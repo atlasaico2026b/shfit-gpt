@@ -1,14 +1,14 @@
 {
-  "name": "ATLAS SHIFT | مدیریت شیفت و پرسنل",
+  "name": "ATLAS SHIFT | مدیریت نیروی انسانی",
   "short_name": "ATLAS SHIFT",
-  "description": "مدیریت محلی پرسنل، شیفت‌ها و مأموریت‌ها با تقویم شمسی",
+  "description": "رابط محلی مدیریت شیفت، مأموریت و عملیات",
   "lang": "fa-IR",
   "dir": "rtl",
-  "start_url": "./",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0a1022",
-  "theme_color": "#101a35",
+  "background_color": "#080c1c",
+  "theme_color": "#080c1c",
   "orientation": "any",
   "icons": [
     {
