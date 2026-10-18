@@ -7,7 +7,7 @@
   <meta name="description" content="ATLAS SHIFT؛ مدیریت محلی پرسنل، شیفت‌ها و مأموریت‌ها با تقویم شمسی">
   <title>ATLAS SHIFT | مدیریت شیفت و پرسنل</title>
   <link rel="manifest" href="./manifest.json">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=20261018-3">
 </head>
 <body>
   <div class="ambient ambient-one"></div>
@@ -55,6 +55,35 @@
   <div id="modal-root"></div>
   <div id="toast-region" class="toast-region" role="status" aria-live="polite"></div>
   <input type="file" id="restore-input" accept="application/json,.json" hidden>
-  <script src="./app.js" defer></script>
+  <script>
+    (function () {
+      function showAppError(message) {
+        var root = document.getElementById('view-root');
+        if (!root) return;
+        var box = document.createElement('div');
+        box.className = 'panel';
+        box.style.margin = '16px 0';
+        box.style.borderColor = 'rgba(255,156,200,.45)';
+        var heading = document.createElement('strong');
+        heading.textContent = 'برنامه کامل بارگذاری نشد';
+        var detail = document.createElement('p');
+        detail.style.color = '#ffb8d8';
+        detail.style.fontSize = '12px';
+        detail.textContent = message || 'فایل برنامه بارگذاری نشد. صفحه را با Ctrl+F5 تازه‌سازی کنید.';
+        box.appendChild(heading);
+        box.appendChild(detail);
+        root.replaceChildren(box);
+      }
+      window.addEventListener('error', function (event) {
+        if (event && event.message) showAppError('خطای اجرا: ' + event.message);
+        else if (event && event.target && event.target.tagName === 'SCRIPT') showAppError('فایل JavaScript بارگذاری نشد.');
+      }, true);
+      window.addEventListener('unhandledrejection', function () {
+        showAppError('هنگام اجرای برنامه خطایی رخ داد.');
+      });
+      window.__atlasShiftShowError = showAppError;
+    })();
+  </script>
+  <script src="./app.js?v=20261018-3" defer onerror="window.__atlasShiftShowError && window.__atlasShiftShowError('فایل app.js دریافت نشد؛ مسیر انتشار یا کش مرورگر را بررسی کنید.')"></script>
 </body>
 </html>
