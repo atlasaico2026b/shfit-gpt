@@ -1,0 +1,46 @@
+:root{
+  --v2-cyan:#67fff0;--v2-blue:#7fa7ff;--v2-violet:#b895ff;--v2-pink:#ff86c8;
+}
+body{perspective:1200px}
+body:after{background:radial-gradient(circle at var(--pointer-x,50%) var(--pointer-y,35%),rgba(103,255,240,.08),transparent 22%),conic-gradient(from 180deg at 50% 50%,transparent 0deg,rgba(95,245,232,.035) 55deg,transparent 115deg,rgba(164,116,255,.045) 205deg,transparent 285deg);transition:background-position .3s ease}
+body:before{opacity:.65}
+.app-shell{position:relative}
+.app-shell:before{content:"";position:absolute;inset:2px;border-radius:34px;pointer-events:none;background:linear-gradient(110deg,rgba(255,255,255,.055),transparent 22%,transparent 76%,rgba(103,255,240,.035));mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;padding:1px}
+.sidebar{transform-style:preserve-3d;overflow:hidden}
+.sidebar:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(125deg,rgba(255,255,255,.075),transparent 18%,transparent 70%,rgba(103,255,240,.045));opacity:.8}
+.brand{position:relative;z-index:1}
+.brand-mark{position:relative;overflow:hidden}
+.brand-mark:after{content:"";position:absolute;width:80px;height:10px;left:-60px;top:4px;transform:rotate(-25deg);background:rgba(255,255,255,.35);filter:blur(7px);animation:atlas-sheen 5s ease-in-out infinite}
+.nav-item{transform-style:preserve-3d}
+.nav-item .nav-icon{transition:transform .25s ease,color .25s ease}
+.nav-item:hover .nav-icon{transform:translateZ(10px) scale(1.08)}
+.main-content{position:relative}
+.topbar{position:relative}
+.topbar:after{content:"";position:absolute;right:0;bottom:10px;width:190px;height:1px;background:linear-gradient(90deg,transparent,var(--v2-cyan),transparent);opacity:.2;filter:blur(.5px)}
+.dashboard-intro,.period-bar,.dash-window,.widget-setting-card{transform-style:preserve-3d}
+.dash-window{position:relative;overflow:hidden}
+.dash-window .dash-window-head,.dash-window .dash-stat-value,.dash-window .dash-stat-foot,.dash-window .notification-empty,.dash-window .chart-placeholder,.dash-window .chart-note,.dash-window .info-placeholder,.dash-window .info-lines{position:relative;z-index:2}
+.dash-window .dash-window-head{transform:translateZ(12px)}
+.dash-window .dash-stat-value{transform:translateZ(10px)}
+.dash-window:before{mix-blend-mode:screen}
+.dash-window:after{animation:atlas-orb 7s ease-in-out infinite alternate}
+.dash-window:hover .dash-window-head{filter:brightness(1.08)}
+.dash-window:nth-child(2n):after{animation-delay:-2s}.dash-window:nth-child(3n):after{animation-delay:-4s}
+.dash-icon{position:relative;overflow:hidden}
+.dash-icon:after{content:"";position:absolute;inset:-30%;background:linear-gradient(120deg,transparent 35%,rgba(255,255,255,.25),transparent 65%);transform:translateX(-120%);transition:transform .65s ease}
+.dash-window:hover .dash-icon:after{transform:translateX(120%)}
+.drag-handle{position:relative;z-index:4}
+.notification-orbit{position:relative}
+.notification-orbit:before,.notification-orbit:after{content:"";position:absolute;inset:-9px;border:1px solid color-mix(in srgb,var(--widget-accent) 18%,transparent);border-radius:50%;transform:rotate(35deg) scaleX(1.5);animation:atlas-orbit 5s linear infinite}
+.notification-orbit:after{inset:-17px;transform:rotate(-35deg) scaleX(1.8);animation-duration:8s;opacity:.55}
+.period-option.active{background:linear-gradient(135deg,rgba(103,255,240,.13),rgba(127,167,255,.08))}
+.button,.nav-item,.period-option,.dashboard-settings-link{position:relative;overflow:hidden}
+.atlas-ripple{position:absolute;border-radius:50%;pointer-events:none;background:rgba(255,255,255,.22);transform:scale(0);animation:atlas-ripple .55s ease-out forwards}
+.atlas-press{animation:atlas-press .28s ease-out}
+@keyframes atlas-sheen{0%,60%{transform:translateX(0) rotate(-25deg);opacity:0}72%{opacity:.65}100%{transform:translateX(150px) rotate(-25deg);opacity:0}}
+@keyframes atlas-orb{to{transform:translate(34px,24px) scale(1.18)}}
+@keyframes atlas-orbit{to{transform:rotate(395deg) scaleX(1.5)}}
+@keyframes atlas-ripple{to{transform:scale(1);opacity:0}}
+@keyframes atlas-press{0%{transform:scale(1)}45%{transform:scale(.965)}100%{transform:scale(1)}}
+@media(max-width:720px){body{perspective:none}.app-shell:before{display:none}.topbar:after{display:none}.dash-window .dash-window-head,.dash-window .dash-stat-value{transform:none}.notification-orbit:before,.notification-orbit:after{display:none}}
+@media(prefers-reduced-motion:reduce){.brand-mark:after,.dash-window:after,.notification-orbit:before,.notification-orbit:after{animation:none!important}}
