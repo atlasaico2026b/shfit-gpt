@@ -2,6 +2,7 @@ const CACHE_NAME = 'atlas-shift-v14-unified';
 const APP_FILES = [
   './',
   './index.html',
+  './dashboard.html',
   './styles.css',
   './app.js',
   './manifest.json',
@@ -27,7 +28,7 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request).then(cached => {
+    caches.match(event.request, { ignoreSearch: true }).then(cached => {
       if (cached) return cached;
       return fetch(event.request).then(response => {
         if (response && response.status === 200 && new URL(event.request.url).origin === self.location.origin) {
