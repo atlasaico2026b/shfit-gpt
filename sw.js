@@ -1,11 +1,12 @@
-const CACHE_NAME = 'atlas-shift-v6';
+const CACHE_NAME = 'atlas-shift-v7';
 const APP_FILES = [
   './',
   './index.html',
   './styles.css?v=20261018-6',
   './visual.css?v=20261018-1',
+  './visual-v2.css?v=20261018-1',
   './app.js?v=20261018-5',
-  './visual.js?v=20261018-1',
+  './visual.js?v=20261018-2',
   './manifest.json',
   './icon.svg'
 ];
