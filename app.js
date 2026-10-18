@@ -57,6 +57,30 @@
     });
     return { year: out.year, month: out.month, day: out.day };
   }
+  function jalaliDigitsToLatin(value) {
+    var persian = '۰۱۲۳۴۵۶۷۸۹', arabic = '٠١٢٣٤٥٦٧٨٩';
+    return String(value || '').replace(/[۰-۹٠-٩]/g, function (digit) {
+      var p = persian.indexOf(digit);
+      return String(p >= 0 ? p : arabic.indexOf(digit));
+    }).trim();
+  }
+  function jalaliDateInput(date) {
+    var p = jalaliParts(date);
+    return p.year + '/' + String(p.month).padStart(2, '0') + '/' + String(p.day).padStart(2, '0');
+  }
+  function jalaliDateToISO(value) {
+    var normalized = jalaliDigitsToLatin(value).replace(/[.\\-]/g, '/').replace(/\\s/g, '');
+    var match = normalized.match(/^(\\d{4})\\/(\\d{1,2})\\/(\\d{1,2})$/);
+    if (!match) return '';
+    var jy = Number(match[1]), jm = Number(match[2]), jd = Number(match[3]);
+    if (jm < 1 || jm > 12 || jd < 1 || jd > 31) return '';
+    var start = new Date(jy + 621, 0, 1, 12, 0, 0);
+    for (var i = 0; i < 460; i++) {
+      var candidate = shiftDate(start, i), parts = jalaliParts(candidate);
+      if (parts.year === jy && parts.month === jm && parts.day === jd) return localISO(candidate);
+    }
+    return '';
+  }
   function sameJalaliMonth(a, b) {
     var x = jalaliParts(a), y = jalaliParts(b);
     return x.year === y.year && x.month === y.month;
@@ -418,13 +442,13 @@
     var typeOptions = state.types.map(function (t) {
       return '<option value="' + t.id + '"' + (item && item.typeId === t.id ? ' selected' : (!item && t.id === 'shift12' ? ' selected' : '')) + '>' + escapeHTML(t.label) + '</option>';
     }).join('');
-    var dateValue = item ? item.date : selectedDate || localISO(new Date());
-    var endValue = item ? (item.endDate || '') : '';
+    var dateValue = jalaliDateInput(dateFromISO(item ? item.date : (selectedDate || localISO(new Date()))));
+    var endValue = item && item.endDate ? jalaliDateInput(dateFromISO(item.endDate)) : '';
     var body = '<form id="entry-form" data-id="' + (item ? item.id : '') + '"><div class="form-grid">' +
       field('پرسنل', '<select class="field-select" name="employeeId" required><option value="">انتخاب کارکنان…</option>' + employeeOptions + '</select>') +
       field('نوع فعالیت', '<select class="field-select" name="typeId" required>' + typeOptions + '</select>') +
-      field('تاریخ شروع', '<input class="field-input" name="date" type="date" required value="' + escapeHTML(dateValue) + '"><span class="hint">تاریخ ورودی بر اساس قالب دستگاه است؛ نمایش تقویم در برنامه شمسی است.</span>') +
-      field('تاریخ پایان (اختیاری)', '<input class="field-input" name="endDate" type="date" min="' + escapeHTML(dateValue) + '" value="' + escapeHTML(endValue) + '"><span class="hint">برای فعالیت چندروزه مثل مأموریت استفاده کنید.</span>') +
+      field('تاریخ شروع شمسی', '<input class="field-input" name="date" type="text" inputmode="numeric" autocomplete="off" placeholder="۱۴۰۵/۰۷/۲۶" required value="' + escapeHTML(dateValue) + '"><span class="hint">قالب سال/ماه/روز شمسی؛ ارقام فارسی یا انگلیسی پذیرفته می‌شود.</span>') +
+      field('تاریخ پایان شمسی (اختیاری)', '<input class="field-input" name="endDate" type="text" inputmode="numeric" autocomplete="off" placeholder="۱۴۰۵/۰۷/۲۷" value="' + escapeHTML(endValue) + '"><span class="hint">برای فعالیت چندروزه مثل مأموریت استفاده کنید.</span>') +
       field('ساعت شروع', '<input class="field-input" name="startTime" type="time" value="' + escapeHTML(item ? item.startTime : '') + '">') +
       field('ساعت پایان', '<input class="field-input" name="endTime" type="time" value="' + escapeHTML(item ? item.endTime : '') + '">') +
       field('مکان / شهر', '<input class="field-input" name="location" maxlength="120" placeholder="مثلاً اهواز، منطقه عملیاتی…" value="' + escapeHTML(item ? item.location : '') + '">') +
@@ -598,8 +622,11 @@
     } else if (form.id === 'entry-form') {
       event.preventDefault();
       var ef = new FormData(form), eid = form.dataset.id;
-      var eDate = String(ef.get('date') || '');
-      var eEnd = String(ef.get('endDate') || '');
+      var eDate = jalaliDateToISO(String(ef.get('date') || ''));
+      var rawEndDate = String(ef.get('endDate') || '').trim();
+      var eEnd = rawEndDate ? jalaliDateToISO(rawEndDate) : '';
+      if (!eDate) { toast('تاریخ شروع را با قالب شمسی سال/ماه/روز وارد کنید.', true); return; }
+      if (rawEndDate && !eEnd) { toast('تاریخ پایان شمسی معتبر نیست؛ قالب سال/ماه/روز را بررسی کنید.', true); return; }
       if (eEnd && eEnd < eDate) { toast('تاریخ پایان نمی‌تواند قبل از تاریخ شروع باشد.', true); return; }
       if (!employeeById(String(ef.get('employeeId') || ''))) { toast('یک پرسنل معتبر انتخاب کنید.', true); return; }
       var activity = {
