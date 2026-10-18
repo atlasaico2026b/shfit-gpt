@@ -12,6 +12,20 @@ Last consolidated: 2026-10-18
 - Do not re-ask questions already answered. Ask only one direct question at a time when a decision is genuinely needed.
 - Before coding, inspect the current repository and this snapshot to avoid repeating work.
 
+## Main navigation — confirmed
+The app must have exactly these **9 main menus**, in this order:
+1. داشبورد
+2. کارکنان
+3. مأموریت‌ها
+4. مرخصی‌ها
+5. خودروها
+6. گازسنج‌ها
+7. یادداشت‌ها
+8. گزارشات
+9. تنظیمات
+
+These replace the earlier prototype's main navigation labels. Do not keep “تقویم شمسی” or “برنامه کاری” as separate main menus; calendar/scheduling behavior belongs within the relevant approved menu(s), to be decided from the user's requirements. Do not change this list or order unless the user explicitly asks.
+
 ## Product goal
 A private/local operations app named **ATLAS SHIFT** for managing safety and firefighting personnel, shifts, leave, work assignments, missions, and related vehicles/equipment. It should answer the day-to-day question: who is where, what are they doing, and which personnel/vehicles are assigned to a mission or location; it should also support monthly reporting on who went where.
 
@@ -23,7 +37,7 @@ A private/local operations app named **ATLAS SHIFT** for managing safety and fir
 - Every user-approved data section and its items should be addable, editable, and removable through the app UI. This requirement is not permission to invent new sections.
 - Filters should include an “All” choice where applicable.
 - Main reporting priority: daily personnel status/location (including missions and leave), vehicle location/assignment, and monthly “who went where” statistics. Reports/filters, printing/export, backup and restore are required. Discuss exact report layouts before inventing them.
-- Relevant date ranges mentioned: day, 3 days, week, 10 days, month, 6 months, year; dashboard range presets previously mentioned include today, yesterday, week, month, 3 months, 6 months and custom. Do not add dashboard cards without approval.
+- Relevant date ranges: day, 3 days, week, 10 days, month, 6 months, year; dashboard range presets previously mentioned include today, yesterday, week, month, 3 months, 6 months and custom. Do not add dashboard cards without approval.
 - Work context includes shift workers on 12-hour shifts, permanent day workers, leave, missions to other cities, and assignments that can change from shift to day work. Workplaces/stations mentioned include Mahshahr, Abadan, Ahvaz, Andimeshk and Tang-e Fanni; route missions may have origin, destination, and distance in km.
 - Mission notes/work types mentioned by the user include welding supervision; inspection of branches/leaks and soil/water pollution; visits for extinguishers, gas detectors, breathing air and cylinders for charging/repair; and station telecom visits.
 - Personnel data previously requested: name and surname, mobile, job title, employment type, base/system workplace versus current assigned workplace, and status (shift / working / leave); individual or bulk editing; reports by city/workplace/employment type.
@@ -33,7 +47,7 @@ A private/local operations app named **ATLAS SHIFT** for managing safety and fir
 ## Current repository implementation (not the final approved specification)
 Files seen on `main`: `index.html`, `styles.css`, `app.js`, `sw.js`, `manifest.json`, `icon.svg`, `README.md`, and `.github/workflows/deploy-pages.yml`.
 The current prototype includes navigation for overview/dashboard, Solar Hijri calendar, work schedule, personnel and settings, plus local JSON backup/restore, configurable activity types, custom sections/records, and browser local storage.
-Important: the prototype contains implementation choices and fields/cards that were added during the first build without sufficient user approval. Treat them as provisional, not as accepted requirements. Reconcile the screens, cards, fields, and workflows against the user's specification before redesigning or expanding them.
+Important: the prototype contains implementation choices and fields/cards that were added during the first build without sufficient user approval. Treat them as provisional, not as accepted requirements. Reconcile the screens, cards, fields, and workflows against the user's specification before redesigning or expanding them. The current navigation must be brought into alignment with the nine confirmed menus above.
 
 ## Current technical state / known issue
 - Repository is public and the connected GitHub tool currently reports pull/push/admin permissions for `atlasaico2026b/shfit-gpt`.
@@ -49,6 +63,6 @@ Important: the prototype contains implementation choices and fields/cards that w
 
 ## Open decision and next work
 - The earlier unanswered question is: which device(s) will run the final app in actual use (Windows PC, Android phone, both, or another target)? Do not ask again until the conversation is at that point; do not assume the answer.
-- Continue from the step-by-step product-specification phase. First clarify the target platform, then resolve requirements one question at a time before changing the UI or adding capabilities.
-- After the target is known, compare the current implementation against the agreed spec, list mismatches for discussion, and only then implement approved changes.
+- Continue from the step-by-step product-specification phase. The nine-menu navigation is now confirmed. Continue resolving requirements one question at a time before changing the UI or adding capabilities.
+- After requirements are confirmed, compare the current implementation against the agreed spec, list mismatches for discussion, and only then implement approved changes.
 - Avoid repeating repository setup, GitHub connection troubleshooting, or deployment setup unless a fresh check shows they are needed.
