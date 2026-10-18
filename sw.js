@@ -1,4 +1,4 @@
-const CACHE_NAME = 'atlas-shift-v9';
+const CACHE_NAME = 'atlas-shift-v10';
 const APP_FILES = [
   './',
   './index.html',
@@ -6,7 +6,7 @@ const APP_FILES = [
   './visual.css?v=20261018-1',
   './visual-v2.css?v=20261018-1',
   './app.js?v=20261018-7',
-  './visual.js?v=20261018-5',
+  './visual-engine.js?v=20261018-1',
   './manifest.json',
   './icon.svg'
 ];
@@ -38,7 +38,7 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
         }
         return response;
-      }).catch(() => caches.match('./index.html'));
+      });
     })
   );
 });
