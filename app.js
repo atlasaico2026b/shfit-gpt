@@ -400,7 +400,7 @@
       '</section></div>';
   }
   function renderCustomSection(section) {
-    if (!section) return emptyState('این بخش در دسترس نیست', 'ممکن است حذف شده باشد؛ از تنظیمات بخش دیگری انتخاب کنید.', 'settings', 'رفتن به تنظیمات');
+    if (!section) return '<div class="empty-state"><div class="empty-icon">✧</div><strong>این بخش در دسترس نیست</strong><p>ممکن است حذف شده باشد؛ از تنظیمات بخش دیگری انتخاب کنید.</p><button class="button button-primary button-small" data-view="settings">رفتن به تنظیمات</button></div>';
     var items = Array.isArray(section.items) ? section.items : [];
     var rows = items.slice().sort(function (a, b) {
       return String(a.date || '').localeCompare(String(b.date || '')) || String(a.title || '').localeCompare(String(b.title || ''));
