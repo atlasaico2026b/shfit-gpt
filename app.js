@@ -69,8 +69,8 @@
     return p.year + '/' + String(p.month).padStart(2, '0') + '/' + String(p.day).padStart(2, '0');
   }
   function jalaliDateToISO(value) {
-    var normalized = jalaliDigitsToLatin(value).replace(/[.\\-]/g, '/').replace(/\\s/g, '');
-    var match = normalized.match(/^(\\d{4})\\/(\\d{1,2})\\/(\\d{1,2})$/);
+    var normalized = jalaliDigitsToLatin(value).replace(/[.-]/g, '/').replace(/\s/g, '');
+    var match = normalized.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
     if (!match) return '';
     var jy = Number(match[1]), jm = Number(match[2]), jd = Number(match[3]);
     if (jm < 1 || jm > 12 || jd < 1 || jd > 31) return '';
