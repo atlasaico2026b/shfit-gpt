@@ -1,277 +1,213 @@
-(function () {
-  'use strict';
+(()=>{
+  const $=(s,root=document)=>root.querySelector(s), $$=(s,root=document)=>Array.from(root.querySelectorAll(s));
+  const dashboard=$('#dashboard'), widgets=()=>$$('.widget',dashboard);
+  const initialOrder=['roster','shift-coverage','missions','alerts','fleet','calendar','equipment','operations','stations'];
+  const initialSizes={roster:'medium','shift-coverage':'compact',missions:'wide',alerts:'compact',fleet:'compact',calendar:'compact',equipment:'medium',operations:'wide',stations:'compact'};
+  let layoutMode=false, showUnreadOnly=false, toastTimer;
+  const toast=(msg)=>{const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2400)};
+  const safeRead=(key)=>{try{return localStorage.getItem(key)}catch(e){return null}};
+  const safeWrite=(key,value)=>{try{localStorage.setItem(key,value)}catch(e){}}
+  function applySavedLayout(){
+    let saved;try{saved=JSON.parse(safeRead('atlasShiftLayout')||'null')}catch(e){saved=null}
+    if(saved&&Array.isArray(saved.order)){
+      saved.order.forEach(id=>{const node=$(`[data-widget="${id}"]`);if(node)dashboard.appendChild(node)});
+      // Keep newly-added widgets visible when loading a layout saved by an older version.
+      widgets().forEach(w=>{if(!saved.order.includes(w.dataset.widget))dashboard.appendChild(w);if(saved.sizes&&saved.sizes[w.dataset.widget])w.dataset.size=saved.sizes[w.dataset.widget]});
+    }
+    paintSizeButtons();
+  }
+  function saveLayout(){safeWrite('atlasShiftLayout',JSON.stringify({order:widgets().map(w=>w.dataset.widget),sizes:Object.fromEntries(widgets().map(w=>[w.dataset.widget,w.dataset.size]))}));}
+  function paintSizeButtons(){widgets().forEach(w=>$$('[data-size-action]',w).forEach(b=>b.classList.toggle('selected',b.dataset.sizeAction===w.dataset.size)))}
+  function setLayoutMode(on){layoutMode=on;document.body.classList.toggle('layout-mode',on);$('#layoutButtonText').textContent=on?'پایان تنظیم':'تنظیم چیدمان';$('#layoutButton').setAttribute('aria-pressed',String(on));widgets().forEach(w=>{const handle=$('.drag-handle',w);if(handle)handle.setAttribute('draggable',String(on));});if(on)toast('حالت چیدمان فعال شد؛ دستگیرهٔ پنجره‌ها را بکش و جابه‌جا کن.');else{saveLayout();toast('چیدمان در این مرورگر ذخیره شد.')}}
+  $('#layoutButton').addEventListener('click',()=>setLayoutMode(!layoutMode));
+  $('#resetLayout').addEventListener('click',()=>{initialOrder.forEach(id=>{const node=$(`[data-widget="${id}"]`);if(node)dashboard.appendChild(node);if(node)node.dataset.size=initialSizes[id]});safeWrite('atlasShiftLayout','');paintSizeButtons();setLayoutMode(false);toast('چیدمان اولیه بازگردانده شد.')});
+  // A drag handle is used for both a mouse and a finger. Cards snap to the grid when dropped.
+  let dragCard=null, startX=0,startY=0,lastTarget=null,activePointer=null;
+  widgets().forEach(w=>{
+    const handle=$('.drag-handle',w);if(!handle)return;
+    handle.addEventListener('pointerdown',e=>{if(!layoutMode)return;if(e.button!==0&&e.pointerType==='mouse')return;dragCard=w;activePointer=e.pointerId;startX=e.clientX;startY=e.clientY;w.classList.add('is-dragging');handle.setPointerCapture?.(e.pointerId);e.preventDefault()});
+    handle.addEventListener('pointermove',e=>{
+      if(!layoutMode||dragCard!==w||activePointer!==e.pointerId)return;
+      const hit=document.elementFromPoint(e.clientX,e.clientY)?.closest('.widget');
+      if(!hit||hit===dragCard||hit===lastTarget)return;
+      if(lastTarget)lastTarget.classList.remove('drag-over');lastTarget=hit;hit.classList.add('drag-over');
+      const r=hit.getBoundingClientRect();const dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);let after;
+      if(Math.abs(dx)>Math.abs(dy))after=(document.documentElement.dir==='rtl')?dx<0:dx>0;else after=dy>0;
+      dashboard.insertBefore(dragCard,after?hit.nextSibling:hit); 
+    });
+    const endDrag=e=>{if(dragCard!==w)return;w.classList.remove('is-dragging');if(lastTarget)lastTarget.classList.remove('drag-over');lastTarget=null;dragCard=null;activePointer=null;saveLayout();if(layoutMode)paintSizeButtons()};
+    handle.addEventListener('pointerup',endDrag);handle.addEventListener('pointercancel',endDrag);
+  });
+  // Keep the widgets' glass reflection responsive to the pointer.
+  widgets().forEach(w=>{w.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;const r=w.getBoundingClientRect();w.style.setProperty('--mx',(e.clientX-r.left)+'px');w.style.setProperty('--my',(e.clientY-r.top)+'px')});w.addEventListener('pointerleave',()=>{w.style.setProperty('--mx','50%');w.style.setProperty('--my','0')})});
+  dashboard.addEventListener('click',e=>{const btn=e.target.closest('[data-size-action]');if(!btn||!layoutMode)return;const w=btn.closest('.widget');w.dataset.size=btn.dataset.sizeAction;paintSizeButtons();saveLayout()});
+  applySavedLayout();
+  // Notifications: open, read/unread filter, and local read state.
+  function updateNotificationBadge(){const count=$$('.notice-card.unread').length;const badge=$('#notificationCount');badge.textContent=String(count).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);badge.style.display=count?'flex':'none';}
+  function openDrawer(){document.body.classList.add('notifications-open');$('#notificationDrawer').setAttribute('aria-hidden','false');$('#settingsPanel').classList.remove('open');$('#settingsPanel').setAttribute('aria-hidden','true');$('#settingsButton').setAttribute('aria-expanded','false')}
+  function closeDrawer(){document.body.classList.remove('notifications-open');$('#notificationDrawer').setAttribute('aria-hidden','true')}
+  $('#notificationButton').addEventListener('click',openDrawer);$('#seeAllAlerts').addEventListener('click',openDrawer);$('#closeDrawer').addEventListener('click',closeDrawer);$('#drawerBackdrop').addEventListener('click',closeDrawer);
+  $('#markAllRead').addEventListener('click',()=>{$$('.notice-card').forEach(n=>{n.classList.remove('unread');$('.notice-unread',n)?.remove()});updateNotificationBadge();toast('همه اعلان‌ها خوانده‌شده علامت خوردند.')});
+  $('#onlyUnread').addEventListener('click',()=>{showUnreadOnly=!showUnreadOnly;$('#onlyUnread').textContent=showUnreadOnly?'نمایش همه اعلان‌ها':'فقط خوانده‌نشده‌ها';$$('.notice-card').forEach(n=>n.style.display=(!showUnreadOnly||n.classList.contains('unread'))?'flex':'none');const any=$$('.notice-card').some(n=>n.style.display!=='none');let empty=$('.empty-notices');if(!any&&!empty){empty=document.createElement('div');empty.className='empty-notices';empty.textContent='اعلان خوانده‌نشده‌ای باقی نمانده است.';$('#noticeList').appendChild(empty)}else if(any&&empty)empty.remove()});
+  $$('.notice-card').forEach(n=>n.addEventListener('click',()=>{n.classList.remove('unread');$('.notice-unread',n)?.remove();updateNotificationBadge()}));
+  updateNotificationBadge();
+  // Theme accents
+  const themes={violet:{accent:'#7c8cff',rgb:'124,140,255',accent2:'#4ee2d0'},cyan:{accent:'#55bfff',rgb:'85,191,255',accent2:'#4ee2d0'},rose:{accent:'#c58aff',rgb:'197,138,255',accent2:'#ff83b5'},amber:{accent:'#ffb96b',rgb:'255,185,107',accent2:'#79e8d4'}};
+  function applyTheme(name){const t=themes[name]||themes.violet;document.documentElement.style.setProperty('--accent',t.accent);document.documentElement.style.setProperty('--accent-rgb',t.rgb);document.documentElement.style.setProperty('--accent2',t.accent2);$$('.swatch').forEach(s=>s.classList.toggle('active',s.dataset.theme===name));safeWrite('atlasShiftTheme',name)}
+  const settingsPanel=$('#settingsPanel'),settingsButton=$('#settingsButton');
+  settingsButton.addEventListener('click',e=>{e.stopPropagation();const opening=!settingsPanel.classList.contains('open');settingsPanel.classList.toggle('open',opening);settingsPanel.setAttribute('aria-hidden',String(!opening));settingsButton.setAttribute('aria-expanded',String(opening));closeDrawer()});
+  $$('.swatch').forEach(s=>s.addEventListener('click',()=>{applyTheme(s.dataset.theme);toast('رنگ فضای کاری تغییر کرد.')}));
+  document.addEventListener('click',e=>{if(!e.target.closest('#settingsPanel')&&!e.target.closest('#settingsButton')){settingsPanel.classList.remove('open');settingsPanel.setAttribute('aria-hidden','true');settingsButton.setAttribute('aria-expanded','false')}});
+  applyTheme(safeRead('atlasShiftTheme')||'violet');
+  // Persian calendar and range presets for the dashboard's top-level filter bar.
+  const faDigits = s => String(s).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
+  const rangeNames = {today:'امروز',yesterday:'دیروز',threeDays:'۳ روز اخیر',week:'هفته اخیر',tenDays:'۱۰ روز اخیر',month:'ماه جاری',threeMonths:'۳ ماه اخیر',sixMonths:'۶ ماه اخیر',year:'سال جاری',custom:'بازه دلخواه'};
+  let activeRange='today', rangeStart=null, rangeEnd=null, calendarAnchor=new Date();
+  const jalaliPartsFormat = new Intl.DateTimeFormat('en-US-u-ca-persian-nu-latn',{year:'numeric',month:'numeric',day:'numeric'});
+  const jalaliMonthFormat = new Intl.DateTimeFormat('fa-IR-u-ca-persian',{month:'long',year:'numeric'});
+  const jalaliDateFormat = new Intl.DateTimeFormat('fa-IR-u-ca-persian',{day:'numeric',month:'long',year:'numeric'});
+  const dayOnly = date => new Date(date.getFullYear(),date.getMonth(),date.getDate());
+  const addDays = (date,n) => { const d=dayOnly(date); d.setDate(d.getDate()+n); return d; };
+  const jParts = date => { const p=jalaliPartsFormat.formatToParts(date); const value=t=>Number(p.find(x=>x.type===t)?.value||0); return {year:value('year'),month:value('month'),day:value('day')}; };
+  const formatJDate = date => date ? jalaliDateFormat.format(date) : '—';
+  const isoDay = date => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+  function jalaliMonthDates(anchor){
+    const target=jParts(anchor), found=[];
+    for(let offset=-40;offset<=40;offset++){
+      const d=addDays(anchor,offset), p=jParts(d);
+      if(p.year===target.year&&p.month===target.month)found.push(d);
+    }
+    return found.sort((a,b)=>a-b);
+  }
+  function persianYearStart(anchor){
+    for(let offset=-220;offset<=220;offset++){
+      const d=addDays(anchor,offset), p=jParts(d);
+      if(p.month===1&&p.day===1)return d;
+    }
+    return jalaliMonthDates(anchor)[0]||dayOnly(anchor);
+  }
+  function updateRangeSummary(){
+    const label=$('#selectedRangeLabel');
+    $$('.range-chip').forEach(b=>b.classList.toggle('active',b.dataset.rangePreset===activeRange));
+    if(rangeStart&&rangeEnd) label.textContent=`${rangeNames[activeRange]||rangeNames.custom} · ${formatJDate(rangeStart)} تا ${formatJDate(rangeEnd)}`;
+    else if(rangeStart) label.textContent=`${rangeNames[activeRange]||rangeNames.custom} · از ${formatJDate(rangeStart)} تا …`;
+    else label.textContent=rangeNames[activeRange]||rangeNames.custom;
+    $('#calendarSelectionDates').textContent=rangeStart?(rangeEnd?`${formatJDate(rangeStart)}
+تا
+${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب روز شروع';
+    $('#calendarSelectionHelp').textContent=!rangeStart?'برای شروع، یک روز را از تقویم انتخاب کن.':!rangeEnd?'حالا روز پایان را انتخاب کن. اگر روزی زودتر از شروع انتخاب شود، ترتیب تاریخ‌ها به‌صورت خودکار اصلاح می‌شود.':'بازه آماده است. با «اعمال بازه» آن را برای نمای داشبورد انتخاب کن.';
+    $('#applyCustomRange').disabled=!(rangeStart&&rangeEnd);
+  }
+  function renderCalendar(){
+    $('#calendarMonthLabel').textContent=jalaliMonthFormat.format(calendarAnchor);
+    const grid=$('#calendarGrid');grid.innerHTML='';
+    const dates=jalaliMonthDates(calendarAnchor);if(!dates.length)return;
+    const leading=(dates[0].getDay()+1)%7;
+    for(let i=0;i<leading;i++){const blank=document.createElement('span');blank.className='day-empty';grid.appendChild(blank)}
+    const todayIso=isoDay(new Date()), startIso=rangeStart?isoDay(rangeStart):'', endIso=rangeEnd?isoDay(rangeEnd):'';
+    dates.forEach(date=>{
+      const btn=document.createElement('button');btn.type='button';btn.className='calendar-day';btn.textContent=faDigits(jParts(date).day);btn.dataset.date=isoDay(date);btn.setAttribute('aria-label',formatJDate(date));
+      const id=isoDay(date);if(id===todayIso)btn.classList.add('today');
+      if(startIso&&id===startIso)btn.classList.add('range-start','selected');
+      if(endIso&&id===endIso)btn.classList.add('range-end','selected');
+      if(rangeStart&&rangeEnd&&date>=rangeStart&&date<=rangeEnd)btn.classList.add('in-range');
+      if(id===startIso||id===endIso)btn.setAttribute('aria-pressed','true');else btn.setAttribute('aria-pressed','false');
+      btn.addEventListener('click',()=>chooseCalendarDate(date));grid.appendChild(btn);
+    });
+  }
+  function chooseCalendarDate(date){
+    const picked=dayOnly(date);
+    if(!rangeStart||rangeEnd){rangeStart=picked;rangeEnd=null;activeRange='custom'}
+    else if(picked<rangeStart){rangeEnd=rangeStart;rangeStart=picked;activeRange='custom'}
+    else {rangeEnd=picked;activeRange='custom'}
+    calendarAnchor=picked;updateRangeSummary();renderCalendar();
+  }
+  function applyRangePreset(name){
+    activeRange=name;const today=dayOnly(new Date());let start=today,end=today;
+    if(name==='yesterday'){start=addDays(today,-1);end=start}
+    else if(name==='threeDays')start=addDays(today,-2);
+    else if(name==='week')start=addDays(today,-6);
+    else if(name==='tenDays')start=addDays(today,-9);
+    else if(name==='month')start=jalaliMonthDates(today)[0]||today;
+    else if(name==='threeMonths')start=jalaliMonthDates(addDays(today,-62))[0]||addDays(today,-62);
+    else if(name==='sixMonths')start=jalaliMonthDates(addDays(today,-155))[0]||addDays(today,-155);
+    else if(name==='year')start=persianYearStart(today);
+    else if(name==='custom'){
+      $('#calendarPanel').classList.add('open');$('#calendarPanel').setAttribute('aria-hidden','false');$('#calendarToggle').setAttribute('aria-expanded','true');
+      calendarAnchor=rangeStart||today;updateRangeSummary();renderCalendar();return;
+    }
+    rangeStart=dayOnly(start);rangeEnd=dayOnly(end);calendarAnchor=rangeEnd;updateRangeSummary();renderCalendar();
+    $('#calendarPanel').classList.remove('open');$('#calendarPanel').setAttribute('aria-hidden','true');$('#calendarToggle').setAttribute('aria-expanded','false');
+  }
+  const calendarPanel=$('#calendarPanel'), calendarToggle=$('#calendarToggle');
+  calendarToggle.addEventListener('click',()=>{const opening=!calendarPanel.classList.contains('open');calendarPanel.classList.toggle('open',opening);calendarPanel.setAttribute('aria-hidden',String(!opening));calendarToggle.setAttribute('aria-expanded',String(opening));if(opening){calendarAnchor=rangeStart||new Date();renderCalendar()}});
+  $('#closeCalendar').addEventListener('click',()=>{calendarPanel.classList.remove('open');calendarPanel.setAttribute('aria-hidden','true');calendarToggle.setAttribute('aria-expanded','false')});
+  $('#calendarPrev').addEventListener('click',()=>{calendarAnchor=addDays(calendarAnchor,-32);renderCalendar()});
+  $('#calendarNext').addEventListener('click',()=>{calendarAnchor=addDays(calendarAnchor,32);renderCalendar()});
+  $('#clearCalendarSelection').addEventListener('click',()=>{rangeStart=null;rangeEnd=null;activeRange='custom';updateRangeSummary();renderCalendar()});
+  $('#applyCustomRange').addEventListener('click',()=>{if(!rangeStart||!rangeEnd)return;activeRange='custom';updateRangeSummary();calendarPanel.classList.remove('open');calendarPanel.setAttribute('aria-hidden','true');calendarToggle.setAttribute('aria-expanded','false');toast('بازهٔ زمانی دلخواه انتخاب شد.')});
+  $$('.range-chip').forEach(button=>button.addEventListener('click',()=>applyRangePreset(button.dataset.rangePreset)));
+  rangeStart=dayOnly(new Date());rangeEnd=dayOnly(new Date());updateRangeSummary();renderCalendar();
 
-  var viewNames = {
-    dashboard: 'داشبورد',
-    employees: 'کارکنان',
-    missions: 'مأموریت‌ها',
-    leaves: 'مرخصی‌ها',
-    vehicles: 'خودروها',
-    gasmeters: 'گازسنج‌ها',
-    notes: 'یادداشت‌ها',
-    reports: 'گزارشات',
-    settings: 'تنظیمات'
+  // Nine visible shortcut tabs scroll to their corresponding information-only panes.
+  let dockFocusTimer;
+  $$('[data-target-widget]').forEach(button=>button.addEventListener('click',()=>{
+    const target=$(`[data-widget="${button.dataset.targetWidget}"]`);if(!target)return;
+    $$('[data-target-widget]').forEach(item=>item.classList.toggle('active',item===button));
+    target.scrollIntoView({behavior:'smooth',block:'center'});target.classList.add('dock-focus');
+    clearTimeout(dockFocusTimer);dockFocusTimer=setTimeout(()=>target.classList.remove('dock-focus'),1500);
+  }));
+
+  function updateClock(){const now=new Date();try{$('#clockText').textContent=faDigits(new Intl.DateTimeFormat('fa-IR',{hour:'2-digit',minute:'2-digit',hour12:false}).format(now));const parts=new Intl.DateTimeFormat('fa-IR-u-ca-persian',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).formatToParts(now);const get=t=>parts.find(p=>p.type===t)?.value||'';$('#dateText').textContent=`${get('weekday')}، ${get('day')} ${get('month')}`;$('#persianDay').textContent=get('day');$('#persianMonth').textContent=`${get('month')} ${get('year')}`;$('#weekDay').textContent=get('weekday')}catch(e){$('#clockText').textContent=faDigits(now.toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'}));}}
+  updateClock();setInterval(updateClock,30000);
+
+  // Single-shell navigation: all menu sections use this same UI. Unbuilt modules show an honest in-theme placeholder.
+  const viewInfo = {
+    dashboard:{title:'اتاق فرمان <span style="color:var(--accent2)">عملیات</span>',subtitle:'نمایی یکپارچه از نیروی انسانی، مأموریت‌ها، ناوگان و وضعیت تجهیزات ایمنی',kicker:'مرکز پایش عملیات / LIVE OVERVIEW'},
+    employees:{title:'مدیریت <span style="color:var(--accent2)">کارکنان</span>',subtitle:'پرونده پرسنلی، وضعیت کاری و محل خدمت',kicker:'مدیریت عملیات / کارکنان',icon:'♙',note:'در این بخش، کارت پرسنلی، نوع استخدام، محل سازمانی و محل خدمت فعلی ساخته خواهد شد.'},
+    missions:{title:'مدیریت <span style="color:var(--accent2)">مأموریت‌ها</span>',subtitle:'مأموریت‌های شهری و بین‌شهری، مسیر، کیلومتر و فعالیت میدانی',kicker:'مدیریت عملیات / مأموریت‌ها',icon:'↗',note:'فرم‌های ثبت مأموریت، مبدأ و مقصد، تاریخ، خودرو، نفرات و گزارش‌های دوره‌ای در همین بخش پیاده‌سازی خواهند شد.'},
+    leaves:{title:'مدیریت <span style="color:var(--accent2)">مرخصی‌ها</span>',subtitle:'برنامه‌ریزی مرخصی و مشاهده وضعیت نیروها',kicker:'مدیریت عملیات / مرخصی‌ها',icon:'◷',note:'ثبت بازه مرخصی، پیوند آن با برنامه شیفت و گزارش مرخصی‌ها در این بخش پیاده‌سازی خواهد شد.'},
+    vehicles:{title:'مدیریت <span style="color:var(--accent2)">خودروها</span>',subtitle:'وضعیت ناوگان، محل استقرار، سرنشینان و سرویس دوره‌ای',kicker:'مدیریت عملیات / خودروها',icon:'▰',note:'کارت خودرو، پلاک‌ها، خرابی‌ها، تجهیزات همراه، کیلومتر و سوابق تعمیرات در همین بخش ساخته خواهد شد.'},
+    gasmeters:{title:'مدیریت <span style="color:var(--accent2)">گازسنج‌ها</span>',subtitle:'وضعیت تجهیزات، گازهای قابل‌اندازه‌گیری و سررسید کالیبراسیون',kicker:'مدیریت عملیات / تجهیزات',icon:'◉',note:'ثبت کد و سریال، نوع گاز، محل استقرار، وضعیت دستگاه و محاسبه سررسید کالیبراسیون در این بخش پیاده‌سازی خواهد شد.'},
+    notes:{title:'یادداشت‌ها و <span style="color:var(--accent2)">پیگیری‌ها</span>',subtitle:'یادداشت‌های کاری و نکات پیگیری عملیات',kicker:'مدیریت عملیات / یادداشت‌ها',icon:'▤',note:'یادداشت‌های قابل ویرایش و حذف، تاریخ و ارجاع مرتبط در این بخش ساخته خواهد شد.'},
+    reports:{title:'گزارش‌ها و <span style="color:var(--accent2)">آمار</span>',subtitle:'گزارش‌های روزانه و دوره‌ای بر اساس تاریخ، شهر و نوع فعالیت',kicker:'مدیریت عملیات / گزارشات',icon:'▥',note:'فیلتر تاریخ شمسی، شمارش مأموریت‌ها و گزارش‌های قابل چاپ و خروجی در این بخش پیاده‌سازی خواهد شد.'},
+    settings:{title:'تنظیمات <span style="color:var(--accent2)">برنامه</span>',subtitle:'ظاهر، چیدمان پنجره‌ها و آماده‌سازی اجرای محلی',kicker:'فضای کاری / تنظیمات',icon:'⚙',note:'تنظیمات ظاهری موجود است. تنظیمات داده، پشتیبان‌گیری و گزینه‌های نصب محلی در ادامه به همین بخش اضافه خواهند شد.'}
   };
-  var storageKey = 'atlas-shift-dashboard-layout-v1';
-  var periodNames = { daily: 'روزانه', weekly: 'هفتگی', monthly: 'ماهانه', halfyear: '۶ ماهه', yearly: 'سالانه' };
-  var types = {
-    employees: { name: 'کارکنان', icon: '♙', note: 'خلاصه اطلاعات کارکنان', value: '—' },
-    missions: { name: 'مأموریت‌ها', icon: '↗', note: 'آمار مأموریت در بازه انتخابی', value: '—' },
-    leaves: { name: 'مرخصی‌ها', icon: '◷', note: 'خلاصه مرخصی‌ها', value: '—' },
-    vehicles: { name: 'خودروها', icon: '▰', note: 'خلاصه وضعیت ناوگان', value: '—' },
-    notifications: { name: 'اعلان‌ها', icon: '♢', note: 'فضای نمایش اعلان‌ها', value: '' },
-    chart: { name: 'نمودار آماری', icon: '⌁', note: 'نمای آماری در بازه انتخابی', value: '' },
-    info: { name: 'پنجره اطلاعاتی', icon: '▤', note: 'خلاصه اطلاعات قابل نمایش', value: '' },
-    gasmeters: { name: 'گازسنج‌ها', icon: '◉', note: 'خلاصه اطلاعات گازسنج‌ها', value: '—' }
-  };
-  var defaultWidgets = [
-    { id: 'w-employees', type: 'employees', title: 'کارکنان', size: 'small', color: 'cyan' },
-    { id: 'w-missions', type: 'missions', title: 'مأموریت‌ها', size: 'small', color: 'violet' },
-    { id: 'w-leaves', type: 'leaves', title: 'مرخصی‌ها', size: 'small', color: 'orange' },
-    { id: 'w-vehicles', type: 'vehicles', title: 'خودروها', size: 'small', color: 'green' },
-    { id: 'w-notifications', type: 'notifications', title: 'اعلان‌ها', size: 'wide', color: 'pink' },
-    { id: 'w-chart', type: 'chart', title: 'نمای آماری', size: 'wide', color: 'cyan' },
-    { id: 'w-info', type: 'info', title: 'خلاصه اطلاعات', size: 'medium', color: 'violet' }
-  ];
-  var palette = { cyan: 'فیروزه‌ای', violet: 'بنفش', orange: 'نارنجی', green: 'سبز', pink: 'صورتی', blue: 'آبی' };
-  var state = { period: 'daily', widgets: loadWidgets(), dragId: null, dragPointer: null };
-
-  function loadWidgets() {
-    try {
-      var saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
-      if (saved && Array.isArray(saved.widgets) && saved.widgets.length) {
-        return saved.widgets.filter(function (w) { return w && types[w.type] && w.id; }).map(normalizeWidget);
-      }
-    } catch (e) {}
-    return defaultWidgets.map(function (w) { return Object.assign({}, w); });
-  }
-  function normalizeWidget(w) {
-    return { id: String(w.id), type: types[w.type] ? w.type : 'info', title: String(w.title || types[w.type].name), size: ['small', 'medium', 'wide'].indexOf(w.size) >= 0 ? w.size : 'medium', color: palette[w.color] ? w.color : 'cyan' };
-  }
-  function saveWidgets() {
-    try { localStorage.setItem(storageKey, JSON.stringify({ widgets: state.widgets })); } catch (e) {}
-  }
-  function escapeHtml(value) {
-    return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+  function renderRoute(){
+    let view='dashboard';
+    try{view=new URLSearchParams(window.location.search).get('view')||'dashboard'}catch(e){}
+    if(!Object.prototype.hasOwnProperty.call(viewInfo,view))view='dashboard';
+    const info=viewInfo[view], isDashboard=view==='dashboard';
+    const hideSelectors=['.dashboard-controls','.widget-dock','.layout-hint','#dashboard','.footnote'];
+    hideSelectors.forEach(sel=>{const el=$(sel);if(el)el.classList.toggle('route-hidden',!isDashboard)});
+    const section=$('#sectionView');
+    section.hidden=isDashboard;
+    document.querySelectorAll('.app-menu-item').forEach(link=>{
+      let target='dashboard';
+      try{target=new URL(link.getAttribute('href'),window.location.href).searchParams.get('view')||'dashboard'}catch(e){}
+      link.classList.toggle('active',target===view);
+      if(target===view)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');
     });
-  }
-  function setPage(name, subtitle) {
-    document.querySelectorAll('.main-nav [data-view]').forEach(function (button) {
-      var active = button.dataset.view === name;
-      button.classList.toggle('active', active);
-      button.setAttribute('aria-current', active ? 'page' : 'false');
-    });
-    document.getElementById('page-title').textContent = viewNames[name];
-    document.getElementById('page-subtitle').textContent = subtitle || '';
-  }
-  function selectOptions(options, selected) {
-    return options.map(function (option) {
-      return '<option value="' + escapeHtml(option.value) + '"' + (option.value === selected ? ' selected' : '') + '>' + escapeHtml(option.label) + '</option>';
-    }).join('');
-  }
-  function renderWidget(w) {
-    var type = types[w.type] || types.info;
-    var sizeClass = 'widget-' + w.size;
-    var html = '<article class="dash-window ' + sizeClass + ' tone-' + w.color + '" data-widget-id="' + escapeHtml(w.id) + '">';
-    html += '<div class="dash-window-head"><span class="dash-icon">' + type.icon + '</span><span class="dash-window-label">' + escapeHtml(w.title) + '</span><span class="dash-window-tag">نمایشی</span><button class="drag-handle" type="button" data-drag-handle="' + escapeHtml(w.id) + '" aria-label="جابجایی پنجره ' + escapeHtml(w.title) + '" title="برای جابجایی بکشید">⠿</button></div>';
-    if (w.type === 'notifications') {
-      html += '<div class="notification-empty"><div class="notification-orbit"><span>♢</span></div><strong>فضای نمایش اعلان‌ها</strong><p>اعلان‌های برنامه در این پنجره نمایش داده می‌شوند.</p></div>';
-    } else if (w.type === 'chart') {
-      html += '<div class="chart-placeholder" aria-label="جایگاه نمودار آماری"><div class="chart-y-labels"><span>—</span><span>—</span><span>—</span><span>—</span></div><div class="chart-area"><div class="chart-grid-lines"><i></i><i></i><i></i><i></i></div><svg viewBox="0 0 620 150" preserveAspectRatio="none" role="img" aria-label="نمودار نمونه بدون داده واقعی"><defs><linearGradient id="fill-' + escapeHtml(w.id) + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--widget-accent)" stop-opacity=".24"/><stop offset="100%" stop-color="var(--widget-accent)" stop-opacity="0"/></linearGradient></defs><path d="M0,118 C55,108 65,76 120,88 S205,120 255,72 S335,86 385,54 S475,82 520,36 S585,52 620,20 L620,150 L0,150 Z" fill="url(#fill-' + escapeHtml(w.id) + ')"/><path d="M0,118 C55,108 65,76 120,88 S205,120 255,72 S335,86 385,54 S475,82 520,36 S585,52 620,20" fill="none" stroke="var(--widget-accent)" stroke-width="2.5" vector-effect="non-scaling-stroke"/></svg><div class="chart-x-labels"><span>ابتدای بازه</span><span>میانه بازه</span><span>انتهای بازه</span></div></div></div><div class="chart-note">نمودار نمونه است؛ هنوز به داده واقعی متصل نشده.</div>';
-    } else if (w.type === 'info') {
-      html += '<div class="info-placeholder"><span class="info-placeholder-mark">✧</span><div><strong>پنجره اطلاعاتی</strong><p>محتوا در مرحله بعد به اطلاعات برنامه متصل می‌شود.</p></div></div><div class="info-lines"><i></i><i></i><i></i></div>';
-    } else {
-      html += '<div class="dash-stat-value">—</div><div class="dash-stat-foot">' + escapeHtml(type.note) + '</div><div class="dash-stat-decoration"></div>';
-    }
-    html += '</article>';
-    return html;
-  }
-  function renderDashboard() {
-    var root = document.getElementById('view-root');
-    root.innerHTML = '<div class="dashboard-view">' +
-      '<div class="dashboard-intro"><div><div class="section-kicker">نمای کلی · ATLAS SHIFT</div><h2>تصویر کلی عملیات</h2><p>پنجره‌های آماری و اطلاعاتی؛ بدون امکان تغییر داده‌ها از داشبورد</p></div><button type="button" class="dashboard-settings-link" data-open-dashboard-settings>⚙ تنظیم پنجره‌ها</button></div>' +
-      '<section class="period-bar panel" aria-label="بازه زمانی داشبورد"><div class="period-label"><span class="period-calendar">▦</span><div><strong>بازه زمانی</strong><small id="period-caption">نمایش اطلاعات ' + periodNames[state.period] + '</small></div></div><div class="period-options" role="group" aria-label="انتخاب بازه زمانی">' +
-      Object.keys(periodNames).map(function (key) { return '<button type="button" class="period-option' + (key === state.period ? ' active' : '') + '" data-period="' + key + '" aria-pressed="' + (key === state.period ? 'true' : 'false') + '">' + periodNames[key] + '</button>'; }).join('') +
-      '</div></section><div class="dashboard-grid" id="dashboard-grid">' + state.widgets.map(renderWidget).join('') + '</div>' +
-      '<div class="dashboard-footnote"><span class="footnote-dot"></span> این نسخه برای بررسی ظاهر است؛ اعداد نمونه و اتصال به داده‌های واقعی هنوز پیاده‌سازی نشده‌اند.</div></div>';
-  }
-  function renderSettings() {
-    var root = document.getElementById('view-root');
-    root.innerHTML = '<div class="settings-view"><div class="dashboard-intro"><div><div class="section-kicker">شخصی‌سازی</div><h2>تنظیمات داشبورد</h2><p>تعداد، محتوا، اندازه، رنگ و ترتیب پنجره‌ها را تغییر بده.</p></div><button type="button" class="button button-secondary" data-back-dashboard>← بازگشت به داشبورد</button></div>' +
-      '<div class="settings-tab-strip"><span class="settings-tab active">تب داشبورد</span><span class="settings-hint">تنظیمات در همین دستگاه ذخیره می‌شوند.</span></div>' +
-      '<div class="settings-toolbar"><div><strong>پنجره‌های داشبورد</strong><p>با دستگیره ⠿ یا دکمه‌های جابه‌جایی، ترتیب را تنظیم کن.</p></div><button type="button" class="button button-primary" data-add-widget>＋ افزودن پنجره</button></div>' +
-      '<div class="widget-settings-list">' + state.widgets.map(renderWidgetSetting).join('') + '</div>' +
-      '<div class="settings-bottom-actions"><button type="button" class="button button-secondary" data-reset-widgets>بازگرداندن چیدمان اولیه</button><span>تعداد پنجره‌ها: <strong>' + state.widgets.length + '</strong></span></div></div>';
-  }
-  function renderWidgetSetting(w, index) {
-    var typeOptions = Object.keys(types).map(function (key) { return { value: key, label: types[key].name }; });
-    var sizeOptions = [{ value: 'small', label: 'کوچک' }, { value: 'medium', label: 'متوسط' }, { value: 'wide', label: 'عریض' }];
-    var colorOptions = Object.keys(palette).map(function (key) { return { value: key, label: palette[key] }; });
-    return '<article class="widget-setting-card" data-setting-id="' + escapeHtml(w.id) + '">' +
-      '<div class="widget-setting-top"><span class="widget-order">' + (index + 1) + '</span><span class="setting-color-dot tone-dot-' + w.color + '"></span><strong>' + escapeHtml(w.title) + '</strong><div class="setting-reorder"><button type="button" class="icon-button" data-move-widget="' + escapeHtml(w.id) + '" data-direction="-1" aria-label="انتقال به بالا" ' + (index === 0 ? 'disabled' : '') + '>↑</button><button type="button" class="icon-button" data-move-widget="' + escapeHtml(w.id) + '" data-direction="1" aria-label="انتقال به پایین" ' + (index === state.widgets.length - 1 ? 'disabled' : '') + '>↓</button><button type="button" class="icon-button danger" data-remove-widget="' + escapeHtml(w.id) + '" aria-label="حذف پنجره">×</button></div></div>' +
-      '<div class="widget-setting-fields"><label>عنوان پنجره<input class="field-input" data-widget-field="title" data-widget-id="' + escapeHtml(w.id) + '" value="' + escapeHtml(w.title) + '" maxlength="48"></label>' +
-      '<label>نوع و محتوا<select class="field-select" data-widget-field="type" data-widget-id="' + escapeHtml(w.id) + '">' + selectOptions(typeOptions, w.type) + '</select></label>' +
-      '<label>اندازه پنجره<select class="field-select" data-widget-field="size" data-widget-id="' + escapeHtml(w.id) + '">' + selectOptions(sizeOptions, w.size) + '</select></label>' +
-      '<label>رنگ پنجره<select class="field-select" data-widget-field="color" data-widget-id="' + escapeHtml(w.id) + '">' + selectOptions(colorOptions, w.color) + '</select></label></div>' +
-      '<div class="setting-card-foot"><span>⠿ ترتیب پنجره</span><button type="button" class="text-link" data-preview-widget="' + escapeHtml(w.id) + '">مشاهده در داشبورد ←</button></div></article>';
-  }
-  function openView(name) {
-    if (!Object.prototype.hasOwnProperty.call(viewNames, name)) return;
-    if (name === 'dashboard') {
-      setPage(name, 'نمایش آماری و اطلاعاتی');
-      renderDashboard();
-    } else if (name === 'settings') {
-      setPage(name, 'تنظیم ظاهر و چیدمان پنجره‌های داشبورد');
-      renderSettings();
-    } else {
-      setPage(name, '');
-      document.getElementById('view-root').replaceChildren();
+    const h=$('.hero h1'),p=$('.hero p'),k=$('.hero .kicker');
+    if(h)h.innerHTML=info.title;
+    if(p)p.textContent=info.subtitle;
+    if(k)k.textContent=info.kicker;
+    if(!isDashboard){
+      section.innerHTML='<article class="section-placeholder"><span class="section-badge">'+(info.icon||'✧')+' &nbsp; فضای کاری یکپارچه</span><h2>'+info.title.replace(/<[^>]*>/g,'')+'</h2><p>'+info.subtitle+'</p><div class="section-note">'+info.note+'</div><p>این صفحه در همان پوسته و تم اصلی برنامه باز شده است؛ به فایل یا تم قدیمی دیگری هدایت نمی‌شود. هنوز فرم‌ها و منطق ثبت اطلاعات این ماژول پیاده‌سازی نشده‌اند و تا زمان تکمیل، داده واقعی در این صفحه ذخیره نمی‌شود.</p><div class="section-actions">'+(view==='settings'?'<button type="button" class="primary" data-open-settings-panel>باز کردن تنظیمات ظاهر و چیدمان</button>':'')+'<a class="primary" href="./index.html">بازگشت به داشبورد</a></div></article>';
+    }else{section.innerHTML='';}
+    if(view==='settings'){
+      settingsPanel.classList.add('open');settingsPanel.setAttribute('aria-hidden','false');settingsButton.setAttribute('aria-expanded','true');
+    }else{
+      settingsPanel.classList.remove('open');settingsPanel.setAttribute('aria-hidden','true');settingsButton.setAttribute('aria-expanded','false');
     }
   }
-  function reorder(fromId, toId) {
-    if (!fromId || !toId || fromId === toId) return;
-    var from = state.widgets.findIndex(function (w) { return w.id === fromId; });
-    var to = state.widgets.findIndex(function (w) { return w.id === toId; });
-    if (from < 0 || to < 0) return;
-    var moved = state.widgets.splice(from, 1)[0];
-    state.widgets.splice(to, 0, moved);
-    saveWidgets();
-    if (document.getElementById('page-title').textContent === viewNames.settings) renderSettings();
-    else renderDashboard();
-  }
-  function addWidget() {
-    var id = 'w-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
-    state.widgets.push({ id: id, type: 'info', title: 'پنجره جدید', size: 'medium', color: 'blue' });
-    saveWidgets();
-    renderSettings();
-  }
-  function removeWidget(id) {
-    if (state.widgets.length <= 1) {
-      alert('حداقل یک پنجره باید در داشبورد باقی بماند.');
-      return;
+  document.addEventListener('click',event=>{
+    if(event.target.closest('[data-open-settings-panel]')){
+      settingsPanel.classList.add('open');settingsPanel.setAttribute('aria-hidden','false');settingsButton.setAttribute('aria-expanded','true');
     }
-    state.widgets = state.widgets.filter(function (w) { return w.id !== id; });
-    saveWidgets();
-    renderSettings();
-  }
-  function updateWidget(id, field, value) {
-    var widget = state.widgets.find(function (w) { return w.id === id; });
-    if (!widget || ['title', 'type', 'size', 'color'].indexOf(field) < 0) return;
-    widget[field] = value;
-    if (field === 'type' && (!widget.title || widget.title === types.info.name || Object.keys(types).some(function (key) { return types[key].name === widget.title; }))) widget.title = types[value].name;
-    widget = normalizeWidget(widget);
-    saveWidgets();
-    var focusedId = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.widgetId : null;
-    var selection = document.activeElement && typeof document.activeElement.selectionStart === 'number' ? document.activeElement.selectionStart : null;
-    renderSettings();
-    if (field === 'title' && focusedId === id) {
-      var input = document.querySelector('[data-widget-id="' + id + '"][data-widget-field="title"]');
-      if (input) { input.focus(); if (selection !== null) input.setSelectionRange(selection, selection); }
-    }
-  }
+  });
+  window.addEventListener('popstate',renderRoute);
+  renderRoute();
 
-  document.addEventListener('click', function (event) {
-    var nav = event.target.closest('.main-nav [data-view]');
-    if (nav) { event.preventDefault(); openView(nav.dataset.view); return; }
-    var period = event.target.closest('[data-period]');
-    if (period) {
-      state.period = period.dataset.period;
-      document.querySelectorAll('[data-period]').forEach(function (button) {
-        var active = button.dataset.period === state.period;
-        button.classList.toggle('active', active);
-        button.setAttribute('aria-pressed', active ? 'true' : 'false');
-      });
-      var caption = document.getElementById('period-caption');
-      if (caption) caption.textContent = 'نمایش اطلاعات ' + periodNames[state.period];
-      return;
-    }
-    if (event.target.closest('[data-open-dashboard-settings]')) { openView('settings'); return; }
-    if (event.target.closest('[data-back-dashboard]')) { openView('dashboard'); return; }
-    if (event.target.closest('[data-add-widget]')) { addWidget(); return; }
-    if (event.target.closest('[data-reset-widgets]')) {
-      state.widgets = defaultWidgets.map(function (w) { return Object.assign({}, w); });
-      saveWidgets();
-      renderSettings();
-      return;
-    }
-    var remove = event.target.closest('[data-remove-widget]');
-    if (remove) { removeWidget(remove.dataset.removeWidget); return; }
-    var move = event.target.closest('[data-move-widget]');
-    if (move) {
-      var id = move.dataset.moveWidget;
-      var index = state.widgets.findIndex(function (w) { return w.id === id; });
-      var target = index + Number(move.dataset.direction);
-      if (target >= 0 && target < state.widgets.length) reorder(id, state.widgets[target].id);
-      return;
-    }
-    var preview = event.target.closest('[data-preview-widget]');
-    if (preview) { openView('dashboard'); return; }
-  });
-
-  document.addEventListener('change', function (event) {
-    var field = event.target.closest('[data-widget-field]');
-    if (field && field.tagName !== 'INPUT') updateWidget(field.dataset.widgetId, field.dataset.widgetField, field.value);
-  });
-  document.addEventListener('input', function (event) {
-    var field = event.target.closest('[data-widget-field="title"]');
-    if (field) {
-      var widget = state.widgets.find(function (w) { return w.id === field.dataset.widgetId; });
-      if (widget) { widget.title = field.value; saveWidgets(); }
-      var heading = document.querySelector('[data-setting-id="' + field.dataset.widgetId + '"] .widget-setting-top strong');
-      if (heading) heading.textContent = field.value || 'بدون عنوان';
-    }
-  });
-  document.addEventListener('focusout', function (event) {
-    var field = event.target.closest('[data-widget-field="title"]');
-    if (field) updateWidget(field.dataset.widgetId, 'title', field.value.trim() || 'پنجره بدون عنوان');
-  });
-
-  var drag = null;
-  document.addEventListener('pointerdown', function (event) {
-    var handle = event.target.closest('[data-drag-handle]');
-    if (!handle || event.button !== 0) return;
-    var card = handle.closest('[data-widget-id]');
-    if (!card) return;
-    drag = { id: handle.dataset.dragHandle, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, active: false };
-    state.dragPointer = event.pointerId;
-  });
-  document.addEventListener('pointermove', function (event) {
-    if (!drag || drag.pointerId !== event.pointerId) return;
-    if (!drag.active && Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) > 7) {
-      drag.active = true;
-      document.body.classList.add('is-dragging-widget');
-      var card = document.querySelector('[data-widget-id="' + drag.id + '"]');
-      if (card) card.classList.add('dragging');
-    }
-    if (!drag.active) return;
-    var cards = Array.from(document.querySelectorAll('#dashboard-grid [data-widget-id]')).filter(function (card) { return card.dataset.widgetId !== drag.id; });
-    var target = cards.find(function (card) {
-      var rect = card.getBoundingClientRect();
-      return event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
-    });
-    cards.forEach(function (card) { card.classList.toggle('drop-target', !!target && card === target); });
-    if (target) drag.targetId = target.dataset.widgetId;
-  });
-  document.addEventListener('pointerup', function (event) {
-    if (!drag || drag.pointerId !== event.pointerId) return;
-    var fromId = drag.id;
-    var toId = drag.targetId;
-    var wasActive = drag.active;
-    drag = null;
-    state.dragPointer = null;
-    document.body.classList.remove('is-dragging-widget');
-    document.querySelectorAll('.dragging,.drop-target').forEach(function (el) { el.classList.remove('dragging', 'drop-target'); });
-    if (wasActive && toId) reorder(fromId, toId);
-  });
-  document.addEventListener('pointercancel', function () {
-    drag = null;
-    state.dragPointer = null;
-    document.body.classList.remove('is-dragging-widget');
-    document.querySelectorAll('.dragging,.drop-target').forEach(function (el) { el.classList.remove('dragging', 'drop-target'); });
-  });
-
-  var requestedView = '';
-  try { requestedView = new URLSearchParams(window.location.search).get('view') || ''; } catch (e) {}
-  openView(Object.prototype.hasOwnProperty.call(viewNames, requestedView) ? requestedView : 'dashboard');
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDrawer();calendarPanel.classList.remove('open');calendarPanel.setAttribute('aria-hidden','true');calendarToggle.setAttribute('aria-expanded','false');settingsPanel.classList.remove('open');settingsPanel.setAttribute('aria-hidden','true');settingsButton.setAttribute('aria-expanded','false');if(layoutMode)setLayoutMode(false)}});
 })();
