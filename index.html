@@ -16,10 +16,7 @@
   <div class="ambient ambient-two"></div>
   <div class="app-shell">
     <aside class="sidebar glass">
-      <a class="brand" href="#" aria-label="صفحه اصلی">
-        <span class="brand-mark"><span></span><span></span><span></span></span>
-        <span><strong>ATLAS SHIFT</strong><small>سامانه مدیریت نیروی انسانی</small></span>
-      </a>
+      <a class="brand" href="#" aria-label="صفحه اصلی"><span class="brand-mark"><span></span><span></span><span></span></span><span><strong>ATLAS SHIFT</strong><small>سامانه مدیریت نیروی انسانی</small></span></a>
       <div class="sidebar-label">فضای کاری</div>
       <nav class="main-nav" aria-label="ناوبری اصلی">
         <button type="button" class="nav-item active" data-view="dashboard"><span class="nav-icon">⌂</span><span>داشبورد</span></button>
@@ -33,57 +30,34 @@
         <button type="button" class="nav-item" data-view="settings"><span class="nav-icon">⚙</span><span>تنظیمات</span></button>
       </nav>
       <div class="sidebar-spacer"></div>
-      <div class="local-card">
-        <span class="local-dot"></span>
-        <div><strong>حالت محلی</strong><small>اطلاعات روی همین دستگاه</small></div>
-      </div>
+      <div class="local-card"><span class="local-dot"></span><div><strong>حالت محلی</strong><small>اطلاعات روی همین دستگاه</small></div></div>
       <div class="sidebar-footer">نسخه 0.1.0 · پیش‌نمایش اولیه</div>
     </aside>
     <main class="main-content">
-      <header class="topbar">
-        <div class="topbar-heading">
-          <div class="eyebrow"><span class="status-pulse"></span> مرکز عملیات نیروی انسانی</div>
-          <h1 id="page-title">نمای کلی</h1>
-          <p id="page-subtitle">وضعیت امروز و برنامه پیشِ رو</p>
-        </div>
-      </header>
+      <header class="topbar"><div class="topbar-heading"><div class="eyebrow"><span class="status-pulse"></span> مرکز عملیات نیروی انسانی</div><h1 id="page-title">نمای کلی</h1><p id="page-subtitle">وضعیت امروز و برنامه پیشِ رو</p></div></header>
       <section id="view-root" aria-live="polite"></section>
       <footer class="main-footer"><span>ATLAS SHIFT</span><span>طراحی‌شده برای کار آفلاین و مدیریت روزانه</span></footer>
     </main>
   </div>
-  <div id="modal-root"></div>
-  <div id="toast-region" class="toast-region" role="status" aria-live="polite"></div>
-  <input type="file" id="restore-input" accept="application/json,.json" hidden>
+  <div id="modal-root"></div><div id="toast-region" class="toast-region" role="status" aria-live="polite"></div><input type="file" id="restore-input" accept="application/json,.json" hidden>
   <script>
-    (function () {
-      function showAppError(message) {
-        var root = document.getElementById('view-root');
-        if (!root) return;
-        var box = document.createElement('div');
-        box.className = 'panel';
-        box.style.margin = '16px 0';
-        box.style.borderColor = 'rgba(255,156,200,.45)';
-        var heading = document.createElement('strong');
-        heading.textContent = 'برنامه کامل بارگذاری نشد';
-        var detail = document.createElement('p');
-        detail.style.color = '#ffb8d8';
-        detail.style.fontSize = '12px';
-        detail.textContent = message || 'فایل برنامه بارگذاری نشد.';
-        box.appendChild(heading);
-        box.appendChild(detail);
-        root.replaceChildren(box);
+    (function(){
+      function showAppError(message){
+        var root=document.getElementById('view-root'); if(!root)return;
+        var box=document.createElement('div'); box.className='panel'; box.style.margin='16px 0'; box.style.borderColor='rgba(255,156,200,.45)';
+        var heading=document.createElement('strong'); heading.textContent='برنامه کامل بارگذاری نشد';
+        var detail=document.createElement('p'); detail.style.color='#ffb8d8'; detail.style.fontSize='12px'; detail.textContent=message||'فایل برنامه بارگذاری نشد.';
+        box.appendChild(heading); box.appendChild(detail); root.replaceChildren(box);
       }
-      window.addEventListener('error', function (event) {
-        if (event && event.message) showAppError('خطای اجرا: ' + event.message);
-        else if (event && event.target && event.target.tagName === 'SCRIPT') showAppError('فایل JavaScript بارگذاری نشد.');
-      }, true);
-      window.addEventListener('unhandledrejection', function () {
-        showAppError('هنگام اجرای برنامه خطایی رخ داد.');
-      });
-      window.__atlasShiftShowError = showAppError;
+      window.addEventListener('error',function(event){
+        if(event&&event.target&&event.target.tagName==='SCRIPT'&&event.target.src){showAppError('فایل JavaScript بارگذاری نشد: '+event.target.src);}
+        else if(event&&event.message){showAppError('خطای اجرا: '+event.message);}
+      },true);
+      window.addEventListener('unhandledrejection',function(event){showAppError('خطای اجرای برنامه: '+(event&&event.reason&&event.reason.message?event.reason.message:'خطای ناشناخته'));});
+      window.__atlasShiftShowError=showAppError;
     })();
   </script>
-  <script src="./app.js?v=20261018-5" defer onerror="window.__atlasShiftShowError && window.__atlasShiftShowError('فایل app.js دریافت نشد؛ مسیر انتشار یا کش مرورگر را بررسی کنید.')"></script>
-  <script src="./visual.js?v=20261018-3" defer onerror="window.__atlasShiftShowError && window.__atlasShiftShowError('فایل visual.js دریافت نشد.')"></script>
+  <script src="./app.js?v=20261018-5" defer onerror="window.__atlasShiftShowError&&window.__atlasShiftShowError('فایل app.js دریافت نشد.')"></script>
+  <script src="./visual.js?v=20261018-4" defer onerror="window.__atlasShiftShowError&&window.__atlasShiftShowError('فایل visual.js دریافت نشد.')"></script>
 </body>
 </html>
