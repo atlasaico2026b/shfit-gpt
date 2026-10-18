@@ -271,5 +271,7 @@
     document.querySelectorAll('.dragging,.drop-target').forEach(function (el) { el.classList.remove('dragging', 'drop-target'); });
   });
 
-  openView('dashboard');
+  var requestedView = '';
+  try { requestedView = new URLSearchParams(window.location.search).get('view') || ''; } catch (e) {}
+  openView(Object.prototype.hasOwnProperty.call(viewNames, requestedView) ? requestedView : 'dashboard');
 })();
