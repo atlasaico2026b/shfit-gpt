@@ -74,3 +74,12 @@ Important: the prototype contains implementation choices and fields/cards that w
 - Each menu opens its own empty view with the matching title; no section-specific forms, cards, or workflows have been added in this scaffold.
 - The previous prototype's separate calendar and work-schedule top-level buttons and the separate sidebar backup button are no longer shown.
 - This is a navigation skeleton only. The underlying approved functionality still needs to be implemented menu by menu. The app has not yet been browser-tested after this change.
+
+
+## Dashboard preview checkpoint — 2026-10-18
+- The dashboard now has a visual prototype with a selectable time range: daily, weekly, monthly, 6 months, and yearly.
+- Dashboard windows are display-only. The visible counts and chart are placeholders; live app data is not connected yet.
+- The user approved a configurable dashboard: window count, type/content, title, size, color, and ordering are adjustable in Settings → Dashboard.
+- Drag-and-drop reordering is supported on dashboard cards with a drag handle; up/down controls are also provided in settings for accessible and touch-friendly alternative movement.
+- Dashboard layout is stored locally in browser localStorage. No cloud sync is implied.
+- Responsive styles were added for desktop and mobile screen widths. The app has not yet been verified in a real browser/device; check the published preview and report any visual or interaction issues before connecting real data.
