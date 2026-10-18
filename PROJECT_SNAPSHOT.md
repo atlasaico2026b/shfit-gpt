@@ -66,3 +66,11 @@ Important: the prototype contains implementation choices and fields/cards that w
 - Continue from the step-by-step product-specification phase. The nine-menu navigation is now confirmed. Continue resolving requirements one question at a time before changing the UI or adding capabilities.
 - After requirements are confirmed, compare the current implementation against the agreed spec, list mismatches for discussion, and only then implement approved changes.
 - Avoid repeating repository setup, GitHub connection troubleshooting, or deployment setup unless a fresh check shows they are needed.
+
+
+## Current implementation checkpoint — 2026-10-18
+- The initial navigation scaffold has been committed to `main`.
+- Exactly the nine approved menu buttons are present in the specified order.
+- Each menu opens its own empty view with the matching title; no section-specific forms, cards, or workflows have been added in this scaffold.
+- The previous prototype's separate calendar and work-schedule top-level buttons and the separate sidebar backup button are no longer shown.
+- This is a navigation skeleton only. The underlying approved functionality still needs to be implemented menu by menu. The app has not yet been browser-tested after this change.
