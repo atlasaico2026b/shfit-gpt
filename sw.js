@@ -1,4 +1,4 @@
-const CACHE_NAME = 'atlas-shift-v13-unified';
+const CACHE_NAME = 'atlas-shift-v14-unified';
 const APP_FILES = [
   './',
   './index.html',
