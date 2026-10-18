@@ -39,7 +39,6 @@
       </div>
       <div class="sidebar-footer">نسخه 0.1.0 · پیش‌نمایش اولیه</div>
     </aside>
-
     <main class="main-content">
       <header class="topbar">
         <div class="topbar-heading">
@@ -52,7 +51,6 @@
       <footer class="main-footer"><span>ATLAS SHIFT</span><span>طراحی‌شده برای کار آفلاین و مدیریت روزانه</span></footer>
     </main>
   </div>
-
   <div id="modal-root"></div>
   <div id="toast-region" class="toast-region" role="status" aria-live="polite"></div>
   <input type="file" id="restore-input" accept="application/json,.json" hidden>
@@ -70,7 +68,7 @@
         var detail = document.createElement('p');
         detail.style.color = '#ffb8d8';
         detail.style.fontSize = '12px';
-        detail.textContent = message || 'فایل برنامه بارگذاری نشد. صفحه را با Ctrl+F5 تازه‌سازی کنید.';
+        detail.textContent = message || 'فایل برنامه بارگذاری نشد.';
         box.appendChild(heading);
         box.appendChild(detail);
         root.replaceChildren(box);
@@ -86,6 +84,6 @@
     })();
   </script>
   <script src="./app.js?v=20261018-5" defer onerror="window.__atlasShiftShowError && window.__atlasShiftShowError('فایل app.js دریافت نشد؛ مسیر انتشار یا کش مرورگر را بررسی کنید.')"></script>
-  <script src="./visual.js?v=20261018-2" defer onerror="window.__atlasShiftShowError && window.__atlasShiftShowError('فایل visual.js دریافت نشد.')"></script>
+  <script src="./visual.js?v=20261018-3" defer onerror="window.__atlasShiftShowError && window.__atlasShiftShowError('فایل visual.js دریافت نشد.')"></script>
 </body>
 </html>
