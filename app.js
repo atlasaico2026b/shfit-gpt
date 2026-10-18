@@ -4,6 +4,7 @@
   var STORE_KEY = 'atlasShiftData_v1';
   var view = 'dashboard';
   var employeeSearch = '';
+  var currentCustomId = '';
   var selectedDate = localISO(new Date());
   var calendarAnchor = dateFromISO(selectedDate);
   var state = loadState();
@@ -161,6 +162,32 @@
       id: id || 'muted', label: 'نوع نامشخص', color: 'muted'
     };
   }
+  function customSectionById(id) {
+    return state.customSections.find(function (section) { return section.id === id; });
+  }
+  function renderCustomNav() {
+    var nav = document.querySelector('.main-nav');
+    if (!nav) return;
+    nav.querySelectorAll('.nav-custom').forEach(function (el) { el.remove(); });
+    var settingsButton = nav.querySelector('[data-view="settings"]');
+    state.customSections.forEach(function (section) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'nav-item nav-custom';
+      button.dataset.action = 'open-custom-section';
+      button.dataset.id = section.id;
+      var icon = document.createElement('span');
+      icon.className = 'nav-icon';
+      icon.textContent = '◈';
+      var label = document.createElement('span');
+      label.textContent = section.name;
+      button.appendChild(icon);
+      button.appendChild(label);
+      if (settingsButton) nav.insertBefore(button, settingsButton);
+      else nav.appendChild(button);
+      button.classList.toggle('active', view === 'custom' && currentCustomId === section.id);
+    });
+  }
   function entriesForDate(isoDate) {
     return state.entries.filter(function (e) {
       var start = e.date || '';
@@ -188,13 +215,17 @@
   }
   function setView(next) {
     view = next;
-    document.querySelectorAll('.nav-item[data-view]').forEach(function (b) {
-      b.classList.toggle('active', b.dataset.view === view);
-    });
     renderView();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   function renderView() {
+    renderCustomNav();
+    document.querySelectorAll('.nav-item[data-view]').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.view === view);
+    });
+    document.querySelectorAll('.nav-custom').forEach(function (b) {
+      b.classList.toggle('active', view === 'custom' && b.dataset.id === currentCustomId);
+    });
     var titles = {
       dashboard: ['نمای کلی', 'وضعیت امروز و برنامه پیشِ رو'],
       calendar: ['تقویم شمسی', 'نمای روزانه و ماهانه برنامه‌های ثبت‌شده'],
@@ -202,14 +233,17 @@
       employees: ['پرسنل', 'پرونده کارکنان و الگوی کاری آنان'],
       settings: ['تنظیمات', 'مدیریت واحدها، انواع فعالیت و داده‌های محلی']
     };
-    document.getElementById('page-title').textContent = titles[view][0];
-    document.getElementById('page-subtitle').textContent = titles[view][1];
+    var custom = view === 'custom' ? customSectionById(currentCustomId) : null;
+    var titleData = custom ? [custom.name, 'بخش سفارشی · داده‌ها روی همین دستگاه نگهداری می‌شوند.'] : (titles[view] || titles.dashboard);
+    document.getElementById('page-title').textContent = titleData[0];
+    document.getElementById('page-subtitle').textContent = titleData[1];
     document.getElementById('today-label').textContent = todayLabelFormatter.format(new Date());
     var root = document.getElementById('view-root');
     if (view === 'dashboard') root.innerHTML = renderDashboard();
     else if (view === 'calendar') root.innerHTML = renderCalendar();
     else if (view === 'schedule') root.innerHTML = renderSchedule();
     else if (view === 'employees') root.innerHTML = renderEmployees();
+    else if (view === 'custom') root.innerHTML = renderCustomSection(custom);
     else root.innerHTML = renderSettings();
   }
   function renderDashboard() {
@@ -365,6 +399,29 @@
         emptyState('برای این روز برنامه‌ای نیست', 'می‌توانید همین حالا شیفت یا مأموریت اضافه کنید.', state.employees.length ? 'add-entry' : 'add-employee', state.employees.length ? 'ثبت برنامه برای این روز' : 'افزودن پرسنل')) +
       '</section></div>';
   }
+  function renderCustomSection(section) {
+    if (!section) return emptyState('این بخش در دسترس نیست', 'ممکن است حذف شده باشد؛ از تنظیمات بخش دیگری انتخاب کنید.', 'settings', 'رفتن به تنظیمات');
+    var items = Array.isArray(section.items) ? section.items : [];
+    var rows = items.slice().sort(function (a, b) {
+      return String(a.date || '').localeCompare(String(b.date || '')) || String(a.title || '').localeCompare(String(b.title || ''));
+    }).map(function (item) {
+      return '<tr><td><strong>' + escapeHTML(item.title) + '</strong></td><td>' +
+        (item.date ? escapeHTML(shortDateFormatter.format(dateFromISO(item.date))) : '—') + '</td><td>' +
+        escapeHTML(item.detail || '—') + '</td><td><div class="row-actions">' +
+        '<button class="icon-button" aria-label="ویرایش مورد" data-action="edit-custom-item" data-section-id="' + section.id + '" data-id="' + item.id + '">✎</button>' +
+        '<button class="icon-button danger" aria-label="حذف مورد" data-action="delete-custom-item" data-section-id="' + section.id + '" data-id="' + item.id + '">×</button>' +
+        '</div></td></tr>';
+    }).join('');
+    return '<div class="section-heading"><div><h2>' + escapeHTML(section.name) + '</h2><p>' +
+      escapeHTML(section.description || 'این بخش توسط مدیر برنامه تعریف شده و می‌تواند برای فهرست‌های اختصاصی استفاده شود.') +
+      '</p></div><button class="button button-primary" data-action="add-custom-item" data-section-id="' + section.id + '">＋ افزودن مورد</button></div>' +
+      '<div class="panel"><div class="toolbar"><div><strong>موارد این بخش</strong><div class="muted" style="font-size:10px;margin-top:3px">عنوان، تاریخ و توضیحات را متناسب با نیاز خود ثبت کنید.</div></div>' +
+      '<span class="type-pill">' + items.length + ' مورد</span></div>' +
+      (items.length ? '<div class="table-wrap"><table class="data-table"><thead><tr><th>عنوان</th><th>تاریخ شمسی</th><th>توضیحات</th><th>عملیات</th></tr></thead><tbody>' + rows + '</tbody></table></div>' :
+      emptyState('این بخش هنوز موردی ندارد', 'اولین مورد را اضافه کنید؛ اطلاعات به‌صورت محلی ذخیره می‌شود.', 'add-custom-item', 'افزودن مورد')) +
+      '</div>';
+  }
+
   function renderSettings() {
     var depts = state.departments.map(function (d) {
       return '<span class="config-chip">' + escapeHTML(d) + '<button title="ویرایش واحد" aria-label="ویرایش واحد" data-action="edit-department" data-name="' + escapeHTML(d) + '">✎</button>' +
@@ -375,6 +432,11 @@
         '<button title="ویرایش نوع فعالیت" aria-label="ویرایش نوع فعالیت" data-action="edit-type" data-id="' + t.id + '">✎</button>' +
         '<button title="حذف نوع فعالیت" aria-label="حذف نوع فعالیت" data-action="delete-type" data-id="' + t.id + '">×</button></span>';
     }).join('');
+    var customSections = state.customSections.map(function (section) {
+      return '<span class="config-chip">◈ ' + escapeHTML(section.name) +
+        '<button title="ویرایش بخش" aria-label="ویرایش بخش" data-action="edit-custom-section" data-id="' + section.id + '">✎</button>' +
+        '<button title="حذف بخش" aria-label="حذف بخش" data-action="delete-custom-section" data-id="' + section.id + '">×</button></span>';
+    }).join('');
     return '<div class="section-heading"><div><h2>پیکربندی برنامه</h2><p>واحدها و انواع فعالیت متناسب با ساختار سازمان را تعریف کنید.</p></div></div>' +
       '<div class="settings-grid"><section class="settings-panel"><h3>واحدها / بخش‌ها</h3><p>واحدها را اضافه، ویرایش یا حذف کنید.</p>' +
       '<form id="department-form" class="inline-form"><input class="field-input" name="name" placeholder="نام واحد جدید…" required maxlength="60"><button class="button button-primary button-small" type="submit">افزودن</button></form>' +
@@ -382,6 +444,9 @@
       '<section class="settings-panel"><h3>انواع فعالیت</h3><p>شیفت، روزکار، انواع مأموریت و موارد اختصاصی را مدیریت کنید.</p>' +
       '<button class="button button-primary button-small" data-action="add-type" style="margin-bottom:12px">＋ نوع فعالیت جدید</button>' +
       '<div class="chip-list">' + (types || '<span class="muted">نوع فعالیتی تعریف نشده است.</span>') + '</div></section>' +
+      '<section class="settings-panel settings-wide"><h3>بخش‌های سفارشی</h3><p>برای نیازهایی مانند آموزش، تجهیزات، بازرسی یا هر فهرست اختصاصی، بخش مستقل بسازید؛ سپس موارد آن را اضافه، ویرایش یا حذف کنید.</p>' +
+      '<button class="button button-primary button-small" data-action="add-custom-section" style="margin-bottom:12px">＋ ساخت بخش سفارشی</button>' +
+      '<div class="chip-list">' + (customSections || '<span class="muted">بخش سفارشی‌ای تعریف نشده است.</span>') + '</div></section>' +
       '<section class="settings-panel settings-wide"><h3>داده‌ها و پشتیبان</h3><p>اطلاعات در همین مرورگر ذخیره می‌شود؛ برای انتقال به دستگاه دیگر باید خروجی بگیرید.</p>' +
       '<div class="backup-actions"><button class="button button-primary" data-action="backup">⇩ دریافت فایل پشتیبان</button><button class="button button-secondary" data-action="restore">⇧ بازیابی از فایل JSON</button>' +
       '<button class="button button-danger" data-action="reset-data">پاک‌کردن همه داده‌ها</button></div>' +
@@ -392,6 +457,29 @@
       '<div class="quick-action"><span>▦</span><div><strong>' + state.departments.length + ' واحد</strong><small>قابل انتخاب برای کارکنان</small></div></div>' +
       '<div class="quick-action"><span>⚙</span><div><strong>' + state.types.length + ' نوع فعالیت</strong><small>قابل انتخاب در برنامه‌ریزی</small></div></div>' +
       '</div></section></div>';
+  }
+
+  function openCustomSectionForm(id) {
+    var item = id ? customSectionById(id) : null;
+    var body = '<form id="custom-section-form" data-id="' + (item ? item.id : '') + '"><div class="form-grid">' +
+      field('نام بخش', '<input class="field-input" name="name" required maxlength="60" placeholder="مثلاً آموزش و گواهینامه‌ها" value="' + escapeHTML(item ? item.name : '') + '">') +
+      field('شرح کوتاه (اختیاری)', '<input class="field-input" name="description" maxlength="180" placeholder="کاربرد این بخش چیست؟" value="' + escapeHTML(item ? item.description : '') + '">') +
+      '</div><div class="form-actions"><button class="button button-primary" type="submit">' + (item ? 'ذخیره تغییرات' : 'ساخت بخش') +
+      '</button><button class="button button-secondary" type="button" data-action="close-modal">انصراف</button></div></form>';
+    openModal(item ? 'ویرایش بخش سفارشی' : 'ساخت بخش سفارشی', 'این بخش به منوی کناری اضافه می‌شود و داده‌های مخصوص خودش را دارد.', body);
+  }
+  function openCustomItemForm(sectionId, itemId) {
+    var section = customSectionById(sectionId);
+    if (!section) { toast('بخش انتخاب‌شده در دسترس نیست.', true); return; }
+    var item = itemId ? (section.items || []).find(function (entry) { return entry.id === itemId; }) : null;
+    var date = item && item.date ? jalaliDateInput(dateFromISO(item.date)) : '';
+    var body = '<form id="custom-item-form" data-section-id="' + section.id + '" data-id="' + (item ? item.id : '') + '"><div class="form-grid">' +
+      field('عنوان', '<input class="field-input" name="title" required maxlength="120" placeholder="عنوان مورد" value="' + escapeHTML(item ? item.title : '') + '">') +
+      field('تاریخ شمسی (اختیاری)', '<input class="field-input" name="date" type="text" inputmode="numeric" autocomplete="off" placeholder="۱۴۰۵/۰۷/۲۶" value="' + escapeHTML(date) + '"><span class="hint">قالب سال/ماه/روز شمسی</span>') +
+      field('توضیحات', '<textarea class="field-textarea" name="detail" maxlength="1200" placeholder="جزئیات و یادداشت‌ها">' + escapeHTML(item ? item.detail : '') + '</textarea>', 'full') +
+      '</div><div class="form-actions"><button class="button button-primary" type="submit">' + (item ? 'ذخیره تغییرات' : 'افزودن مورد') +
+      '</button><button class="button button-secondary" type="button" data-action="close-modal">انصراف</button></div></form>';
+    openModal(item ? 'ویرایش مورد' : 'افزودن مورد', 'بخش: ' + section.name, body);
   }
 
   function openModal(title, subtitle, body, widthClass) {
@@ -575,6 +663,29 @@
     else if (action === 'select-day') { selectedDate = button.dataset.date; calendarAnchor = dateFromISO(selectedDate); renderView(); }
     else if (action === 'add-type') openTypeForm();
     else if (action === 'edit-type') openTypeForm(button.dataset.id);
+    else if (action === 'open-custom-section') {
+      currentCustomId = button.dataset.id;
+      view = 'custom';
+      renderView();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (action === 'add-custom-section') openCustomSectionForm();
+    else if (action === 'edit-custom-section') openCustomSectionForm(button.dataset.id);
+    else if (action === 'delete-custom-section') {
+      var sectionToDelete = customSectionById(button.dataset.id);
+      if (sectionToDelete && window.confirm('بخش «' + sectionToDelete.name + '» و تمام موارد آن حذف شود؟')) {
+        state.customSections = state.customSections.filter(function (section) { return section.id !== sectionToDelete.id; });
+        if (currentCustomId === sectionToDelete.id) { currentCustomId = ''; view = 'settings'; }
+        saveState(); renderView(); toast('بخش سفارشی حذف شد.');
+      }
+    } else if (action === 'add-custom-item') openCustomItemForm(button.dataset.sectionId || currentCustomId);
+    else if (action === 'edit-custom-item') openCustomItemForm(button.dataset.sectionId, button.dataset.id);
+    else if (action === 'delete-custom-item') {
+      var sectionForItem = customSectionById(button.dataset.sectionId);
+      if (sectionForItem && window.confirm('این مورد حذف شود؟')) {
+        sectionForItem.items = (sectionForItem.items || []).filter(function (item) { return item.id !== button.dataset.id; });
+        saveState(); renderView(); toast('مورد حذف شد.');
+      }
+    }
     else if (action === 'delete-type') {
       var typ = typeById(button.dataset.id);
       if (state.entries.some(function (e) { return e.typeId === typ.id; })) {
@@ -669,6 +780,38 @@
       state.departments = state.departments.map(function (d) { return d === oldName ? newName : d; });
       state.employees = state.employees.map(function (e) { if (e.department === oldName) e.department = newName; return e; });
       saveState(); closeModal(); renderView(); toast('واحد به‌روزرسانی شد.');
+    } else if (form.id === 'custom-section-form') {
+      event.preventDefault();
+      var sf = new FormData(form), sid = form.dataset.id;
+      var sectionName = String(sf.get('name') || '').trim();
+      var sectionDescription = String(sf.get('description') || '').trim();
+      if (!sectionName) return;
+      if (state.customSections.some(function (section) {
+        return section.name.toLowerCase() === sectionName.toLowerCase() && section.id !== sid;
+      })) { toast('بخشی با این نام وجود دارد.', true); return; }
+      if (sid) {
+        state.customSections = state.customSections.map(function (section) {
+          if (section.id === sid) { section.name = sectionName; section.description = sectionDescription; }
+          return section;
+        });
+      } else {
+        state.customSections.push({ id: uid('section'), name: sectionName, description: sectionDescription, items: [] });
+      }
+      saveState(); closeModal(); renderView(); toast(sid ? 'بخش به‌روزرسانی شد.' : 'بخش سفارشی ساخته شد.');
+    } else if (form.id === 'custom-item-form') {
+      event.preventDefault();
+      var cf = new FormData(form), cSection = customSectionById(form.dataset.sectionId), cItemId = form.dataset.id;
+      if (!cSection) { toast('بخش انتخاب‌شده در دسترس نیست.', true); return; }
+      var itemTitle = String(cf.get('title') || '').trim();
+      var rawCustomDate = String(cf.get('date') || '').trim();
+      var itemDate = rawCustomDate ? jalaliDateToISO(rawCustomDate) : '';
+      if (!itemTitle) { toast('عنوان مورد الزامی است.', true); return; }
+      if (rawCustomDate && !itemDate) { toast('تاریخ شمسی معتبر نیست؛ قالب سال/ماه/روز را بررسی کنید.', true); return; }
+      var customItem = { id: cItemId || uid('item'), title: itemTitle, date: itemDate, detail: String(cf.get('detail') || '').trim() };
+      if (!Array.isArray(cSection.items)) cSection.items = [];
+      if (cItemId) cSection.items = cSection.items.map(function (item) { return item.id === cItemId ? customItem : item; });
+      else cSection.items.push(customItem);
+      saveState(); closeModal(); renderView(); toast(cItemId ? 'مورد ویرایش شد.' : 'مورد به بخش افزوده شد.');
     } else if (form.id === 'type-form') {
       event.preventDefault();
       var tf = new FormData(form), tid = form.dataset.id;
