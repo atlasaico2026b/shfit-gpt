@@ -7,7 +7,7 @@
   var currentCustomId = '';
   var selectedDate = localISO(new Date());
   var calendarAnchor = dateFromISO(selectedDate);
-  var state = loadState();
+  var state;
 
   var systemTypes = [
     { id: 'shift12', label: 'شیفت ۱۲ ساعته', color: 'blue' },
@@ -33,6 +33,9 @@
   var todayLabelFormatter = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
   });
+
+  // Load persisted data only after systemTypes has been initialized.
+  state = loadState();
 
   function localISO(date) {
     var d = new Date(date);
