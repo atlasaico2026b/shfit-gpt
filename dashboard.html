@@ -524,6 +524,16 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
 
   function updateClock(){const now=new Date();try{$('#clockText').textContent=faDigits(new Intl.DateTimeFormat('fa-IR',{hour:'2-digit',minute:'2-digit',hour12:false}).format(now));const parts=new Intl.DateTimeFormat('fa-IR-u-ca-persian',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).formatToParts(now);const get=t=>parts.find(p=>p.type===t)?.value||'';$('#dateText').textContent=`${get('weekday')}، ${get('day')} ${get('month')}`;$('#persianDay').textContent=get('day');$('#persianMonth').textContent=`${get('month')} ${get('year')}`;$('#weekDay').textContent=get('weekday')}catch(e){$('#clockText').textContent=faDigits(now.toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'}));}}
   updateClock();setInterval(updateClock,30000);
+  // When this single HTML preview is opened directly from Downloads, relative links to index.html cannot resolve because the companion app files are not beside it. In file:// mode, route these menu links to the published app; on GitHub Pages or a local server, keep normal relative navigation.
+  document.querySelectorAll('.app-menu-item[href*="index.html?view="]').forEach(link=>{
+    link.addEventListener('click',event=>{
+      if(window.location.protocol!=='file:') return;
+      const view=new URL(link.href).searchParams.get('view');
+      if(!view) return;
+      event.preventDefault();
+      window.location.href='https://atlasaico2026b.github.io/shfit-gpt/index.html?view='+encodeURIComponent(view);
+    });
+  });
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDrawer();calendarPanel.classList.remove('open');calendarPanel.setAttribute('aria-hidden','true');calendarToggle.setAttribute('aria-expanded','false');settingsPanel.classList.remove('open');settingsPanel.setAttribute('aria-hidden','true');settingsButton.setAttribute('aria-expanded','false');if(layoutMode)setLayoutMode(false)}});
 })();
 </script>
