@@ -1030,7 +1030,7 @@
       ['today','امروز'],['yesterday','دیروز'],['threeDays','۳ روز اخیر'],['week','هفته'],['tenDays','۱۰ روز اخیر'],
       ['month','ماه جاری'],['threeMonths','۳ ماه اخیر'],['sixMonths','۶ ماه اخیر'],['year','سال جاری'],['all','همهٔ اطلاعات'],['custom','بازهٔ دلخواه']
     ];
-    const actions = '<button class="secondary-btn" type="button" data-module-action="export-all">خروجی CSV همهٔ اطلاعات</button><button class="primary-btn" type="button" data-module-action="print">چاپ گزارش</button>';
+    const actions = '<select id="reportExportFormat" class="module-report-export" aria-label="قالب خروجی گزارش"><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option><option value="docx">Word (.docx)</option><option value="pptx">PowerPoint (.pptx)</option></select><button class="primary-btn" type="button" data-module-action="export-report">دریافت گزارش</button><button class="secondary-btn" type="button" data-module-action="print">چاپ / ذخیرهٔ PDF</button><button class="secondary-btn" type="button" data-module-action="export-all">CSV همهٔ اطلاعات</button>';
     const cards = MODULES.map(function (key) {
       const total=appData[key].filter(function(record){return isInRange(key,record,reportPeriod);}).length;
       return '<a class="module-report-card" href="./index.html?view='+esc(key)+'"><span>'+esc(specs[key].title)+'</span><strong>'+faDigits(total)+'</strong><small>مشاهدهٔ فهرست ←</small></a>';
@@ -1155,6 +1155,220 @@
     const a=document.createElement('a');a.href=url;a.download=filename;
     document.body.appendChild(a);a.click();a.remove();
     window.setTimeout(function(){URL.revokeObjectURL(url);},1500);
+  }
+
+  function xmlEscape(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+  }
+
+  function concatBytes(parts) {
+    const total=parts.reduce(function(sum,part){return sum+part.length;},0);
+    const output=new Uint8Array(total);
+    let offset=0;
+    parts.forEach(function(part){output.set(part,offset);offset+=part.length;});
+    return output;
+  }
+
+  function le16(value) {
+    return new Uint8Array([value&255,(value>>>8)&255]);
+  }
+
+  function le32(value) {
+    return new Uint8Array([value&255,(value>>>8)&255,(value>>>16)&255,(value>>>24)&255]);
+  }
+
+  function crc32(bytes) {
+    let crc=0xFFFFFFFF;
+    for(let i=0;i<bytes.length;i+=1){
+      crc^=bytes[i];
+      for(let bit=0;bit<8;bit+=1)crc=(crc>>>1)^((crc&1)?0xEDB88320:0);
+    }
+    return (crc^0xFFFFFFFF)>>>0;
+  }
+
+  // A minimal standards-based ZIP writer using stored entries keeps Office export fully offline.
+  function zipStored(entries) {
+    const encoder=new TextEncoder();
+    const localParts=[],centralParts=[];
+    let localOffset=0;
+    const now=new Date();
+    const dosTime=(now.getHours()<<11)|(now.getMinutes()<<5)|Math.floor(now.getSeconds()/2);
+    const dosDate=((Math.max(1980,now.getFullYear())-1980)<<9)|((now.getMonth()+1)<<5)|now.getDate();
+
+    entries.forEach(function(entry){
+      const name=encoder.encode(entry.name);
+      const data=encoder.encode(entry.content);
+      const crc=crc32(data);
+      const local=concatBytes([
+        le32(0x04034B50),le16(20),le16(0x0800),le16(0),le16(dosTime),le16(dosDate),
+        le32(crc),le32(data.length),le32(data.length),le16(name.length),le16(0),name,data
+      ]);
+      localParts.push(local);
+      const central=concatBytes([
+        le32(0x02014B50),le16(20),le16(20),le16(0x0800),le16(0),le16(dosTime),le16(dosDate),
+        le32(crc),le32(data.length),le32(data.length),le16(name.length),le16(0),le16(0),
+        le16(0),le16(0),le32(0),le32(localOffset),name
+      ]);
+      centralParts.push(central);
+      localOffset+=local.length;
+    });
+
+    const central=concatBytes(centralParts);
+    const end=concatBytes([
+      le32(0x06054B50),le16(0),le16(0),le16(entries.length),le16(entries.length),
+      le32(central.length),le32(localOffset),le16(0)
+    ]);
+    return new Blob([concatBytes(localParts.concat([central,end]))],{type:'application/zip'});
+  }
+
+  function downloadBlob(filename, blob) {
+    const url=URL.createObjectURL(blob);
+    const anchor=document.createElement('a');
+    anchor.href=url;
+    anchor.download=filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(function(){URL.revokeObjectURL(url);},1500);
+  }
+
+  function currentReportRows() {
+    const rows=[['بخش','شناسه','عنوان یا نام','وضعیت','تاریخ','شرح']];
+    MODULES.forEach(function(moduleKey){
+      appData[moduleKey].filter(function(record){return isInRange(moduleKey,record,reportPeriod);}).forEach(function(record){
+        const summary=record.notes||record.body||record.result||record.reason||record.destination||record.related||'';
+        rows.push([specs[moduleKey].title,record.id,recordLabel(moduleKey,record),record.status||'',recordDateForCsv(moduleKey,record),summary]);
+      });
+    });
+    (appData.shifts||[]).filter(function(record){return isInRange('shifts',record,reportPeriod);}).forEach(function(record){
+      rows.push(['برنامهٔ شیفت',record.id,shiftLabel(record,appData),record.status||'',record.startAt||'',[record.workplace,record.notes].filter(Boolean).join(' · ')]);
+    });
+    return rows;
+  }
+
+  function currentReportTitle() {
+    const labels={today:'امروز',yesterday:'دیروز',threeDays:'۳ روز اخیر',week:'هفتهٔ اخیر',tenDays:'۱۰ روز اخیر',month:'ماه جاری',threeMonths:'۳ ماه اخیر',sixMonths:'۶ ماه اخیر',year:'سال جاری',all:'همهٔ اطلاعات',custom:'بازهٔ دلخواه'};
+    return 'گزارش عملیاتی ATLAS SHIFT · '+(labels[reportPeriod]||'بازهٔ انتخاب‌شده');
+  }
+
+  function exportReportCsv() {
+    const rows=currentReportRows();
+    downloadFile('ATLAS-SHIFT-report-'+todayIso()+'.csv','\uFEFF'+rows.map(function(row){return row.map(csvEscape).join(',');}).join('\r\n'),'text/csv;charset=utf-8;');
+  }
+
+  function wordParagraph(text, bold, center) {
+    return '<w:p><w:pPr><w:bidi w:val="1"/>'+(center?'<w:jc w:val="center"/>':'<w:jc w:val="right"/>')+'</w:pPr><w:r><w:rPr>'+
+      (bold?'<w:b/>':'')+'<w:rtl/><w:lang w:val="fa-IR"/></w:rPr><w:t xml:space="preserve">'+xmlEscape(text)+'</w:t></w:r></w:p>';
+  }
+
+  function wordTable(rows) {
+    const borders='<w:tblBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="A8BBD0"/><w:left w:val="single" w:sz="4" w:space="0" w:color="A8BBD0"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="A8BBD0"/><w:right w:val="single" w:sz="4" w:space="0" w:color="A8BBD0"/><w:insideH w:val="single" w:sz="4" w:space="0" w:color="D7E1EA"/><w:insideV w:val="single" w:sz="4" w:space="0" w:color="D7E1EA"/></w:tblBorders>';
+    const body=rows.map(function(row,rowIndex){
+      const header=rowIndex===0;
+      return '<w:tr>'+row.map(function(cell){
+        return '<w:tc><w:tcPr><w:tcW w:w="1800" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:bidi w:val="1"/><w:jc w:val="right"/></w:pPr><w:r><w:rPr>'+
+          (header?'<w:b/>':'')+'<w:rtl/><w:lang w:val="fa-IR"/></w:rPr><w:t xml:space="preserve">'+xmlEscape(cell)+'</w:t></w:r></w:p></w:tc>';
+      }).join('')+'</w:tr>';
+    }).join('');
+    return '<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/>'+borders+'<w:tblLayout w:type="autofit"/></w:tblPr>'+body+'</w:tbl>';
+  }
+
+  function exportReportDocx() {
+    const rows=currentReportRows();
+    const paragraphs=wordParagraph(currentReportTitle(),true,false)+
+      wordParagraph('تاریخ تهیه: '+formatJalali(new Date().toISOString(),true),false,false)+
+      wordParagraph('تعداد ردیف‌های گزارش: '+faDigits(Math.max(0,rows.length-1)),false,false);
+    const documentXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+paragraphs+wordTable(rows)+
+      '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720" w:header="360" w:footer="360" w:gutter="0"/></w:sectPr></w:body></w:document>';
+    const files=[
+      {name:'[Content_Types].xml',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>'},
+      {name:'_rels/.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>'},
+      {name:'word/document.xml',content:documentXml}
+    ];
+    downloadBlob('ATLAS-SHIFT-report-'+todayIso()+'.docx',zipStored(files));
+  }
+
+  function excelColumn(index) {
+    let n=index+1,letters='';
+    while(n>0){const remainder=(n-1)%26;letters=String.fromCharCode(65+remainder)+letters;n=Math.floor((n-1)/26);}
+    return letters;
+  }
+
+  function exportReportXlsx() {
+    const rows=currentReportRows();
+    const sheetRows=rows.map(function(row,rowIndex){
+      const cells=row.map(function(value,columnIndex){
+        const reference=excelColumn(columnIndex)+(rowIndex+1);
+        return '<c r="'+reference+'" t="inlineStr"><is><t xml:space="preserve">'+xmlEscape(value)+'</t></is></c>';
+      }).join('');
+      return '<row r="'+(rowIndex+1)+'">'+cells+'</row>';
+    }).join('');
+    const workbook='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="گزارش ATLAS SHIFT" sheetId="1" r:id="rId1"/></sheets></workbook>';
+    const files=[
+      {name:'[Content_Types].xml',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>'},
+      {name:'_rels/.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},
+      {name:'xl/workbook.xml',content:workbook},
+      {name:'xl/_rels/workbook.xml.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>'},
+      {name:'xl/worksheets/sheet1.xml',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:'+excelColumn(rows[0].length-1)+Math.max(1,rows.length)+'"/><sheetViews><sheetView workbookViewId="0"/></sheetViews><sheetFormatPr defaultRowHeight="18"/><sheetData>'+sheetRows+'</sheetData></worksheet>'}
+    ];
+    downloadBlob('ATLAS-SHIFT-report-'+todayIso()+'.xlsx',zipStored(files));
+  }
+
+  function pptTextShape(id,name,x,y,cx,cy,lines,size,bold) {
+    return '<p:sp><p:nvSpPr><p:cNvPr id="'+id+'" name="'+xmlEscape(name)+'"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>'+
+      '<p:spPr><a:xfrm><a:off x="'+x+'" y="'+y+'"/><a:ext cx="'+cx+'" cy="'+cy+'"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></p:spPr>'+
+      '<p:txBody><a:bodyPr wrap="square" rtlCol="1" anchor="t"/><a:lstStyle/>'+
+      lines.map(function(line){return '<a:p><a:pPr algn="r" rtl="1"/><a:r><a:rPr lang="fa-IR" sz="'+size+'"'+(bold?' b="1"':'')+'/><a:t xml:space="preserve">'+xmlEscape(line)+'</a:t></a:r><a:endParaRPr lang="fa-IR"/></a:p>';}).join('')+
+      '</p:txBody></p:sp>';
+  }
+
+  function exportReportPptx() {
+    const rows=currentReportRows();
+    const summary=MODULES.map(function(key){
+      const count=appData[key].filter(function(record){return isInRange(key,record,reportPeriod);}).length;
+      return specs[key].title+': '+faDigits(count);
+    });
+    summary.push('برنامهٔ شیفت‌ها: '+faDigits((appData.shifts||[]).filter(function(record){return isInRange('shifts',record,reportPeriod);}).length));
+    summary.push('کل ردیف‌های گزارش: '+faDigits(Math.max(0,rows.length-1)));
+    summary.push('تهیه‌شده در '+formatJalali(new Date().toISOString(),true));
+    const groupTree='<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>';
+    const slide='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld name="ATLAS SHIFT"><p:spTree>'+groupTree+
+      pptTextShape(2,'عنوان گزارش',500000,350000,11100000,900000,[currentReportTitle()],2800,true)+
+      pptTextShape(3,'خلاصه گزارش',500000,1500000,11100000,5200000,summary.slice(0,18),1800,false)+
+      '</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>';
+    const master='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld name="ATLAS SHIFT"><p:spTree>'+groupTree+'</p:spTree></p:cSld>'+
+      '<p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>'+
+      '<p:sldLayoutIdLst><p:sldLayoutId id="1" r:id="rId1"/></p:sldLayoutIdLst><p:txStyles><p:titleStyle><a:lvl1pPr><a:defRPr sz="2800"/></a:lvl1pPr></p:titleStyle><p:bodyStyle><a:lvl1pPr><a:defRPr sz="1800"/></a:lvl1pPr></p:bodyStyle><p:otherStyle><a:lvl1pPr><a:defRPr sz="1600"/></a:lvl1pPr></p:otherStyle></p:txStyles></p:sldMaster>';
+    const layout='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" type="blank" preserve="1"><p:cSld name="Blank"><p:spTree>'+groupTree+'</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>';
+    const theme='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="ATLAS SHIFT"><a:themeElements>'+
+      '<a:clrScheme name="ATLAS SHIFT"><a:dk1><a:srgbClr val="183E69"/></a:dk1><a:lt1><a:srgbClr val="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="243447"/></a:dk2><a:lt2><a:srgbClr val="EAF5FF"/></a:lt2>'+
+      '<a:accent1><a:srgbClr val="25BCE8"/></a:accent1><a:accent2><a:srgbClr val="7B82FF"/></a:accent2><a:accent3><a:srgbClr val="39C6A5"/></a:accent3><a:accent4><a:srgbClr val="FFB8DF"/></a:accent4><a:accent5><a:srgbClr val="F3C66B"/></a:accent5><a:accent6><a:srgbClr val="A7B5C6"/></a:accent6><a:hlink><a:srgbClr val="0563C1"/></a:hlink><a:folHlink><a:srgbClr val="954F72"/></a:folHlink></a:clrScheme>'+
+      '<a:fontScheme name="ATLAS SHIFT"><a:majorFont><a:latin typeface="Aptos Display"/><a:ea typeface=""/><a:cs typeface="Tahoma"/></a:majorFont><a:minorFont><a:latin typeface="Aptos"/><a:ea typeface=""/><a:cs typeface="Tahoma"/></a:minorFont></a:fontScheme>'+
+      '<a:fmtScheme name="ATLAS SHIFT"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"><a:lumMod val="95000"/><a:lumOff val="5000"/></a:schemeClr></a:solidFill><a:solidFill><a:schemeClr val="phClr"><a:lumMod val="90000"/><a:lumOff val="10000"/></a:schemeClr></a:solidFill></a:fillStyleLst>'+
+      '<a:lnStyleLst><a:ln w="6350" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:round/></a:ln><a:ln w="12700" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:round/></a:ln><a:ln w="19050" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:round/></a:ln></a:lnStyleLst>'+
+      '<a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst>'+
+      '<a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"><a:lumMod val="95000"/><a:lumOff val="5000"/></a:schemeClr></a:solidFill><a:solidFill><a:schemeClr val="phClr"><a:lumMod val="90000"/><a:lumOff val="10000"/></a:schemeClr></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements><a:objectDefaults/><a:extraClrSchemeLst/></a:theme>';
+    const files=[
+      {name:'[Content_Types].xml',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/><Override PartName="/ppt/slides/slide1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/><Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/><Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/><Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/></Types>'},
+      {name:'_rels/.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/></Relationships>'},
+      {name:'ppt/presentation.xml',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst><p:sldIdLst><p:sldId id="256" r:id="rId2"/></p:sldIdLst><p:sldSz cx="12192000" cy="6858000" type="screen16x9"/><p:notesSz cx="6858000" cy="9144000"/><p:defaultTextStyle><a:defPPr><a:defRPr lang="fa-IR"/></a:defPPr></p:defaultTextStyle></p:presentation>'},
+      {name:'ppt/_rels/presentation.xml.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide1.xml"/></Relationships>'},
+      {name:'ppt/slides/slide1.xml',content:slide},
+      {name:'ppt/slides/_rels/slide1.xml.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/></Relationships>'},
+      {name:'ppt/slideLayouts/slideLayout1.xml',content:layout},
+      {name:'ppt/slideLayouts/_rels/slideLayout1.xml.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/></Relationships>'},
+      {name:'ppt/slideMasters/slideMaster1.xml',content:master},
+      {name:'ppt/slideMasters/_rels/slideMaster1.xml.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/></Relationships>'},
+      {name:'ppt/theme/theme1.xml',content:theme}
+    ];
+    downloadBlob('ATLAS-SHIFT-report-'+todayIso()+'.pptx',zipStored(files));
   }
 
   function exportCsv(moduleKey) {
@@ -1311,6 +1525,13 @@
       if(await saveState()){render(moduleKey,section);refreshDashboard();toast('موارد انتخاب‌شده حذف شدند.')}
     }else if(action==='export'&&specs[moduleKey]){
       exportCsv(moduleKey);
+    }else if(action==='export-report'){
+      const selector=document.getElementById('reportExportFormat');
+      const format=selector?selector.value:'csv';
+      if(format==='xlsx')exportReportXlsx();
+      else if(format==='docx')exportReportDocx();
+      else if(format==='pptx')exportReportPptx();
+      else exportReportCsv();
     }else if(action==='export-all'){
       exportAllCsv();
     }else if(action==='print'){
