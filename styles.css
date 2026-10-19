@@ -464,3 +464,19 @@ html[data-atlas-theme="cloud-glass"] .module-report-card small{color:#227b9a}
 
 /* Main module page must span the entire 12-column section grid. */
 .section-view > .module-wrap{grid-column:1 / -1;width:100%;min-width:0}
+
+/* Robust module-page sizing: the single module stack must fill the available content width. */
+#sectionView.section-view:not([hidden]){
+  display:block !important;
+  width:100%;
+  max-width:none;
+  min-width:0;
+}
+#sectionView.section-view > .module-wrap{
+  display:flex;
+  flex-direction:column;
+  width:100%;
+  max-width:none;
+  min-width:0;
+  grid-column:auto;
+}

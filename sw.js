@@ -1,4 +1,4 @@
-const CACHE_NAME = 'atlas-shift-v23-module-width-fix';
+const CACHE_NAME = 'atlas-shift-v24-full-width-module-pages';
 const APP_FILES = [
   './',
   './index.html',
