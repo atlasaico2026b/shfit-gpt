@@ -480,3 +480,15 @@ html[data-atlas-theme="cloud-glass"] .module-report-card small{color:#227b9a}
   min-width:0;
   grid-column:auto;
 }
+
+/* Operational module controls: layout only, inheriting the current theme tokens. */
+.module-field-hint{display:block;margin-top:5px;color:var(--muted);font-size:10px;line-height:1.8}
+.module-check-options{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-height:38px}
+.module-check-options label{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.04);font-size:11px}
+.module-check-options input{width:15px!important;height:15px;accent-color:var(--accent)}
+.module-report-range{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-top:12px}
+.module-report-range .module-field{flex:1 1 220px}
+.module-report-range>[data-module-action]{flex:0 0 auto}
+.module-settings-counts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.module-settings-counts>span{padding:8px 10px;border:1px solid var(--line);border-radius:10px;color:var(--muted);font-size:10px}
+.module-settings-counts b{color:var(--text)}

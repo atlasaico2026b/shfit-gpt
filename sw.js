@@ -1,4 +1,4 @@
-const CACHE_NAME = 'atlas-shift-v25-module-rewrite';
+const CACHE_NAME = 'atlas-shift-v26-operational-submenus';
 const APP_FILES = [
   './',
   './index.html',

@@ -377,6 +377,8 @@
     return out;
   }
 
+  function displayDateTime(value) { return formatJalali(value, true); }
+
   function jalaliInputValue(value, withTime) {
     if (!value) {
       if (withTime) return formatJalali(nowLocalDateTime(), true);
@@ -464,8 +466,10 @@
         control += '<small class="module-field-hint">پیوست‌های فعلی: ' + faDigits(value.length) + ' مورد</small>';
       }
     } else if (field.type === 'jalali' || field.type === 'jalali-datetime') {
+      const withTime = field.type === 'jalali-datetime';
+      const shownDate = value ? jalaliInputValue(value, withTime) : (field.required ? jalaliInputValue('', withTime) : '');
       control = '<input id="' + esc(id) + '" name="' + esc(field.key) + '" type="text" inputmode="text" autocomplete="off"' + required +
-        ' value="' + esc(value ? jalaliInputValue(value, field.type === 'jalali-datetime') : jalaliInputValue('', field.type === 'jalali-datetime')) +
+        ' value="' + esc(shownDate) +
         '" placeholder="' + dateInputHint(field.type) + '" data-jalali-input="' + esc(field.type) + '">' +
         '<small class="module-field-hint">تاریخ شمسی؛ نمونه: ' + dateInputHint(field.type) + '</small>';
     } else {
@@ -545,7 +549,7 @@
     const wantedStatus = filterState[moduleKey] || 'all';
     if (wantedStatus !== 'all' && String(record.status || '') !== wantedStatus) return false;
     if (!term) return true;
-    const values = fieldsFor(moduleKey).map(function (field) {
+    const values = fieldsFor(moduleKey).filter(function(field){return field.type!=='file'&&field.type!=='file-multiple';}).map(function (field) {
       let value = field.custom && record.customFields ? record.customFields[field.key] : record[field.key];
       return field.label + ' ' + (Array.isArray(value) ? value.join(' ') : String(value == null ? '' : value));
     }).join(' ').toLocaleLowerCase();
@@ -600,7 +604,7 @@
           columns.map(function (key) {
             const value = fieldsFor(moduleKey).find(function (field) { return field.key === key && field.custom; }) && record.customFields
               ? record.customFields[key] : record[key];
-            return '<td>' + displayValue(moduleKey, key, value, data) + '</td>';
+            return '<td>' + (moduleKey==='employees'&&key==='status' ? esc(effectiveEmployeeStatus(record)) : displayValue(moduleKey, key, value, data)) + '</td>';
           }).join('') +
           '<td class="module-row-actions">' + renderHistoryButton(moduleKey, record) +
           '<button type="button" class="secondary-btn" data-module-action="edit" data-view="' + esc(moduleKey) + '" data-id="' + esc(record.id) + '">ویرایش</button> ' +
@@ -673,6 +677,24 @@
     return alerts.sort(function (a,b) { return Number(b.critical)-Number(a.critical); });
   }
 
+  function effectiveEmployeeStatus(employee) {
+    const today = todayIso();
+    const approvedLeave = appData.leaves.some(function(leave) {
+      return String(leave.employeeId||'')===String(employee.id) &&
+        ['تأییدشده','استفاده‌شده'].includes(leave.status) &&
+        String(leave.startDate||'')<=today && String(leave.endDate||'')>=today;
+    });
+    if (approvedLeave) return 'مرخصی';
+    const activeMission = appData.missions.some(function(mission) {
+      const crew = Array.isArray(mission.crewIds) ? mission.crewIds.map(String) : [];
+      return crew.includes(String(employee.id)) && mission.status==='در جریان' &&
+        String(mission.startAt||'').slice(0,10)<=today &&
+        (!mission.endAt || String(mission.endAt).slice(0,10)>=today);
+    });
+    if (activeMission) return 'مأموریت';
+    return employee.status || 'ثبت نشده';
+  }
+
   function refreshDashboard() {
     if (!ready) return;
     const staff = appData.employees;
@@ -683,8 +705,9 @@
     const roster = document.querySelector('[data-widget="roster"]');
     if (roster) {
       const total = staff.length;
-      const active = count(function (e) { return ['آماده‌کار','در حال کار','شیفت','مأموریت'].includes(e.status); });
-      const values = [active,count(function(e){return e.status === 'شیفت';}),count(function(e){return e.status === 'مأموریت';}),count(function(e){return e.status === 'مرخصی';})];
+      const statusOf = function(e){return effectiveEmployeeStatus(e);};
+      const active = count(function (e) { return ['آماده‌کار','در حال کار','شیفت','مأموریت'].includes(statusOf(e)); });
+      const values = [active,count(function(e){return statusOf(e) === 'شیفت';}),count(function(e){return statusOf(e) === 'مأموریت';}),count(function(e){return statusOf(e) === 'مرخصی';})];
       const number = roster.querySelector('.big-number');
       if (number) number.innerHTML = faDigits(total) + '<small>نفر ثبت‌شده</small>';
       const stats = roster.querySelectorAll('.mini-stat .value');
@@ -701,7 +724,7 @@
       const stats = [
         {label:'نیروی شیفتی',value:count(function(e){return e.workType === 'شیفتی';})},
         {label:'نیروی روزکار',value:count(function(e){return e.workType === 'روزکار';})},
-        {label:'در مأموریت',value:count(function(e){return e.status === 'مأموریت';})}
+        {label:'در مأموریت',value:count(function(e){return effectiveEmployeeStatus(e) === 'مأموریت';})}
       ];
       const max = Math.max(1,stats[0].value,stats[1].value,stats[2].value);
       stats.forEach(function (item,index) {
@@ -845,7 +868,7 @@
       const total=appData[key].filter(function(record){return isInRange(key,record,reportPeriod);}).length;
       return '<a class="module-report-card" href="./index.html?view='+esc(key)+'"><span>'+esc(specs[key].title)+'</span><strong>'+faDigits(total)+'</strong><small>مشاهدهٔ فهرست ←</small></a>';
     }).join('');
-    const activeStaff=appData.employees.filter(function(item){return item.status!=='غیرفعال';}).length;
+    const activeStaff=appData.employees.filter(function(item){return effectiveEmployeeStatus(item)!=='غیرفعال';}).length;
     const openMissions=appData.missions.filter(function(item){return ['در جریان','برنامه‌ریزی‌شده'].includes(item.status);}).length;
     const dueMeters=appData.gasmeters.filter(function(item){return dueInDays(item.calibrationEnd)<=30;}).length;
     section.innerHTML=rootWrap(
@@ -1170,7 +1193,9 @@
     render: render,
     refreshDashboard: refreshDashboard,
     getData: function () { return appData; },
-    isReady: function () { return ready; }
+    isReady: function () { return ready; },
+    parseJalali: parseJalali,
+    formatJalali: formatJalali
   };
 
   document.addEventListener('DOMContentLoaded', function(){refreshDashboard();});
