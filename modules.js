@@ -10,6 +10,7 @@
   const formState = Object.create(null);
   const searchState = Object.create(null);
   const filterState = Object.create(null);
+  let shiftFormState = { open:false, id:null };
   let appData = createEmptyState();
   let db = null;
   let ready = false;
@@ -151,6 +152,7 @@
       settings: { employeeCustomFields: '' },
       references: { workplaces: ['اهواز','آبادان','اندیمشک','ماهشهر','بندر امام'] },
       history: [],
+      shifts: [],
       updatedAt: ''
     };
     MODULES.forEach(function (key) { state[key] = []; });
@@ -166,6 +168,7 @@
     if (value.settings && typeof value.settings === 'object') out.settings = Object.assign(out.settings, value.settings);
     if (value.references && typeof value.references === 'object') out.references = Object.assign(out.references, value.references);
     if (Array.isArray(value.history)) out.history = value.history.slice(-3000);
+    if (Array.isArray(value.shifts)) out.shifts = value.shifts.filter(function(item){return item&&typeof item==='object';});
     out.schemaVersion = 2;
     out.updatedAt = value.updatedAt || '';
     return out;
@@ -622,6 +625,87 @@
       }).join('') + '</tbody></table></div>';
   }
 
+  function shiftLabel(record, data) {
+    const employees = (record.employeeIds || []).map(function (id) {
+      const person = (data.employees || []).find(function (item) { return String(item.id) === String(id); });
+      return person ? (person.fullName || person.personnelId || 'کارمند') : '';
+    }).filter(Boolean);
+    return employees.join('، ') || 'شیفت بدون نیروی ثبت‌شده';
+  }
+
+  function addShiftHistory(record, action, changes) {
+    appData.history.push({
+      id: createId(),
+      module: 'shifts',
+      recordId: String(record.id),
+      recordLabel: shiftLabel(record, appData),
+      action: action,
+      at: new Date().toISOString(),
+      changes: changes || []
+    });
+    if (appData.history.length > 3000) appData.history.splice(0, appData.history.length - 3000);
+  }
+
+  function renderShiftForm(data) {
+    if (!shiftFormState.open) return '';
+    const existing = shiftFormState.id ? (data.shifts || []).find(function (item) { return String(item.id) === String(shiftFormState.id); }) : null;
+    const current = existing || {};
+    const chosen = Array.isArray(current.employeeIds) ? current.employeeIds.map(String) : [];
+    const employeeOptions = (data.employees || []).slice().sort(function (a, b) {
+      return String(a.fullName || '').localeCompare(String(b.fullName || ''), 'fa');
+    }).map(function (person) {
+      return '<option value="' + esc(person.id) + '"' + (chosen.includes(String(person.id)) ? ' selected' : '') + '>' +
+        esc((person.fullName || 'بدون نام') + (person.personnelId ? ' · ' + person.personnelId : '')) + '</option>';
+    }).join('');
+    const startValue = current.startAt ? jalaliInputValue(current.startAt, true) : jalaliInputValue('', true);
+    const endValue = current.endAt ? jalaliInputValue(current.endAt, true) : '';
+    return '<section class="module-form-panel" style="width:100%;min-width:0"><div class="module-form-head"><div><h3>' +
+      (existing ? 'ویرایش برنامهٔ شیفت' : 'ثبت برنامهٔ شیفت') +
+      '</h3><p>نوع روز/شب و زمان شروع و پایان را مشخص کن. برای شیفت شب، تاریخ پایان روز بعد را وارد کن.</p></div>' +
+      '<button type="button" class="secondary-btn" data-shift-action="cancel">بستن فرم</button></div>' +
+      '<form class="module-form" data-shift-form data-shift-id="' + esc(existing ? existing.id : '') + '"><div class="module-fields">' +
+      '<label class="module-field"><span>نوع شیفت <i>*</i></span><select name="shiftType" required><option value="">انتخاب کنید</option>' +
+      ['۱۲ ساعته روز','۱۲ ساعته شب','روزکار'].map(function (option) {
+        return '<option value="' + esc(option) + '"' + (current.shiftType === option ? ' selected' : '') + '>' + esc(option) + '</option>';
+      }).join('') + '</select></label>' +
+      '<label class="module-field"><span>وضعیت برنامه <i>*</i></span><select name="status" required><option value="">انتخاب کنید</option>' +
+      ['برنامه‌ریزی‌شده','انجام‌شده','لغوشده','جایگزینی روزکار'].map(function (option) {
+        return '<option value="' + esc(option) + '"' + (current.status === option ? ' selected' : '') + '>' + esc(option) + '</option>';
+      }).join('') + '</select></label>' +
+      '<label class="module-field"><span>محل خدمت</span><input name="workplace" value="' + esc(current.workplace || '') + '" placeholder="ایستگاه یا محل خدمت"></label>' +
+      '<label class="module-field"><span>شروع شیفت شمسی <i>*</i></span><input type="text" name="startAt" data-jalali-input="jalali-datetime" required value="' +
+      esc(startValue) + '" placeholder="۱۴۰۵/۰۷/۲۸ ۰۷:۰۰"><small class="module-field-hint">مثال: ۱۴۰۵/۰۷/۲۸ ۰۷:۰۰</small></label>' +
+      '<label class="module-field"><span>پایان شیفت شمسی <i>*</i></span><input type="text" name="endAt" data-jalali-input="jalali-datetime" required value="' +
+      esc(endValue) + '" placeholder="۱۴۰۵/۰۷/۲۸ ۱۹:۰۰"><small class="module-field-hint">برای شیفت شب، تاریخ پایان را در روز بعد وارد کن.</small></label>' +
+      '<label class="module-field module-field-wide"><span>نیروهای این شیفت <i>*</i></span><select name="employeeIds" multiple size="5" required>' +
+      employeeOptions + '</select><small class="module-field-hint">برای انتخاب چند نفر در رایانه، کلید Ctrl را نگه‌دار.</small></label>' +
+      '<label class="module-field module-field-wide"><span>توضیحات</span><textarea name="notes" rows="3">' + esc(current.notes || '') + '</textarea></label>' +
+      '</div><div class="module-form-actions"><span class="module-required-help">برنامه‌های ثبت‌شده در تقویم روزانه و وضعیت کارکنان منعکس می‌شوند.</span><div>' +
+      '<button type="button" class="secondary-btn" data-shift-action="cancel">انصراف</button> ' +
+      '<button type="submit" class="primary-btn">' + (existing ? 'ذخیرهٔ تغییرات' : 'ثبت برنامهٔ شیفت') + '</button></div></div></form></section>';
+  }
+
+  function renderShiftSchedule(data) {
+    const shifts = (data.shifts || []).slice().sort(function (a, b) {
+      return String(b.startAt || '').localeCompare(String(a.startAt || ''));
+    });
+    const rows = shifts.length ? shifts.map(function (item) {
+      return '<tr><td>' + formatJalali(item.startAt, true) + '</td><td>' + formatJalali(item.endAt, true) + '</td><td>' +
+        esc(item.shiftType || '—') + '</td><td>' + esc(shiftLabel(item, data)) + '</td><td>' + esc(item.workplace || '—') +
+        '</td><td><span class="module-tag">' + esc(item.status || '—') + '</span></td><td class="module-row-actions">' +
+        '<button type="button" class="secondary-btn" data-shift-action="edit" data-id="' + esc(item.id) + '">ویرایش</button> ' +
+        '<button type="button" class="module-delete-btn" data-shift-action="delete" data-id="' + esc(item.id) + '">حذف</button></td></tr>';
+    }).join('') : '<tr><td colspan="7"><div class="module-empty">هنوز برنامهٔ شیفتی ثبت نشده است.</div></td></tr>';
+    return '<section class="module-list-panel" id="shift-schedule" style="width:100%;min-width:0"><div class="module-list-head"><div><h3>برنامهٔ شیفت‌ها</h3>' +
+      '<p>ثبت و پیگیری برنامهٔ ۱۲ ساعتهٔ روز/شب و جایگزینی روزکار، در کنار پروندهٔ کارکنان.</p></div><div class="module-page-actions">' +
+      '<button type="button" class="secondary-btn" data-shift-action="export">خروجی CSV شیفت‌ها</button> ' +
+      '<button type="button" class="primary-btn" data-shift-action="new">＋ ثبت شیفت</button></div></div>' +
+      renderShiftForm(data) + '<div class="module-table-wrap" style="width:100%;max-width:100%;min-width:0"><table class="module-table"><thead><tr>' +
+      '<th>شروع</th><th>پایان</th><th>نوع</th><th>کارکنان</th><th>محل خدمت</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>' +
+      rows + '</tbody></table></div><div class="module-list-foot">تعداد برنامه‌ها: ' + faDigits(shifts.length) +
+      ' · برای شیفت شب، تاریخ پایان را صریحاً در روز بعد ثبت کن.</div></section>';
+  }
+
   function renderCrud(moduleKey, section) {
     const data = appData;
     const records = data[moduleKey] || [];
@@ -638,6 +722,7 @@
       '<div class="module-bulk-tools"><label><input type="checkbox" data-module-select-all> انتخاب همه</label><button type="button" class="module-delete-btn" data-module-action="bulk-delete" data-view="' + esc(moduleKey) + '">حذف انتخاب‌شده‌ها</button>' +
       '<span data-module-result-count>' + faDigits(recordsForView(moduleKey, data).length) + ' مورد از ' + faDigits(existing) + '</span></div>' +
       '<div data-module-list-region>' + renderTable(moduleKey, data) + '</div></section>' +
+      (moduleKey === 'employees' ? renderShiftSchedule(data) : '') +
       '<div class="module-local-note"><strong>ذخیره‌سازی محلی:</strong> اطلاعات در همین دستگاه ذخیره می‌شوند. برای انتقال دستگاه، از بخش تنظیمات نسخهٔ پشتیبان تهیه کن.</div>'
     );
   }
@@ -702,6 +787,14 @@
         (!mission.endAt || String(mission.endAt).slice(0,10)>=today);
     });
     if (activeMission) return 'مأموریت';
+    const now = nowLocalDateTime();
+    const activeShift = (appData.shifts || []).find(function (shift) {
+      const people = Array.isArray(shift.employeeIds) ? shift.employeeIds.map(String) : [];
+      return people.includes(String(employee.id)) &&
+        ['برنامه‌ریزی‌شده','جایگزینی روزکار'].includes(shift.status) &&
+        String(shift.startAt || '') <= now && String(shift.endAt || '') >= now;
+    });
+    if (activeShift) return activeShift.status === 'جایگزینی روزکار' || activeShift.shiftType === 'روزکار' ? 'در حال کار' : 'شیفت';
     return employee.status || 'ثبت نشده';
   }
 
@@ -804,6 +897,7 @@
     if(agenda){
       const today=todayIso(),items=[];
       missions.filter(function(m){return String(m.startAt||'').slice(0,10)===today&&m.status!=='لغو‌شده';}).forEach(function(m){items.push({time:String(m.startAt||'').slice(11,16),type:'مأموریت',title:m.title||'مأموریت',detail:[m.city,m.destination].filter(Boolean).join(' · ')});});
+      (appData.shifts||[]).filter(function(s){return String(s.startAt||'').slice(0,10)<=today&&String(s.endAt||'').slice(0,10)>=today&&['برنامه‌ریزی‌شده','جایگزینی روزکار'].includes(s.status);}).forEach(function(s){items.push({time:String(s.startAt||'').slice(11,16),type:'شیفت',title:(s.shiftType||'شیفت')+' · '+shiftLabel(s,appData),detail:[s.workplace,s.status].filter(Boolean).join(' · ')});});
       appData.notes.filter(function(n){return (n.dueDate===today||n.date===today)&&!['تکمیل‌شده','لغوشده'].includes(n.status);}).forEach(function(n){items.push({time:'',type:'پیگیری',title:n.title||'پیگیری',detail:n.related||n.body||''});});
       appData.leaves.filter(function(l){return l.startDate===today&&l.status!=='ردشده';}).forEach(function(l){const person=staff.find(function(e){return String(e.id)===String(l.employeeId)});items.push({time:'',type:'مرخصی',title:person?person.fullName:(l.groupName||'مرخصی'),detail:l.leaveType||''});});
       agenda.innerHTML=items.length?items.slice(0,6).map(function(item){return '<div class="agenda-row"><div class="agenda-time">'+esc(item.time||item.type)+'</div><div class="agenda-dot"></div><div class="agenda-text"><b>'+esc(item.title)+'</b><span>'+esc(item.detail||item.type)+'</span></div></div>';}).join(''):'<div class="module-empty">برای امروز مأموریت یا پیگیری زمان‌بندی‌شده‌ای ثبت نشده است.</div>';
@@ -836,7 +930,7 @@
   }
 
   function reportDateFor(moduleKey, record) {
-    if (moduleKey === 'missions') return String(record.startAt || '').slice(0,10);
+    if (moduleKey === 'missions' || moduleKey === 'shifts') return String(record.startAt || '').slice(0,10);
     if (moduleKey === 'leaves') return record.startDate || '';
     if (moduleKey === 'gasmeters') return record.calibrationEnd || record.updatedAt || '';
     if (moduleKey === 'vehicles') return record.updatedAt || record.createdAt || '';
@@ -885,7 +979,9 @@
     const cards = MODULES.map(function (key) {
       const total=appData[key].filter(function(record){return isInRange(key,record,reportPeriod);}).length;
       return '<a class="module-report-card" href="./index.html?view='+esc(key)+'"><span>'+esc(specs[key].title)+'</span><strong>'+faDigits(total)+'</strong><small>مشاهدهٔ فهرست ←</small></a>';
-    }).join('');
+    }).join('') + '<a class="module-report-card" href="./index.html?view=employees#shift-schedule"><span>برنامهٔ شیفت‌ها</span><strong>' +
+      faDigits((appData.shifts || []).filter(function(record){return isInRange('shifts',record,reportPeriod);}).length) +
+      '</strong><small>مشاهده و ویرایش ←</small></a>';
     const activeStaff=appData.employees.filter(function(item){return effectiveEmployeeStatus(item)!=='غیرفعال';}).length;
     const openMissions=appData.missions.filter(function(item){return ['در جریان','برنامه‌ریزی‌شده'].includes(item.status);}).length;
     const dueMeters=appData.gasmeters.filter(function(item){return dueInDays(item.calibrationEnd)<=30;}).length;
@@ -904,7 +1000,7 @@
     const rows=appData.history.slice().sort(function(a,b){return String(b.at).localeCompare(String(a.at));}).slice(0,50);
     if(!rows.length)return '<div class="module-empty">هنوز سابقه‌ای ثبت نشده است.</div>';
     return '<div class="module-table-wrap"><table class="module-table"><thead><tr><th>زمان</th><th>بخش</th><th>مورد</th><th>عملیات</th><th>تغییرات</th></tr></thead><tbody>'+
-      rows.map(function(item){return '<tr><td>'+formatJalali(item.at,true)+'</td><td>'+esc(specs[item.module]?specs[item.module].title:item.module)+'</td><td>'+esc(item.recordLabel||'—')+'</td><td>'+esc(item.action)+'</td><td>'+esc((item.changes||[]).map(function(c){return c.field+': '+c.before+' ← '+c.after;}).join('؛ ')||'—')+'</td></tr>';}).join('')+'</tbody></table></div>';
+      rows.map(function(item){return '<tr><td>'+formatJalali(item.at,true)+'</td><td>'+esc(item.module==='shifts'?'برنامهٔ شیفت':(specs[item.module]?specs[item.module].title:item.module))+'</td><td>'+esc(item.recordLabel||'—')+'</td><td>'+esc(item.action)+'</td><td>'+esc((item.changes||[]).map(function(c){return c.field+': '+c.before+' ← '+c.after;}).join('؛ ')||'—')+'</td></tr>';}).join('')+'</tbody></table></div>';
   }
 
   function renderSettings(section) {
@@ -1020,6 +1116,14 @@
     downloadFile('ATLAS-SHIFT-'+moduleKey+'-'+todayIso()+'.csv','\uFEFF'+rows.map(function(row){return row.map(csvEscape).join(',');}).join('\r\n'),'text/csv;charset=utf-8;');
   }
 
+  function exportShiftsCsv() {
+    const rows=[['شناسه','شروع','پایان','نوع شیفت','کارکنان','محل خدمت','وضعیت','توضیحات']];
+    (appData.shifts||[]).forEach(function(record){
+      rows.push([record.id,record.startAt||'',record.endAt||'',record.shiftType||'',shiftLabel(record,appData),record.workplace||'',record.status||'',record.notes||'']);
+    });
+    downloadFile('ATLAS-SHIFT-shifts-'+todayIso()+'.csv','\uFEFF'+rows.map(function(row){return row.map(csvEscape).join(',');}).join('\r\n'),'text/csv;charset=utf-8;');
+  }
+
   function exportAllCsv() {
     const rows=[['بخش','شناسه','عنوان','وضعیت','تاریخ','شرح']];
     MODULES.forEach(function(key){
@@ -1027,11 +1131,12 @@
         rows.push([specs[key].title,record.id,recordLabel(key,record),record.status||'',recordDateForCsv(key,record),record.notes||record.body||record.result||record.reason||'']);
       });
     });
+    (appData.shifts||[]).forEach(function(record){rows.push(['برنامهٔ شیفت',record.id,shiftLabel(record,appData),record.status||'',record.startAt||'',record.workplace||record.notes||'']);});
     downloadFile('ATLAS-SHIFT-report-'+todayIso()+'.csv','\uFEFF'+rows.map(function(row){return row.map(csvEscape).join(',');}).join('\r\n'),'text/csv;charset=utf-8;');
   }
 
   function recordDateForCsv(key, record) {
-    if(key==='missions')return record.startAt||'';
+    if(key==='missions'||key==='shifts')return record.startAt||'';
     if(key==='leaves')return record.startDate||'';
     if(key==='gasmeters')return record.calibrationEnd||'';
     if(key==='notes')return record.date||'';
@@ -1072,6 +1177,29 @@
     });
     window.alert((record?recordLabel(moduleKey,record):'سوابق')+'\n\n'+(textRows.join('\n\n')||'سابقه‌ای ثبت نشده است.'));
   }
+
+  document.addEventListener('click', async function(event) {
+    const button=event.target.closest('[data-shift-action]');
+    if(!button)return;
+    const action=button.dataset.shiftAction;
+    const section=document.getElementById('sectionView');
+    if(action==='new'||action==='edit'){
+      shiftFormState={open:true,id:action==='edit'?button.dataset.id:null};
+      render('employees',section);
+      const form=section&&section.querySelector('[data-shift-form]');
+      if(form)form.scrollIntoView({behavior:'smooth',block:'start'});
+    }else if(action==='cancel'){
+      shiftFormState={open:false,id:null};render('employees',section);
+    }else if(action==='delete'){
+      const record=(appData.shifts||[]).find(function(item){return String(item.id)===String(button.dataset.id);});
+      if(!record||!window.confirm('برنامهٔ شیفت این مورد حذف شود؟'))return;
+      appData.shifts=appData.shifts.filter(function(item){return String(item.id)!==String(record.id);});
+      addShiftHistory(record,'حذف',[]);
+      if(await saveState()){render('employees',section);refreshDashboard();toast('برنامهٔ شیفت حذف شد.');}
+    }else if(action==='export'){
+      exportShiftsCsv();
+    }
+  });
 
   document.addEventListener('click', async function(event) {
     const button=event.target.closest('[data-module-action]');
@@ -1134,6 +1262,43 @@
     card.classList.remove('unread');
     const count = document.getElementById('notificationCount');
     if (count) count.textContent = faDigits(document.querySelectorAll('.notice-card.unread').length);
+  });
+
+  document.addEventListener('submit', async function(event) {
+    const form=event.target.closest('[data-shift-form]');
+    if(!form)return;
+    event.preventDefault();
+    try{
+      const fd=new FormData(form);
+      const rawStart=String(fd.get('startAt')||'').trim();
+      const rawEnd=String(fd.get('endAt')||'').trim();
+      const startAt=parseJalali(rawStart,true),endAt=parseJalali(rawEnd,true);
+      if(!startAt)throw new Error('زمان شروع را به شکل شمسی ۱۴۰۵/۰۷/۲۸ ۰۷:۰۰ وارد کن.');
+      if(!endAt)throw new Error('زمان پایان را به شکل شمسی ۱۴۰۵/۰۷/۲۸ ۱۹:۰۰ وارد کن.');
+      if(endAt<=startAt)throw new Error('پایان شیفت باید بعد از شروع آن باشد؛ برای شیفت شب، تاریخ پایان روز بعد را وارد کن.');
+      const employeeIds=fd.getAll('employeeIds').map(String).filter(Boolean);
+      if(!employeeIds.length)throw new Error('حداقل یک کارمند را برای این شیفت انتخاب کن.');
+      const id=form.dataset.shiftId||'';
+      const old=id?(appData.shifts||[]).find(function(item){return String(item.id)===String(id);}):null;
+      const record={id:old?old.id:createId(),employeeIds:employeeIds,startAt:startAt,endAt:endAt,
+        shiftType:String(fd.get('shiftType')||''),status:String(fd.get('status')||''),
+        workplace:String(fd.get('workplace')||'').trim(),notes:String(fd.get('notes')||'').trim(),
+        createdAt:old?old.createdAt||new Date().toISOString():new Date().toISOString(),updatedAt:new Date().toISOString()};
+      if(!record.shiftType||!record.status)throw new Error('نوع شیفت و وضعیت برنامه را انتخاب کن.');
+      if(old){
+        appData.shifts=appData.shifts.map(function(item){return String(item.id)===String(old.id)?record:item;});
+        addShiftHistory(record,'ویرایش',[]);
+      }else{
+        appData.shifts.push(record);
+        addShiftHistory(record,'ثبت',[]);
+      }
+      const ok=await saveState();
+      if(!ok)return;
+      shiftFormState={open:false,id:null};
+      render('employees',document.getElementById('sectionView'));
+      refreshDashboard();
+      toast(old?'برنامهٔ شیفت به‌روزرسانی شد.':'برنامهٔ شیفت ثبت شد.');
+    }catch(error){toast(error.message||'ثبت برنامهٔ شیفت انجام نشد.');}
   });
 
   document.addEventListener('submit', async function(event) {

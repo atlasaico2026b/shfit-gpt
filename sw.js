@@ -1,4 +1,4 @@
-const CACHE_NAME = 'atlas-shift-v28-dashboard-range-filter';
+const CACHE_NAME = 'atlas-shift-v29-shift-schedule';
 const APP_FILES = [
   './',
   './index.html',
