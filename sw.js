@@ -1,4 +1,4 @@
-const CACHE_NAME = 'atlas-shift-v32-vehicle-mission-history'
+const CACHE_NAME = 'atlas-shift-v35-office-export-cache-refresh';
 const APP_FILES = [
   './',
   './index.html',
