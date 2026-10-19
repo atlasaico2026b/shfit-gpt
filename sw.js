@@ -1,4 +1,4 @@
-const CACHE_NAME = 'atlas-shift-v31-complete-backup-settings';
+const CACHE_NAME = 'atlas-shift-v32-vehicle-mission-history'
 const APP_FILES = [
   './',
   './index.html',

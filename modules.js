@@ -103,7 +103,7 @@
         {key:'notes',label:'سوابق و توضیحات',type:'textarea',wide:true},
         {key:'attachments',label:'پیوست‌ها',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx'}
       ],
-      columns: ['name','vehicleType','companyPlate','policePlate','status','currentCity','currentPlace','currentKm','nextOilKm']
+      columns: ['name','vehicleType','companyPlate','policePlate','status','currentCity','currentPlace','currentKm','nextOilKm','relatedMissions']
     },
     gasmeters: {
       title: 'گازسنج‌ها', singular: 'گازسنج',
@@ -521,6 +521,24 @@
     const existing = state.id ? (data[moduleKey] || []).find(function (item) { return String(item.id) === String(state.id); }) : null;
     const fields = fieldsFor(moduleKey);
     const fileNotice = '<p class="module-field-hint">فایل‌ها در حافظهٔ محلی برنامه ذخیره می‌شوند؛ اندازهٔ هر فایل بهتر است کمتر از ۱۰ مگابایت باشد.</p>';
+    let relatedVehicleHistory = '';
+    if (moduleKey === 'vehicles' && existing) {
+      const linked = (data.missions || []).filter(function (mission) {
+        return String(mission.vehicleId || '') === String(existing.id);
+      }).slice().sort(function (a,b) { return String(b.startAt || '').localeCompare(String(a.startAt || '')); });
+      relatedVehicleHistory = '<section class="module-related-history"><div class="module-list-head"><div><h3>سوابق مأموریت این خودرو</h3><p>این فهرست از مأموریت‌هایی ساخته می‌شود که همین خودرو در آن‌ها انتخاب شده است.</p></div><span class="module-tag">' + faDigits(linked.length) + ' مورد</span></div>' +
+        (linked.length ? '<div class="module-table-wrap" style="width:100%;min-width:0"><table class="module-table"><thead><tr><th>مأموریت</th><th>نوع فعالیت</th><th>شروع</th><th>پایان</th><th>وضعیت</th><th>گروه اعزامی</th></tr></thead><tbody>' +
+          linked.slice(0,30).map(function(mission) {
+            const crew=(mission.crewIds||[]).map(function(id) {
+              const person=(data.employees||[]).find(function(item){return String(item.id)===String(id);});
+              return person?person.fullName||person.personnelId:'';
+            }).filter(Boolean).join('، ');
+            return '<tr><td>' + esc(mission.title||'مأموریت بدون عنوان') + '</td><td>' + esc(mission.missionType||'—') + '</td><td>' +
+              formatJalali(mission.startAt,true) + '</td><td>' + formatJalali(mission.endAt,true) + '</td><td>' +
+              '<span class="module-tag">' + esc(mission.status||'—') + '</span></td><td>' + esc([crew,mission.crewText].filter(Boolean).join('؛ ')||'—') + '</td></tr>';
+          }).join('') + '</tbody></table></div>' : '<div class="module-empty">برای این خودرو هنوز مأموریتی ثبت نشده است.</div>') +
+        '</section>';
+    }
     return '<section class="module-form-panel" style="width:100%;min-width:0"><div class="module-form-head"><div><h3>' +
       (existing ? 'ویرایش ' : 'ثبت ') + esc(specs[moduleKey].singular) + '</h3><p>پس از ذخیره، اطلاعات به فهرست، داشبورد و گزارش‌های مرتبط منتقل می‌شود.</p></div>' +
       '<button type="button" class="secondary-btn" data-module-action="cancel" data-view="' + esc(moduleKey) + '">بستن فرم</button></div>' +
@@ -529,7 +547,8 @@
       fileNotice +
       '<div class="module-form-actions"><span class="module-required-help">موارد دارای * ضروری هستند.</span><div>' +
       '<button type="button" class="secondary-btn" data-module-action="cancel" data-view="' + esc(moduleKey) + '">انصراف</button> ' +
-      '<button type="submit" class="primary-btn">' + (existing ? 'ذخیرهٔ تغییرات' : 'ثبت ' + esc(specs[moduleKey].singular)) + '</button></div></div></form></section>';
+      '<button type="submit" class="primary-btn">' + (existing ? 'ذخیرهٔ تغییرات' : 'ثبت ' + esc(specs[moduleKey].singular)) + '</button></div></div></form>' +
+      relatedVehicleHistory + '</section>';
   }
 
   function displayValue(moduleKey, fieldKey, value, data) {
@@ -610,14 +629,26 @@
       '<th class="module-check-cell"><input type="checkbox" data-module-select-all aria-label="انتخاب همهٔ ردیف‌ها"></th>' +
       columns.map(function (key) {
         const field = fieldsFor(moduleKey).find(function (item) { return item.key === key; });
-        return '<th>' + esc(field ? field.label : key) + '</th>';
+        const label = field ? field.label : (key === 'relatedMissions' ? 'مأموریت‌های مرتبط' : key);
+        return '<th>' + esc(label) + '</th>';
       }).join('') + '<th>عملیات</th></tr></thead><tbody>' +
       records.map(function (record) {
         return '<tr><td class="module-check-cell"><input type="checkbox" data-record-select value="' + esc(record.id) + '" aria-label="انتخاب ردیف"></td>' +
           columns.map(function (key) {
+            if (moduleKey === 'vehicles' && key === 'relatedMissions') {
+              const linkedCount = (data.missions || []).filter(function (mission) {
+                return String(mission.vehicleId || '') === String(record.id);
+              }).length;
+              return '<td>' + faDigits(linkedCount) + ' مورد</td>';
+            }
             const value = fieldsFor(moduleKey).find(function (field) { return field.key === key && field.custom; }) && record.customFields
               ? record.customFields[key] : record[key];
-            return '<td>' + (moduleKey==='employees'&&key==='status' ? esc(effectiveEmployeeStatus(record)) : displayValue(moduleKey, key, value, data)) + '</td>';
+            if (moduleKey === 'employees' && key === 'status') return '<td>' + esc(effectiveEmployeeStatus(record)) + '</td>';
+            if (moduleKey === 'notes' && key === 'status') {
+              const overdue = record.dueDate && dueInDays(record.dueDate) < 0 && !['تکمیل‌شده','لغوشده'].includes(record.status);
+              return '<td><span class="module-tag' + (overdue ? ' module-tag-danger' : '') + '">' + esc(overdue ? 'عقب‌افتاده' : (record.status || 'ثبت نشده')) + '</span></td>';
+            }
+            return '<td>' + displayValue(moduleKey, key, value, data) + '</td>';
           }).join('') +
           '<td class="module-row-actions">' + renderHistoryButton(moduleKey, record) +
           '<button type="button" class="secondary-btn" data-module-action="edit" data-view="' + esc(moduleKey) + '" data-id="' + esc(record.id) + '">ویرایش</button> ' +
