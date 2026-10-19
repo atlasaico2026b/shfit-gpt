@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fa" dir="rtl">
+<html lang="fa" dir="rtl" data-atlas-theme="cloud-glass">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -177,15 +177,30 @@
 </aside>
 <section class="settings-popover" id="settingsPanel" aria-label="تنظیمات داشبورد" aria-hidden="true">
   <div class="settings-head"><span class="setting-glyph"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="m19 13.5 1.2 1-.9 1.6-1.5-.5a6.8 6.8 0 0 1-1.4.8l-.3 1.6h-1.9l-.3-1.6a6.8 6.8 0 0 1-1.4-.8l-1.5.5-.9-1.6 1.2-1a6 6 0 0 1 0-1.6l-1.2-1 .9-1.6 1.5.5a6.8 6.8 0 0 1 1.4-.8l.3-1.6h1.9l.3 1.6a6.8 6.8 0 0 1 1.4.8l1.5-.5.9 1.6-1.2 1a6 6 0 0 1 0 1.6Z" transform="translate(-1 -1) scale(1.08)"/></svg></span><div><h3>تنظیمات داشبورد</h3><p>ظاهر و چیدمان پنجره‌های نمایش</p></div></div>
-  <div class="settings-section"><h4>رنگ فضای کاری</h4><p>رنگ تأکیدی پنجره‌ها را انتخاب کن؛ انتخاب در همین مرورگر ذخیره می‌شود.</p><div class="swatches"><button class="swatch active" data-theme="violet" aria-label="بنفش آبی" title="بنفش آبی"></button><button class="swatch" data-theme="cyan" aria-label="فیروزه‌ای" title="فیروزه‌ای"></button><button class="swatch" data-theme="rose" aria-label="صورتی بنفش" title="صورتی بنفش"></button><button class="swatch" data-theme="amber" aria-label="کهربایی" title="کهربایی"></button></div></div>
+  <div class="settings-section">
+    <h4>پوستهٔ برنامه</h4>
+    <p>برنامه دو جایگاه تم دارد. تم اول از تصویر مرجع شیشه‌ای ابروبادی پیروی می‌کند؛ تم دوم پس از دریافت طرح شما ساخته می‌شود.</p>
+    <div class="theme-choice-grid">
+      <button class="theme-option active" type="button" data-app-theme="cloud-glass" aria-pressed="true">
+        <span class="theme-preview theme-preview-cloud" aria-hidden="true"><i></i><i></i><i></i><b>ATLAS</b></span>
+        <span class="theme-option-copy"><strong>تم اول · شیشه‌ای ابروبادی</strong><small>تم مرجع فعلی</small></span>
+        <span class="theme-option-state">فعال</span>
+      </button>
+      <button class="theme-option pending" type="button" data-app-theme="theme-two" aria-pressed="false" disabled aria-disabled="true">
+        <span class="theme-preview theme-preview-pending" aria-hidden="true"><i></i><i></i><b>۲</b></span>
+        <span class="theme-option-copy"><strong>تم دوم</strong><small>منتظر طرح شما</small></span>
+        <span class="theme-option-state">رزرو</span>
+      </button>
+    </div>
+  </div>
   <div class="settings-section cloud-settings"><h4>پس‌زمینهٔ ابروبادی</h4><p>سه رنگ دلخواه را انتخاب کن؛ تغییرات فوراً اعمال می‌شوند و در همین مرورگر می‌مانند.</p>
     <div class="cloud-color-grid">
-      <label class="cloud-color-field" for="cloudColor1"><span>رنگ اول</span><input class="cloud-color-input" id="cloudColor1" type="color" value="#7c8cff" aria-label="رنگ اول پس‌زمینه"></label>
-      <label class="cloud-color-field" for="cloudColor2"><span>رنگ دوم</span><input class="cloud-color-input" id="cloudColor2" type="color" value="#4ee2d0" aria-label="رنگ دوم پس‌زمینه"></label>
-      <label class="cloud-color-field" for="cloudColor3"><span>رنگ سوم</span><input class="cloud-color-input" id="cloudColor3" type="color" value="#a754ff" aria-label="رنگ سوم پس‌زمینه"></label>
+      <label class="cloud-color-field" for="cloudColor1"><span>رنگ اول</span><input class="cloud-color-input" id="cloudColor1" type="color" value="#8bdcff" aria-label="رنگ اول پس‌زمینه"></label>
+      <label class="cloud-color-field" for="cloudColor2"><span>رنگ دوم</span><input class="cloud-color-input" id="cloudColor2" type="color" value="#ffb8df" aria-label="رنگ دوم پس‌زمینه"></label>
+      <label class="cloud-color-field" for="cloudColor3"><span>رنگ سوم</span><input class="cloud-color-input" id="cloudColor3" type="color" value="#b7b9ff" aria-label="رنگ سوم پس‌زمینه"></label>
     </div>
-    <label class="cloud-strength" for="cloudStrength"><span>شدت رنگ‌ها</span><output id="cloudStrengthValue" for="cloudStrength">۲۲٪</output></label>
-    <input class="cloud-strength-input" id="cloudStrength" type="range" min="8" max="38" step="1" value="22">
+    <label class="cloud-strength" for="cloudStrength"><span>شدت رنگ‌ها</span><output id="cloudStrengthValue" for="cloudStrength">۳۲٪</output></label>
+    <input class="cloud-strength-input" id="cloudStrength" type="range" min="8" max="38" step="1" value="32">
     <button class="secondary-btn" id="resetCloudBackground" type="button">بازگردانی رنگ‌های پیش‌فرض</button>
   </div>
   <div class="settings-section"><h4>چیدمان پنجره‌ها</h4><p>حالت تنظیم را فعال کن و با کشیدن دستگیرهٔ پنجره‌ها، جای آن‌ها را در داشبورد تغییر بده.</p><div class="settings-layout-actions"><button class="primary-btn" id="layoutButton" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="m14 6 4-4 4 4-4 4"/><path d="M18 2v12a4 4 0 0 1-4 4H3"/><path d="m7 14-4 4 4 4"/></svg><span id="layoutButtonText">تنظیم چیدمان</span></button><button class="secondary-btn" id="resetLayout"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>بازنشانی چیدمان</button></div></div>
