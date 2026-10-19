@@ -246,6 +246,24 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
       settingsPanel.classList.add('open');settingsPanel.setAttribute('aria-hidden','false');settingsButton.setAttribute('aria-expanded','true');
     }
   });
+  // Navigate the main menu inside the existing app shell so query routes update reliably.
+  document.addEventListener('click',event=>{
+    const link=event.target.closest('a.app-menu-item');
+    if(!link||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+    if(link.target&&link.target!=='_self')return;
+    let destination;
+    try{destination=new URL(link.href,window.location.href)}catch(e){return}
+    if(destination.origin!==window.location.origin||!destination.pathname.endsWith('/index.html'))return;
+    event.preventDefault();
+    try{
+      window.history.pushState({atlasShiftView:destination.searchParams.get('view')||'dashboard'},'',destination.pathname+destination.search+destination.hash);
+      renderRoute();
+      window.scrollTo({top:0,behavior:'smooth'});
+    }catch(e){
+      // If the host disallows client-side history (for example, an unusual file:// launch), use ordinary navigation.
+      window.location.assign(destination.href);
+    }
+  });
   window.addEventListener('popstate',renderRoute);
   renderRoute();
 
