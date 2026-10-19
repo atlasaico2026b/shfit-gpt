@@ -1,4 +1,4 @@
-const CACHE_NAME = 'atlas-shift-v21-operational-modules';
+const CACHE_NAME = 'atlas-shift-v22-equipment-render-fix';
 const APP_FILES = [
   './',
   './index.html',

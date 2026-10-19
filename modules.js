@@ -353,19 +353,18 @@ function renderDashboard(){
   }
   const equipment=document.querySelector('[data-widget="equipment"]');
   if(equipment){
-    const rows=equipment.querySelectorAll('.equip-row');
+    const heading=equipment.querySelector('.widget-header');
     const header=equipment.querySelector('.widget-meta .status-pill');if(header)header.textContent=faDigits(meters.length)+' دستگاه';
-    const parent=equipment.querySelector('.equip-row')&&equipment.querySelector('.equip-row').parentElement;
-    if(parent){
-      parent.innerHTML=meters.length?meters.slice(0,8).map(m=>{
-        const remaining=daysUntil(m.calibrationEnd);
-        const label=remaining<0?'منقضی':remaining<=30?'نزدیک موعد':(m.status||'معتبر');
-        const classes=remaining<=30?'equip-status warn':'equip-status';
-        const gas=(m.gases||'گازها ثبت نشده').split(',')[0].trim();
-        const percent=remaining===Infinity?0:Math.max(5,Math.min(100,Math.round(remaining/90*100)));
-        return '<div class="equip-row"><div class="equip-label"><div class="gas-chip">'+esc(gas.slice(0,6)||'GAS')+'</div><div><b>'+esc(m.code||m.serial||'گازسنج')+'</b><span>'+esc(m.serial||'')+' · '+esc(m.location||'محل ثبت نشده')+'<div class="progress-track"><div class="progress-bar" style="width:'+percent+'%"></div></div></span></div></div><span class="'+classes+'">'+esc(label)+'</span></div>';
-      }).join(''):'<div class="module-empty">هنوز گازسنجی ثبت نشده است.</div>';
-    }
+    equipment.querySelectorAll('.equip-row,.module-equip-empty').forEach(node=>node.remove());
+    const markup=meters.length?meters.slice(0,8).map(m=>{
+      const remaining=daysUntil(m.calibrationEnd);
+      const label=remaining<0?'منقضی':remaining<=30?'نزدیک موعد':(m.status||'معتبر');
+      const classes=remaining<=30?'equip-status warn':'equip-status';
+      const gas=(m.gases||'گازها ثبت نشده').split(',')[0].trim();
+      const percent=remaining===Infinity?0:Math.max(5,Math.min(100,Math.round(remaining/90*100)));
+      return '<div class="equip-row"><div class="equip-label"><div class="gas-chip">'+esc(gas.slice(0,6)||'GAS')+'</div><div><b>'+esc(m.code||m.serial||'گازسنج')+'</b><span>'+esc(m.serial||'')+' · '+esc(m.location||'محل ثبت نشده')+'<div class="progress-track"><div class="progress-bar" style="width:'+percent+'%"></div></div></span></div></div><span class="'+classes+'">'+esc(label)+'</span></div>';
+    }).join(''):'<div class="module-empty module-equip-empty">هنوز گازسنجی ثبت نشده است.</div>';
+    if(heading)heading.insertAdjacentHTML('afterend',markup);
   }
   const calendar=document.querySelector('[data-widget="calendar"]'),agenda=calendar&&calendar.querySelector('.agenda');
   if(agenda){
