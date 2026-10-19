@@ -1,4 +1,4 @@
-const CACHE_NAME = 'atlas-shift-v18-live-date-nav-fix';
+const CACHE_NAME = 'atlas-shift-v19-final-init-fix';
 const APP_FILES = [
   './',
   './index.html',
