@@ -921,7 +921,7 @@
       });
       items.sort(function(a,b){return String(a.sortKey).localeCompare(String(b.sortKey));});
       agenda.innerHTML=items.length?items.slice(0,8).map(function(item){
-        const timeLabel=singleDay?(item.time||item.type):((item.date?formatJalali(item.date,false)+' · ':'')+(item.time||item.type));
+        const timeLabel=singleDay?faDigits(item.time||item.type):((item.date?formatJalali(item.date,false)+' · ':'')+faDigits(item.time||item.type));
         return '<div class="agenda-row"><div class="agenda-time">'+esc(timeLabel)+'</div><div class="agenda-dot"></div><div class="agenda-text"><b>'+esc(item.title)+'</b><span>'+esc(item.detail||item.type)+'</span></div></div>';
       }).join(''):'<div class="module-empty">برای بازهٔ انتخاب‌شده مأموریت، شیفت یا پیگیری زمان‌بندی‌شده‌ای ثبت نشده است.</div>';
       const p=calendar.querySelector('.widget-title p');
@@ -1035,7 +1035,7 @@
       '<div class="module-backup-card"><strong>بازیابی نسخهٔ پشتیبان</strong><p>بازیابی، داده‌های فعلی را جایگزین اطلاعات درون فایل انتخاب‌شده می‌کند.</p><button type="button" class="secondary-btn" data-module-action="restore-select">انتخاب فایل پشتیبان</button><input type="file" id="atlasRestoreFile" accept=".json,application/json" hidden></div></div></section>'+
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>فیلدهای سفارشی کارکنان</h3><p>هر خط یک عنوان فیلد است. حذف عنوان از این فهرست به معنی حذف مقدار قبلی از پرونده‌ها نیست.</p></div></div>'+
       '<form data-custom-fields-form class="module-form"><label class="module-field module-field-wide"><span>عنوان فیلدها، هر کدام در یک خط</span><textarea name="employeeCustomFields" rows="5" placeholder="مثلاً: گواهینامه تخصصی&#10;شماره بیمه">'+esc(appData.settings.employeeCustomFields||'')+'</textarea></label><div class="module-form-actions"><span class="module-required-help">حداکثر ۲۰ فیلد سفارشی.</span><button type="submit" class="primary-btn">ذخیرهٔ فیلدها</button></div></form></section>'+
-      '<section class="module-list-panel"><div class="module-list-head"><div><h3>وضعیت نگهداری داده</h3><p>داده‌ها در پایگاه محلی مرورگر ذخیره می‌شوند و برای استفادهٔ روزمره به اتصال اینترنت نیاز ندارند.</p></div></div><div class="module-local-note">اطلاعات هر مرورگر مستقل است. پاک‌کردن داده‌های مرورگر می‌تواند اطلاعات را حذف کند؛ فایل پشتیبان را در محل امن نگهداری کن. همگام‌سازی خودکار فعال نیست.</div><div class="module-settings-counts">'+MODULES.map(function(key){return '<span>'+esc(specs[key].title)+': <b>'+faDigits(appData[key].length)+'</b></span>';}).join('')+'</div></section>'
+      '<section class="module-list-panel"><div class="module-list-head"><div><h3>وضعیت نگهداری داده</h3><p>داده‌ها در پایگاه محلی مرورگر ذخیره می‌شوند و برای استفادهٔ روزمره به اتصال اینترنت نیاز ندارند.</p></div></div><div class="module-local-note">اطلاعات هر مرورگر مستقل است. پاک‌کردن داده‌های مرورگر می‌تواند اطلاعات را حذف کند؛ فایل پشتیبان را در محل امن نگهداری کن. همگام‌سازی خودکار فعال نیست.</div><div class="module-settings-counts">'+MODULES.map(function(key){return '<span>'+esc(specs[key].title)+': <b>'+faDigits(appData[key].length)+'</b></span>';}).join('')+'<span>برنامهٔ شیفت: <b>'+faDigits((appData.shifts||[]).length)+'</b></span></div></section>'
     );
   }
 
@@ -1167,10 +1167,24 @@
     return record.createdAt||'';
   }
 
+  function readStoredPreference(key) {
+    try { return localStorage.getItem(key); } catch (error) { return null; }
+  }
+
   function exportBackup() {
-    const payload={app:'ATLAS SHIFT',schemaVersion:2,exportedAt:new Date().toISOString(),data:appData};
+    const payload={
+      app:'ATLAS SHIFT',
+      schemaVersion:2,
+      exportedAt:new Date().toISOString(),
+      data:appData,
+      uiSettings:{
+        layout:readStoredPreference('atlasShiftLayout'),
+        appTheme:readStoredPreference('atlasShiftAppTheme'),
+        cloudBackground:readStoredPreference('atlasShiftCloudBackground')
+      }
+    };
     downloadFile('ATLAS-SHIFT-backup-'+todayIso()+'.json',JSON.stringify(payload,null,2),'application/json;charset=utf-8');
-    toast('نسخهٔ پشتیبان شامل اطلاعات و تاریخچه آماده شد.');
+    toast('نسخهٔ پشتیبان شامل اطلاعات، تاریخچه و تنظیمات رابط آماده شد.');
   }
 
   async function restoreBackup(file) {
@@ -1180,12 +1194,23 @@
       const parsed=JSON.parse(raw);
       const candidate=parsed&&parsed.data?parsed.data:parsed;
       if(!candidate||!MODULES.every(function(key){return Array.isArray(candidate[key]);}))throw new Error('فایل پشتیبان معتبر نیست.');
-      if(!window.confirm('با بازیابی، اطلاعات فعلی این دستگاه با اطلاعات فایل جایگزین می‌شود. ادامه می‌دهی؟'))return;
+      if(!window.confirm('با بازیابی، اطلاعات فعلی و تنظیمات ذخیره‌شدهٔ این دستگاه با اطلاعات فایل جایگزین می‌شود. ادامه می‌دهی؟'))return;
       appData=normalizeState(candidate);
       const ok=await saveState();
       if(!ok)return;
+      const ui=parsed&&parsed.uiSettings&&typeof parsed.uiSettings==='object'?parsed.uiSettings:null;
+      if(ui){
+        [['atlasShiftLayout','layout'],['atlasShiftAppTheme','appTheme'],['atlasShiftCloudBackground','cloudBackground']].forEach(function(pair){
+          if(!Object.prototype.hasOwnProperty.call(ui,pair[1]))return;
+          try{
+            if(typeof ui[pair[1]]==='string')localStorage.setItem(pair[0],ui[pair[1]]);
+            else localStorage.removeItem(pair[0]);
+          }catch(error){}
+        });
+        try{window.dispatchEvent(new CustomEvent('atlas-shift-ui-settings-restored'))}catch(error){}
+      }
       refreshDashboard();refreshCurrentView();
-      toast('بازیابی با موفقیت انجام شد.');
+      toast('بازیابی اطلاعات و تنظیمات با موفقیت انجام شد.');
     } catch(error) {
       toast(error.message||'فایل انتخاب‌شده نسخهٔ پشتیبان معتبر ATLAS SHIFT نیست.');
     }

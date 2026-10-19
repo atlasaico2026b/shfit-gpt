@@ -105,6 +105,13 @@
   let savedCloudBackground=null;
   try{savedCloudBackground=JSON.parse(safeRead('atlasShiftCloudBackground')||'null')}catch(e){}
   applyCloudBackground(savedCloudBackground||defaultCloudBackground,false);
+  window.addEventListener('atlas-shift-ui-settings-restored',()=>{
+    applyTheme(safeRead('atlasShiftAppTheme')||'cloud-glass',false);
+    let restoredBackground=null;
+    try{restoredBackground=JSON.parse(safeRead('atlasShiftCloudBackground')||'null')}catch(e){}
+    applyCloudBackground(restoredBackground||defaultCloudBackground,false);
+    applySavedLayout();
+  });
   const syncCloudBackground=()=>applyCloudBackground({
     colors:[$('#cloudColor1').value,$('#cloudColor2').value,$('#cloudColor3').value],
     strength:$('#cloudStrength').value
