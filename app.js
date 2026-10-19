@@ -53,7 +53,47 @@
   updateNotificationBadge();
   // Theme accents
   const themes={violet:{accent:'#7c8cff',rgb:'124,140,255',accent2:'#4ee2d0'},cyan:{accent:'#55bfff',rgb:'85,191,255',accent2:'#4ee2d0'},rose:{accent:'#c58aff',rgb:'197,138,255',accent2:'#ff83b5'},amber:{accent:'#ffb96b',rgb:'255,185,107',accent2:'#79e8d4'}};
-  function applyTheme(name){const t=themes[name]||themes.violet;document.documentElement.style.setProperty('--accent',t.accent);document.documentElement.style.setProperty('--accent-rgb',t.rgb);document.documentElement.style.setProperty('--accent2',t.accent2);$$('.swatch').forEach(s=>s.classList.toggle('active',s.dataset.theme===name));safeWrite('atlasShiftTheme',name)}
+  function applyTheme(name){const t=themes[name]||themes.violet;document.documentElement.style.setProperty('--accent',t.accent);document.documentElement.style.setProperty('--accent-rgb',t.rgb);document.documentElement.style.setProperty('--accent2',t.accent2);$('.swatch').forEach(s=>s.classList.toggle('active',s.dataset.theme===name));safeWrite('atlasShiftTheme',name)}
+
+  // Custom, locally saved cloud-gradient colors; no remote images or services.
+  const defaultCloudBackground={colors:['#7c8cff','#4ee2d0','#a754ff'],strength:22};
+  function cloudHexToRgb(hex){
+    const match=/^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(String(hex||''));
+    return match?match.slice(1).map(part=>parseInt(part,16)).join(','):'124,140,255';
+  }
+  function applyCloudBackground(settings,persist=true){
+    const source=settings&&typeof settings==='object'?settings:{};
+    const sourceColors=Array.isArray(source.colors)?source.colors:[];
+    const colors=defaultCloudBackground.colors.map((fallback,index)=>{
+      const candidate=String(sourceColors[index]||fallback);
+      return /^#[\da-f]{6}$/i.test(candidate)?candidate:fallback;
+    });
+    const requestedStrength=Number(source.strength);
+    const strength=Number.isFinite(requestedStrength)?Math.max(8,Math.min(38,requestedStrength)):defaultCloudBackground.strength;
+    colors.forEach((color,index)=>{
+      document.documentElement.style.setProperty('--cloud-'+(index+1)+'-rgb',cloudHexToRgb(color));
+      const input=$('#cloudColor'+(index+1));
+      if(input)input.value=color;
+    });
+    document.documentElement.style.setProperty('--cloud-opacity',(strength/100).toFixed(2));
+    document.documentElement.style.setProperty('--cloud-opacity-soft',(strength*.68/100).toFixed(3));
+    document.documentElement.style.setProperty('--cloud-opacity-subtle',(strength*.82/100).toFixed(3));
+    const strengthInput=$('#cloudStrength');
+    const strengthLabel=$('#cloudStrengthValue');
+    if(strengthInput)strengthInput.value=String(strength);
+    if(strengthLabel)strengthLabel.textContent=String(strength).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d])+'٪';
+    if(persist)safeWrite('atlasShiftCloudBackground',JSON.stringify({colors,strength}));
+  }
+  let savedCloudBackground=null;
+  try{savedCloudBackground=JSON.parse(safeRead('atlasShiftCloudBackground')||'null')}catch(e){}
+  applyCloudBackground(savedCloudBackground||defaultCloudBackground,false);
+  const syncCloudBackground=()=>applyCloudBackground({
+    colors:[$('#cloudColor1').value,$('#cloudColor2').value,$('#cloudColor3').value],
+    strength:$('#cloudStrength').value
+  });
+  $('.cloud-color-input').forEach(input=>input.addEventListener('input',syncCloudBackground));
+  $('#cloudStrength').addEventListener('input',syncCloudBackground);
+  $('#resetCloudBackground').addEventListener('click',()=>{applyCloudBackground(defaultCloudBackground);toast('پس‌زمینه به رنگ‌های پیش‌فرض برگشت.')});
   const settingsPanel=$('#settingsPanel'),settingsButton=$('#settingsButton');
   settingsButton.addEventListener('click',e=>{e.stopPropagation();const opening=!settingsPanel.classList.contains('open');settingsPanel.classList.toggle('open',opening);settingsPanel.setAttribute('aria-hidden',String(!opening));settingsButton.setAttribute('aria-expanded',String(opening));closeDrawer()});
   $$('.swatch').forEach(s=>s.addEventListener('click',()=>{applyTheme(s.dataset.theme);toast('رنگ فضای کاری تغییر کرد.')}));
