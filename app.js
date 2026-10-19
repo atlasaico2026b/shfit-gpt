@@ -51,12 +51,30 @@
   $('#onlyUnread').addEventListener('click',()=>{showUnreadOnly=!showUnreadOnly;$('#onlyUnread').textContent=showUnreadOnly?'نمایش همه اعلان‌ها':'فقط خوانده‌نشده‌ها';$$('.notice-card').forEach(n=>n.style.display=(!showUnreadOnly||n.classList.contains('unread'))?'flex':'none');const any=$$('.notice-card').some(n=>n.style.display!=='none');let empty=$('.empty-notices');if(!any&&!empty){empty=document.createElement('div');empty.className='empty-notices';empty.textContent='اعلان خوانده‌نشده‌ای باقی نمانده است.';$('#noticeList').appendChild(empty)}else if(any&&empty)empty.remove()});
   $$('.notice-card').forEach(n=>n.addEventListener('click',()=>{n.classList.remove('unread');$('.notice-unread',n)?.remove();updateNotificationBadge()}));
   updateNotificationBadge();
-  // Theme accents
-  const themes={violet:{accent:'#7c8cff',rgb:'124,140,255',accent2:'#4ee2d0'},cyan:{accent:'#55bfff',rgb:'85,191,255',accent2:'#4ee2d0'},rose:{accent:'#c58aff',rgb:'197,138,255',accent2:'#ff83b5'},amber:{accent:'#ffb96b',rgb:'255,185,107',accent2:'#79e8d4'}};
-  function applyTheme(name){const t=themes[name]||themes.violet;document.documentElement.style.setProperty('--accent',t.accent);document.documentElement.style.setProperty('--accent-rgb',t.rgb);document.documentElement.style.setProperty('--accent2',t.accent2);$('.swatch').forEach(s=>s.classList.toggle('active',s.dataset.theme===name));safeWrite('atlasShiftTheme',name)}
+  // Theme 1 is the glass-cloud reference; theme 2 remains reserved until the user supplies its design.
+  const appThemes={'cloud-glass':{accent:'#168bff',rgb:'22,139,255',accent2:'#24cbe0'}};
+  function applyTheme(name,persist=true){
+    const selected=Object.prototype.hasOwnProperty.call(appThemes,name)?name:'cloud-glass';
+    const theme=appThemes[selected];
+    document.documentElement.dataset.atlasTheme=selected;
+    document.documentElement.style.setProperty('--accent',theme.accent);
+    document.documentElement.style.setProperty('--accent-rgb',theme.rgb);
+    document.documentElement.style.setProperty('--accent2',theme.accent2);
+    $$('[data-app-theme]').forEach(option=>{
+      const active=option.dataset.appTheme===selected;
+      option.classList.toggle('active',active);
+      option.setAttribute('aria-pressed',String(active));
+    });
+    if(persist)safeWrite('atlasShiftAppTheme',selected);
+  }
+  $$('[data-app-theme]:not([disabled])').forEach(option=>option.addEventListener('click',()=>{
+    applyTheme(option.dataset.appTheme);
+    toast('تم برنامه اعمال شد.');
+  }));
+  applyTheme(safeRead('atlasShiftAppTheme')||'cloud-glass',false);
 
   // Custom, locally saved cloud-gradient colors; no remote images or services.
-  const defaultCloudBackground={colors:['#7c8cff','#4ee2d0','#a754ff'],strength:22};
+  const defaultCloudBackground={colors:['#8bdcff','#ffb8df','#b7b9ff'],strength:32};
   function cloudHexToRgb(hex){
     const match=/^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(String(hex||''));
     return match?match.slice(1).map(part=>parseInt(part,16)).join(','):'124,140,255';
@@ -96,9 +114,7 @@
   $('#resetCloudBackground').addEventListener('click',()=>{applyCloudBackground(defaultCloudBackground);toast('پس‌زمینه به رنگ‌های پیش‌فرض برگشت.')});
   const settingsPanel=$('#settingsPanel'),settingsButton=$('#settingsButton');
   settingsButton.addEventListener('click',e=>{e.stopPropagation();const opening=!settingsPanel.classList.contains('open');settingsPanel.classList.toggle('open',opening);settingsPanel.setAttribute('aria-hidden',String(!opening));settingsButton.setAttribute('aria-expanded',String(opening));closeDrawer()});
-  $$('.swatch').forEach(s=>s.addEventListener('click',()=>{applyTheme(s.dataset.theme);toast('رنگ فضای کاری تغییر کرد.')}));
   document.addEventListener('click',e=>{if(!e.target.closest('#settingsPanel')&&!e.target.closest('#settingsButton')){settingsPanel.classList.remove('open');settingsPanel.setAttribute('aria-hidden','true');settingsButton.setAttribute('aria-expanded','false')}});
-  applyTheme(safeRead('atlasShiftTheme')||'violet');
   // Persian calendar and range presets for the dashboard's top-level filter bar.
   const faDigits = s => String(s).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
   const rangeNames = {today:'امروز',yesterday:'دیروز',threeDays:'۳ روز اخیر',week:'هفته اخیر',tenDays:'۱۰ روز اخیر',month:'ماه جاری',threeMonths:'۳ ماه اخیر',sixMonths:'۶ ماه اخیر',year:'سال جاری',custom:'بازه دلخواه'};
