@@ -492,3 +492,9 @@ html[data-atlas-theme="cloud-glass"] .module-report-card small{color:#227b9a}
 .module-settings-counts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .module-settings-counts>span{padding:8px 10px;border:1px solid var(--line);border-radius:10px;color:var(--muted);font-size:10px}
 .module-settings-counts b{color:var(--text)}
+
+/* Report output selector, styled with existing theme tokens. */
+.module-report-export{min-width:140px;max-width:190px;border:1px solid var(--line-hi);border-radius:12px;padding:9px 11px;background:rgba(255,255,255,.06);color:var(--text);font:inherit;font-size:11px;cursor:pointer}
+.module-report-export option{background:#fff;color:#183e69}
+html[data-atlas-theme="cloud-glass"] .module-report-export{background:rgba(255,255,255,.78);border-color:rgba(255,255,255,.96);color:#24547f}
+@media(max-width:650px){.module-report-export{flex:1 1 120px;max-width:none}}
