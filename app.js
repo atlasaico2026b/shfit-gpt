@@ -214,7 +214,25 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
     clearTimeout(dockFocusTimer);dockFocusTimer=setTimeout(()=>target.classList.remove('dock-focus'),1500);
   }));
 
-  function updateClock(){const now=new Date();try{$('#clockText').textContent=faDigits(new Intl.DateTimeFormat('fa-IR',{hour:'2-digit',minute:'2-digit',hour12:false}).format(now));const parts=new Intl.DateTimeFormat('fa-IR-u-ca-persian',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).formatToParts(now);const get=t=>parts.find(p=>p.type===t)?.value||'';$('#dateText').textContent=`${get('weekday')}، ${get('day')} ${get('month')}`;$('#persianDay').textContent=get('day');$('#persianMonth').textContent=`${get('month')} ${get('year')}`;$('#weekDay').textContent=get('weekday')}catch(e){$('#clockText').textContent=faDigits(now.toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'}));}}
+  function updateClock(){
+    const now=new Date();
+    const setText=(id,value)=>{const element=$('#'+id);if(element)element.textContent=value};
+    try{
+      setText('clockText',faDigits(new Intl.DateTimeFormat('fa-IR',{hour:'2-digit',minute:'2-digit',hour12:false}).format(now)));
+    }catch(e){
+      setText('clockText',faDigits(now.toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'})));
+    }
+    try{
+      const parts=new Intl.DateTimeFormat('fa-IR-u-ca-persian',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).formatToParts(now);
+      const get=type=>parts.find(part=>part.type===type)?.value||'';
+      setText('dateText',`${get('weekday')}، ${get('day')} ${get('month')} ${get('year')}`);
+      setText('persianDay',get('day'));
+      setText('persianMonth',`${get('month')} ${get('year')}`);
+      setText('weekDay',get('weekday'));
+    }catch(e){
+      setText('dateText',faDigits(now.toLocaleDateString('fa-IR')));
+    }
+  }
   updateClock();setInterval(updateClock,30000);
 
   // Single-shell navigation: all menu sections use this same UI. Unbuilt modules show an honest in-theme placeholder.
@@ -229,9 +247,9 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
     reports:{title:'گزارش‌ها و <span style="color:var(--accent2)">آمار</span>',subtitle:'گزارش‌های روزانه و دوره‌ای بر اساس تاریخ، شهر و نوع فعالیت',kicker:'مدیریت عملیات / گزارشات',icon:'▥',note:'فیلتر تاریخ شمسی، شمارش مأموریت‌ها و گزارش‌های قابل چاپ و خروجی در این بخش پیاده‌سازی خواهد شد.'},
     settings:{title:'تنظیمات <span style="color:var(--accent2)">برنامه</span>',subtitle:'ظاهر، چیدمان پنجره‌ها و آماده‌سازی اجرای محلی',kicker:'فضای کاری / تنظیمات',icon:'⚙',note:'تنظیمات ظاهری موجود است. تنظیمات داده، پشتیبان‌گیری و گزینه‌های نصب محلی در ادامه به همین بخش اضافه خواهند شد.'}
   };
-  function renderRoute(){
+  function renderRoute(requestedView){
     let view='dashboard';
-    try{view=new URLSearchParams(window.location.search).get('view')||'dashboard'}catch(e){}
+    try{view=requestedView||new URLSearchParams(window.location.search).get('view')||'dashboard'}catch(e){}
     if(!Object.prototype.hasOwnProperty.call(viewInfo,view))view='dashboard';
     const info=viewInfo[view], isDashboard=view==='dashboard';
     const hideSelectors=['.dashboard-controls','.widget-dock','.layout-hint','#dashboard','.footnote'];
@@ -265,21 +283,21 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
   // Navigate the main menu inside the existing app shell so query routes update reliably.
   document.addEventListener('click',event=>{
     const link=event.target.closest('a.app-menu-item');
-    if(!link||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+    if(!link||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
     if(link.target&&link.target!=='_self')return;
     let destination;
     try{destination=new URL(link.href,window.location.href)}catch(e){return}
-    if(destination.origin!==window.location.origin||!destination.pathname.endsWith('/index.html'))return;
+    if(destination.origin!==window.location.origin)return;
+    const nextView=destination.searchParams.get('view')||'dashboard';
     event.preventDefault();
     try{
-      window.history.pushState({atlasShiftView:destination.searchParams.get('view')||'dashboard'},'',destination.pathname+destination.search+destination.hash);
-      renderRoute();
+      window.history.pushState({atlasShiftView:nextView},'',destination.pathname+destination.search+destination.hash);
+      renderRoute(nextView);
       window.scrollTo({top:0,behavior:'smooth'});
     }catch(e){
-      // If the host disallows client-side history (for example, an unusual file:// launch), use ordinary navigation.
       window.location.assign(destination.href);
     }
-  });
+  },true);
   window.addEventListener('popstate',renderRoute);
   renderRoute();
 
