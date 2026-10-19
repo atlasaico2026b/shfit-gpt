@@ -1,477 +1,1178 @@
-(function(){
-'use strict';
-const STORAGE_KEY='atlasShiftOperationalDataV1';
-const moduleSpecs={
-  employees:{
-    title:'کارکنان',
-    subtitle:'پروندهٔ نیروها و وضعیت کاری روزانه',
-    singular:'کارمند',
-    columns:['fullName','mobile','jobTitle','employmentType','workplace','assignedWorkplace','status'],
-    fields:[
-      {key:'fullName',label:'نام و نام خانوادگی',required:true},
-      {key:'mobile',label:'شماره همراه',type:'tel'},
-      {key:'jobTitle',label:'عنوان شغلی',required:true},
-      {key:'employmentType',label:'نوع کار',type:'select',options:['شیفتی','روزکار'],required:true},
-      {key:'workplace',label:'محل سازمانی',type:'select',options:['اهواز','آبادان','اندیمشک','ماهشهر','سایر'],required:true},
-      {key:'assignedWorkplace',label:'محل خدمت فعلی',placeholder:'ایستگاه، محدوده یا محل مأموریت'},
-      {key:'status',label:'وضعیت کاری',type:'select',options:['آماده‌کار','در حال کار','شیفت','مأموریت','مرخصی','استراحت','اضافه‌کار','غیرفعال'],required:true},
-      {key:'notes',label:'توضیحات',type:'textarea',wide:true}
-    ]
-  },
-  missions:{
-    title:'مأموریت‌ها',
-    subtitle:'ثبت مأموریت، مسیر، همکاران و وضعیت پیگیری',
-    singular:'مأموریت',
-    columns:['title','date','missionType','city','origin','destination','crew','vehicleId','status'],
-    fields:[
-      {key:'title',label:'عنوان مأموریت',required:true},
-      {key:'date',label:'تاریخ',type:'date',required:true},
-      {key:'missionType',label:'نوع فعالیت',type:'select',options:['نظارت بر جوشکاری','بررسی انشعاب یا نشتی','بررسی آلودگی خاک یا آب','بازدید ایستگاه','سرویس تجهیزات','سایر'],required:true},
-      {key:'city',label:'شهر یا محدوده',type:'select',options:['اهواز','آبادان','اندیمشک','ماهشهر','بندر امام','آغاجاری','سایر'],required:true},
-      {key:'origin',label:'مبدأ'},
-      {key:'destination',label:'مقصد یا محل عملیات'},
-      {key:'crew',label:'همکاران اعزامی',placeholder:'نام افراد را با ویرگول جدا کن',required:true},
-      {key:'vehicleId',label:'خودرو',type:'select',source:'vehicles'},
-      {key:'status',label:'وضعیت مأموریت',type:'select',options:['برنامه‌ریزی‌شده','در جریان','انجام‌شده','لغو‌شده'],required:true},
-      {key:'notes',label:'شرح کار و نتیجه',type:'textarea',wide:true}
-    ]
-  },
-  leaves:{
-    title:'مرخصی‌ها',
-    subtitle:'ثبت بازهٔ مرخصی و اتصال آن به پروندهٔ کارمند',
-    singular:'مرخصی',
-    columns:['employeeId','startDate','endDate','leaveType','status','notes'],
-    fields:[
-      {key:'employeeId',label:'کارمند',type:'select',source:'employees',required:true},
-      {key:'startDate',label:'از تاریخ',type:'date',required:true},
-      {key:'endDate',label:'تا تاریخ',type:'date',required:true},
-      {key:'leaveType',label:'نوع مرخصی',type:'select',options:['استحقاقی','استعلاجی','بدون حقوق','ساعتی','سایر'],required:true},
-      {key:'status',label:'وضعیت درخواست',type:'select',options:['در انتظار بررسی','تأییدشده','ردشده','استفاده‌شده'],required:true},
-      {key:'notes',label:'توضیحات',type:'textarea',wide:true}
-    ]
-  },
-  vehicles:{
-    title:'خودروها',
-    subtitle:'وضعیت ناوگان، محل استقرار، سرنشینان و کیلومترهای سرویس',
-    singular:'خودرو',
-    columns:['name','companyPlate','policePlate','status','currentCity','currentPlace','nextOilKm','nextFuelKm'],
-    fields:[
-      {key:'name',label:'نام یا عنوان خودرو',required:true},
-      {key:'model',label:'مدل خودرو'},
-      {key:'companyPlate',label:'شماره پلاک سازمانی'},
-      {key:'policePlate',label:'پلاک انتظامی'},
-      {key:'status',label:'وضعیت',type:'select',options:['آماده','در سرویس','خارج از سرویس','در تعمیر'],required:true},
-      {key:'currentCity',label:'شهر فعلی',type:'select',options:['اهواز','آبادان','اندیمشک','ماهشهر','بندر امام','سایر']},
-      {key:'currentPlace',label:'محل یا نقطهٔ استقرار'},
-      {key:'occupants',label:'سرنشینان فعلی',placeholder:'نام افراد با ویرگول جدا شود'},
-      {key:'faults',label:'خرابی‌ها و نقص‌ها',type:'textarea',wide:true},
-      {key:'equipment',label:'تجهیزات همراه',type:'textarea',wide:true},
-      {key:'lastOilKm',label:'کیلومتر آخرین تعویض روغن',type:'number',min:0},
-      {key:'nextOilKm',label:'کیلومتر سرویس روغن بعدی',type:'number',min:0},
-      {key:'lastFuelKm',label:'کیلومتر ثبت سوخت قبلی',type:'number',min:0},
-      {key:'nextFuelKm',label:'کیلومتر ثبت سوخت بعدی',type:'number',min:0}
-    ]
-  },
-  gasmeters:{
-    title:'گازسنج‌ها',
-    subtitle:'کد و سریال دستگاه، گازهای قابل‌اندازه‌گیری و سررسید کالیبراسیون',
-    singular:'گازسنج',
-    columns:['code','serial','gases','status','location','calibrationStart','calibrationEnd'],
-    fields:[
-      {key:'code',label:'کد دستگاه',required:true},
-      {key:'serial',label:'شماره سریال',required:true},
-      {key:'gases',label:'گازهای قابل‌اندازه‌گیری',placeholder:'CO، O₂، LEL، H₂S'},
-      {key:'status',label:'وضعیت دستگاه',type:'select',options:['آماده استفاده','در کالیبراسیون','خارج از سرویس','در تعمیر'],required:true},
-      {key:'location',label:'محل استقرار فعلی'},
-      {key:'calibrationStart',label:'شروع اعتبار کالیبراسیون',type:'date'},
-      {key:'calibrationEnd',label:'پایان اعتبار کالیبراسیون',type:'date',required:true},
-      {key:'notes',label:'توضیحات',type:'textarea',wide:true}
-    ]
-  },
-  notes:{
-    title:'یادداشت‌ها و پیگیری‌ها',
-    subtitle:'یادداشت کاری، مسئول پیگیری، موعد و وضعیت انجام',
-    singular:'یادداشت',
-    columns:['title','date','dueDate','related','status','body'],
-    fields:[
-      {key:'title',label:'عنوان پیگیری',required:true},
-      {key:'date',label:'تاریخ ثبت',type:'date',required:true},
-      {key:'dueDate',label:'موعد پیگیری',type:'date'},
-      {key:'related',label:'مرتبط با',placeholder:'نامه، قطعه، خودرو، ایستگاه یا مأموریت'},
-      {key:'status',label:'وضعیت',type:'select',options:['برای پیگیری','در حال انجام','انجام‌شده'],required:true},
-      {key:'body',label:'شرح یادداشت',type:'textarea',wide:true,required:true}
-    ]
-  }
-};
-const knownDataKeys=Object.keys(moduleSpecs);
-const formStates={},searchStates={},filterStates={};
-function emptyData(){const x={};knownDataKeys.forEach(k=>x[k]=[]);return x}
-function readData(){
-  const base=emptyData();
-  try{
-    const raw=localStorage.getItem(STORAGE_KEY);
-    if(!raw)return base;
-    const parsed=JSON.parse(raw);
-    knownDataKeys.forEach(k=>base[k]=Array.isArray(parsed[k])?parsed[k]:[]);
-  }catch(e){}
-  return base;
-}
-function saveData(data){
-  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data));return true}
-  catch(e){notify('ذخیره‌سازی در این مرورگر در دسترس نیست؛ فضای ذخیره‌سازی را بررسی کن.');return false}
-}
-function esc(value){
-  return String(value==null?'':value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-function faDigits(value){return String(value==null?'':value).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[Number(d)])}
-function todayISO(){
-  const d=new Date();
-  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-}
-function displayDate(value){
-  if(!value)return '—';
-  const m=String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if(!m)return esc(value);
-  const d=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]));
-  try{return esc(new Intl.DateTimeFormat('fa-IR-u-ca-persian',{year:'numeric',month:'short',day:'numeric'}).format(d))}
-  catch(e){return esc(value)}
-}
-function notify(message){
-  const el=document.getElementById('toast');
-  if(!el)return;
-  el.textContent=message;el.classList.add('show');
-  clearTimeout(notify.timer);notify.timer=setTimeout(()=>el.classList.remove('show'),2600);
-}
-function makeId(){return Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,9)}
-function getFieldOptions(field,data){
-  if(field.source==='employees')return data.employees.map(x=>({value:x.id,label:x.fullName||'کارمند بدون نام'}));
-  if(field.source==='vehicles')return data.vehicles.map(x=>({value:x.id,label:(x.name||'خودرو')+(x.companyPlate?' · '+x.companyPlate:'')}));
-  return (field.options||[]).map(x=>typeof x==='string'?{value:x,label:x}:x);
-}
-function fieldValue(view,key,value,data){
-  if(value==null||value==='')return '—';
-  const spec=moduleSpecs[view];
-  const field=(spec.fields||[]).find(f=>f.key===key);
-  if(field&&field.type==='date')return displayDate(value);
-  if(field&&field.source==='employees'){
-    const person=data.employees.find(x=>String(x.id)===String(value));
-    return esc(person?person.fullName:value);
-  }
-  if(field&&field.source==='vehicles'){
-    const vehicle=data.vehicles.find(x=>String(x.id)===String(value));
-    return esc(vehicle?(vehicle.name||'خودرو')+(vehicle.companyPlate?' · '+vehicle.companyPlate:''):value);
-  }
-  return esc(value);
-}
-function renderField(view,field,record,data){
-  let val=record&&record[field.key]!=null?record[field.key]:'';
-  if(!record&&field.type==='date'&&['date','startDate','calibrationStart'].includes(field.key))val=todayISO();
-  const id='field-'+view+'-'+field.key;
-  const required=field.required?' required':'';
-  const star=field.required?' <i>*</i>':'';
-  let control='';
-  if(field.type==='select'){
-    const opts=getFieldOptions(field,data);
-    control='<select id="'+esc(id)+'" name="'+esc(field.key)+'"'+required+'><option value="">'+(field.source==='employees'?'انتخاب کارمند':field.source==='vehicles'?'انتخاب خودرو':'انتخاب کنید')+'</option>'+
-      opts.map(o=>'<option value="'+esc(o.value)+'"'+(String(o.value)===String(val)?' selected':'')+'>'+esc(o.label)+'</option>').join('')+'</select>';
-  }else if(field.type==='textarea'){
-    control='<textarea id="'+esc(id)+'" name="'+esc(field.key)+'" rows="3"'+required+' placeholder="'+esc(field.placeholder||'')+'">'+esc(val)+'</textarea>';
-  }else{
-    control='<input id="'+esc(id)+'" name="'+esc(field.key)+'" type="'+esc(field.type||'text')+'"'+(field.min!=null?' min="'+esc(field.min)+'"':'')+required+' value="'+esc(val)+'" placeholder="'+esc(field.placeholder||'')+'" autocomplete="off">';
-  }
-  return '<label class="module-field'+(field.wide?' module-field-wide':'')+'" for="'+esc(id)+'"><span>'+esc(field.label)+star+'</span>'+control+'</label>';
-}
-function statusOptions(view){
-  const field=moduleSpecs[view]&&moduleSpecs[view].fields.find(f=>f.key==='status');
-  return field&&field.options?field.options:[];
-}
-function getFilteredRecords(view,data){
-  const spec=moduleSpecs[view],term=(searchStates[view]||'').trim().toLocaleLowerCase();
-  const filter=filterStates[view]||'all';
-  return (data[view]||[]).filter(record=>{
-    if(filter!=='all'&&record.status!==filter)return false;
-    if(!term)return true;
-    const values=spec.fields.map(f=>fieldValue(view,f.key,record[f.key],data)).join(' ').toLocaleLowerCase();
-    return values.includes(term);
-  }).slice().sort((a,b)=>String(b.updatedAt||b.createdAt||b.date||b.startDate||'').localeCompare(String(a.updatedAt||a.createdAt||a.date||a.startDate||'')));
-}
-function renderForm(view,data){
-  const spec=moduleSpecs[view],state=formStates[view];
-  if(!state)return '';
-  const record=state.id?(data[view]||[]).find(x=>String(x.id)===String(state.id)):null;
-  if(state.id&&!record){delete formStates[view];return ''}
-  return '<section class="module-form-panel"><div class="module-form-head"><div><h3>'+(record?'ویرایش ':'ثبت ')+esc(spec.singular)+'</h3><p>اطلاعات پس از ذخیره روی همین دستگاه نگهداری می‌شود.</p></div><button type="button" class="secondary-btn" data-module-action="cancel" data-view="'+esc(view)+'">بستن فرم</button></div>'+
-    '<form class="module-form" data-module-form data-view="'+esc(view)+'" data-id="'+esc(record?record.id:'')+'"><div class="module-fields">'+spec.fields.map(f=>renderField(view,f,record,data)).join('')+'</div>'+
-    '<div class="module-form-actions"><span class="module-required-help">موارد دارای * ضروری هستند.</span><div><button type="button" class="secondary-btn" data-module-action="cancel" data-view="'+esc(view)+'">انصراف</button> <button type="submit" class="primary-btn">'+(record?'ذخیرهٔ تغییرات':'ثبت '+esc(spec.singular))+'</button></div></div></form></section>';
-}
-function renderRecordTable(view,data){
-  const spec=moduleSpecs[view],records=getFilteredRecords(view,data);
-  const columns=spec.columns;
-  if(!records.length)return '<div class="module-empty">'+((data[view]||[]).length?'موردی مطابق جست‌وجو یا فیلتر پیدا نشد.':'هنوز اطلاعاتی ثبت نشده است. از «ثبت مورد جدید» شروع کن.')+'</div>';
-  return '<div class="module-table-wrap"><table class="module-table"><thead><tr><th class="module-check-cell"><input type="checkbox" data-module-select-all aria-label="انتخاب همهٔ موارد"></th>'+
-    columns.map(k=>'<th>'+esc((spec.fields.find(f=>f.key===k)||{label:k}).label)+'</th>').join('')+'<th>عملیات</th></tr></thead><tbody>'+
-    records.map(record=>'<tr><td class="module-check-cell"><input type="checkbox" data-record-select value="'+esc(record.id)+'" aria-label="انتخاب ردیف"></td>'+
-      columns.map(k=>'<td>'+fieldValue(view,k,record[k],data)+'</td>').join('')+
-      '<td class="module-row-actions"><button type="button" class="secondary-btn" data-module-action="edit" data-view="'+esc(view)+'" data-id="'+esc(record.id)+'">ویرایش</button> <button type="button" class="module-delete-btn" data-module-action="delete" data-view="'+esc(view)+'" data-id="'+esc(record.id)+'">حذف</button></td></tr>').join('')+
-    '</tbody></table></div><div class="module-list-foot">نمایش '+faDigits(records.length)+' مورد از '+faDigits((data[view]||[]).length)+' مورد</div>';
-}
-function renderCrudView(view,section){
-  const spec=moduleSpecs[view],data=readData(),records=data[view]||[];
-  const statusField=spec.fields.find(f=>f.key==='status');
-  const selectedFilter=filterStates[view]||'all';
-  section.innerHTML='<div class="module-wrap">'+
-    '<div class="module-page-head"><div><span class="module-overline">ATLAS SHIFT / مدیریت عملیات</span><h2>'+esc(spec.title)+'</h2><p>'+esc(spec.subtitle)+'</p></div><div class="module-page-actions"><button class="secondary-btn" type="button" data-module-action="export" data-view="'+esc(view)+'">خروجی CSV</button><button class="primary-btn" type="button" data-module-action="new" data-view="'+esc(view)+'">＋ ثبت مورد جدید</button></div></div>'+
-    '<div class="module-summary"><div><span>تعداد کل</span><strong>'+faDigits(records.length)+'</strong></div><div><span>این دستگاه</span><strong>ذخیرهٔ محلی</strong></div><div><span>آخرین بازبینی</span><strong>'+displayDate(todayISO())+'</strong></div></div>'+
-    renderForm(view,data)+
-    '<section class="module-list-panel"><div class="module-list-head"><div><h3>فهرست '+esc(spec.title)+'</h3><p>برای اصلاح هر ردیف از «ویرایش» استفاده کن.</p></div><div class="module-list-tools"><input type="search" data-module-search data-view="'+esc(view)+'" value="'+esc(searchStates[view]||'')+'" placeholder="جست‌وجو در فهرست" aria-label="جست‌وجو">'+
-    (statusField?'<select data-module-filter data-view="'+esc(view)+'" aria-label="فیلتر وضعیت"><option value="all"'+(selectedFilter==='all'?' selected':'')+'>همه وضعیت‌ها</option>'+statusOptions(view).map(s=>'<option value="'+esc(s)+'"'+(selectedFilter===s?' selected':'')+'>'+esc(s)+'</option>').join('')+'</select>':'')+
-    '</div></div><div class="module-bulk-tools"><label><input type="checkbox" data-module-select-all> انتخاب همه</label><button type="button" class="module-delete-btn" data-module-action="bulk-delete" data-view="'+esc(view)+'">حذف انتخاب‌شده‌ها</button><span>فیلتر «همه» برای نمایش تمام موارد در دسترس است.</span></div><div class="module-list-region">'+renderRecordTable(view,data)+'</div></section>'+
-    '<div class="module-local-note"><strong>ذخیره‌سازی محلی:</strong> داده‌های واردشده در حافظهٔ همین مرورگر ذخیره می‌شوند. برای انتقال یا نگهداری نسخهٔ پشتیبان، از بخش تنظیمات نسخهٔ پشتیبان بگیر.</div></div>';
-}
-function statusPill(status){
-  const s=String(status||'');
-  let cls='module-tag';
-  if(/آماده|انجام‌شده|تأییدشده|در حال کار/.test(s))cls+=' module-tag-ok';
-  else if(/مرخصی|در انتظار|در جریان|سرویس|برای پیگیری/.test(s))cls+=' module-tag-warn';
-  else if(/تعمیر|خارج از سرویس|لغو|ردشده|غیرفعال/.test(s))cls+=' module-tag-danger';
-  return '<span class="'+cls+'">'+esc(s||'ثبت نشده')+'</span>';
-}
-function renderReports(section){
-  const data=readData();
-  const cards=knownDataKeys.map(k=>'<a class="module-report-card" href="./index.html?view='+esc(k)+'"><span>'+esc(moduleSpecs[k].title)+'</span><strong>'+faDigits(data[k].length)+'</strong><small>مشاهدهٔ اطلاعات ←</small></a>').join('');
-  const activeEmployees=data.employees.filter(e=>e.status!=='غیرفعال').length;
-  const openMissions=data.missions.filter(m=>m.status==='در جریان'||m.status==='برنامه‌ریزی‌شده').length;
-  const dueMeters=data.gasmeters.filter(m=>m.calibrationEnd&&daysUntil(m.calibrationEnd)<=30).length;
-  section.innerHTML='<div class="module-wrap"><div class="module-page-head"><div><span class="module-overline">ATLAS SHIFT / پایش اطلاعات</span><h2>گزارش‌ها و آمار</h2><p>گزارش پایه از داده‌هایی که در همین دستگاه ثبت شده‌اند؛ دادهٔ نمونه به آمار اضافه نمی‌شود.</p></div><div class="module-page-actions"><button class="secondary-btn" data-module-action="export-all" type="button">خروجی همهٔ اطلاعات</button><button class="primary-btn" data-module-action="print" type="button">چاپ گزارش</button></div></div>'+
-    '<div class="module-metric-grid"><div><span>نیروی فعال</span><strong>'+faDigits(activeEmployees)+'</strong></div><div><span>مأموریت‌های باز</span><strong>'+faDigits(openMissions)+'</strong></div><div><span>گازسنج با موعد کالیبراسیون تا ۳۰ روز</span><strong>'+faDigits(dueMeters)+'</strong></div></div>'+
-    '<section class="module-list-panel"><div class="module-list-head"><div><h3>خلاصهٔ پرونده‌ها</h3><p>برای مشاهده و ویرایش به بخش مربوطه برو.</p></div></div><div class="module-report-grid">'+cards+'</div></section>'+
-    '<div class="module-local-note">گزارش‌های این صفحه فقط بر اساس اطلاعات ذخیره‌شده در این مرورگر محاسبه می‌شوند.</div></div>';
-}
-function daysUntil(iso){
-  if(!iso)return Infinity;
-  const m=String(iso).match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return Infinity;
-  const target=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]));
-  const now=new Date();now.setHours(0,0,0,0);target.setHours(0,0,0,0);
-  return Math.round((target-now)/86400000);
-}
-function renderSettings(section){
-  section.innerHTML='<div class="module-wrap"><div class="module-page-head"><div><span class="module-overline">ATLAS SHIFT / نگهداری اطلاعات</span><h2>تنظیمات برنامه</h2><p>ظاهر فعلی بدون تغییر باقی می‌ماند؛ این قسمت برای نگهداری و انتقال اطلاعات است.</p></div></div>'+
-   '<section class="module-list-panel"><div class="module-list-head"><div><h3>پشتیبان‌گیری و بازیابی</h3><p>فایل پشتیبان شامل اطلاعات ثبت‌شده در تمام بخش‌های عملیاتی است.</p></div></div><div class="module-backup-grid"><div class="module-backup-card"><strong>ساخت نسخهٔ پشتیبان</strong><p>اطلاعات این دستگاه در یک فایل JSON قابل نگهداری و انتقال ذخیره می‌شود.</p><button type="button" class="primary-btn" data-module-action="backup">دریافت فایل پشتیبان</button></div><div class="module-backup-card"><strong>بازیابی از فایل</strong><p>با بازیابی، اطلاعات فعلی جایگزین اطلاعات داخل فایل پشتیبان خواهد شد.</p><button type="button" class="secondary-btn" data-module-action="restore-select">انتخاب فایل پشتیبان</button><input type="file" id="moduleRestoreFile" accept=".json,application/json" hidden></div></div></section>'+
-   '<section class="module-list-panel"><div class="module-list-head"><div><h3>وضعیت نگهداری</h3><p>ذخیره‌سازی محلی و بدون نیاز به اینترنت در زمان استفاده.</p></div></div><div class="module-local-note">اطلاعات هر مرورگر مستقل است. پاک‌کردن داده‌های مرورگر ممکن است اطلاعات را حذف کند؛ نسخهٔ پشتیبان را در محل امن نگه‌دار. همگام‌سازی ابری در این نسخه فعال نیست.</div></section></div>';
-}
-function downloadFile(name,content,mime){
-  const blob=new Blob([content],{type:mime||'application/octet-stream'});
-  const url=URL.createObjectURL(blob),a=document.createElement('a');
-  a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
-}
-function exportCsv(view){
-  const data=readData(),spec=moduleSpecs[view];
-  const rows=[['شناسه',...spec.fields.map(f=>f.label)]];
-  (data[view]||[]).forEach(r=>rows.push([r.id,...spec.fields.map(f=>String(r[f.key]||''))]));
-  const csv='\uFEFF'+rows.map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
-  downloadFile('ATLAS-SHIFT-'+view+'-'+todayISO()+'.csv',csv,'text/csv;charset=utf-8;');
-}
-function exportAllCsv(){
-  const data=readData(),rows=[['بخش','شناسه','عنوان یا نام','وضعیت','تاریخ','شرح']];
-  knownDataKeys.forEach(k=>data[k].forEach(r=>rows.push([moduleSpecs[k].title,r.id,r.fullName||r.title||r.name||r.code||'',r.status||'',r.date||r.startDate||'',r.notes||r.body||r.destination||''])));
-  const csv='\uFEFF'+rows.map(row=>row.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
-  downloadFile('ATLAS-SHIFT-report-'+todayISO()+'.csv',csv,'text/csv;charset=utf-8;');
-}
-function exportBackup(){
-  const payload={app:'ATLAS SHIFT',schemaVersion:1,exportedAt:new Date().toISOString(),data:readData()};
-  downloadFile('ATLAS-SHIFT-backup-'+todayISO()+'.json',JSON.stringify(payload,null,2),'application/json;charset=utf-8');
-  notify('فایل پشتیبان آماده شد.');
-}
-function doRestore(file){
-  if(!file)return;
-  const reader=new FileReader();
-  reader.onload=function(){
-    try{
-      const parsed=JSON.parse(String(reader.result||''));
-      const candidate=parsed&&parsed.data?parsed.data:parsed;
-      if(!candidate||!knownDataKeys.every(k=>Array.isArray(candidate[k])))throw new Error('invalid');
-      if(!window.confirm('با بازیابی، اطلاعات فعلی با اطلاعات فایل جایگزین می‌شود. ادامه می‌دهی؟'))return;
-      const clean=emptyData();
-      knownDataKeys.forEach(k=>clean[k]=candidate[k].filter(x=>x&&typeof x==='object').map(x=>Object.assign({},x,{id:String(x.id||makeId())})));
-      if(!saveData(clean))return;
-      formStates.employees=null;
-      renderDashboard();
-      const section=document.getElementById('sectionView');
-      const view=new URLSearchParams(window.location.search).get('view')||'dashboard';
-      if(view!=='dashboard')render(view,section);
-      notify('اطلاعات از نسخهٔ پشتیبان بازیابی شد.');
-    }catch(e){notify('فایل انتخاب‌شده نسخهٔ پشتیبان معتبر ATLAS SHIFT نیست.')}
+(function () {
+  'use strict';
+
+  const DB_NAME = 'ATLAS_SHIFT_LOCAL';
+  const DB_VERSION = 1;
+  const STORE_NAME = 'records';
+  const STORE_KEY = 'main';
+  const LEGACY_KEY = 'atlasShiftOperationalDataV1';
+  const MODULES = ['employees', 'missions', 'leaves', 'vehicles', 'gasmeters', 'notes'];
+  const formState = Object.create(null);
+  const searchState = Object.create(null);
+  const filterState = Object.create(null);
+  let appData = createEmptyState();
+  let db = null;
+  let ready = false;
+  let loadError = '';
+  let reportPeriod = 'month';
+  let reportFrom = '';
+  let reportTo = '';
+  let saveQueue = Promise.resolve();
+
+  const specs = {
+    employees: {
+      title: 'کارکنان', singular: 'کارمند',
+      subtitle: 'پروندهٔ پرسنلی، نوع کار، محل خدمت، شیفت و وضعیت روزانه',
+      fields: [
+        {key:'personnelId',label:'شمارهٔ پرسنلی'},
+        {key:'fullName',label:'نام و نام خانوادگی',required:true},
+        {key:'mobile',label:'شمارهٔ همراه',type:'tel'},
+        {key:'jobTitle',label:'عنوان شغلی',required:true},
+        {key:'workType',label:'نوع کار',type:'select',required:true,options:['شیفتی','روزکار']},
+        {key:'employmentType',label:'نوع استخدام',type:'select',required:true,options:['رسمی','پیمانی','قراردادی','شرکتی','سایر']},
+        {key:'workplace',label:'محل سازمانی',type:'select',required:true,options:['اهواز','آبادان','اندیمشک','ماهشهر','بندر امام','آغاجاری','سایر']},
+        {key:'assignedWorkplace',label:'محل خدمت فعلی',placeholder:'ایستگاه، محدوده یا محل مأموریت'},
+        {key:'shiftPattern',label:'الگوی شیفت',type:'select',options:['۱۲ ساعته روز/شب','۲۴/۴۸','ثابت روزکار','سایر']},
+        {key:'status',label:'وضعیت جاری',type:'select',required:true,options:['آماده‌کار','در حال کار','شیفت','مأموریت','مرخصی','استراحت','اضافه‌کار','غیرفعال']},
+        {key:'photo',label:'عکس پرسنلی',type:'file',accept:'image/*'},
+        {key:'notes',label:'توضیحات',type:'textarea',wide:true}
+      ],
+      columns: ['personnelId','fullName','jobTitle','workType','employmentType','workplace','assignedWorkplace','status']
+    },
+    missions: {
+      title: 'مأموریت‌ها', singular: 'مأموریت',
+      subtitle: 'ثبت مسیر، افراد اعزامی، خودرو، زمان‌بندی و نتیجهٔ مأموریت',
+      fields: [
+        {key:'title',label:'عنوان مأموریت',required:true},
+        {key:'missionType',label:'نوع فعالیت',type:'select',required:true,options:['نظارت بر جوشکاری','بررسی انشعاب یا نشتی','بررسی آلودگی خاک یا آب','بازدید ایستگاه','سرویس تجهیزات','بازدید ایمنی','سایر']},
+        {key:'startAt',label:'زمان شروع',type:'jalali-datetime',required:true},
+        {key:'endAt',label:'زمان پایان',type:'jalali-datetime'},
+        {key:'city',label:'شهر یا محدوده',type:'select',required:true,options:['اهواز','آبادان','اندیمشک','ماهشهر','بندر امام','آغاجاری','سایر']},
+        {key:'origin',label:'مبدأ'},
+        {key:'destination',label:'مقصد یا محل عملیات'},
+        {key:'stops',label:'توقف‌ها و نقاط مسیر',type:'textarea',wide:true,placeholder:'هر نقطه را در یک خط وارد کن'},
+        {key:'crewIds',label:'افراد اعزامی',type:'select',source:'employees',multiple:true,wide:true},
+        {key:'crewText',label:'شرح گروه یا افراد خارج از فهرست',type:'textarea',wide:true},
+        {key:'driverId',label:'راننده',type:'select',source:'employees'},
+        {key:'vehicleId',label:'خودرو',type:'select',source:'vehicles'},
+        {key:'status',label:'وضعیت مأموریت',type:'select',required:true,options:['برنامه‌ریزی‌شده','در جریان','انجام‌شده','لغو‌شده']},
+        {key:'result',label:'شرح کار و نتیجه',type:'textarea',wide:true},
+        {key:'attachments',label:'پیوست گزارش',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx'}
+      ],
+      columns: ['title','missionType','startAt','city','crewIds','vehicleId','status']
+    },
+    leaves: {
+      title: 'مرخصی‌ها', singular: 'درخواست مرخصی',
+      subtitle: 'ثبت مرخصی فردی یا گروهی، وضعیت درخواست و زمان بازگشت',
+      fields: [
+        {key:'employeeId',label:'کارمند',type:'select',source:'employees'},
+        {key:'groupName',label:'گروه یا واحد',placeholder:'برای درخواست گروهی، نام گروه را وارد کن'},
+        {key:'leaveType',label:'نوع مرخصی',type:'select',required:true,options:['استحقاقی','استعلاجی','بدون حقوق','ساعتی','سایر']},
+        {key:'startDate',label:'از تاریخ شمسی',type:'jalali',required:true},
+        {key:'endDate',label:'تا تاریخ شمسی',type:'jalali',required:true},
+        {key:'expectedReturn',label:'بازگشت مورد انتظار',type:'jalali'},
+        {key:'actualReturn',label:'تاریخ حضور واقعی',type:'jalali'},
+        {key:'status',label:'وضعیت درخواست',type:'select',required:true,options:['در انتظار بررسی','تأییدشده','ردشده','استفاده‌شده']},
+        {key:'reason',label:'دلیل و توضیحات',type:'textarea',wide:true}
+      ],
+      columns: ['employeeId','groupName','leaveType','startDate','endDate','expectedReturn','status']
+    },
+    vehicles: {
+      title: 'خودروها', singular: 'خودرو',
+      subtitle: 'مشخصات ناوگان، موقعیت فعلی، خرابی‌ها، کیلومتر و سرویس',
+      fields: [
+        {key:'name',label:'نام یا عنوان خودرو',required:true},
+        {key:'vehicleType',label:'نوع خودرو',type:'select',options:['خودروی آتش‌نشانی','خودروی پشتیبانی','وانت','سواری','مینی‌بوس','سایر']},
+        {key:'model',label:'مدل خودرو'},
+        {key:'companyPlate',label:'پلاک سازمانی'},
+        {key:'policePlate',label:'پلاک انتظامی'},
+        {key:'status',label:'وضعیت عملیاتی',type:'select',required:true,options:['آماده','در سرویس','خارج از سرویس','در تعمیر']},
+        {key:'healthStatus',label:'وضعیت سلامت',type:'select',options:['سالم','نیازمند بررسی','دارای نقص','در حال تعمیر']},
+        {key:'currentCity',label:'شهر فعلی',type:'select',options:['اهواز','آبادان','اندیمشک','ماهشهر','بندر امام','آغاجاری','سایر']},
+        {key:'currentPlace',label:'محل یا نقطهٔ استقرار'},
+        {key:'occupants',label:'سرنشینان فعلی',type:'textarea',wide:true},
+        {key:'currentKm',label:'کیلومتر فعلی',type:'number',min:0},
+        {key:'fuelKm',label:'کیلومتر ثبت سوخت',type:'number',min:0},
+        {key:'lastOilKm',label:'کیلومتر آخرین تعویض روغن',type:'number',min:0},
+        {key:'nextOilKm',label:'کیلومتر سرویس روغن بعدی',type:'number',min:0},
+        {key:'faults',label:'خرابی‌ها و نقص‌های باز',type:'textarea',wide:true},
+        {key:'faultsResolved',label:'ایرادهای رفع‌شده',type:'textarea',wide:true},
+        {key:'equipment',label:'تجهیزات همراه خودرو',type:'textarea',wide:true},
+        {key:'notes',label:'سوابق و توضیحات',type:'textarea',wide:true},
+        {key:'attachments',label:'پیوست‌ها',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx'}
+      ],
+      columns: ['name','vehicleType','companyPlate','policePlate','status','currentCity','currentPlace','currentKm','nextOilKm']
+    },
+    gasmeters: {
+      title: 'گازسنج‌ها', singular: 'گازسنج',
+      subtitle: 'مشخصات دستگاه، محل و مسئول، کالیبراسیون، تعمیرات و گواهی',
+      fields: [
+        {key:'code',label:'کد دستگاه',required:true},
+        {key:'model',label:'مدل دستگاه'},
+        {key:'serial',label:'شمارهٔ سریال',required:true},
+        {key:'gases',label:'گازهای قابل‌اندازه‌گیری',type:'checks',options:['CO','O₂','LEL','H₂S']},
+        {key:'status',label:'وضعیت دستگاه',type:'select',required:true,options:['آماده استفاده','در کالیبراسیون','خارج از سرویس','در تعمیر']},
+        {key:'healthStatus',label:'وضعیت سلامت',type:'select',options:['سالم','نیازمند بررسی','دارای نقص','در حال تعمیر']},
+        {key:'location',label:'محل استقرار'},
+        {key:'responsibleId',label:'مسئول دستگاه',type:'select',source:'employees'},
+        {key:'calibrationStart',label:'شروع اعتبار کالیبراسیون',type:'jalali'},
+        {key:'calibrationEnd',label:'پایان اعتبار کالیبراسیون',type:'jalali',required:true},
+        {key:'calibrationDispatch',label:'تاریخ ارسال برای کالیبراسیون',type:'jalali'},
+        {key:'calibrationReturn',label:'تاریخ برگشت از کالیبراسیون',type:'jalali'},
+        {key:'certificateCode',label:'شمارهٔ گواهی کالیبراسیون'},
+        {key:'certificateFiles',label:'گواهی و پیوست کالیبراسیون',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx'},
+        {key:'repairHistory',label:'تعمیرات و سوابق دستگاه',type:'textarea',wide:true},
+        {key:'notes',label:'توضیحات',type:'textarea',wide:true}
+      ],
+      columns: ['code','model','serial','gases','status','location','calibrationEnd','responsibleId']
+    },
+    notes: {
+      title: 'یادداشت‌ها و پیگیری‌ها', singular: 'اقدام / پیگیری',
+      subtitle: 'نامه‌ها، خرید، استعلام، ارسال تجهیزات، بازرسی و اقدام‌های محوله',
+      fields: [
+        {key:'title',label:'عنوان',required:true},
+        {key:'actionType',label:'نوع مورد',type:'select',required:true,options:['نامه اداری','درخواست خرید','استعلام','برآورد هزینه','پیگیری قطعه','ارسال تجهیزات','بازدید','بازرسی','ممیزی','اقدام اصلاحی','یادداشت عمومی','سایر']},
+        {key:'date',label:'تاریخ ثبت شمسی',type:'jalali',required:true},
+        {key:'dueDate',label:'موعد پیگیری شمسی',type:'jalali'},
+        {key:'related',label:'موضوع یا محل مرتبط'},
+        {key:'responsibleId',label:'مسئول پیگیری',type:'select',source:'employees'},
+        {key:'status',label:'وضعیت',type:'select',required:true,options:['شروع‌نشده','در حال انجام','در انتظار پاسخ','ارجاع‌شده','تکمیل‌شده','لغوشده','عقب‌افتاده']},
+        {key:'body',label:'شرح و نتیجهٔ پیگیری',type:'textarea',wide:true,required:true},
+        {key:'attachments',label:'پیوست‌ها',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx'}
+      ],
+      columns: ['title','actionType','date','dueDate','related','responsibleId','status']
+    }
   };
-  reader.readAsText(file);
-}
-function render(view,section){
-  if(!section)return;
-  if(view==='dashboard'){section.innerHTML='';renderDashboard();return}
-  if(moduleSpecs[view]){renderCrudView(view,section);return}
-  if(view==='reports'){renderReports(section);return}
-  if(view==='settings'){renderSettings(section);return}
-  section.innerHTML='<div class="module-wrap"><div class="module-empty">این بخش در نسخهٔ فعلی تعریف نشده است.</div></div>';
-}
-function renderDashboard(){
-  const data=readData(),employees=data.employees,missions=data.missions,vehicles=data.vehicles,meters=data.gasmeters;
-  const roster=document.querySelector('[data-widget="roster"]');
-  if(roster){
-    const count=(fn)=>employees.filter(fn).length;
-    const total=employees.length,ready=count(e=>['آماده‌کار','در حال کار'].includes(e.status)),shift=count(e=>e.status==='شیفت'),mission=count(e=>e.status==='مأموریت'),leave=count(e=>e.status==='مرخصی');
-    const num=roster.querySelector('.big-number');if(num)num.innerHTML=faDigits(total)+'<small>نفر ثبت‌شده</small>';
-    const hint=roster.querySelector('.roster-top > div:first-child > div:last-child');if(hint)hint.textContent='تعداد پرونده‌های ثبت‌شده در برنامهٔ کاری';
-    const stats=roster.querySelectorAll('.mini-stat .value');[ready,shift,mission,leave].forEach((n,i)=>{if(stats[i])stats[i].textContent=faDigits(n)});
-    const pct=total?Math.round((ready+shift+mission)/total*100):0;
-    const ring=roster.querySelector('.ring-label b');if(ring)ring.textContent=faDigits(pct)+'٪';
-    const ringLabel=roster.querySelector('.ring-label span');if(ringLabel)ringLabel.textContent='فعال';
+
+  function createEmptyState() {
+    const state = {
+      schemaVersion: 2,
+      settings: { employeeCustomFields: '' },
+      references: { workplaces: ['اهواز','آبادان','اندیمشک','ماهشهر','بندر امام'] },
+      history: [],
+      updatedAt: ''
+    };
+    MODULES.forEach(function (key) { state[key] = []; });
+    return state;
   }
-  const coverage=document.querySelector('[data-widget="shift-coverage"]');
-  if(coverage){
-    const rows=coverage.querySelectorAll('.shift-line');
-    const defs=[
-      {label:'نیروی شیفتی',count:employees.filter(e=>e.employmentType==='شیفتی').length},
-      {label:'نیروی روزکار',count:employees.filter(e=>e.employmentType==='روزکار').length},
-      {label:'در مأموریت',count:employees.filter(e=>e.status==='مأموریت').length}
-    ];
-    const max=Math.max(1,...defs.map(x=>x.count));
-    defs.forEach((x,i)=>{const row=rows[i];if(!row)return;const label=row.querySelector('.shift-line-top b'),value=row.querySelector('.shift-line-top span'),bar=row.querySelector('.progress-bar');if(label)label.textContent=x.label;if(value)value.textContent=faDigits(x.count)+' نفر';if(bar)bar.style.width=(x.count?Math.max(5,Math.round(x.count/max*100)):0)+'%'});
-    const pill=coverage.querySelector('.widget-meta .status-pill');if(pill)pill.textContent='دادهٔ ثبت‌شده';
+
+  function normalizeState(value) {
+    const out = createEmptyState();
+    if (!value || typeof value !== 'object') return out;
+    MODULES.forEach(function (key) {
+      if (Array.isArray(value[key])) out[key] = value[key].filter(function (item) { return item && typeof item === 'object'; });
+    });
+    if (value.settings && typeof value.settings === 'object') out.settings = Object.assign(out.settings, value.settings);
+    if (value.references && typeof value.references === 'object') out.references = Object.assign(out.references, value.references);
+    if (Array.isArray(value.history)) out.history = value.history.slice(-3000);
+    out.schemaVersion = 2;
+    out.updatedAt = value.updatedAt || '';
+    return out;
   }
-  const missionWidget=document.querySelector('[data-widget="missions"]');
-  if(missionWidget){
-    const list=missionWidget.querySelector('.list'),pill=missionWidget.querySelector('.widget-meta .status-pill');
-    if(pill)pill.textContent=faDigits(missions.length)+' مورد';
-    if(list){
-      const recent=missions.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).slice(0,6);
-      list.innerHTML=recent.length?recent.map((m,i)=>'<div class="list-item"><div class="route-mark"><b>'+esc((m.city||'—').slice(0,3))+'</b><span>مسیر '+faDigits(i+1)+'</span></div><div class="list-main"><b>'+esc(m.title||'مأموریت بدون عنوان')+'</b><span>'+esc([m.origin,m.destination,m.city].filter(Boolean).join(' ← '))+' · '+esc(m.crew||'بدون ثبت همکاران')+'</span></div><div class="list-side"><strong>'+esc(m.status||'ثبت نشده')+'</strong><span class="status-pill">'+displayDate(m.date)+'</span></div></div>').join(''):'<div class="module-empty">هنوز مأموریتی ثبت نشده است.</div>';
+
+  function esc(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function persianDigitsToLatin(value) {
+    return String(value == null ? '' : value).replace(/[۰-۹٠-٩]/g, function (d) {
+      const fa = '۰۱۲۳۴۵۶۷۸۹';
+      const ar = '٠١٢٣٤٥٦٧٨٩';
+      return String(fa.indexOf(d) >= 0 ? fa.indexOf(d) : ar.indexOf(d));
+    });
+  }
+
+  function faDigits(value) {
+    return String(value == null ? '' : value).replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[Number(d)]; });
+  }
+
+  function toast(message) {
+    const el = document.getElementById('toast');
+    if (!el) { window.alert(message); return; }
+    el.textContent = message;
+    el.classList.add('show');
+    window.clearTimeout(toast.timer);
+    toast.timer = window.setTimeout(function () { el.classList.remove('show'); }, 2800);
+  }
+
+  function openDb() {
+    return new Promise(function (resolve, reject) {
+      if (!('indexedDB' in window)) { reject(new Error('IndexedDB unavailable')); return; }
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = function () {
+        const database = request.result;
+        if (!database.objectStoreNames.contains(STORE_NAME)) database.createObjectStore(STORE_NAME, { keyPath: 'id' });
+      };
+      request.onsuccess = function () {
+        db = request.result;
+        db.onversionchange = function () { db.close(); };
+        resolve(db);
+      };
+      request.onerror = function () { reject(request.error || new Error('IndexedDB open failed')); };
+      request.onblocked = function () { reject(new Error('IndexedDB upgrade blocked')); };
+    });
+  }
+
+  function readLegacyLocalStorage() {
+    try {
+      const raw = localStorage.getItem(LEGACY_KEY);
+      if (!raw) return null;
+      const saved = JSON.parse(raw);
+      return normalizeState(saved);
+    } catch (error) {
+      return null;
     }
   }
-  const fleet=document.querySelector('[data-widget="fleet"]'),stack=fleet&&fleet.querySelector('.vehicle-stack');
-  if(stack){
-    stack.innerHTML=vehicles.length?vehicles.slice(0,6).map(v=>'<div class="vehicle"><div class="vehicle-icon"><span>▰</span></div><div class="vehicle-info"><b>'+esc(v.name||'خودرو بدون عنوان')+'</b><span>'+esc([v.currentCity,v.currentPlace,v.companyPlate].filter(Boolean).join(' · ')||'موقعیت ثبت نشده')+'</span></div><div class="vehicle-side"><b>'+esc(v.status||'ثبت نشده')+'</b><span>'+esc(v.policePlate||'')+'</span></div></div>').join(''):'<div class="module-empty">هنوز خودرویی ثبت نشده است.</div>';
+
+  function loadFromDb(database) {
+    return new Promise(function (resolve, reject) {
+      const request = database.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(STORE_KEY);
+      request.onsuccess = function () { resolve(request.result ? request.result.value : null); };
+      request.onerror = function () { reject(request.error || new Error('Read failed')); };
+    });
   }
-  const equipment=document.querySelector('[data-widget="equipment"]');
-  if(equipment){
-    const heading=equipment.querySelector('.widget-header');
-    const header=equipment.querySelector('.widget-meta .status-pill');if(header)header.textContent=faDigits(meters.length)+' دستگاه';
-    equipment.querySelectorAll('.equip-row,.module-equip-empty').forEach(node=>node.remove());
-    const markup=meters.length?meters.slice(0,8).map(m=>{
-      const remaining=daysUntil(m.calibrationEnd);
-      const label=remaining<0?'منقضی':remaining<=30?'نزدیک موعد':(m.status||'معتبر');
-      const classes=remaining<=30?'equip-status warn':'equip-status';
-      const gas=(m.gases||'گازها ثبت نشده').split(',')[0].trim();
-      const percent=remaining===Infinity?0:Math.max(5,Math.min(100,Math.round(remaining/90*100)));
-      return '<div class="equip-row"><div class="equip-label"><div class="gas-chip">'+esc(gas.slice(0,6)||'GAS')+'</div><div><b>'+esc(m.code||m.serial||'گازسنج')+'</b><span>'+esc(m.serial||'')+' · '+esc(m.location||'محل ثبت نشده')+'<div class="progress-track"><div class="progress-bar" style="width:'+percent+'%"></div></div></span></div></div><span class="'+classes+'">'+esc(label)+'</span></div>';
-    }).join(''):'<div class="module-empty module-equip-empty">هنوز گازسنجی ثبت نشده است.</div>';
-    if(heading)heading.insertAdjacentHTML('afterend',markup);
+
+  function writeToDb(database, value) {
+    return new Promise(function (resolve, reject) {
+      const tx = database.transaction(STORE_NAME, 'readwrite');
+      tx.objectStore(STORE_NAME).put({ id: STORE_KEY, value: value });
+      tx.oncomplete = function () { resolve(true); };
+      tx.onerror = function () { reject(tx.error || new Error('Write failed')); };
+      tx.onabort = function () { reject(tx.error || new Error('Write aborted')); };
+    });
   }
-  const calendar=document.querySelector('[data-widget="calendar"]'),agenda=calendar&&calendar.querySelector('.agenda');
-  if(agenda){
-    const today=todayISO(),items=[];
-    missions.filter(m=>m.date===today&&m.status!=='لغو‌شده').forEach(m=>items.push({kind:'مأموریت',title:m.title||'مأموریت',detail:[m.city,m.destination].filter(Boolean).join(' · '),date:m.date}));
-    data.notes.filter(n=>(n.dueDate===today||n.date===today)&&n.status!=='انجام‌شده').forEach(n=>items.push({kind:'پیگیری',title:n.title||'یادداشت',detail:n.related||n.body||'',date:n.dueDate||n.date}));
-    data.leaves.filter(l=>l.startDate===today&&l.status!=='ردشده').forEach(l=>items.push({kind:'مرخصی',title:fieldValue('leaves','employeeId',l.employeeId,data),detail:l.leaveType||'',date:l.startDate}));
-    agenda.innerHTML=items.length?items.slice(0,6).map(x=>'<div class="agenda-row"><div class="agenda-time">'+esc(x.kind)+'</div><div class="agenda-dot"></div><div class="agenda-text"><b>'+esc(x.title)+'</b><span>'+esc(x.detail||'')+'</span></div></div>').join(''):'<div class="module-empty">برای امروز مأموریت یا پیگیری زمان‌بندی‌شده‌ای ثبت نشده است.</div>';
-    const subtitle=calendar.querySelector('.widget-title p');if(subtitle)subtitle.textContent='برنامهٔ امروز بر اساس اطلاعات ثبت‌شده';
+
+  async function initializeStorage() {
+    try {
+      await openDb();
+      const saved = await loadFromDb(db);
+      if (saved) {
+        appData = normalizeState(saved);
+      } else {
+        appData = readLegacyLocalStorage() || createEmptyState();
+        if (appData.updatedAt || MODULES.some(function (key) { return appData[key].length; })) {
+          await writeToDb(db, appData);
+        }
+      }
+    } catch (error) {
+      loadError = 'فضای ذخیره‌سازی پیشرفته در دسترس نیست؛ ذخیره‌سازی جایگزین مرورگر استفاده می‌شود.';
+      appData = readLegacyLocalStorage() || createEmptyState();
+      db = null;
+    }
+    ready = true;
+    refreshCurrentView();
+    refreshDashboard();
   }
-  const alertsWidget=document.querySelector('[data-widget="alerts"]'),alertList=alertsWidget&&alertsWidget.querySelector('.alert-list');
-  if(alertList){
-    const existingButton=document.getElementById('seeAllAlerts'),alerts=[];
-    meters.forEach(m=>{const n=daysUntil(m.calibrationEnd);if(n<=30)alerts.push({critical:n<=7,title:'موعد کالیبراسیون گازسنج',detail:(m.code||m.serial||'دستگاه')+' · '+(n<0?'مهلت گذشته':('تا '+faDigits(n)+' روز دیگر'))})});
-    vehicles.filter(v=>['در تعمیر','خارج از سرویس'].includes(v.status)).forEach(v=>alerts.push({critical:true,title:'خودرو نیازمند رسیدگی',detail:(v.name||'خودرو')+' · '+v.status}));
-    data.notes.filter(n=>n.dueDate&&daysUntil(n.dueDate)<0&&n.status!=='انجام‌شده').forEach(n=>alerts.push({critical:false,title:'پیگیری با موعد گذشته',detail:n.title||'یادداشت'}));
-    alertList.innerHTML=alerts.length?alerts.slice(0,5).map(a=>'<div class="alert-item'+(a.critical?' critical':'')+'"><div class="alert-symbol">'+(a.critical?'!':'↗')+'</div><div class="alert-copy"><b>'+esc(a.title)+'</b><p>'+esc(a.detail)+'</p></div><span class="alert-age">'+(a.critical?'توجه':'پیگیری')+'</span></div>').join(''):'<div class="module-empty">هشدار عملیاتی ثبت‌شده‌ای وجود ندارد.</div>';
-    if(existingButton)alertList.appendChild(existingButton);
+
+  function saveState() {
+    appData.updatedAt = new Date().toISOString();
+    saveQueue = saveQueue.then(async function () {
+      if (db) {
+        try {
+          await writeToDb(db, appData);
+          return true;
+        } catch (error) {
+          db = null;
+          loadError = 'ذخیره‌سازی جایگزین مرورگر فعال شد.';
+        }
+      }
+      try {
+        localStorage.setItem(LEGACY_KEY, JSON.stringify(appData));
+        return true;
+      } catch (error) {
+        toast('ذخیره انجام نشد؛ فضای ذخیره‌سازی این مرورگر کافی نیست.');
+        return false;
+      }
+    });
+    return saveQueue;
   }
-  const operations=document.querySelector('[data-widget="operations"]');
-  if(operations){
-    const chart=operations.querySelector('.chart'),legend=operations.querySelector('.chart-legend'),labels=operations.querySelector('.chart-labels');
-    if(chart)chart.hidden=true;if(legend)legend.hidden=true;if(labels)labels.hidden=true;
-    let summary=document.getElementById('operationsRealDataSummary');
-    if(!summary){summary=document.createElement('div');summary.id='operationsRealDataSummary';summary.className='module-empty';if(chart)chart.insertAdjacentElement('afterend',summary);}
-    const lastSeven=missions.filter(m=>m.date&&daysUntil(m.date)>=0&&daysUntil(m.date)<=6).length;
-    summary.textContent='مأموریت‌های ثبت‌شده در ۷ روز اخیر: '+faDigits(lastSeven)+' مورد. با ثبت مأموریت‌ها، این آمار به‌روز می‌شود.';
+
+  function addHistory(moduleKey, record, action, changes) {
+    appData.history.push({
+      id: createId(),
+      module: moduleKey,
+      recordId: record ? String(record.id) : '',
+      recordLabel: recordLabel(moduleKey, record),
+      action: action,
+      at: new Date().toISOString(),
+      changes: changes || []
+    });
+    if (appData.history.length > 3000) appData.history.splice(0, appData.history.length - 3000);
   }
-  const stationLabel=document.querySelector('[data-widget="stations"] .widget-meta');
-  if(stationLabel&&stationLabel.querySelector('.status-pill'))stationLabel.querySelector('.status-pill').textContent='نمای ایستگاه‌ها';
-  const foot=document.querySelector('.footnote');
-  if(foot){
-    const parts=foot.querySelectorAll('span');
-    if(parts.length>1)parts[1].textContent='اطلاعات ثبت‌شده در همین دستگاه';
-    if(parts.length>3)parts[3].textContent='ذخیره‌سازی محلی · بدون اتصال ابری';
+
+  function createId() {
+    return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
   }
-}
-document.addEventListener('click',function(event){
-  const button=event.target.closest('[data-module-action]');
-  if(!button)return;
-  const action=button.dataset.moduleAction,view=button.dataset.view||new URLSearchParams(window.location.search).get('view')||'dashboard';
-  if(action==='new'||action==='edit'){
-    event.preventDefault();
-    formStates[view]={id:action==='edit'?button.dataset.id:null};
-    const section=document.getElementById('sectionView');render(view,section);
-    const form=section.querySelector('[data-module-form]');
-    if(form)form.scrollIntoView({behavior:'smooth',block:'start'});
-  }else if(action==='cancel'){
-    delete formStates[view];render(view,document.getElementById('sectionView'));
-  }else if(action==='delete'){
-    const data=readData(),name=moduleSpecs[view].singular;
-    if(!window.confirm('این '+name+' حذف شود؟'))return;
-    data[view]=data[view].filter(x=>String(x.id)!==String(button.dataset.id));
-    if(saveData(data)){render(view,document.getElementById('sectionView'));renderDashboard();notify('مورد حذف شد.')}
-  }else if(action==='bulk-delete'){
+
+  function todayIso() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function nowLocalDateTime() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0') + 'T' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+
+  function intlJalaliParts(date) {
+    const formatter = new Intl.DateTimeFormat('en-US-u-ca-persian-nu-latn', {year:'numeric',month:'numeric',day:'numeric'});
+    const parts = formatter.formatToParts(date);
+    const get = function (type) { return Number((parts.find(function (p) { return p.type === type; }) || {}).value || 0); };
+    return { year:get('year'), month:get('month'), day:get('day') };
+  }
+
+  function jalaliYearStart(jy) {
+    // Find the exact Gregorian day which Intl identifies as Farvardin 1 of jy.
+    const gy = jy + 621;
+    for (let offset = -3; offset <= 5; offset += 1) {
+      const date = new Date(gy, 2, 20 + offset, 12, 0, 0, 0);
+      const p = intlJalaliParts(date);
+      if (p.year === jy && p.month === 1 && p.day === 1) return date;
+    }
+    throw new Error('تبدیل تقویم شمسی برای این سال در دسترس نیست.');
+  }
+
+  function parseJalali(value, withTime) {
+    const raw = persianDigitsToLatin(value).trim();
+    const re = withTime
+      ? /^(\d{4})\s*[\/.-]\s*(\d{1,2})\s*[\/.-]\s*(\d{1,2})(?:\s+|T)(\d{1,2}):(\d{2})$/
+      : /^(\d{4})\s*[\/.-]\s*(\d{1,2})\s*[\/.-]\s*(\d{1,2})$/;
+    const m = raw.match(re);
+    if (!m) return null;
+    const jy = Number(m[1]), jm = Number(m[2]), jd = Number(m[3]);
+    if (jm < 1 || jm > 12 || jd < 1 || jd > 31) return null;
+    let hh = withTime ? Number(m[4]) : 12;
+    let mm = withTime ? Number(m[5]) : 0;
+    if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return null;
+    const first = jalaliYearStart(jy);
+    const next = jalaliYearStart(jy + 1);
+    let offset = jm <= 6 ? (jm - 1) * 31 + jd - 1 : 186 + (jm - 7) * 30 + jd - 1;
+    const date = new Date(first.getFullYear(), first.getMonth(), first.getDate() + offset, hh, mm, 0, 0);
+    const p = intlJalaliParts(date);
+    if (p.year !== jy || p.month !== jm || p.day !== jd || date >= next && p.year !== jy) return null;
+    if (withTime) {
+      return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' +
+        String(date.getDate()).padStart(2, '0') + 'T' + String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+    }
+    return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+  }
+
+  function toValidDate(value) {
+    if (!value) return null;
+    const raw = String(value);
+    const parsed = new Date(/^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw + 'T12:00:00' : raw);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return parsed;
+  }
+
+  function formatJalali(value, includeTime) {
+    const date = toValidDate(value);
+    if (!date) return value ? esc(value) : '—';
+    const p = intlJalaliParts(date);
+    let out = faDigits(p.year + '/' + String(p.month).padStart(2, '0') + '/' + String(p.day).padStart(2, '0'));
+    if (includeTime) out += ' · ' + faDigits(String(date.getHours()).padStart(2, '0') + ':' + String(date.getMinutes()).padStart(2, '0'));
+    return out;
+  }
+
+  function jalaliInputValue(value, withTime) {
+    if (!value) {
+      if (withTime) return formatJalali(nowLocalDateTime(), true);
+      return formatJalali(todayIso(), false);
+    }
+    return formatJalali(value, withTime);
+  }
+
+  function dateInputToIso(value, type) {
+    if (!value) return '';
+    if (type === 'jalali') return parseJalali(value, false) || null;
+    if (type === 'jalali-datetime') return parseJalali(value, true) || null;
+    return value;
+  }
+
+  function dateInputHint(type) {
+    return type === 'jalali-datetime' ? '۱۴۰۵/۰۷/۲۸ ۰۸:۳۰' : '۱۴۰۵/۰۷/۲۸';
+  }
+
+  function recordLabel(moduleKey, record) {
+    if (!record) return specs[moduleKey] ? specs[moduleKey].singular : '';
+    return record.fullName || record.title || record.name || record.code || record.personnelId || record.serial || specs[moduleKey].singular;
+  }
+
+  function fieldsFor(moduleKey) {
+    const fields = specs[moduleKey].fields.slice();
+    if (moduleKey === 'employees') {
+      const custom = String(appData.settings.employeeCustomFields || '').split(/\r?\n/)
+        .map(function (line) { return line.trim(); }).filter(Boolean).slice(0, 20);
+      custom.forEach(function (label, index) {
+        fields.push({ key:'customField' + (index + 1), label:label, custom:true, wide:false });
+      });
+    }
+    return fields;
+  }
+
+  function getSelectOptions(field, data) {
+    if (field.source === 'employees') {
+      return data.employees.slice().sort(function (a, b) {
+        return String(a.fullName || '').localeCompare(String(b.fullName || ''), 'fa');
+      }).map(function (item) {
+        return {value:item.id,label:(item.fullName || 'بدون نام') + (item.personnelId ? ' · ' + item.personnelId : '')};
+      });
+    }
+    if (field.source === 'vehicles') {
+      return data.vehicles.slice().sort(function (a, b) {
+        return String(a.name || '').localeCompare(String(b.name || ''), 'fa');
+      }).map(function (item) {
+        return {value:item.id,label:(item.name || 'خودرو') + (item.companyPlate ? ' · ' + item.companyPlate : '')};
+      });
+    }
+    return (field.options || []).map(function (option) { return {value:option,label:option}; });
+  }
+
+  function renderField(moduleKey, field, record, data) {
+    const value = record && record[field.key] != null ? record[field.key] : (field.custom && record && record.customFields ? record.customFields[field.key] : '');
+    const id = 'atlas-field-' + moduleKey + '-' + field.key;
+    const required = field.required ? ' required' : '';
+    const label = '<span>' + esc(field.label) + (field.required ? ' <i>*</i>' : '') + '</span>';
+    let control = '';
+    if (field.type === 'select') {
+      const options = getSelectOptions(field, data);
+      control = '<select id="' + esc(id) + '" name="' + esc(field.key) + '"' + (field.multiple ? ' multiple size="4"' : '') + required + '>' +
+        (field.multiple ? '' : '<option value="">انتخاب کنید</option>') +
+        options.map(function (option) {
+          const selected = Array.isArray(value) ? value.map(String).includes(String(option.value)) : String(value) === String(option.value);
+          return '<option value="' + esc(option.value) + '"' + (selected ? ' selected' : '') + '>' + esc(option.label) + '</option>';
+        }).join('') + '</select>' +
+        (field.multiple ? '<small class="module-field-hint">برای انتخاب چند نفر، کلید Ctrl را نگه‌دار؛ در موبایل انتخاب چندتایی را از فهرست انجام بده.</small>' : '');
+    } else if (field.type === 'textarea') {
+      control = '<textarea id="' + esc(id) + '" name="' + esc(field.key) + '" rows="3"' + required + ' placeholder="' + esc(field.placeholder || '') + '">' + esc(value) + '</textarea>';
+    } else if (field.type === 'checks') {
+      const selected = Array.isArray(value) ? value : String(value || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+      control = '<div class="module-check-options">' + field.options.map(function (option) {
+        return '<label><input type="checkbox" name="' + esc(field.key) + '" value="' + esc(option) + '"' + (selected.includes(option) ? ' checked' : '') + '><span>' + esc(option) + '</span></label>';
+      }).join('') + '</div>';
+    } else if (field.type === 'file' || field.type === 'file-multiple') {
+      const multiple = field.type === 'file-multiple';
+      control = '<input id="' + esc(id) + '" name="' + esc(field.key) + '" type="file" accept="' + esc(field.accept || '*/*') + '"' + (multiple ? ' multiple' : '') + '>' +
+        (value && (!Array.isArray(value) || value.length) ? '<small class="module-field-hint">پیوست قبلی حفظ می‌شود مگر اینکه پیوست جدید انتخاب کنی.</small>' : '');
+      if (field.key === 'photo' && value) {
+        control += '<img src="' + esc(value) + '" alt="تصویر پرسنلی فعلی" style="width:76px;height:76px;object-fit:cover;border-radius:12px;margin-top:8px">';
+      }
+      if (multiple && Array.isArray(value) && value.length) {
+        control += '<small class="module-field-hint">پیوست‌های فعلی: ' + faDigits(value.length) + ' مورد</small>';
+      }
+    } else if (field.type === 'jalali' || field.type === 'jalali-datetime') {
+      control = '<input id="' + esc(id) + '" name="' + esc(field.key) + '" type="text" inputmode="text" autocomplete="off"' + required +
+        ' value="' + esc(value ? jalaliInputValue(value, field.type === 'jalali-datetime') : jalaliInputValue('', field.type === 'jalali-datetime')) +
+        '" placeholder="' + dateInputHint(field.type) + '" data-jalali-input="' + esc(field.type) + '">' +
+        '<small class="module-field-hint">تاریخ شمسی؛ نمونه: ' + dateInputHint(field.type) + '</small>';
+    } else {
+      const type = field.type || 'text';
+      control = '<input id="' + esc(id) + '" name="' + esc(field.key) + '" type="' + esc(type) + '"' +
+        (field.min != null ? ' min="' + esc(field.min) + '"' : '') + required +
+        ' value="' + esc(value) + '" placeholder="' + esc(field.placeholder || '') + '" autocomplete="off">';
+    }
+    return '<label class="module-field' + (field.wide ? ' module-field-wide' : '') + '" for="' + esc(id) + '">' + label + control + '</label>';
+  }
+
+  function rootWrap(content) {
+    return '<div class="module-wrap" style="display:flex;flex-direction:column;gap:16px;width:100%;max-width:none;min-width:0">' + content + '</div>';
+  }
+
+  function prepareSection(section) {
+    if (!section) return;
+    section.hidden = false;
+    section.style.display = 'block';
+    section.style.width = '100%';
+    section.style.maxWidth = 'none';
+    section.style.minWidth = '0';
+    section.style.gridTemplateColumns = 'none';
+    section.style.gridColumn = 'auto';
+    section.style.overflow = 'visible';
+  }
+
+  function pageHead(title, subtitle, actions) {
+    return '<div class="module-page-head" style="width:100%;min-width:0"><div><span class="module-overline">ATLAS SHIFT / مدیریت عملیات</span>' +
+      '<h2>' + esc(title) + '</h2><p>' + esc(subtitle) + '</p></div><div class="module-page-actions">' + actions + '</div></div>';
+  }
+
+  function renderForm(moduleKey, data) {
+    const state = formState[moduleKey];
+    if (!state || !state.open) return '';
+    const existing = state.id ? (data[moduleKey] || []).find(function (item) { return String(item.id) === String(state.id); }) : null;
+    const fields = fieldsFor(moduleKey);
+    const fileNotice = '<p class="module-field-hint">فایل‌ها در حافظهٔ محلی برنامه ذخیره می‌شوند؛ اندازهٔ هر فایل بهتر است کمتر از ۱۰ مگابایت باشد.</p>';
+    return '<section class="module-form-panel" style="width:100%;min-width:0"><div class="module-form-head"><div><h3>' +
+      (existing ? 'ویرایش ' : 'ثبت ') + esc(specs[moduleKey].singular) + '</h3><p>پس از ذخیره، اطلاعات به فهرست، داشبورد و گزارش‌های مرتبط منتقل می‌شود.</p></div>' +
+      '<button type="button" class="secondary-btn" data-module-action="cancel" data-view="' + esc(moduleKey) + '">بستن فرم</button></div>' +
+      '<form class="module-form" data-module-form data-view="' + esc(moduleKey) + '" data-id="' + esc(existing ? existing.id : '') + '">' +
+      '<div class="module-fields">' + fields.map(function (field) { return renderField(moduleKey, field, existing, data); }).join('') + '</div>' +
+      fileNotice +
+      '<div class="module-form-actions"><span class="module-required-help">موارد دارای * ضروری هستند.</span><div>' +
+      '<button type="button" class="secondary-btn" data-module-action="cancel" data-view="' + esc(moduleKey) + '">انصراف</button> ' +
+      '<button type="submit" class="primary-btn">' + (existing ? 'ذخیرهٔ تغییرات' : 'ثبت ' + esc(specs[moduleKey].singular)) + '</button></div></div></form></section>';
+  }
+
+  function displayValue(moduleKey, fieldKey, value, data) {
+    if (value == null || value === '') return '—';
+    const field = fieldsFor(moduleKey).find(function (item) { return item.key === fieldKey; });
+    if (field && (field.type === 'jalali' || field.type === 'date')) return formatJalali(value, false);
+    if (field && field.type === 'jalali-datetime') return formatJalali(value, true);
+    if (field && field.source === 'employees') {
+      const findName = function (id) {
+        const item = data.employees.find(function (person) { return String(person.id) === String(id); });
+        return item ? item.fullName || item.personnelId || 'کارمند' : id;
+      };
+      return esc(Array.isArray(value) ? value.map(findName).join('، ') : findName(value));
+    }
+    if (field && field.source === 'vehicles') {
+      const item = data.vehicles.find(function (vehicle) { return String(vehicle.id) === String(value); });
+      return esc(item ? (item.name || 'خودرو') + (item.companyPlate ? ' · ' + item.companyPlate : '') : value);
+    }
+    if (field && (field.type === 'file' || field.type === 'file-multiple')) {
+      const count = Array.isArray(value) ? value.length : (value ? 1 : 0);
+      return count ? 'پیوست (' + faDigits(count) + ')' : '—';
+    }
+    if (field && field.type === 'checks' && Array.isArray(value)) return esc(value.join('، '));
+    if (field && field.type === 'number') return faDigits(value);
+    return esc(Array.isArray(value) ? value.join('، ') : value);
+  }
+
+  function searchMatch(moduleKey, record, data) {
+    const term = String(searchState[moduleKey] || '').trim().toLocaleLowerCase();
+    const wantedStatus = filterState[moduleKey] || 'all';
+    if (wantedStatus !== 'all' && String(record.status || '') !== wantedStatus) return false;
+    if (!term) return true;
+    const values = fieldsFor(moduleKey).map(function (field) {
+      let value = field.custom && record.customFields ? record.customFields[field.key] : record[field.key];
+      return field.label + ' ' + (Array.isArray(value) ? value.join(' ') : String(value == null ? '' : value));
+    }).join(' ').toLocaleLowerCase();
+    const related = (data.employees || []).filter(function (item) { return String(record.crewIds || '').includes(String(item.id)); }).map(function (item) { return item.fullName; }).join(' ');
+    return (values + ' ' + related).toLocaleLowerCase().includes(term);
+  }
+
+  function recordsForView(moduleKey, data) {
+    return (data[moduleKey] || []).filter(function (record) { return searchMatch(moduleKey, record, data); }).slice().sort(function (a, b) {
+      return String(b.updatedAt || b.createdAt || b.startAt || b.startDate || b.date || '').localeCompare(
+        String(a.updatedAt || a.createdAt || a.startAt || a.startDate || a.date || '')
+      );
+    });
+  }
+
+  function statusOptions(moduleKey) {
+    const field = specs[moduleKey].fields.find(function (item) { return item.key === 'status' && item.type === 'select'; });
+    return field ? field.options : [];
+  }
+
+  function renderStatusFilter(moduleKey) {
+    if (!statusOptions(moduleKey).length) return '';
+    const selected = filterState[moduleKey] || 'all';
+    return '<select data-module-filter data-view="' + esc(moduleKey) + '" aria-label="فیلتر وضعیت"><option value="all"' +
+      (selected === 'all' ? ' selected' : '') + '>همه وضعیت‌ها</option>' +
+      statusOptions(moduleKey).map(function (item) {
+        return '<option value="' + esc(item) + '"' + (selected === item ? ' selected' : '') + '>' + esc(item) + '</option>';
+      }).join('') + '</select>';
+  }
+
+  function renderHistoryButton(moduleKey, record) {
+    const hasHistory = appData.history.some(function (item) { return item.module === moduleKey && item.recordId === String(record.id); });
+    return hasHistory ? '<button type="button" class="secondary-btn" data-module-action="history" data-view="' + esc(moduleKey) + '" data-id="' + esc(record.id) + '">سوابق</button> ' : '';
+  }
+
+  function renderTable(moduleKey, data) {
+    const columns = specs[moduleKey].columns;
+    const records = recordsForView(moduleKey, data);
+    if (!records.length) {
+      return '<div class="module-empty">' + ((data[moduleKey] || []).length ?
+        'موردی مطابق جست‌وجو یا فیلتر پیدا نشد.' :
+        'هنوز اطلاعاتی ثبت نشده است. برای شروع روی «ثبت مورد جدید» بزن.') + '</div>';
+    }
+    return '<div class="module-table-wrap" style="width:100%;max-width:100%;min-width:0"><table class="module-table"><thead><tr>' +
+      '<th class="module-check-cell"><input type="checkbox" data-module-select-all aria-label="انتخاب همهٔ ردیف‌ها"></th>' +
+      columns.map(function (key) {
+        const field = fieldsFor(moduleKey).find(function (item) { return item.key === key; });
+        return '<th>' + esc(field ? field.label : key) + '</th>';
+      }).join('') + '<th>عملیات</th></tr></thead><tbody>' +
+      records.map(function (record) {
+        return '<tr><td class="module-check-cell"><input type="checkbox" data-record-select value="' + esc(record.id) + '" aria-label="انتخاب ردیف"></td>' +
+          columns.map(function (key) {
+            const value = fieldsFor(moduleKey).find(function (field) { return field.key === key && field.custom; }) && record.customFields
+              ? record.customFields[key] : record[key];
+            return '<td>' + displayValue(moduleKey, key, value, data) + '</td>';
+          }).join('') +
+          '<td class="module-row-actions">' + renderHistoryButton(moduleKey, record) +
+          '<button type="button" class="secondary-btn" data-module-action="edit" data-view="' + esc(moduleKey) + '" data-id="' + esc(record.id) + '">ویرایش</button> ' +
+          '<button type="button" class="module-delete-btn" data-module-action="delete" data-view="' + esc(moduleKey) + '" data-id="' + esc(record.id) + '">حذف</button></td></tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+
+  function renderCrud(moduleKey, section) {
+    const data = appData;
+    const records = data[moduleKey] || [];
+    const existing = records.length;
+    const actions = '<button class="secondary-btn" type="button" data-module-action="export" data-view="' + esc(moduleKey) + '">خروجی CSV</button>' +
+      '<button class="primary-btn" type="button" data-module-action="new" data-view="' + esc(moduleKey) + '">＋ ثبت مورد جدید</button>';
+    section.innerHTML = rootWrap(
+      pageHead(specs[moduleKey].title, specs[moduleKey].subtitle, actions) +
+      '<div class="module-summary" style="width:100%"><div><span>تعداد کل</span><strong>' + faDigits(existing) + '</strong></div>' +
+      '<div><span>ذخیره‌سازی</span><strong>محلی و آفلاین</strong></div><div><span>آخرین به‌روزرسانی</span><strong>' + (data.updatedAt ? displayDateTime(data.updatedAt) : '—') + '</strong></div></div>' +
+      renderForm(moduleKey, data) +
+      '<section class="module-list-panel" style="width:100%;min-width:0"><div class="module-list-head"><div><h3>فهرست ' + esc(specs[moduleKey].title) + '</h3><p>جست‌وجو، فیلتر، انتخاب چند ردیف و ویرایش از همین بخش انجام می‌شود.</p></div>' +
+      '<div class="module-list-tools"><input type="search" data-module-search data-view="' + esc(moduleKey) + '" value="' + esc(searchState[moduleKey] || '') + '" placeholder="جست‌وجو در فهرست" aria-label="جست‌وجو">' + renderStatusFilter(moduleKey) + '</div></div>' +
+      '<div class="module-bulk-tools"><label><input type="checkbox" data-module-select-all> انتخاب همه</label><button type="button" class="module-delete-btn" data-module-action="bulk-delete" data-view="' + esc(moduleKey) + '">حذف انتخاب‌شده‌ها</button>' +
+      '<span data-module-result-count>' + faDigits(recordsForView(moduleKey, data).length) + ' مورد از ' + faDigits(existing) + '</span></div>' +
+      '<div data-module-list-region>' + renderTable(moduleKey, data) + '</div></section>' +
+      '<div class="module-local-note"><strong>ذخیره‌سازی محلی:</strong> اطلاعات در همین دستگاه ذخیره می‌شوند. برای انتقال دستگاه، از بخش تنظیمات نسخهٔ پشتیبان تهیه کن.</div>'
+    );
+  }
+
+  function parseDateValue(value) {
+    if (!value) return null;
+    const raw = String(value);
+    const date = new Date(/^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw + 'T12:00:00' : raw);
+    if (Number.isNaN(date.getTime())) return null;
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }
+
+  function dueInDays(value) {
+    const target = parseDateValue(value);
+    if (!target) return Infinity;
+    const now = parseDateValue(todayIso());
+    return Math.round((target.getTime() - now.getTime()) / 86400000);
+  }
+
+  function alertsForData() {
+    const alerts = [];
+    appData.gasmeters.forEach(function (meter) {
+      const left = dueInDays(meter.calibrationEnd);
+      if (left <= 30) alerts.push({
+        key:'meter-' + meter.id, critical:left <= 7,
+        title:'موعد کالیبراسیون گازسنج',
+        detail:(meter.code || meter.serial || 'دستگاه') + ' · ' + (left < 0 ? 'مهلت گذشته' : 'تا ' + faDigits(left) + ' روز دیگر'),
+        at:meter.calibrationEnd
+      });
+    });
+    appData.vehicles.forEach(function (vehicle) {
+      if (['در تعمیر','خارج از سرویس'].includes(vehicle.status) || vehicle.healthStatus === 'دارای نقص') {
+        alerts.push({key:'vehicle-' + vehicle.id,critical:true,title:'خودرو نیازمند رسیدگی',detail:(vehicle.name || 'خودرو') + ' · ' + (vehicle.status || vehicle.healthStatus || ''),at:vehicle.updatedAt});
+      }
+      const km = Number(vehicle.currentKm), next = Number(vehicle.nextOilKm);
+      if (Number.isFinite(km) && Number.isFinite(next) && next > 0 && next - km <= 500) {
+        alerts.push({key:'oil-' + vehicle.id,critical:next <= km,title:'سررسید سرویس روغن',detail:(vehicle.name || 'خودرو') + ' · ' + (next <= km ? 'موعد گذشته' : faDigits(next - km) + ' کیلومتر مانده'),at:vehicle.updatedAt});
+      }
+    });
+    appData.notes.forEach(function (note) {
+      const left = dueInDays(note.dueDate);
+      if (note.dueDate && left < 0 && !['تکمیل‌شده','لغوشده'].includes(note.status)) {
+        alerts.push({key:'note-' + note.id,critical:false,title:'پیگیری با موعد گذشته',detail:note.title || 'پیگیری',at:note.dueDate});
+      }
+    });
+    return alerts.sort(function (a,b) { return Number(b.critical)-Number(a.critical); });
+  }
+
+  function refreshDashboard() {
+    if (!ready) return;
+    const staff = appData.employees;
+    const missions = appData.missions;
+    const vehicles = appData.vehicles;
+    const meters = appData.gasmeters;
+    const count = function (fn) { return staff.filter(fn).length; };
+    const roster = document.querySelector('[data-widget="roster"]');
+    if (roster) {
+      const total = staff.length;
+      const active = count(function (e) { return ['آماده‌کار','در حال کار','شیفت','مأموریت'].includes(e.status); });
+      const values = [active,count(function(e){return e.status === 'شیفت';}),count(function(e){return e.status === 'مأموریت';}),count(function(e){return e.status === 'مرخصی';})];
+      const number = roster.querySelector('.big-number');
+      if (number) number.innerHTML = faDigits(total) + '<small>نفر ثبت‌شده</small>';
+      const stats = roster.querySelectorAll('.mini-stat .value');
+      values.forEach(function (value,index) { if(stats[index]) stats[index].textContent = faDigits(value); });
+      const ring = roster.querySelector('.ring-label b');
+      if (ring) ring.textContent = faDigits(total ? Math.round(active / total * 100) : 0) + '٪';
+      const ringLabel = roster.querySelector('.ring-label span');
+      if (ringLabel) ringLabel.textContent = 'فعال';
+    }
+
+    const shift = document.querySelector('[data-widget="shift-coverage"]');
+    if (shift) {
+      const rows = shift.querySelectorAll('.shift-line');
+      const stats = [
+        {label:'نیروی شیفتی',value:count(function(e){return e.workType === 'شیفتی';})},
+        {label:'نیروی روزکار',value:count(function(e){return e.workType === 'روزکار';})},
+        {label:'در مأموریت',value:count(function(e){return e.status === 'مأموریت';})}
+      ];
+      const max = Math.max(1,stats[0].value,stats[1].value,stats[2].value);
+      stats.forEach(function (item,index) {
+        const row=rows[index];if(!row)return;
+        const title=row.querySelector('.shift-line-top b'),value=row.querySelector('.shift-line-top span'),bar=row.querySelector('.progress-bar');
+        if(title)title.textContent=item.label;
+        if(value)value.textContent=faDigits(item.value)+' نفر';
+        if(bar)bar.style.width=(item.value?Math.max(5,Math.round(item.value/max*100)):0)+'%';
+      });
+      const badge=shift.querySelector('.widget-meta .status-pill');if(badge)badge.textContent='دادهٔ ثبت‌شده';
+    }
+
+    const missionWidget=document.querySelector('[data-widget="missions"]');
+    if(missionWidget){
+      const list=missionWidget.querySelector('.list'),badge=missionWidget.querySelector('.widget-meta .status-pill');
+      if(badge)badge.textContent=faDigits(missions.length)+' مورد';
+      if(list){
+        const recent=missions.slice().sort(function(a,b){return String(b.startAt||'').localeCompare(String(a.startAt||''));}).slice(0,6);
+        list.innerHTML=recent.length?recent.map(function(m,index){
+          const names=(m.crewIds||[]).map(function(id){const person=staff.find(function(e){return String(e.id)===String(id)});return person?person.fullName:''}).filter(Boolean);
+          const crew=[names.join('، '),m.crewText].filter(Boolean).join('؛ ');
+          return '<div class="list-item"><div class="route-mark"><b>'+esc((m.city||'—').slice(0,3))+'</b><span>مسیر '+faDigits(index+1)+'</span></div><div class="list-main"><b>'+esc(m.title||'مأموریت')+'</b><span>'+esc([m.origin,m.destination,m.city].filter(Boolean).join(' ← '))+' · '+esc(crew||'گروه ثبت نشده')+'</span></div><div class="list-side"><strong>'+esc(m.status||'ثبت نشده')+'</strong><span class="status-pill">'+formatJalali(m.startAt,true)+'</span></div></div>';
+        }).join(''):'<div class="module-empty">هنوز مأموریتی ثبت نشده است.</div>';
+      }
+    }
+
+    const fleet=document.querySelector('[data-widget="fleet"]'),stack=fleet&&fleet.querySelector('.vehicle-stack');
+    if(stack){
+      stack.innerHTML=vehicles.length?vehicles.slice(0,6).map(function(v){
+        return '<div class="vehicle"><div class="vehicle-icon"><span>▰</span></div><div class="vehicle-info"><b>'+esc(v.name||'خودرو')+'</b><span>'+esc([v.currentCity,v.currentPlace,v.companyPlate].filter(Boolean).join(' · ')||'موقعیت ثبت نشده')+'</span></div><div class="vehicle-side"><b>'+esc(v.status||'ثبت نشده')+'</b><span>'+esc(v.policePlate||'')+'</span></div></div>';
+      }).join(''):'<div class="module-empty">هنوز خودرویی ثبت نشده است.</div>';
+    }
+
+    const equipment=document.querySelector('[data-widget="equipment"]');
+    if(equipment){
+      const badge=equipment.querySelector('.widget-meta .status-pill');if(badge)badge.textContent=faDigits(meters.length)+' دستگاه';
+      equipment.querySelectorAll('.equip-row,.module-equip-empty').forEach(function(node){node.remove();});
+      const heading=equipment.querySelector('.widget-header');
+      const markup=meters.length?meters.slice(0,8).map(function(m){
+        const left=dueInDays(m.calibrationEnd);
+        const label=left<0?'منقضی':left<=30?'نزدیک موعد':(m.status||'معتبر');
+        const percent=left===Infinity?0:Math.max(5,Math.min(100,Math.round(left/90*100)));
+        const gases=Array.isArray(m.gases)?m.gases.join(', '):String(m.gases||'گاز ثبت نشده');
+        return '<div class="equip-row"><div class="equip-label"><div class="gas-chip">'+esc(gases.slice(0,6)||'GAS')+'</div><div><b>'+esc(m.code||m.serial||'گازسنج')+'</b><span>'+esc(m.serial||'')+' · '+esc(m.location||'محل ثبت نشده')+'<div class="progress-track"><div class="progress-bar" style="width:'+percent+'%"></div></div></span></div></div><span class="equip-status'+(left<=30?' warn':'')+'">'+esc(label)+'</span></div>';
+      }).join(''):'<div class="module-empty module-equip-empty">هنوز گازسنجی ثبت نشده است.</div>';
+      if(heading)heading.insertAdjacentHTML('afterend',markup);
+    }
+
+    const calendar=document.querySelector('[data-widget="calendar"]'),agenda=calendar&&calendar.querySelector('.agenda');
+    if(calendar){
+      const now=new Date(), dayParts=intlJalaliParts(now);
+      const day=calendar.querySelector('#persianDay');if(day)day.textContent=faDigits(dayParts.day);
+      const month=calendar.querySelector('#persianMonth');
+      if(month){try{month.textContent=new Intl.DateTimeFormat('fa-IR-u-ca-persian',{month:'long',year:'numeric'}).format(now)}catch(error){}}
+      const weekday=calendar.querySelector('#weekDay');
+      if(weekday)weekday.textContent=new Intl.DateTimeFormat('fa-IR',{weekday:'long'}).format(now);
+    }
+    if(agenda){
+      const today=todayIso(),items=[];
+      missions.filter(function(m){return String(m.startAt||'').slice(0,10)===today&&m.status!=='لغو‌شده';}).forEach(function(m){items.push({time:String(m.startAt||'').slice(11,16),type:'مأموریت',title:m.title||'مأموریت',detail:[m.city,m.destination].filter(Boolean).join(' · ')});});
+      appData.notes.filter(function(n){return (n.dueDate===today||n.date===today)&&!['تکمیل‌شده','لغوشده'].includes(n.status);}).forEach(function(n){items.push({time:'',type:'پیگیری',title:n.title||'پیگیری',detail:n.related||n.body||''});});
+      appData.leaves.filter(function(l){return l.startDate===today&&l.status!=='ردشده';}).forEach(function(l){const person=staff.find(function(e){return String(e.id)===String(l.employeeId)});items.push({time:'',type:'مرخصی',title:person?person.fullName:(l.groupName||'مرخصی'),detail:l.leaveType||''});});
+      agenda.innerHTML=items.length?items.slice(0,6).map(function(item){return '<div class="agenda-row"><div class="agenda-time">'+esc(item.time||item.type)+'</div><div class="agenda-dot"></div><div class="agenda-text"><b>'+esc(item.title)+'</b><span>'+esc(item.detail||item.type)+'</span></div></div>';}).join(''):'<div class="module-empty">برای امروز مأموریت یا پیگیری زمان‌بندی‌شده‌ای ثبت نشده است.</div>';
+      const p=calendar.querySelector('.widget-title p');if(p)p.textContent='برنامهٔ امروز بر اساس اطلاعات ثبت‌شده';
+    }
+
+    const alerts=alertsForData();
+    const alertsWidget=document.querySelector('[data-widget="alerts"]'),alertList=alertsWidget&&alertsWidget.querySelector('.alert-list');
+    if(alertList){
+      const existingButton=document.getElementById('seeAllAlerts');
+      alertList.innerHTML=alerts.length?alerts.slice(0,5).map(function(a){return '<div class="alert-item'+(a.critical?' critical':'')+'"><div class="alert-symbol">'+(a.critical?'!':'↗')+'</div><div class="alert-copy"><b>'+esc(a.title)+'</b><p>'+esc(a.detail)+'</p></div><span class="alert-age">'+(a.critical?'توجه':'پیگیری')+'</span></div>';}).join(''):'<div class="module-empty">هشدار عملیاتی ثبت‌شده‌ای وجود ندارد.</div>';
+      if(existingButton)alertList.appendChild(existingButton);
+      const count=document.getElementById('notificationCount');if(count)count.textContent=faDigits(alerts.length);
+    }
+    const notificationList=document.getElementById('noticeList');
+    if(notificationList){
+      const drawerButton=document.getElementById('seeAllAlerts');
+      notificationList.innerHTML=alerts.length?alerts.map(function(a){return '<div class="notice-card'+(a.critical?' unread':'')+'"><div class="notice-icon">'+(a.critical?'!':'↗')+'</div><div><b>'+esc(a.title)+'</b><p>'+esc(a.detail)+'</p></div></div>';}).join(''):'<div class="module-empty">اعلان تازه‌ای وجود ندارد.</div>';
+    }
+    const operations=document.querySelector('[data-widget="operations"]');
+    if(operations){
+      const chart=operations.querySelector('.chart'),legend=operations.querySelector('.chart-legend'),labels=operations.querySelector('.chart-labels');
+      if(chart)chart.hidden=true;if(legend)legend.hidden=true;if(labels)labels.hidden=true;
+      let summary=document.getElementById('operationsRealDataSummary');
+      if(!summary){summary=document.createElement('div');summary.id='operationsRealDataSummary';summary.className='module-empty';if(chart)chart.insertAdjacentElement('afterend',summary);}
+      const lastSeven=missions.filter(function(m){const d=String(m.startAt||'').slice(0,10);const left=dueInDays(d);return left>=0&&left<=6;}).length;
+      summary.textContent='مأموریت‌های ثبت‌شده در ۷ روز اخیر: '+faDigits(lastSeven)+' مورد.';
+    }
+    const foot=document.querySelector('.footnote');
+    if(foot){const parts=foot.querySelectorAll('span');if(parts[1])parts[1].textContent='اطلاعات ثبت‌شده در همین دستگاه';if(parts[3])parts[3].textContent='ذخیره‌سازی محلی · بدون اتصال ابری';}
+  }
+
+  function reportDateFor(moduleKey, record) {
+    if (moduleKey === 'missions') return String(record.startAt || '').slice(0,10);
+    if (moduleKey === 'leaves') return record.startDate || '';
+    if (moduleKey === 'gasmeters') return record.calibrationEnd || record.updatedAt || '';
+    if (moduleKey === 'vehicles') return record.updatedAt || record.createdAt || '';
+    if (moduleKey === 'notes') return record.date || record.dueDate || '';
+    return record.createdAt || '';
+  }
+
+  function isInRange(moduleKey, record, period) {
+    if (period === 'all') return true;
+    const raw = reportDateFor(moduleKey, record);
+    const date = parseDateValue(raw);
+    const today = parseDateValue(todayIso());
+    if (!date || !today) return false;
+    if (period === 'custom') {
+      const from = reportFrom ? parseJalali(reportFrom, false) : '';
+      const to = reportTo ? parseJalali(reportTo, false) : '';
+      if (reportFrom && !from) return false;
+      if (reportTo && !to) return false;
+      const fromDate = from ? parseDateValue(from) : null;
+      const toDate = to ? parseDateValue(to) : null;
+      if (fromDate && date < fromDate) return false;
+      if (toDate && date > toDate) return false;
+      return true;
+    }
+    if (period === 'today') return date.getTime() === today.getTime();
+    if (period === 'yesterday') {
+      const d = new Date(today);d.setDate(d.getDate()-1);return date.getTime()===d.getTime();
+    }
+    let start = new Date(today);
+    if (period === 'threeDays') start.setDate(start.getDate()-2);
+    else if (period === 'week') start.setDate(start.getDate()-6);
+    else if (period === 'tenDays') start.setDate(start.getDate()-9);
+    else if (period === 'month') start = new Date(today.getFullYear(),today.getMonth(),1);
+    else if (period === 'threeMonths') start.setMonth(start.getMonth()-2,1);
+    else if (period === 'sixMonths') start.setMonth(start.getMonth()-5,1);
+    else if (period === 'year') start = new Date(today.getFullYear(),0,1);
+    return date >= start && date <= today;
+  }
+
+  function renderReports(section) {
+    const periods = [
+      ['today','امروز'],['yesterday','دیروز'],['threeDays','۳ روز اخیر'],['week','هفته'],['tenDays','۱۰ روز اخیر'],
+      ['month','ماه جاری'],['threeMonths','۳ ماه اخیر'],['sixMonths','۶ ماه اخیر'],['year','سال جاری'],['all','همهٔ اطلاعات'],['custom','بازهٔ دلخواه']
+    ];
+    const actions = '<button class="secondary-btn" type="button" data-module-action="export-all">خروجی CSV همهٔ اطلاعات</button><button class="primary-btn" type="button" data-module-action="print">چاپ گزارش</button>';
+    const cards = MODULES.map(function (key) {
+      const total=appData[key].filter(function(record){return isInRange(key,record,reportPeriod);}).length;
+      return '<a class="module-report-card" href="./index.html?view='+esc(key)+'"><span>'+esc(specs[key].title)+'</span><strong>'+faDigits(total)+'</strong><small>مشاهدهٔ فهرست ←</small></a>';
+    }).join('');
+    const activeStaff=appData.employees.filter(function(item){return item.status!=='غیرفعال';}).length;
+    const openMissions=appData.missions.filter(function(item){return ['در جریان','برنامه‌ریزی‌شده'].includes(item.status);}).length;
+    const dueMeters=appData.gasmeters.filter(function(item){return dueInDays(item.calibrationEnd)<=30;}).length;
+    section.innerHTML=rootWrap(
+      pageHead('گزارش‌ها و آمار','خلاصهٔ اطلاعات ثبت‌شده در دستگاه و فیلتر براساس بازهٔ زمانی.',actions)+
+      '<section class="module-list-panel"><div class="module-list-head"><div><h3>بازهٔ گزارش</h3><p>برای بازهٔ سفارشی تاریخ شمسی را وارد کن.</p></div><div class="module-list-tools"><select data-report-period aria-label="بازهٔ گزارش">'+periods.map(function(item){return '<option value="'+item[0]+'"'+(reportPeriod===item[0]?' selected':'')+'>'+item[1]+'</option>';}).join('')+'</select></div></div>'+
+      '<div class="module-report-range" data-report-custom'+(reportPeriod==='custom'?'':' hidden')+'><label class="module-field"><span>از تاریخ شمسی</span><input type="text" data-report-from value="'+esc(reportFrom)+'" placeholder="۱۴۰۵/۰۷/۰۱"></label><label class="module-field"><span>تا تاریخ شمسی</span><input type="text" data-report-to value="'+esc(reportTo)+'" placeholder="۱۴۰۵/۰۷/۳۰"></label><button type="button" class="primary-btn" data-module-action="apply-report-range">اعمال بازه</button></div></section>'+
+      '<div class="module-metric-grid"><div><span>نیروی ثبت‌شدهٔ فعال</span><strong>'+faDigits(activeStaff)+'</strong></div><div><span>مأموریت‌های باز</span><strong>'+faDigits(openMissions)+'</strong></div><div><span>گازسنج با موعد تا ۳۰ روز</span><strong>'+faDigits(dueMeters)+'</strong></div></div>'+
+      '<section class="module-list-panel"><div class="module-list-head"><div><h3>خلاصهٔ پرونده‌ها</h3><p>تعداد هر بخش مطابق بازهٔ انتخاب‌شده.</p></div></div><div class="module-report-grid">'+cards+'</div></section>'+
+      '<section class="module-list-panel"><div class="module-list-head"><div><h3>تاریخچهٔ عملیات</h3><p>آخرین تغییرات ثبت‌شده در این دستگاه.</p></div></div>'+renderGlobalHistory()+'</section>'+
+      '<div class="module-local-note">برای فایل PDF از پنجرهٔ چاپ مرورگر گزینهٔ «ذخیره به‌صورت PDF» را انتخاب کن. خروجی جدولی CSV است و در نرم‌افزارهای صفحه‌گسترده باز می‌شود.</div>'
+    );
+  }
+
+  function renderGlobalHistory() {
+    const rows=appData.history.slice().sort(function(a,b){return String(b.at).localeCompare(String(a.at));}).slice(0,50);
+    if(!rows.length)return '<div class="module-empty">هنوز سابقه‌ای ثبت نشده است.</div>';
+    return '<div class="module-table-wrap"><table class="module-table"><thead><tr><th>زمان</th><th>بخش</th><th>مورد</th><th>عملیات</th><th>تغییرات</th></tr></thead><tbody>'+
+      rows.map(function(item){return '<tr><td>'+formatJalali(item.at,true)+'</td><td>'+esc(specs[item.module]?specs[item.module].title:item.module)+'</td><td>'+esc(item.recordLabel||'—')+'</td><td>'+esc(item.action)+'</td><td>'+esc((item.changes||[]).map(function(c){return c.field+': '+c.before+' ← '+c.after;}).join('؛ ')||'—')+'</td></tr>';}).join('')+'</tbody></table></div>';
+  }
+
+  function renderSettings(section) {
+    section.innerHTML=rootWrap(
+      pageHead('تنظیمات','مدیریت محلی اطلاعات، فیلدهای پرسنلی قابل تنظیم و نسخهٔ پشتیبان. تم فعلی تغییر داده نمی‌شود.','')+
+      '<section class="module-list-panel"><div class="module-list-head"><div><h3>پشتیبان‌گیری و بازیابی</h3><p>نسخهٔ پشتیبان تمام پرونده‌ها، تاریخچه، تنظیمات و پیوست‌های محلی را دربر می‌گیرد.</p></div></div>'+
+      '<div class="module-backup-grid"><div class="module-backup-card"><strong>ساخت نسخهٔ پشتیبان</strong><p>یک فایل JSON از تمام داده‌های موجود در این دستگاه دریافت می‌کنی.</p><button type="button" class="primary-btn" data-module-action="backup">دریافت فایل پشتیبان</button></div>'+
+      '<div class="module-backup-card"><strong>بازیابی نسخهٔ پشتیبان</strong><p>بازیابی، داده‌های فعلی را جایگزین اطلاعات درون فایل انتخاب‌شده می‌کند.</p><button type="button" class="secondary-btn" data-module-action="restore-select">انتخاب فایل پشتیبان</button><input type="file" id="atlasRestoreFile" accept=".json,application/json" hidden></div></div></section>'+
+      '<section class="module-list-panel"><div class="module-list-head"><div><h3>فیلدهای سفارشی کارکنان</h3><p>هر خط یک عنوان فیلد است. حذف عنوان از این فهرست به معنی حذف مقدار قبلی از پرونده‌ها نیست.</p></div></div>'+
+      '<form data-custom-fields-form class="module-form"><label class="module-field module-field-wide"><span>عنوان فیلدها، هر کدام در یک خط</span><textarea name="employeeCustomFields" rows="5" placeholder="مثلاً: گواهینامه تخصصی&#10;شماره بیمه">'+esc(appData.settings.employeeCustomFields||'')+'</textarea></label><div class="module-form-actions"><span class="module-required-help">حداکثر ۲۰ فیلد سفارشی.</span><button type="submit" class="primary-btn">ذخیرهٔ فیلدها</button></div></form></section>'+
+      '<section class="module-list-panel"><div class="module-list-head"><div><h3>وضعیت نگهداری داده</h3><p>داده‌ها در پایگاه محلی مرورگر ذخیره می‌شوند و برای استفادهٔ روزمره به اتصال اینترنت نیاز ندارند.</p></div></div><div class="module-local-note">اطلاعات هر مرورگر مستقل است. پاک‌کردن داده‌های مرورگر می‌تواند اطلاعات را حذف کند؛ فایل پشتیبان را در محل امن نگهداری کن. همگام‌سازی خودکار فعال نیست.</div><div class="module-settings-counts">'+MODULES.map(function(key){return '<span>'+esc(specs[key].title)+': <b>'+faDigits(appData[key].length)+'</b></span>';}).join('')+'</div></section>'
+    );
+  }
+
+  function refreshCurrentView() {
     const section=document.getElementById('sectionView');
-    const selected=[...section.querySelectorAll('[data-record-select]:checked')].map(x=>x.value);
-    if(!selected.length){notify('ابتدا یک یا چند ردیف را انتخاب کن.');return}
-    if(!window.confirm('تعداد '+faDigits(selected.length)+' مورد انتخاب‌شده حذف شود؟'))return;
-    const data=readData();data[view]=data[view].filter(x=>!selected.includes(String(x.id)));
-    if(saveData(data)){render(view,section);renderDashboard();notify('موارد انتخاب‌شده حذف شدند.')}
-  }else if(action==='export'){exportCsv(view)}
-  else if(action==='export-all'){exportAllCsv()}
-  else if(action==='print'){window.print()}
-  else if(action==='backup'){exportBackup()}
-  else if(action==='restore-select'){const input=document.getElementById('moduleRestoreFile');if(input)input.click()}
-});
-document.addEventListener('submit',function(event){
-  const form=event.target.closest('[data-module-form]');if(!form)return;
-  event.preventDefault();
-  const view=form.dataset.view,spec=moduleSpecs[view];if(!spec)return;
-  const fd=new FormData(form),data=readData(),id=form.dataset.id;
-  const record={id:id||makeId(),createdAt:'',updatedAt:new Date().toISOString()};
-  if(id){const old=data[view].find(x=>String(x.id)===String(id));if(old)record.createdAt=old.createdAt||''}
-  if(!record.createdAt)record.createdAt=record.updatedAt;
-  spec.fields.forEach(f=>{record[f.key]=String(fd.get(f.key)||'').trim()});
-  if(view==='leaves'&&record.startDate&&record.endDate&&record.endDate<record.startDate){notify('تاریخ پایان مرخصی نباید قبل از تاریخ شروع باشد.');return}
-  if(view==='gasmeters'&&record.calibrationStart&&record.calibrationEnd&&record.calibrationEnd<record.calibrationStart){notify('پایان اعتبار کالیبراسیون نباید قبل از شروع آن باشد.');return}
-  if(id)data[view]=data[view].map(x=>String(x.id)===String(id)?record:x);
-  else data[view].push(record);
-  if(!saveData(data))return;
-  delete formStates[view];searchStates[view]=searchStates[view]||'';
-  render(view,document.getElementById('sectionView'));renderDashboard();
-  notify(id?'تغییرات ذخیره شد.':'اطلاعات جدید ثبت شد.');
-});
-document.addEventListener('input',function(event){
-  const input=event.target;
-  if(!input.matches('[data-module-search]'))return;
-  const view=input.dataset.view,position=input.selectionStart;
-  searchStates[view]=input.value;
-  const section=document.getElementById('sectionView');render(view,section);
-  const replacement=section.querySelector('[data-module-search]');
-  if(replacement){replacement.focus();try{replacement.setSelectionRange(position,position)}catch(e){}}
-});
-document.addEventListener('change',function(event){
-  const target=event.target;
-  if(target.matches('[data-module-filter]')){
-    filterStates[target.dataset.view]=target.value;render(target.dataset.view,document.getElementById('sectionView'));
-  }else if(target.matches('[data-module-select-all]')){
-    const section=document.getElementById('sectionView');
-    section.querySelectorAll('[data-record-select]').forEach(box=>box.checked=target.checked);
-    section.querySelectorAll('[data-module-select-all]').forEach(box=>box.checked=target.checked);
-  }else if(target.id==='moduleRestoreFile'){
-    const file=target.files&&target.files[0];if(file)doRestore(file);target.value='';
+    const view=new URLSearchParams(window.location.search).get('view')||'dashboard';
+    if (section) render(view,section);
   }
-});
-window.ATLAS_MODULES={render:render,refreshDashboard:renderDashboard,getData:readData};
-document.addEventListener('DOMContentLoaded',renderDashboard);
-renderDashboard();
+
+  function render(view, section) {
+    if(!section)return;
+    prepareSection(section);
+    if(!ready){
+      section.innerHTML=rootWrap('<div class="module-empty">در حال آماده‌سازی اطلاعات محلی…</div>');
+      return;
+    }
+    if(specs[view])renderCrud(view,section);
+    else if(view==='reports')renderReports(section);
+    else if(view==='settings')renderSettings(section);
+    else{section.hidden=true;section.innerHTML='';}
+  }
+
+  async function readFileAsDataUrl(file) {
+    if(file.size > 10 * 1024 * 1024) throw new Error('هر فایل باید کمتر از ۱۰ مگابایت باشد.');
+    return new Promise(function(resolve,reject){
+      const reader=new FileReader();
+      reader.onload=function(){resolve({name:file.name,type:file.type||'application/octet-stream',size:file.size,dataUrl:String(reader.result||'')});};
+      reader.onerror=function(){reject(reader.error||new Error('File read failed'));};
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function formValues(form, moduleKey, oldRecord) {
+    const fields=fieldsFor(moduleKey), data={};
+    const fd=new FormData(form);
+    for(let i=0;i<fields.length;i+=1){
+      const field=fields[i];
+      if(field.type==='file'||field.type==='file-multiple'){
+        const input=form.querySelector('[name="'+field.key+'"]');
+        const selected=input&&input.files?Array.from(input.files):[];
+        if(!selected.length){
+          data[field.key]=oldRecord&&oldRecord[field.key] != null?oldRecord[field.key]:(field.type==='file-multiple'?[]:'');
+        } else {
+          const list=[];
+          for(let j=0;j<selected.length;j+=1)list.push(await readFileAsDataUrl(selected[j]));
+          data[field.key]=field.type==='file-multiple'?list:(list[0].dataUrl);
+        }
+      }else if(field.type==='checks'||(field.type==='select'&&field.multiple)){
+        data[field.key]=fd.getAll(field.key);
+      }else if(field.type==='jalali'||field.type==='jalali-datetime'){
+        const raw=String(fd.get(field.key)||'').trim();
+        const normalized=dateInputToIso(raw,field.type);
+        if(raw&&!normalized)throw new Error('تاریخ «'+field.label+'» را با قالب شمسی ۱۴۰۵/۰۷/۲۸ وارد کن.');
+        data[field.key]=normalized||'';
+      }else{
+        data[field.key]=String(fd.get(field.key)||'').trim();
+      }
+      if(field.required && (data[field.key] == null || data[field.key] === '' || (Array.isArray(data[field.key])&&!data[field.key].length))){
+        throw new Error('فیلد «'+field.label+'» ضروری است.');
+      }
+    }
+    return data;
+  }
+
+  function summarizeChanges(oldRecord, newRecord, moduleKey) {
+    if(!oldRecord)return [];
+    const fields=fieldsFor(moduleKey),changes=[];
+    fields.forEach(function(field){
+      const before=field.custom&&oldRecord.customFields?oldRecord.customFields[field.key]:oldRecord[field.key];
+      const after=field.custom&&newRecord.customFields?newRecord.customFields[field.key]:newRecord[field.key];
+      const a=JSON.stringify(before==null?'':before),b=JSON.stringify(after==null?'':after);
+      if(a!==b)changes.push({field:field.label||field.key,before:String(before==null?'':Array.isArray(before)?before.join('، '):before),after:String(after==null?'':Array.isArray(after)?after.join('، '):after)});
+    });
+    return changes.slice(0,100);
+  }
+
+  function csvEscape(value) {
+    let text=String(value == null ? '' : value);
+    if (/^[=+\-@\t\r]/.test(text)) text="'"+text;
+    return '"' + text.replace(/"/g,'""') + '"';
+  }
+
+  function downloadFile(filename, content, mime) {
+    const blob=new Blob([content],{type:mime||'application/octet-stream'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=filename;
+    document.body.appendChild(a);a.click();a.remove();
+    window.setTimeout(function(){URL.revokeObjectURL(url);},1500);
+  }
+
+  function exportCsv(moduleKey) {
+    const rows=[];
+    const fields=fieldsFor(moduleKey);
+    rows.push(['شناسه'].concat(fields.map(function(field){return field.label;})));
+    appData[moduleKey].forEach(function(record){
+      rows.push([record.id].concat(fields.map(function(field){
+        const value=field.custom&&record.customFields?record.customFields[field.key]:record[field.key];
+        if(field.type==='file'||field.type==='file-multiple')return Array.isArray(value)?value.map(function(x){return x.name;}).join('; '):(value?'تصویر پیوست':'');
+        return Array.isArray(value)?value.join('، '):String(value==null?'':value);
+      })));
+    });
+    downloadFile('ATLAS-SHIFT-'+moduleKey+'-'+todayIso()+'.csv','\uFEFF'+rows.map(function(row){return row.map(csvEscape).join(',');}).join('\r\n'),'text/csv;charset=utf-8;');
+  }
+
+  function exportAllCsv() {
+    const rows=[['بخش','شناسه','عنوان','وضعیت','تاریخ','شرح']];
+    MODULES.forEach(function(key){
+      appData[key].forEach(function(record){
+        rows.push([specs[key].title,record.id,recordLabel(key,record),record.status||'',recordDateForCsv(key,record),record.notes||record.body||record.result||record.reason||'']);
+      });
+    });
+    downloadFile('ATLAS-SHIFT-report-'+todayIso()+'.csv','\uFEFF'+rows.map(function(row){return row.map(csvEscape).join(',');}).join('\r\n'),'text/csv;charset=utf-8;');
+  }
+
+  function recordDateForCsv(key, record) {
+    if(key==='missions')return record.startAt||'';
+    if(key==='leaves')return record.startDate||'';
+    if(key==='gasmeters')return record.calibrationEnd||'';
+    if(key==='notes')return record.date||'';
+    return record.createdAt||'';
+  }
+
+  function exportBackup() {
+    const payload={app:'ATLAS SHIFT',schemaVersion:2,exportedAt:new Date().toISOString(),data:appData};
+    downloadFile('ATLAS-SHIFT-backup-'+todayIso()+'.json',JSON.stringify(payload,null,2),'application/json;charset=utf-8');
+    toast('نسخهٔ پشتیبان شامل اطلاعات و تاریخچه آماده شد.');
+  }
+
+  async function restoreBackup(file) {
+    if(!file)return;
+    try {
+      const raw=await file.text();
+      const parsed=JSON.parse(raw);
+      const candidate=parsed&&parsed.data?parsed.data:parsed;
+      if(!candidate||!MODULES.every(function(key){return Array.isArray(candidate[key]);}))throw new Error('فایل پشتیبان معتبر نیست.');
+      if(!window.confirm('با بازیابی، اطلاعات فعلی این دستگاه با اطلاعات فایل جایگزین می‌شود. ادامه می‌دهی؟'))return;
+      appData=normalizeState(candidate);
+      const ok=await saveState();
+      if(!ok)return;
+      refreshDashboard();refreshCurrentView();
+      toast('بازیابی با موفقیت انجام شد.');
+    } catch(error) {
+      toast(error.message||'فایل انتخاب‌شده نسخهٔ پشتیبان معتبر ATLAS SHIFT نیست.');
+    }
+  }
+
+  function openHistory(moduleKey, id) {
+    const record=appData[moduleKey].find(function(item){return String(item.id)===String(id);});
+    const rows=appData.history.filter(function(item){return item.module===moduleKey&&item.recordId===String(id);})
+      .sort(function(a,b){return String(b.at).localeCompare(String(a.at));});
+    const textRows=rows.map(function(item){
+      const changes=(item.changes||[]).map(function(change){return change.field+': «'+change.before+'» ← «'+change.after+'»';}).join('\n');
+      return displayDateTime(item.at)+' | '+item.action+(changes?'\n'+changes:'');
+    });
+    window.alert((record?recordLabel(moduleKey,record):'سوابق')+'\n\n'+(textRows.join('\n\n')||'سابقه‌ای ثبت نشده است.'));
+  }
+
+  document.addEventListener('click', async function(event) {
+    const button=event.target.closest('[data-module-action]');
+    if(!button)return;
+    const action=button.dataset.moduleAction;
+    const moduleKey=button.dataset.view||new URLSearchParams(window.location.search).get('view')||'dashboard';
+    const section=document.getElementById('sectionView');
+    if(action==='new'||action==='edit'){
+      if(!specs[moduleKey])return;
+      formState[moduleKey]={open:true,id:action==='edit'?button.dataset.id:null};
+      render(moduleKey,section);
+    }else if(action==='cancel'){
+      delete formState[moduleKey];render(moduleKey,section);
+    }else if(action==='delete'){
+      if(!specs[moduleKey])return;
+      const record=appData[moduleKey].find(function(item){return String(item.id)===String(button.dataset.id);});
+      if(!record||!window.confirm('«'+recordLabel(moduleKey,record)+'» حذف شود؟'))return;
+      appData[moduleKey]=appData[moduleKey].filter(function(item){return String(item.id)!==String(button.dataset.id);});
+      addHistory(moduleKey,record,'حذف',[]);
+      if(await saveState()){render(moduleKey,section);refreshDashboard();toast('مورد حذف شد.')}
+    }else if(action==='bulk-delete'){
+      if(!specs[moduleKey])return;
+      const selected=Array.from(section.querySelectorAll('[data-record-select]:checked')).map(function(box){return box.value;});
+      if(!selected.length){toast('ابتدا یک یا چند ردیف را انتخاب کن.');return;}
+      if(!window.confirm('تعداد '+faDigits(selected.length)+' مورد انتخاب‌شده حذف شود؟'))return;
+      const removed=appData[moduleKey].filter(function(item){return selected.includes(String(item.id));});
+      appData[moduleKey]=appData[moduleKey].filter(function(item){return !selected.includes(String(item.id));});
+      removed.forEach(function(record){addHistory(moduleKey,record,'حذف گروهی',[]);});
+      if(await saveState()){render(moduleKey,section);refreshDashboard();toast('موارد انتخاب‌شده حذف شدند.')}
+    }else if(action==='export'&&specs[moduleKey]){
+      exportCsv(moduleKey);
+    }else if(action==='export-all'){
+      exportAllCsv();
+    }else if(action==='print'){
+      window.print();
+    }else if(action==='backup'){
+      exportBackup();
+    }else if(action==='restore-select'){
+      const input=document.getElementById('atlasRestoreFile');if(input)input.click();
+    }else if(action==='history'&&specs[moduleKey]){
+      openHistory(moduleKey,button.dataset.id);
+    }else if(action==='apply-report-range'){
+      const from=section.querySelector('[data-report-from]'),to=section.querySelector('[data-report-to]');
+      if((from&&from.value&&!parseJalali(from.value,false))||(to&&to.value&&!parseJalali(to.value,false))){
+        toast('تاریخ بازه را به شکل شمسی ۱۴۰۵/۰۷/۲۸ وارد کن.');return;
+      }
+      if(from&&to&&from.value&&to.value){
+        const a=parseJalali(from.value,false),b=parseJalali(to.value,false);
+        if(a>b){toast('تاریخ پایان نباید قبل از تاریخ شروع باشد.');return;}
+      }
+      reportFrom=from?from.value.trim():'';reportTo=to?to.value.trim():'';
+      renderReports(section);
+    }
+  });
+
+  document.addEventListener('submit', async function(event) {
+    const form=event.target.closest('[data-module-form]');
+    if(form){
+      event.preventDefault();
+      const moduleKey=form.dataset.view;
+      if(!specs[moduleKey])return;
+      const id=form.dataset.id||'';
+      const old= id ? appData[moduleKey].find(function(item){return String(item.id)===String(id);}) : null;
+      try{
+        const values=await formValues(form,moduleKey,old);
+        if(moduleKey==='leaves'&&values.startDate&&values.endDate&&values.endDate<values.startDate)throw new Error('تاریخ پایان مرخصی نباید قبل از تاریخ شروع باشد.');
+        if(moduleKey==='missions'&&values.startAt&&values.endAt&&values.endAt<values.startAt)throw new Error('زمان پایان مأموریت نباید قبل از زمان شروع باشد.');
+        if(moduleKey==='gasmeters'&&values.calibrationStart&&values.calibrationEnd&&values.calibrationEnd<values.calibrationStart)throw new Error('پایان اعتبار کالیبراسیون نباید قبل از شروع باشد.');
+        const record=Object.assign({},old||{},values,{id:old?old.id:createId(),createdAt:old?old.createdAt||new Date().toISOString():new Date().toISOString(),updatedAt:new Date().toISOString()});
+        const customFields={};
+        fieldsFor(moduleKey).filter(function(field){return field.custom;}).forEach(function(field){customFields[field.key]=values[field.key]||'';delete record[field.key];});
+        if(Object.keys(customFields).length)record.customFields=customFields;
+        const changes=summarizeChanges(old,record,moduleKey);
+        if(old){
+          appData[moduleKey]=appData[moduleKey].map(function(item){return String(item.id)===String(old.id)?record:item;});
+          addHistory(moduleKey,record,'ویرایش',changes);
+        }else{
+          appData[moduleKey].push(record);
+          addHistory(moduleKey,record,'ثبت',[]);
+        }
+        if(moduleKey==='employees'&&record.status==='غیرفعال') {
+          appData.missions.forEach(function(mission){if((mission.crewIds||[]).map(String).includes(String(record.id))&&mission.status==='برنامه‌ریزی‌شده')mission.updatedAt=new Date().toISOString();});
+        }
+        const ok=await saveState();
+        if(!ok)return;
+        delete formState[moduleKey];
+        render(moduleKey,document.getElementById('sectionView'));
+        refreshDashboard();
+        toast(old?'تغییرات ذخیره شد.':'اطلاعات جدید ثبت شد.');
+      }catch(error){
+        toast(error.message||'ثبت اطلاعات انجام نشد.');
+      }
+      return;
+    }
+    const customForm=event.target.closest('[data-custom-fields-form]');
+    if(customForm){
+      event.preventDefault();
+      const input=customForm.querySelector('[name="employeeCustomFields"]');
+      const lines=String(input?input.value:'').split(/\r?\n/).map(function(x){return x.trim();}).filter(Boolean);
+      if(lines.length>20){toast('حداکثر ۲۰ فیلد سفارشی تعریف کن.');return;}
+      appData.settings.employeeCustomFields=lines.join('\n');
+      if(await saveState()){renderSettings(document.getElementById('sectionView'));toast('فیلدهای سفارشی ذخیره شدند.');}
+    }
+  });
+
+  document.addEventListener('input', function(event) {
+    const input=event.target;
+    if(!input.matches('[data-module-search]'))return;
+    const moduleKey=input.dataset.view;
+    const cursor=input.selectionStart;
+    searchState[moduleKey]=input.value;
+    const section=document.getElementById('sectionView');
+    renderCrud(moduleKey,section);
+    const replacement=section.querySelector('[data-module-search]');
+    if(replacement){replacement.focus();try{replacement.setSelectionRange(cursor,cursor);}catch(error){}}
+  });
+
+  document.addEventListener('change', function(event) {
+    const target=event.target;
+    if(target.matches('[data-module-filter]')){
+      filterState[target.dataset.view]=target.value;
+      render(target.dataset.view,document.getElementById('sectionView'));
+    }else if(target.matches('[data-module-select-all]')){
+      const section=document.getElementById('sectionView');
+      section.querySelectorAll('[data-record-select]').forEach(function(box){box.checked=target.checked;});
+      section.querySelectorAll('[data-module-select-all]').forEach(function(box){box.checked=target.checked;});
+    }else if(target.id==='atlasRestoreFile'){
+      const file=target.files&&target.files[0];if(file)restoreBackup(file);target.value='';
+    }else if(target.matches('[data-report-period]')){
+      reportPeriod=target.value;
+      const region=document.getElementById('sectionView');
+      renderReports(region);
+    }
+  });
+
+  window.ATLAS_MODULES = {
+    render: render,
+    refreshDashboard: refreshDashboard,
+    getData: function () { return appData; },
+    isReady: function () { return ready; }
+  };
+
+  document.addEventListener('DOMContentLoaded', function(){refreshDashboard();});
+  initializeStorage();
 })();
