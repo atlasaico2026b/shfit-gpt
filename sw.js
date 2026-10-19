@@ -1,10 +1,11 @@
-const CACHE_NAME = 'atlas-shift-v20-titr-headings';
+const CACHE_NAME = 'atlas-shift-v21-operational-modules';
 const APP_FILES = [
   './',
   './index.html',
   './dashboard.html',
   './styles.css',
   './app.js',
+  './modules.js',
   './manifest.json',
   './icon.svg'
 ];

@@ -233,7 +233,9 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
       setText('dateText',faDigits(now.toLocaleDateString('fa-IR')));
     }
   }
-  updateClock();setInterval(updateClock,30000);
+  updateClock();setInterval(updateClock,15000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)updateClock()});
+  window.addEventListener('pageshow',updateClock);
 
   // Single-shell navigation: all menu sections use this same UI. Unbuilt modules show an honest in-theme placeholder.
   const viewInfo = {
@@ -266,8 +268,10 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
     if(h)h.innerHTML=info.title;
     if(p)p.textContent=info.subtitle;
     if(k)k.textContent=info.kicker;
-    if(!isDashboard){
-      section.innerHTML='<article class="section-placeholder"><span class="section-badge">'+(info.icon||'✧')+' &nbsp; فضای کاری یکپارچه</span><h2>'+info.title.replace(/<[^>]*>/g,'')+'</h2><p>'+info.subtitle+'</p><div class="section-note">'+info.note+'</div><p>این صفحه در همان پوسته و تم اصلی برنامه باز شده است؛ به فایل یا تم قدیمی دیگری هدایت نمی‌شود. هنوز فرم‌ها و منطق ثبت اطلاعات این ماژول پیاده‌سازی نشده‌اند و تا زمان تکمیل، داده واقعی در این صفحه ذخیره نمی‌شود.</p><div class="section-actions">'+(view==='settings'?'<button type="button" class="primary" data-open-settings-panel>باز کردن تنظیمات ظاهر و چیدمان</button>':'')+'<a class="primary" href="./index.html">بازگشت به داشبورد</a></div></article>';
+    if(window.ATLAS_MODULES&&typeof window.ATLAS_MODULES.render==='function'){
+      window.ATLAS_MODULES.render(view,section);
+    }else if(!isDashboard){
+      section.innerHTML='<article class="section-placeholder"><span class="section-badge">'+(info.icon||'✧')+' &nbsp; فضای کاری یکپارچه</span><h2>'+info.title.replace(/<[^>]*>/g,'')+'</h2><p>'+info.subtitle+'</p><div class="section-note">'+info.note+'</div><p>این صفحه هنوز در حال آماده‌سازی است.</p><div class="section-actions"><a class="primary" href="./index.html">بازگشت به داشبورد</a></div></article>';
     }else{section.innerHTML='';}
     if(view==='settings'){
       settingsPanel.classList.add('open');settingsPanel.setAttribute('aria-hidden','false');settingsButton.setAttribute('aria-expanded','true');
