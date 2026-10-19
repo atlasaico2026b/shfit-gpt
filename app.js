@@ -109,7 +109,7 @@
     colors:[$('#cloudColor1').value,$('#cloudColor2').value,$('#cloudColor3').value],
     strength:$('#cloudStrength').value
   });
-  $('.cloud-color-input').forEach(input=>input.addEventListener('input',syncCloudBackground));
+  $$('.cloud-color-input').forEach(input=>input.addEventListener('input',syncCloudBackground));
   $('#cloudStrength').addEventListener('input',syncCloudBackground);
   $('#resetCloudBackground').addEventListener('click',()=>{applyCloudBackground(defaultCloudBackground);toast('پس‌زمینه به رنگ‌های پیش‌فرض برگشت.')});
   const settingsPanel=$('#settingsPanel'),settingsButton=$('#settingsButton');
