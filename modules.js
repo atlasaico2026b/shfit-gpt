@@ -15,6 +15,7 @@
   let ready = false;
   let loadError = '';
   let reportPeriod = 'month';
+  let dashboardRange = { name:'today', start:todayIso(), end:todayIso() };
   let reportFrom = '';
   let reportTo = '';
   let saveQueue = Promise.resolve();
@@ -746,12 +747,21 @@
       const badge=shift.querySelector('.widget-meta .status-pill');if(badge)badge.textContent='دادهٔ ثبت‌شده';
     }
 
+    const rangeStart = dashboardRange.start || '';
+    const rangeEnd = dashboardRange.end || '';
+    const dashboardMissions = missions.filter(function(mission) {
+      const day = String(mission.startAt || '').slice(0,10);
+      if (!day) return false;
+      if (rangeStart && day < rangeStart) return false;
+      if (rangeEnd && day > rangeEnd) return false;
+      return true;
+    });
     const missionWidget=document.querySelector('[data-widget="missions"]');
     if(missionWidget){
       const list=missionWidget.querySelector('.list'),badge=missionWidget.querySelector('.widget-meta .status-pill');
-      if(badge)badge.textContent=faDigits(missions.length)+' مورد';
+      if(badge)badge.textContent=faDigits(dashboardMissions.length)+' مورد';
       if(list){
-        const recent=missions.slice().sort(function(a,b){return String(b.startAt||'').localeCompare(String(a.startAt||''));}).slice(0,6);
+        const recent=dashboardMissions.slice().sort(function(a,b){return String(b.startAt||'').localeCompare(String(a.startAt||''));}).slice(0,6);
         list.innerHTML=recent.length?recent.map(function(m,index){
           const names=(m.crewIds||[]).map(function(id){const person=staff.find(function(e){return String(e.id)===String(id)});return person?person.fullName:''}).filter(Boolean);
           const crew=[names.join('، '),m.crewText].filter(Boolean).join('؛ ');
@@ -819,8 +829,7 @@
       if(chart)chart.hidden=true;if(legend)legend.hidden=true;if(labels)labels.hidden=true;
       let summary=document.getElementById('operationsRealDataSummary');
       if(!summary){summary=document.createElement('div');summary.id='operationsRealDataSummary';summary.className='module-empty';if(chart)chart.insertAdjacentElement('afterend',summary);}
-      const lastSeven=missions.filter(function(m){const d=String(m.startAt||'').slice(0,10);const left=dueInDays(d);return left>=0&&left<=6;}).length;
-      summary.textContent='مأموریت‌های ثبت‌شده در ۷ روز اخیر: '+faDigits(lastSeven)+' مورد.';
+      summary.textContent='مأموریت‌های ثبت‌شده در بازهٔ '+faDigits(dashboardMissions.length)+' مورد است.';
     }
     const foot=document.querySelector('.footnote');
     if(foot){const parts=foot.querySelectorAll('span');if(parts[1])parts[1].textContent='اطلاعات ثبت‌شده در همین دستگاه';if(parts[3])parts[3].textContent='ذخیره‌سازی محلی · بدون اتصال ابری';}
@@ -1205,6 +1214,16 @@
       const region=document.getElementById('sectionView');
       renderReports(region);
     }
+  });
+
+  window.addEventListener('atlas-shift-range-changed', function(event) {
+    const detail = event && event.detail ? event.detail : {};
+    dashboardRange = {
+      name: detail.name || 'today',
+      start: detail.start || null,
+      end: detail.end || null
+    };
+    refreshDashboard();
   });
 
   window.ATLAS_MODULES = {

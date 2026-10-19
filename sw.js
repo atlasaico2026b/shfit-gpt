@@ -1,4 +1,4 @@
-const CACHE_NAME = 'atlas-shift-v27-storage-and-notification-hardening';
+const CACHE_NAME = 'atlas-shift-v28-dashboard-range-filter';
 const APP_FILES = [
   './',
   './index.html',

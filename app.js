@@ -142,6 +142,13 @@
     }
     return jalaliMonthDates(anchor)[0]||dayOnly(anchor);
   }
+  function publishDashboardRange(){
+    window.dispatchEvent(new CustomEvent('atlas-shift-range-changed',{detail:{
+      name:activeRange,
+      start:rangeStart?isoDay(rangeStart):null,
+      end:rangeEnd?isoDay(rangeEnd):null
+    }}));
+  }
   function updateRangeSummary(){
     const label=$('#selectedRangeLabel');
     $$('.range-chip').forEach(b=>b.classList.toggle('active',b.dataset.rangePreset===activeRange));
@@ -192,7 +199,7 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
       $('#calendarPanel').classList.add('open');$('#calendarPanel').setAttribute('aria-hidden','false');$('#calendarToggle').setAttribute('aria-expanded','true');
       calendarAnchor=rangeStart||today;updateRangeSummary();renderCalendar();return;
     }
-    rangeStart=dayOnly(start);rangeEnd=dayOnly(end);calendarAnchor=rangeEnd;updateRangeSummary();renderCalendar();
+    rangeStart=dayOnly(start);rangeEnd=dayOnly(end);calendarAnchor=rangeEnd;updateRangeSummary();renderCalendar();publishDashboardRange();
     $('#calendarPanel').classList.remove('open');$('#calendarPanel').setAttribute('aria-hidden','true');$('#calendarToggle').setAttribute('aria-expanded','false');
   }
   const calendarPanel=$('#calendarPanel'), calendarToggle=$('#calendarToggle');
@@ -200,10 +207,10 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
   $('#closeCalendar').addEventListener('click',()=>{calendarPanel.classList.remove('open');calendarPanel.setAttribute('aria-hidden','true');calendarToggle.setAttribute('aria-expanded','false')});
   $('#calendarPrev').addEventListener('click',()=>{calendarAnchor=addDays(calendarAnchor,-32);renderCalendar()});
   $('#calendarNext').addEventListener('click',()=>{calendarAnchor=addDays(calendarAnchor,32);renderCalendar()});
-  $('#clearCalendarSelection').addEventListener('click',()=>{rangeStart=null;rangeEnd=null;activeRange='custom';updateRangeSummary();renderCalendar()});
-  $('#applyCustomRange').addEventListener('click',()=>{if(!rangeStart||!rangeEnd)return;activeRange='custom';updateRangeSummary();calendarPanel.classList.remove('open');calendarPanel.setAttribute('aria-hidden','true');calendarToggle.setAttribute('aria-expanded','false');toast('بازهٔ زمانی دلخواه انتخاب شد.')});
+  $('#clearCalendarSelection').addEventListener('click',()=>{rangeStart=null;rangeEnd=null;activeRange='custom';updateRangeSummary();renderCalendar();publishDashboardRange()});
+  $('#applyCustomRange').addEventListener('click',()=>{if(!rangeStart||!rangeEnd)return;activeRange='custom';updateRangeSummary();publishDashboardRange();calendarPanel.classList.remove('open');calendarPanel.setAttribute('aria-hidden','true');calendarToggle.setAttribute('aria-expanded','false');toast('بازهٔ زمانی دلخواه انتخاب شد.')});
   $$('.range-chip').forEach(button=>button.addEventListener('click',()=>applyRangePreset(button.dataset.rangePreset)));
-  rangeStart=dayOnly(new Date());rangeEnd=dayOnly(new Date());updateRangeSummary();renderCalendar();
+  rangeStart=dayOnly(new Date());rangeEnd=dayOnly(new Date());updateRangeSummary();renderCalendar();publishDashboardRange();
 
   // Nine visible shortcut tabs scroll to their corresponding information-only panes.
   let dockFocusTimer;
