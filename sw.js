@@ -1,4 +1,4 @@
-const CACHE_NAME = 'atlas-shift-v19-final-init-fix';
+const CACHE_NAME = 'atlas-shift-v20-titr-headings';
 const APP_FILES = [
   './',
   './index.html',
