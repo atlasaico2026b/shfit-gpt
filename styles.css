@@ -219,10 +219,10 @@ html[data-atlas-theme="cloud-glass"]{
 }
 html[data-atlas-theme="cloud-glass"] body{
  color:var(--text);background:
- radial-gradient(ellipse 55% 47% at 12% 8%,rgba(139,220,255,.82),transparent 72%),
- radial-gradient(ellipse 48% 44% at 91% 19%,rgba(255,184,223,.63),transparent 74%),
- radial-gradient(ellipse 54% 48% at 58% 96%,rgba(183,185,255,.62),transparent 74%),
- radial-gradient(ellipse 52% 42% at 30% 60%,rgba(192,242,255,.56),transparent 72%),
+ radial-gradient(ellipse 55% 47% at 12% 8%,rgba(var(--cloud-1-rgb),var(--cloud-opacity)),transparent 72%),
+ radial-gradient(ellipse 48% 44% at 91% 19%,rgba(var(--cloud-2-rgb),var(--cloud-opacity-soft)),transparent 74%),
+ radial-gradient(ellipse 54% 48% at 58% 96%,rgba(var(--cloud-3-rgb),var(--cloud-opacity-subtle)),transparent 74%),
+ radial-gradient(ellipse 52% 42% at 30% 60%,rgba(192,242,255,.38),transparent 72%),
  linear-gradient(135deg,#e8f6ff,#eff7ff 52%,#e7f4ff);background-attachment:fixed;
 }
 html[data-atlas-theme="cloud-glass"] body:before{
