@@ -245,20 +245,29 @@
   }
 
   async function initializeStorage() {
+    const localCopy = readLegacyLocalStorage();
     try {
       await openDb();
       const saved = await loadFromDb(db);
       if (saved) {
-        appData = normalizeState(saved);
+        const databaseCopy = normalizeState(saved);
+        const localIsNewer = !!(localCopy && localCopy.updatedAt &&
+          (!databaseCopy.updatedAt || localCopy.updatedAt > databaseCopy.updatedAt));
+        appData = localIsNewer ? localCopy : databaseCopy;
+        if (localIsNewer) {
+          try { await writeToDb(db, appData); }
+          catch (writeError) { db = null; loadError = 'ذخیره‌سازی جایگزین مرورگر فعال شد.'; }
+        }
       } else {
-        appData = readLegacyLocalStorage() || createEmptyState();
+        appData = localCopy || createEmptyState();
         if (appData.updatedAt || MODULES.some(function (key) { return appData[key].length; })) {
-          await writeToDb(db, appData);
+          try { await writeToDb(db, appData); }
+          catch (writeError) { db = null; loadError = 'ذخیره‌سازی جایگزین مرورگر فعال شد.'; }
         }
       }
     } catch (error) {
       loadError = 'فضای ذخیره‌سازی پیشرفته در دسترس نیست؛ ذخیره‌سازی جایگزین مرورگر استفاده می‌شود.';
-      appData = readLegacyLocalStorage() || createEmptyState();
+      appData = localCopy || createEmptyState();
       db = null;
     }
     ready = true;
@@ -1107,6 +1116,15 @@
       reportFrom=from?from.value.trim():'';reportTo=to?to.value.trim():'';
       renderReports(section);
     }
+  });
+
+  // Delegate clicks for dynamically generated notification cards as well as the initial markup.
+  document.addEventListener('click', function(event) {
+    const card = event.target.closest('.notice-card');
+    if (!card) return;
+    card.classList.remove('unread');
+    const count = document.getElementById('notificationCount');
+    if (count) count.textContent = faDigits(document.querySelectorAll('.notice-card.unread').length);
   });
 
   document.addEventListener('submit', async function(event) {

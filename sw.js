@@ -1,4 +1,4 @@
-const CACHE_NAME = 'atlas-shift-v26-operational-submenus';
+const CACHE_NAME = 'atlas-shift-v27-storage-and-notification-hardening';
 const APP_FILES = [
   './',
   './index.html',
