@@ -1,4 +1,4 @@
-const CACHE_NAME = 'atlas-shift-v15-cloud-background';
+const CACHE_NAME = 'atlas-shift-v16-menu-routing';
 const APP_FILES = [
   './',
   './index.html',
