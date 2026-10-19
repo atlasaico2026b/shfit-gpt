@@ -895,13 +895,37 @@
       if(weekday)weekday.textContent=new Intl.DateTimeFormat('fa-IR',{weekday:'long'}).format(now);
     }
     if(agenda){
-      const today=todayIso(),items=[];
-      missions.filter(function(m){return String(m.startAt||'').slice(0,10)===today&&m.status!=='لغو‌شده';}).forEach(function(m){items.push({time:String(m.startAt||'').slice(11,16),type:'مأموریت',title:m.title||'مأموریت',detail:[m.city,m.destination].filter(Boolean).join(' · ')});});
-      (appData.shifts||[]).filter(function(s){return String(s.startAt||'').slice(0,10)<=today&&String(s.endAt||'').slice(0,10)>=today&&['برنامه‌ریزی‌شده','جایگزینی روزکار'].includes(s.status);}).forEach(function(s){items.push({time:String(s.startAt||'').slice(11,16),type:'شیفت',title:(s.shiftType||'شیفت')+' · '+shiftLabel(s,appData),detail:[s.workplace,s.status].filter(Boolean).join(' · ')});});
-      appData.notes.filter(function(n){return (n.dueDate===today||n.date===today)&&!['تکمیل‌شده','لغوشده'].includes(n.status);}).forEach(function(n){items.push({time:'',type:'پیگیری',title:n.title||'پیگیری',detail:n.related||n.body||''});});
-      appData.leaves.filter(function(l){return l.startDate===today&&l.status!=='ردشده';}).forEach(function(l){const person=staff.find(function(e){return String(e.id)===String(l.employeeId)});items.push({time:'',type:'مرخصی',title:person?person.fullName:(l.groupName||'مرخصی'),detail:l.leaveType||''});});
-      agenda.innerHTML=items.length?items.slice(0,6).map(function(item){return '<div class="agenda-row"><div class="agenda-time">'+esc(item.time||item.type)+'</div><div class="agenda-dot"></div><div class="agenda-text"><b>'+esc(item.title)+'</b><span>'+esc(item.detail||item.type)+'</span></div></div>';}).join(''):'<div class="module-empty">برای امروز مأموریت یا پیگیری زمان‌بندی‌شده‌ای ثبت نشده است.</div>';
-      const p=calendar.querySelector('.widget-title p');if(p)p.textContent='برنامهٔ امروز بر اساس اطلاعات ثبت‌شده';
+      const today=todayIso();
+      const selectedStart=dashboardRange.start||today;
+      const selectedEnd=dashboardRange.end||today;
+      const singleDay=selectedStart===selectedEnd;
+      const items=[];
+      const dayInRange=function(value){const day=String(value||'').slice(0,10);return !!day&&day>=selectedStart&&day<=selectedEnd;};
+      missions.filter(function(m){return dayInRange(m.startAt)&&m.status!=='لغو‌شده';}).forEach(function(m){
+        items.push({sortKey:String(m.startAt||''),date:String(m.startAt||'').slice(0,10),time:String(m.startAt||'').slice(11,16),type:'مأموریت',title:m.title||'مأموریت',detail:[m.city,m.destination].filter(Boolean).join(' · ')});
+      });
+      (appData.shifts||[]).filter(function(s){
+        const start=String(s.startAt||'').slice(0,10),end=String(s.endAt||'').slice(0,10);
+        return start&&end&&start<=selectedEnd&&end>=selectedStart&&['برنامه‌ریزی‌شده','جایگزینی روزکار'].includes(s.status);
+      }).forEach(function(s){
+        items.push({sortKey:String(s.startAt||''),date:String(s.startAt||'').slice(0,10),time:String(s.startAt||'').slice(11,16),type:'شیفت',title:(s.shiftType||'شیفت')+' · '+shiftLabel(s,appData),detail:[s.workplace,s.status].filter(Boolean).join(' · ')});
+      });
+      appData.notes.filter(function(n){return dayInRange(n.dueDate||n.date)&&!['تکمیل‌شده','لغوشده'].includes(n.status);}).forEach(function(n){
+        items.push({sortKey:String(n.dueDate||n.date||''),date:String(n.dueDate||n.date||''),time:'',type:'پیگیری',title:n.title||'پیگیری',detail:n.related||n.body||''});
+      });
+      appData.leaves.filter(function(l){
+        return String(l.startDate||'')<=selectedEnd&&String(l.endDate||l.startDate||'')>=selectedStart&&l.status!=='ردشده';
+      }).forEach(function(l){
+        const person=staff.find(function(e){return String(e.id)===String(l.employeeId)});
+        items.push({sortKey:String(l.startDate||''),date:String(l.startDate||''),time:'',type:'مرخصی',title:person?person.fullName:(l.groupName||'مرخصی'),detail:l.leaveType||''});
+      });
+      items.sort(function(a,b){return String(a.sortKey).localeCompare(String(b.sortKey));});
+      agenda.innerHTML=items.length?items.slice(0,8).map(function(item){
+        const timeLabel=singleDay?(item.time||item.type):((item.date?formatJalali(item.date,false)+' · ':'')+(item.time||item.type));
+        return '<div class="agenda-row"><div class="agenda-time">'+esc(timeLabel)+'</div><div class="agenda-dot"></div><div class="agenda-text"><b>'+esc(item.title)+'</b><span>'+esc(item.detail||item.type)+'</span></div></div>';
+      }).join(''):'<div class="module-empty">برای بازهٔ انتخاب‌شده مأموریت، شیفت یا پیگیری زمان‌بندی‌شده‌ای ثبت نشده است.</div>';
+      const p=calendar.querySelector('.widget-title p');
+      if(p)p.textContent=singleDay?'برنامهٔ روز انتخاب‌شده بر اساس اطلاعات ثبت‌شده':'برنامهٔ بازهٔ انتخاب‌شده بر اساس اطلاعات ثبت‌شده';
     }
 
     const alerts=alertsForData();

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'atlas-shift-v29-shift-schedule';
+const CACHE_NAME = 'atlas-shift-v30-agenda-range-integration';
 const APP_FILES = [
   './',
   './index.html',
