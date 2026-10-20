@@ -1,4 +1,4 @@
-const CACHE_NAME = 'atlas-shift-v40-dashboard-settings-inline';
+const CACHE_NAME = 'atlas-shift-v41-stability-fix';
 const APP_FILES = [
   './',
   './index.html',
