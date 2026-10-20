@@ -27,7 +27,18 @@ jobs:
       - name: Prepare static site
         run: |
           mkdir site
-          cp index.html styles.css app.js manifest.json sw.js icon.svg site/
+          cp index.html styles.css module-table-fix.css theme-two.css theme-two.js app.js manifest.json sw.js icon.svg site/
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('site/index.html')
+          html = p.read_text(encoding='utf-8')
+          html = html.replace('<link rel="stylesheet" href="./styles.css">','<link rel="stylesheet" href="./styles.css">\n  <link rel="stylesheet" href="./module-table-fix.css">\n  <link rel="stylesheet" href="./theme-two.css">')
+          html = html.replace('<script src="./app.js" defer></script>','<script src="./app.js" defer></script>\n<script src="./theme-two.js" defer></script>')
+          html = html.replace('data-app-theme="theme-two" aria-pressed="false" disabled aria-disabled="true"','data-app-theme="theme-two" aria-pressed="false"')
+          html = html.replace('<small>منتظر طرح شما</small>','<small>تم دوم · مرکز فرمان آینده‌نگر</small>')
+          html = html.replace('<span class="theme-option-state">رزرو</span>','<span class="theme-option-state">انتخاب</span>')
+          p.write_text(html, encoding='utf-8')
+          PY
           touch site/.nojekyll
 
       - name: Configure GitHub Pages
