@@ -1,4 +1,4 @@
-const CACHE_NAME = 'atlas-shift-v37-theme-two-colorful';
+const CACHE_NAME = 'atlas-shift-v38-configurable-options';
 const APP_FILES = [
   './',
   './index.html',
