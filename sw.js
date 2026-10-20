@@ -1,9 +1,12 @@
-const CACHE_NAME = 'atlas-shift-v35-office-export-cache-refresh';
+const CACHE_NAME = 'atlas-shift-v36-theme-two-and-table-fix';
 const APP_FILES = [
   './',
   './index.html',
   './dashboard.html',
   './styles.css',
+  './module-table-fix.css',
+  './theme-two.css',
+  './theme-two.js',
   './app.js',
   './modules.js',
   './manifest.json',
