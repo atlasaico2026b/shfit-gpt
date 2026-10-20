@@ -1,4 +1,4 @@
-const CACHE_NAME = 'atlas-shift-v36-theme-two-and-table-fix';
+const CACHE_NAME = 'atlas-shift-v37-theme-two-colorful';
 const APP_FILES = [
   './',
   './index.html',
@@ -6,6 +6,7 @@ const APP_FILES = [
   './styles.css',
   './module-table-fix.css',
   './theme-two.css',
+  './theme-two-colorful.css',
   './theme-two.js',
   './app.js',
   './modules.js',
