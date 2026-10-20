@@ -1,8 +1,7 @@
-const CACHE_NAME = 'atlas-shift-v42-no-observer-freeze';
+const CACHE_NAME = 'atlas-shift-v43-single-entry-cleanup';
 const APP_FILES = [
   './',
   './index.html',
-  './dashboard.html',
   './styles.css',
   './module-table-fix.css',
   './theme-two.css',
