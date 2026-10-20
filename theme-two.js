@@ -1,7 +1,14 @@
 (function(){
   'use strict';
   var KEY='atlasShiftAppTheme', MIGRATION='atlasShiftThemeTwoApplied';
+  function loadColorfulFinish(){
+    if(document.getElementById('atlas-theme-two-colorful'))return;
+    var link=document.createElement('link');
+    link.id='atlas-theme-two-colorful';link.rel='stylesheet';link.href='./theme-two-colorful.css';
+    document.head.appendChild(link);
+  }
   function setTheme(){
+    loadColorfulFinish();
     document.documentElement.dataset.atlasTheme='theme-two';
     try{localStorage.setItem(KEY,'theme-two')}catch(e){}
     document.querySelectorAll('[data-app-theme]').forEach(function(el){
@@ -12,6 +19,7 @@
     });
   }
   function boot(){
+    loadColorfulFinish();
     var button=document.querySelector('[data-app-theme="theme-two"]');
     if(button){button.disabled=false;button.removeAttribute('aria-disabled');button.classList.remove('pending');}
     document.addEventListener('click',function(e){
