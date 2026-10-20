@@ -1,6 +1,6 @@
 (function(){
   'use strict';
-  var KEY='atlasShiftAppTheme';
+  var KEY='atlasShiftAppTheme', MIGRATION='atlasShiftThemeTwoApplied';
   function setTheme(){
     document.documentElement.dataset.atlasTheme='theme-two';
     try{localStorage.setItem(KEY,'theme-two')}catch(e){}
@@ -19,7 +19,7 @@
       if(!target)return;
       e.preventDefault();e.stopImmediatePropagation();setTheme();
     },true);
-    try{if(localStorage.getItem(KEY)==='theme-two')setTheme();}catch(e){}
+    try{if(localStorage.getItem(MIGRATION)!=='1'){setTheme();localStorage.setItem(MIGRATION,'1');}else if(localStorage.getItem(KEY)==='theme-two')setTheme();}catch(e){}
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
