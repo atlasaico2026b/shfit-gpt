@@ -1,4 +1,4 @@
-const CACHE_NAME = 'atlas-shift-v41-stability-fix';
+const CACHE_NAME = 'atlas-shift-v42-no-observer-freeze';
 const APP_FILES = [
   './',
   './index.html',
