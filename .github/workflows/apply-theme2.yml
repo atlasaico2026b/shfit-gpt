@@ -1,0 +1,115 @@
+name: Apply ATLAS SHIFT Theme 2
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch Theme 2
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          app = Path('app.js')
+          s = app.read_text(encoding='utf-8')
+          old = "  // Theme 1 is the glass-cloud reference; theme 2 remains reserved until the user supplies its design.\n  const appThemes={'cloud-glass':{accent:'#168bff',rgb:'22,139,255',accent2:'#24cbe0'}};"
+          new = """  // Two selectable visual themes. Theme 2 follows the supplied futuristic ATLAS SHIFT reference image.
+  const appThemes={
+    'cloud-glass':{accent:'#168bff',rgb:'22,139,255',accent2:'#24cbe0'},
+    'neon-space':{accent:'#28a9ff',rgb:'40,169,255',accent2:'#a84dff'}
+  };
+  function ensureThemeChoices(){
+    const panel=$('#settingsPanel');
+    if(!panel||$('#atlasThemeChoices'))return;
+    const box=document.createElement('div');
+    box.id='atlasThemeChoices';
+    box.className='atlas-theme-choices';
+    box.innerHTML=`<div class="atlas-theme-title">تم برنامه</div><div class="atlas-theme-buttons"><button type="button" class="atlas-theme-choice" data-app-theme="cloud-glass" aria-pressed="false">تم شیشه‌ای</button><button type="button" class="atlas-theme-choice" data-app-theme="neon-space" aria-pressed="false">تم فضایی تصویر</button></div>`;
+    panel.prepend(box);
+  }
+  ensureThemeChoices();"""
+          if old not in s: raise SystemExit('Theme anchor not found')
+          s=s.replace(old,new,1)
+          old2="  applyTheme(safeRead('atlasShiftAppTheme')||'cloud-glass',false);"
+          new2="""  const savedTheme=safeRead('atlasShiftAppTheme');
+  if(!safeRead('atlasShiftTheme2Applied')){applyTheme('neon-space',true);safeWrite('atlasShiftTheme2Applied','1')}else applyTheme(savedTheme||'neon-space',false);"""
+          if old2 not in s: raise SystemExit('Theme init anchor not found')
+          s=s.replace(old2,new2,1)
+          app.write_text(s,encoding='utf-8')
+
+          css = Path('styles.css')
+          c = css.read_text(encoding='utf-8')
+          marker='/* ATLAS SHIFT THEME 2 — supplied futuristic reference */'
+          if marker not in c:
+              c += r'''\n\n/* ATLAS SHIFT THEME 2 — supplied futuristic reference */
+html[data-atlas-theme="neon-space"]{
+  --bg:#020719;--bg2:#07163a;--glass:rgba(5,20,55,.72);--glass-strong:rgba(7,25,66,.88);
+  --line:rgba(92,177,255,.24);--line-hi:rgba(96,205,255,.48);--text:#f7fbff;--muted:#9db8dc;
+  --accent:#21a8ff;--accent-rgb:33,168,255;--accent2:#b04cff;--danger:#ff3d71;--warn:#ffc43d;--ok:#21e6b1;
+  --cloud-1-rgb:0,153,255;--cloud-2-rgb:156,44,255;--cloud-3-rgb:255,37,174;
+  --cloud-opacity:.32;--cloud-opacity-soft:.25;--cloud-opacity-subtle:.28;
+  --shadow:0 24px 80px rgba(0,0,0,.5);
+}
+html[data-atlas-theme="neon-space"] body{
+  background:
+    radial-gradient(ellipse 45% 38% at 5% 12%,rgba(0,167,255,.30),transparent 70%),
+    radial-gradient(ellipse 44% 42% at 93% 17%,rgba(183,42,255,.31),transparent 72%),
+    radial-gradient(ellipse 48% 44% at 54% 100%,rgba(255,34,164,.23),transparent 74%),
+    radial-gradient(ellipse 25% 20% at 54% 24%,rgba(255,42,189,.23),transparent 72%),
+    linear-gradient(135deg,#010513 0%,#04112f 48%,#020718 100%);
+}
+html[data-atlas-theme="neon-space"] body:before{opacity:.72;background-image:radial-gradient(1px 1px at 8% 17%,#fff 40%,transparent 62%),radial-gradient(1px 1px at 24% 73%,#73d7ff 40%,transparent 62%),radial-gradient(1px 1px at 45% 11%,#fff 40%,transparent 62%),radial-gradient(1px 1px at 73% 81%,#c8a4ff 40%,transparent 62%),radial-gradient(1px 1px at 90% 22%,#fff 40%,transparent 62%),radial-gradient(1px 1px at 61% 43%,#65d8ff 40%,transparent 62%);}
+html[data-atlas-theme="neon-space"] .topbar{background:linear-gradient(180deg,rgba(1,7,22,.94),rgba(3,14,38,.72));border-bottom-color:rgba(75,179,255,.22);}
+html[data-atlas-theme="neon-space"] .brandmark{background:linear-gradient(135deg,rgba(0,177,255,.42),rgba(180,49,255,.28));box-shadow:0 0 34px rgba(0,170,255,.25),inset 0 1px #fff3;}
+html[data-atlas-theme="neon-space"] .navitem.active,html[data-atlas-theme="neon-space"] .range-chip.active{background:linear-gradient(135deg,rgba(26,157,255,.34),rgba(174,56,255,.20));box-shadow:0 0 24px rgba(0,162,255,.16),inset 0 0 0 1px rgba(90,205,255,.24);}
+html[data-atlas-theme="neon-space"] .widget{background:linear-gradient(145deg,rgba(12,49,102,.70),rgba(5,19,53,.72) 52%,rgba(97,34,145,.20)),rgba(4,18,48,.68);border-color:rgba(61,174,255,.24);box-shadow:0 22px 70px rgba(0,0,0,.48),0 0 26px rgba(0,132,255,.08),inset 0 1px rgba(126,220,255,.12);}
+html[data-atlas-theme="neon-space"] .widget:hover{border-color:rgba(54,194,255,.48);box-shadow:0 26px 80px rgba(0,0,0,.52),0 0 38px rgba(0,144,255,.16),inset 0 1px rgba(126,220,255,.15);}
+html[data-atlas-theme="neon-space"] .widget-icon{background:linear-gradient(135deg,rgba(20,166,255,.23),rgba(173,55,255,.18));border-color:rgba(70,194,255,.28);box-shadow:0 0 20px rgba(21,157,255,.12);}
+html[data-atlas-theme="neon-space"] .primary-btn{background:linear-gradient(135deg,#159fff,#713cff 55%,#b03dff);box-shadow:0 10px 30px rgba(41,104,255,.30),0 0 20px rgba(164,61,255,.16);}
+html[data-atlas-theme="neon-space"] .secondary-btn,html[data-atlas-theme="neon-space"] .icon-btn{background:rgba(8,30,70,.66);}
+html[data-atlas-theme="neon-space"] .clock-pill,html[data-atlas-theme="neon-space"] .topnav{background:rgba(5,22,53,.58);border-color:rgba(67,183,255,.22);}
+html[data-atlas-theme="neon-space"] .widget-dock{background:linear-gradient(180deg,rgba(2,13,38,.72),rgba(4,20,52,.88));border-color:rgba(66,183,255,.22);box-shadow:0 18px 50px rgba(0,0,0,.42);}
+html[data-atlas-theme="neon-space"] .widget-dock-item.active{background:linear-gradient(135deg,rgba(19,157,255,.26),rgba(166,52,255,.20));border-color:rgba(74,192,255,.34);box-shadow:0 0 24px rgba(0,150,255,.14);}
+html[data-atlas-theme="neon-space"] .app-menu{background:linear-gradient(180deg,rgba(3,13,35,.94),rgba(2,8,24,.96));border-color:rgba(60,177,255,.22);box-shadow:0 0 50px rgba(0,109,255,.10);}
+html[data-atlas-theme="neon-space"] .app-menu-item:hover,html[data-atlas-theme="neon-space"] .app-menu-item.active{background:linear-gradient(90deg,rgba(20,153,255,.24),rgba(170,47,255,.16));border-color:rgba(74,191,255,.26);box-shadow:0 0 22px rgba(0,157,255,.10);}
+html[data-atlas-theme="neon-space"] .notification-drawer,html[data-atlas-theme="neon-space"] .settings-panel,html[data-atlas-theme="neon-space"] .calendar-panel{background:linear-gradient(145deg,rgba(3,16,44,.97),rgba(9,16,48,.96));border-color:rgba(72,188,255,.30);box-shadow:0 24px 80px rgba(0,0,0,.65),0 0 36px rgba(0,116,255,.12);}
+html[data-atlas-theme="neon-space"] .module-shell,html[data-atlas-theme="neon-space"] .section-placeholder{background:linear-gradient(145deg,rgba(5,22,54,.78),rgba(10,17,48,.72));border-color:rgba(65,181,255,.24);box-shadow:0 24px 70px rgba(0,0,0,.42),inset 0 1px rgba(119,221,255,.08);}
+html[data-atlas-theme="neon-space"] table{background:rgba(2,13,36,.34);border-color:rgba(65,177,255,.20);}
+html[data-atlas-theme="neon-space"] th{background:linear-gradient(90deg,rgba(17,114,190,.26),rgba(105,45,165,.20));color:#dff7ff;}
+html[data-atlas-theme="neon-space"] td{border-color:rgba(67,169,255,.13);}
+html[data-atlas-theme="neon-space"] tr:hover td{background:rgba(24,154,255,.08);}
+html[data-atlas-theme="neon-space"] .atlas-theme-choice.active{background:linear-gradient(135deg,#159fff,#813dff);border-color:rgba(115,220,255,.48);color:#fff;box-shadow:0 0 20px rgba(53,159,255,.20);}
+.atlas-theme-choices{margin:0 0 16px;padding:13px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.035);}
+.atlas-theme-title{font-size:11px;font-weight:800;margin-bottom:9px;color:var(--text);}
+.atlas-theme-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.atlas-theme-choice{min-height:38px;padding:8px 10px;border-radius:11px;border:1px solid var(--line);background:rgba(255,255,255,.045);color:var(--muted);font:inherit;font-size:10px;}
+.atlas-theme-choice:hover{border-color:var(--line-hi);color:var(--text);}
+.module-table-wrap,.table-wrap,.module-table-container{width:100%;max-width:100%;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;}
+.module-table-wrap table,.table-wrap table,.module-table-container table{width:100%;min-width:720px;table-layout:auto;}
+.module-table-wrap th,.module-table-wrap td,.table-wrap th,.table-wrap td,.module-table-container th,.module-table-container td{padding:10px 11px;vertical-align:middle;white-space:nowrap;}
+@media(max-width:900px){.module-table-wrap table,.table-wrap table,.module-table-container table{min-width:680px;}}
+@media(max-width:650px){.module-table-wrap table,.table-wrap table,.module-table-container table{min-width:620px;} .atlas-theme-buttons{grid-template-columns:1fr;}}
+'''
+              css.write_text(c,encoding='utf-8')
+
+          sw = Path('sw.js')
+          w = sw.read_text(encoding='utf-8')
+          w = re.sub(r"const CACHE_NAME = '[^']+';?", "const CACHE_NAME = 'atlas-shift-v36-neon-space-theme';", w, count=1)
+          sw.write_text(w,encoding='utf-8')
+      - name: Commit Theme 2 and remove patch workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js styles.css sw.js
+          git diff --cached --quiet || git commit -m "Apply ATLAS SHIFT futuristic Theme 2"
+          git push
+          rm -f .github/workflows/apply-theme2.yml
+          git add -u .github/workflows/apply-theme2.yml
+          git diff --cached --quiet || git commit -m "Remove one-shot Theme 2 patch workflow"
+          git push
