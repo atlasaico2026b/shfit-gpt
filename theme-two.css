@@ -87,3 +87,6 @@ html[data-atlas-theme="theme-two"] .layout-hint{color:#9bc4ea;background:rgba(7,
 html[data-atlas-theme="theme-two"] .toast{color:#e9f6ff;background:rgba(4,18,49,.96);border-color:rgba(70,183,255,.30);box-shadow:0 14px 38px rgba(0,0,0,.48)}
 @media(max-width:1050px){html[data-atlas-theme="theme-two"] body{grid-template-columns:205px minmax(0,1fr)}}
 @media(max-width:780px){html[data-atlas-theme="theme-two"] body{display:flex;flex-direction:column;gap:8px;padding:8px}.app-menu{position:relative!important;width:100%!important;height:auto!important;min-height:0!important}.app-menu-nav{overflow-x:auto}.topbar{order:1!important}.shell{order:2!important}.section-view{grid-template-columns:1fr}.module-table{min-width:640px!important}.module-table-wrap{overflow-x:auto}}
+
+/* فقط دکمهٔ «تنظیمات داشبورد» در نوار بالایی مخفی شود؛ سایر بخش‌ها بدون تغییر */
+#settingsButton{display:none!important}
