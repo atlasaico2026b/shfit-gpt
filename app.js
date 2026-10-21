@@ -399,6 +399,7 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
     const escPb=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const fields=[
       ['name','نام و نام خانوادگی','text',true,false],
+      ['extension','شماره داخلی چهاررقمی','tel',false,false],
       ['area','حوزه','text',false,true],['city','شهر','text',false,true],
       ['complex','مجتمع','text',false,true],['transferCenter','نام مرکز انتقال نفت','text',false,true],
       ['station','نام ایستگاه','text',false,true],['building','ساختمان','text',false,true],
