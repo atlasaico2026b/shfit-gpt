@@ -427,7 +427,7 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
       const record={};
       fields.forEach(([key])=>record[key]=String(fd.get(key)||'').trim());
       record.numbers=editIndex>=0&&contacts[editIndex]?contacts[editIndex].numbers:[];
-      if(record.extension&&!/^\d{4}$/.test(record.extension)){alert('شماره داخلی باید دقیقاً چهار رقم باشد.');form.elements.extension.focus();return;}
+      if(record.extension&&!/^[0-9۰-۹٠-٩]{4}$/.test(record.extension)){alert('شماره داخلی باید دقیقاً چهار رقم باشد.');form.elements.extension.focus();return;}
       if(editIndex>=0)contacts[editIndex]=record;else contacts.push(record);
       persist();refillFilters();draw();reset();
     };
