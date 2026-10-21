@@ -443,7 +443,7 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
       }
     };
     [search,cityFilter,siteFilter,stationFilter].forEach(el=>{el.addEventListener('input',draw);el.addEventListener('change',draw);});
-    document.addEventListener('atlas-phonebook-options-updated',()=>{options=phonebookOptionsLoad();fillDatalists();});
+    document.addEventListener('atlas-phonebook-options-updated',()=>{options=phonebookOptionsLoad();fillDatalists();renderPhoneRows(readPhoneRows());});
     fillDatalists();refillFilters();draw();
   }
   function renderRoute(requestedView){
