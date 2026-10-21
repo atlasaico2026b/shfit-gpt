@@ -481,7 +481,7 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
       }
       return null;
     }
-    function persist(){try{localStorage.setItem(PHONEBOOK_KEY,JSON.stringify(contacts));}catch(_){alert('ذخیره‌سازی انجام نشد؛ فضای ذخیره‌سازی مرورگر را بررسی کن.');}}
+    function persist(){try{localStorage.setItem(PHONEBOOK_KEY,JSON.stringify(contacts));return true;}catch(_){alert('ذخیره‌سازی انجام نشد؛ فضای ذخیره‌سازی مرورگر را بررسی کن. اطلاعات فرم پاک نمی‌شود.');return false;}}
     function fillDatalists(){
       fields.filter(f=>f[4]).forEach(([key])=>{
         const list=section.querySelector('#atlasPbList_'+key);if(!list)return;
@@ -542,8 +542,13 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
         (target||form.elements.extension).focus();
         return;
       }
+      const previousRecord=editIndex>=0?contacts[editIndex]:null;
       if(editIndex>=0)contacts[editIndex]=record;else contacts.push(record);
-      persist();refillFilters();draw();reset();
+      if(!persist()){
+        if(editIndex>=0)contacts[editIndex]=previousRecord;else contacts.pop();
+        return;
+      }
+      refillFilters();draw();reset();
     };
     section.querySelector('#atlasPbResults').onclick=event=>{
       const edit=event.target.closest('[data-pb-edit]'),del=event.target.closest('[data-pb-delete]');
@@ -554,7 +559,9 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
         form.classList.add('open');form.querySelector('[type=submit]').textContent='ذخیره تغییرات';form.elements.name.focus();
       }else if(del){
         const i=Number(del.dataset.pbDelete);if(!Number.isInteger(i)||!contacts[i]||!confirm('این مخاطب حذف شود؟'))return;
-        contacts.splice(i,1);persist();refillFilters();draw();reset();
+        const removed=contacts.splice(i,1)[0];
+        if(!persist()){contacts.splice(i,0,removed);return;}
+        refillFilters();draw();reset();
       }
     };
     [search,cityFilter,siteFilter,stationFilter,sortBy,sortDirection].forEach(el=>{el.addEventListener('input',draw);el.addEventListener('change',draw);});
