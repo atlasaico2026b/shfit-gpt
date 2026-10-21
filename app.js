@@ -442,6 +442,44 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
     }
     function readPhoneRows(){return [...phoneRows.querySelectorAll('.atlas-pb-phone-row')].map(row=>({kind:row.children[0].value==='office'?'office':'mobile',label:row.children[1].value||'سایر',value:row.children[2].value.trim()})).filter(p=>p.value);}
     section.querySelector('#atlasPbAddPhone').addEventListener('click',()=>{const current=readPhoneRows();current.push({kind:'mobile',label:(options.phoneLabel||PHONEBOOK_DEFAULT_OPTIONS.phoneLabel)[0]||'تلفن اصلی',value:''});renderPhoneRows(current);phoneRows.lastElementChild?.querySelector('input')?.focus();});
+    function normalizePhoneForCheck(value){
+      let v=String(value||'').trim().replace(/[\s().\-\/]+/g,'');
+      v=v.replace(/[۰-۹]/g,d=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[٠-٩]/g,d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
+      if(v.startsWith('+'))v='+'+v.slice(1).replace(/\D/g,'');else v=v.replace(/\D/g,'');
+      if(v.startsWith('0098'))v='0'+v.slice(4);
+      else if(v.startsWith('+98'))v='0'+v.slice(3);
+      else if(v.startsWith('98')&&v.length>=12)v='0'+v.slice(2);
+      return v;
+    }
+    function duplicatePhoneInContacts(value,skipIndex=-1){
+      const candidate=normalizePhoneForCheck(value);if(!candidate)return null;
+      for(let ci=0;ci<contacts.length;ci++){
+        if(ci===skipIndex)continue;
+        const c=contacts[ci];
+        for(const p of (c.phoneNumbers||[])){
+          if(normalizePhoneForCheck(p.value)===candidate)return {contact:c,phone:p,index:ci};
+        }
+        if(normalizePhoneForCheck(c.extension)===candidate)return {contact:c,phone:{value:c.extension,label:'شماره داخلی چهاررقمی'},index:ci};
+      }
+      return null;
+    }
+    function duplicatePhoneInForm(){
+      const rows=readPhoneRows(),seen=new Set();
+      for(const p of rows){
+        const key=normalizePhoneForCheck(p.value);if(!key)continue;
+        if(seen.has(key))return {value:p.value,insideForm:true};
+        seen.add(key);
+        const existing=duplicatePhoneInContacts(p.value,editIndex);
+        if(existing)return {value:p.value,contact:existing.contact,insideForm:false};
+      }
+      const ext=normalizePhoneForCheck(form.elements.extension.value);
+      if(ext){
+        if(seen.has(ext))return {value:form.elements.extension.value,insideForm:true};
+        const existing=duplicatePhoneInContacts(form.elements.extension.value,editIndex);
+        if(existing)return {value:form.elements.extension.value,contact:existing.contact,insideForm:false};
+      }
+      return null;
+    }
     function persist(){try{localStorage.setItem(PHONEBOOK_KEY,JSON.stringify(contacts));}catch(_){alert('ذخیره‌سازی انجام نشد؛ فضای ذخیره‌سازی مرورگر را بررسی کن.');}}
     function fillDatalists(){
       fields.filter(f=>f[4]).forEach(([key])=>{
@@ -507,6 +545,16 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
       record.phoneNumbers=readPhoneRows();
       record.numbers=[];
       if(record.extension&&!/^[0-9۰-۹٠-٩]{4}$/.test(record.extension)){alert('شماره داخلی باید دقیقاً چهار رقم باشد.');form.elements.extension.focus();return;}
+      const duplicate=duplicatePhoneInForm();
+      if(duplicate){
+        const message=duplicate.insideForm
+          ? 'این شماره در همین فرم بیش از یک بار وارد شده است: '+duplicate.value
+          : 'این شماره قبلاً برای مخاطب «'+duplicate.contact.name+'» ثبت شده است: '+duplicate.value+'\nشماره تکراری قابل ذخیره نیست.';
+        alert(message);
+        const target=[...phoneRows.querySelectorAll('input[type="tel"]')].find(input=>normalizePhoneForCheck(input.value)===normalizePhoneForCheck(duplicate.value));
+        (target||form.elements.extension).focus();
+        return;
+      }
       if(editIndex>=0)contacts[editIndex]=record;else contacts.push(record);
       persist();refillFilters();draw();reset();
     };
