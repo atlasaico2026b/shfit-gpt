@@ -498,7 +498,7 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
     function draw(){
       const q=search.value.trim().toLocaleLowerCase();
       const found=contacts.map((c,i)=>({c,i})).filter(({c})=>{
-        const hay=[c.name,c.extension,c.position,c.area,c.city,c.complex,c.transferCenter,c.station,c.building,c.unit,...c.phoneNumbers.map(p=>[p.kind==='office'?'تلفن دفتر':'موبایل',p.label,p.value].join(' '))].join(' ').toLocaleLowerCase();
+        const hay=[c.name,c.extension,c.position,c.supervision,c.area,c.city,c.complex,c.transferCenter,c.station,c.building,c.unit,...c.phoneNumbers.map(p=>[p.kind==='office'?'تلفن دفتر':'موبایل',p.label,p.value].join(' '))].join(' ').toLocaleLowerCase();
         return(!q||hay.includes(q))&&(!cityFilter.value||c.city===cityFilter.value)&&(!siteFilter.value||c.complex===siteFilter.value)&&(!stationFilter.value||c.station===stationFilter.value);
       });
       const sortKey=sortBy.value||'normal',direction=sortDirection.value==='desc'?-1:1;
