@@ -136,6 +136,35 @@
   const phonebookOptionLabels={area:'حوزه',city:'شهر',complex:'مجتمع',transferCenter:'مرکز انتقال نفت',station:'نام ایستگاه',building:'ساختمان',unit:'واحد',position:'سمت سازمانی'};
   let phonebookOptionData={},editingPhonebookOption=null;
   try{phonebookOptionData=JSON.parse(localStorage.getItem('atlasShiftPhonebookOptionsV1')||'{}');}catch(_){}
+  const pbTreeType=$('#pbTreeType'),pbTreeParent=$('#pbTreeParent'),pbTreeName=$('#pbTreeName'),pbTreeView=$('#pbTreeView');
+  const pbTreeLabels={area:'حوزه',city:'شهر',complex:'مجتمع',transferCenter:'مرکز انتقال نفت',station:'ایستگاه',building:'ساختمان',unit:'واحد'};
+  const pbTreeParents={area:[],city:['area'],complex:['area','city'],transferCenter:['area','city','complex'],station:['complex','transferCenter'],building:['station'],unit:['building']};
+  let pbTreeNodes=[];try{const saved=JSON.parse(localStorage.getItem('atlasShiftPhonebookTreeV1')||'[]');if(Array.isArray(saved))pbTreeNodes=saved;}catch(_){}
+  function pbTreeSave(){try{localStorage.setItem('atlasShiftPhonebookTreeV1',JSON.stringify(pbTreeNodes));}catch(_){toast('ذخیره ساختار درختی انجام نشد.');}}
+  function pbTreeRefresh(){
+    const type=pbTreeType.value,allowed=pbTreeParents[type]||[],previous=pbTreeParent.value;
+    pbTreeParent.innerHTML='<option value="">'+(type==='area'?'بدون والد (ریشه)':'انتخاب والد')+'</option>';
+    pbTreeNodes.filter(n=>allowed.includes(n.type)).sort((a,b)=>a.name.localeCompare(b.name,'fa')).forEach(n=>{const o=document.createElement('option');o.value=n.id;o.textContent=pbTreeLabels[n.type]+' · '+n.name;pbTreeParent.appendChild(o);});
+    if([...pbTreeParent.options].some(o=>o.value===previous))pbTreeParent.value=previous;
+    const childrenOf=id=>pbTreeNodes.filter(n=>n.parentId===id).sort((a,b)=>a.name.localeCompare(b.name,'fa'));
+    const renderNode=(node,depth)=>'<div class="atlas-pb-option-row" style="margin-right:'+(depth*18)+'px"><span>↳ '+pbTreeLabels[node.type]+': '+escTree(node.name)+'</span><button class="secondary-btn" type="button" data-pbt-delete="'+escTree(node.id)+'">حذف</button></div>'+childrenOf(node.id).map(n=>renderNode(n,depth+1)).join('');
+    pbTreeView.innerHTML=pbTreeNodes.filter(n=>!pbTreeNodes.some(p=>p.id===n.parentId)).sort((a,b)=>a.name.localeCompare(b.name,'fa')).map(n=>renderNode(n,0)).join('')||'<div class="atlas-pb-empty">ساختار درختی هنوز تعریف نشده است.</div>';
+  }
+  function escTree(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  pbTreeType.addEventListener('change',pbTreeRefresh);
+  $('#pbTreeAdd').addEventListener('click',()=>{
+    const type=pbTreeType.value,name=pbTreeName.value.trim(),parentId=pbTreeParent.value||'';
+    if(!name){pbTreeName.focus();return;}
+    if(type==='area'&&parentId){toast('حوزه باید در ریشه درخت باشد.');return;}
+    if(type!=='area'&&!parentId){toast('برای این مورد، والد را انتخاب کن.');return;}
+    if(pbTreeNodes.some(n=>n.type===type&&n.name===name&&n.parentId===parentId)){toast('این مورد در همین شاخه از قبل وجود دارد.');return;}
+    const node={id:'pbt-'+Date.now()+'-'+(pbTreeNodes.length+1),type,name,parentId};pbTreeNodes.push(node);pbTreeSave();
+    if(!Array.isArray(phonebookOptionData[type]))phonebookOptionData[type]=[];
+    if(!phonebookOptionData[type].includes(name)){phonebookOptionData[type].push(name);phonebookOptionData[type].sort((a,b)=>a.localeCompare(b,'fa'));savePhonebookOptionData();}
+    pbTreeName.value='';pbTreeRefresh();toast('مورد به ساختار درختی افزوده شد.');
+  });
+  pbTreeView.addEventListener('click',event=>{const button=event.target.closest('[data-pbt-delete]');if(!button)return;const id=button.dataset.pbtDelete;if(pbTreeNodes.some(n=>n.parentId===id)){toast('ابتدا زیرمجموعه‌های این مورد را حذف یا جابه‌جا کن.');return;}if(!confirm('این مورد از ساختار درختی حذف شود؟'))return;pbTreeNodes=pbTreeNodes.filter(n=>n.id!==id);pbTreeSave();pbTreeRefresh();});
+  pbTreeRefresh();
   function renderPhonebookOptionList(){
     const key=phonebookCategory.value,values=Array.isArray(phonebookOptionData[key])?phonebookOptionData[key]:[];
     phonebookList.innerHTML=values.length?values.map((value,i)=>'<div class="atlas-pb-option-row"><span>'+String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))+'</span><div style="display:flex;gap:6px"><button class="secondary-btn" type="button" data-pbo-edit="'+i+'">اصلاح</button><button class="secondary-btn" type="button" data-pbo-delete="'+i+'">حذف</button></div></div>').join(''):'<div class="atlas-pb-empty">هنوز مقداری ثبت نشده است.</div>';
@@ -383,7 +412,7 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
         '<div class="atlas-pb-combo">'+input+'<button type="button" class="atlas-pb-add-option" data-pb-add-option="'+key+'" title="افزودن مقدار تایپ‌شده به فهرست" aria-label="افزودن '+label+' به فهرست">+</button></div><datalist id="atlasPbList_'+key+'"></datalist>':
         input)+'</div>';
     }
-    section.innerHTML='<div class="module-root"><header class="module-page-head"><div><h2>دفترچه تلفن سازمانی</h2><p>حوزه ← شهر ← مجتمع ← مرکز انتقال نفت ← ایستگاه ← ساختمان ← واحد ← سمت ← شخص</p></div></header><section class="module-list-panel"><div class="module-list-head"><div><h3>جست‌وجو و فیلتر</h3><p>فهرست‌ها از تنظیمات دفترچه تلفن مدیریت می‌شوند؛ اطلاعات در همین مرورگر ذخیره می‌شود.</p></div><button type="button" class="primary-btn" id="atlasPbNew">＋ ثبت شخص</button></div><div class="atlas-pb-toolbar"><input id="atlasPbSearch" type="search" placeholder="جست‌وجوی نام، شماره یا مشخصات"><select id="atlasPbCityFilter"><option value="">همه شهرها</option></select><select id="atlasPbSiteFilter"><option value="">همه مجتمع‌ها</option></select><select id="atlasPbStationFilter"><option value="">همه ایستگاه‌ها</option></select><select id="atlasPbSortBy" aria-label="مرتب‌سازی بر اساس"><option value="name">مرتب‌سازی: نام و نام خانوادگی</option><option value="position">سمت سازمانی</option><option value="extension">شماره داخلی</option><option value="phoneNumbers">شماره تماس</option><option value="area">حوزه</option><option value="city">شهر</option><option value="complex">مجتمع</option><option value="transferCenter">مرکز انتقال نفت</option><option value="station">ایستگاه</option><option value="building">ساختمان</option><option value="unit">واحد</option></select><select id="atlasPbSortDirection" aria-label="جهت مرتب‌سازی"><option value="asc">صعودی: الف تا ی / کم به زیاد</option><option value="desc">نزولی: ی تا الف / زیاد به کم</option></select></div><form class="atlas-pb-form" id="atlasPbForm">'+fields.map(fieldMarkup).join('')+'<div class="atlas-pb-phone-editor"><div class="atlas-pb-phone-head"><strong>شماره‌های تماس</strong><button type="button" class="secondary-btn" id="atlasPbAddPhone">＋ افزودن شماره</button></div><div id="atlasPbPhoneRows"></div></div><div class="atlas-pb-actions"><button class="primary-btn" type="submit">ذخیره اطلاعات</button><button class="secondary-btn" type="button" id="atlasPbCancel">انصراف</button></div></form><div class="atlas-pb-results" id="atlasPbResults"></div></section></div>';
+    section.innerHTML='<div class="module-root"><header class="module-page-head"><div><h2>دفترچه تلفن سازمانی</h2><p>حوزه ← شهر ← مجتمع ← مرکز انتقال نفت ← ایستگاه ← ساختمان ← واحد ← سمت ← شخص</p></div></header><section class="module-list-panel"><div class="module-list-head"><div><h3>جست‌وجو و فیلتر</h3><p>فهرست‌ها از تنظیمات دفترچه تلفن مدیریت می‌شوند؛ اطلاعات در همین مرورگر ذخیره می‌شود.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="secondary-btn" id="atlasPbAddDemo">＋ افزودن ۲۰ مخاطب آزمایشی</button><button type="button" class="primary-btn" id="atlasPbNew">＋ ثبت شخص</button></div></div><div class="atlas-pb-toolbar"><input id="atlasPbSearch" type="search" placeholder="جست‌وجوی نام، شماره یا مشخصات"><select id="atlasPbCityFilter"><option value="">همه شهرها</option></select><select id="atlasPbSiteFilter"><option value="">همه مجتمع‌ها</option></select><select id="atlasPbStationFilter"><option value="">همه ایستگاه‌ها</option></select><select id="atlasPbSortBy" aria-label="مرتب‌سازی بر اساس"><option value="name">مرتب‌سازی: نام و نام خانوادگی</option><option value="position">سمت سازمانی</option><option value="extension">شماره داخلی</option><option value="phoneNumbers">شماره تماس</option><option value="area">حوزه</option><option value="city">شهر</option><option value="complex">مجتمع</option><option value="transferCenter">مرکز انتقال نفت</option><option value="station">ایستگاه</option><option value="building">ساختمان</option><option value="unit">واحد</option></select><select id="atlasPbSortDirection" aria-label="جهت مرتب‌سازی"><option value="asc">صعودی: الف تا ی / کم به زیاد</option><option value="desc">نزولی: ی تا الف / زیاد به کم</option></select></div><form class="atlas-pb-form" id="atlasPbForm">'+fields.map(fieldMarkup).join('')+'<div class="atlas-pb-phone-editor"><div class="atlas-pb-phone-head"><strong>شماره‌های تماس</strong><button type="button" class="secondary-btn" id="atlasPbAddPhone">＋ افزودن شماره</button></div><div id="atlasPbPhoneRows"></div></div><div class="atlas-pb-actions"><button class="primary-btn" type="submit">ذخیره اطلاعات</button><button class="secondary-btn" type="button" id="atlasPbCancel">انصراف</button></div></form><div class="atlas-pb-results" id="atlasPbResults"></div></section></div>';
     const form=section.querySelector('#atlasPbForm'),search=section.querySelector('#atlasPbSearch');
     const cityFilter=section.querySelector('#atlasPbCityFilter'),siteFilter=section.querySelector('#atlasPbSiteFilter'),stationFilter=section.querySelector('#atlasPbStationFilter'),sortBy=section.querySelector('#atlasPbSortBy'),sortDirection=section.querySelector('#atlasPbSortDirection');
     fields.filter(f=>f[4]).forEach(([key])=>{const input=section.querySelector('#atlasPb_'+key);input.setAttribute('list','atlasPbList_'+key);});
@@ -445,6 +474,17 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
     }
     function reset(){form.reset();editIndex=-1;form.classList.remove('open');form.querySelector('[type=submit]').textContent='ذخیره اطلاعات';}
     section.querySelector('#atlasPbNew').onclick=()=>{reset();renderPhoneRows([]);form.classList.add('open');form.elements.name.focus();};
+    section.querySelector('#atlasPbAddDemo').onclick=()=>{
+      const cities=['اهواز','آبادان','اندیمشک'],positions=['کارشناس ایمنی','مسئول ایستگاه','کارشناس آتش‌نشانی','تکنسین تعمیرات','اپراتور مرکز'];
+      let added=0;
+      for(let n=1;n<=20;n++){
+        const name='مخاطب آزمایشی '+String(n).padStart(2,'0');if(contacts.some(c=>c.name===name))continue;
+        const city=cities[(n-1)%cities.length],area=city==='اندیمشک'?'حوزه شمال':city==='آبادان'?'حوزه غرب':'حوزه مرکزی';
+        contacts.push({name,extension:String(7000+n),area,city,complex:'مجتمع آزمایشی '+(city==='اهواز'?'اهواز':city==='آبادان'?'آبادان':'اندیمشک'),transferCenter:'مرکز آزمایشی '+String(Math.ceil(n/2)).padStart(2,'0'),station:'ایستگاه آزمایشی '+String(n).padStart(2,'0'),building:'ساختمان '+(1+(n%3)),unit:'واحد '+(1+(n%4)),position:positions[(n-1)%positions.length],phoneNumbers:[{kind:'mobile',label:'تلفن آزمایشی',value:'TEST-MOB-'+String(n).padStart(4,'0')},{kind:'office',label:'تلفن دفتر آزمایشی',value:'TEST-OFF-'+String(n).padStart(4,'0')}],numbers:[]});added++;
+      }
+      ['area','city','complex','transferCenter','station','building','unit','position'].forEach(key=>{const values=[...new Set(contacts.map(c=>String(c[key]||'').trim()).filter(Boolean))];phonebookOptionData[key]=[...new Set([...(phonebookOptionData[key]||[]),...values])].sort((a,b)=>a.localeCompare(b,'fa'));});
+      phonebookOptionsSave(phonebookOptionData);persist();refillFilters();fillDatalists();draw();toast(added?'تعداد '+added+' مخاطب آزمایشی افزوده شد.':'این ۲۰ مخاطب آزمایشی از قبل موجود هستند.');
+    };
     section.querySelector('#atlasPbCancel').onclick=reset;
     section.querySelectorAll('[data-pb-add-option]').forEach(button=>button.addEventListener('click',()=>{
       const key=button.dataset.pbAddOption,input=form.elements[key],value=String(input.value||'').trim();
