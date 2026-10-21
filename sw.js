@@ -1,5 +1,5 @@
 /* ATLAS SHIFT service worker — resilient offline cache and route handling */
-const CACHE_NAME = 'atlas-shift-v46-resilient-routing';
+const CACHE_NAME = 'atlas-shift-v47-network-first-assets';
 const APP_FILES = [
   './', './index.html', './styles.css', './module-table-fix.css', './theme-two.css',
   './theme-two-colorful.css', './theme-two.js', './app.js', './modules.js',
@@ -93,16 +93,16 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Prefer the current version's cache, then network. Never let a failed cache lookup block the network.
+  // Network-first for same-origin assets: Ctrl+F5 must not be defeated by a stale service-worker cache.
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
-    const cached = await cache.match(request, { ignoreSearch: true });
-    if (cached) return cached;
     try {
-      const response = await fetch(request);
+      const response = await fetch(request, { cache: 'no-store' });
       if (response.ok) await cache.put(request, response.clone());
       return response;
     } catch (_) {
+      const cached = await cache.match(request, { ignoreSearch: true }) || await caches.match(request, { ignoreSearch: true });
+      if (cached) return cached;
       return new Response('', { status: 504, statusText: 'Offline' });
     }
   })());
