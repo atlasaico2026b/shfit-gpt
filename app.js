@@ -264,6 +264,46 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
     settings:{title:'تنظیمات <span style="color:var(--accent2)">برنامه</span>',subtitle:'ظاهر، چیدمان پنجره‌ها و آماده‌سازی اجرای محلی',kicker:'فضای کاری / تنظیمات',icon:'⚙',note:'تنظیمات ظاهری موجود است. تنظیمات داده، پشتیبان‌گیری و گزینه‌های نصب محلی در ادامه به همین بخش اضافه خواهند شد.'},
     phonebook:{title:'دفترچه <span style="color:var(--accent2)">تلفن سازمانی</span>',subtitle:'حوزه، شهر، مجتمع، واحد، سمت، اشخاص و شماره‌های تماس',kicker:'مدیریت عملیات / دفترچه تلفن',icon:'☎',note:'دفترچه تلفن محلی با جست‌وجو، فیلتر، ثبت و ویرایش اطلاعات.'}
   };
+
+  const PHONEBOOK_KEY='atlasShiftPhonebookV2';
+  function phonebookNormalize(value){
+    const x=value&&typeof value==='object'?value:{};
+    let numbers=Array.isArray(x.numbers)?x.numbers.map(n=>Array.isArray(n)?[String(n[0]||'شماره'),String(n[1]||'')]:[String(n.type||'شماره'),String(n.value||n.number||'')]):[];
+    if(!numbers.length&&x.phones)numbers=[['شماره‌ها',String(x.phones)]];
+    return {name:String(x.name||x.person||x.fullName||''),position:String(x.position||x.jobTitle||''),area:String(x.area||x.region||''),city:String(x.city||''),complex:String(x.complex||x.site||x.building||''),unit:String(x.unit||''),numbers:numbers.filter(n=>n[0].trim()||n[1].trim())};
+  }
+  function phonebookLoad(){
+    try{
+      const current=localStorage.getItem(PHONEBOOK_KEY);
+      if(current!==null){const data=JSON.parse(current);return Array.isArray(data)?data.map(phonebookNormalize):[];}
+      for(const key of ['atlas-shift-phonebook','atlasShiftPhonebookV1']){
+        const raw=localStorage.getItem(key);if(raw===null)continue;
+        const data=JSON.parse(raw);if(Array.isArray(data)){const migrated=data.map(phonebookNormalize);localStorage.setItem(PHONEBOOK_KEY,JSON.stringify(migrated));return migrated;}
+      }
+    }catch(_){}
+    return [];
+  }
+  function renderPhonebook(section){
+    if(!document.getElementById('atlas-phonebook-style')){
+      const style=document.createElement('style');style.id='atlas-phonebook-style';
+      style.textContent='.atlas-pb-toolbar{display:grid;grid-template-columns:minmax(180px,2fr) repeat(3,minmax(120px,1fr));gap:9px;margin:12px 0}.atlas-pb-toolbar input,.atlas-pb-toolbar select,.atlas-pb-form input,.atlas-pb-form textarea{box-sizing:border-box;width:100%;min-width:0;padding:11px 12px;border:1px solid rgba(140,210,255,.2);border-radius:12px;background:rgba(0,0,0,.16);color:inherit;font:inherit}.atlas-pb-form{display:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:14px 0;padding:14px;border:1px solid rgba(99,217,255,.22);border-radius:16px;background:rgba(99,217,255,.045)}.atlas-pb-form.open{display:grid}.atlas-pb-form textarea,.atlas-pb-actions{grid-column:1/-1}.atlas-pb-form textarea{min-height:76px;resize:vertical}.atlas-pb-actions,.atlas-pb-card-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.atlas-pb-results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.atlas-pb-card{padding:14px;border:1px solid rgba(140,210,255,.16);border-radius:16px;background:rgba(255,255,255,.035);min-width:0}.atlas-pb-card h3{margin:0 0 5px}.atlas-pb-path,.atlas-pb-numbers{color:var(--muted);font-size:12px;line-height:1.9;overflow-wrap:anywhere}.atlas-pb-card-actions{margin-top:10px}.atlas-pb-empty{padding:20px;border:1px dashed rgba(140,210,255,.2);border-radius:14px;color:var(--muted);text-align:center}@media(max-width:760px){.atlas-pb-toolbar,.atlas-pb-form,.atlas-pb-results{grid-template-columns:1fr}.atlas-pb-toolbar input,.atlas-pb-form textarea,.atlas-pb-actions{grid-column:auto}}';
+      document.head.appendChild(style);
+    }
+    let contacts=phonebookLoad(),editIndex=-1;
+    const escPb=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    section.innerHTML='<div class="module-root"><header class="module-page-head"><div><h2>دفترچه تلفن سازمانی</h2><p>حوزه ← شهر ← مجتمع / مرکز / ایستگاه ← واحد ← سمت ← شخص ← شماره‌ها</p></div></header><section class="module-list-panel"><div class="module-list-head"><div><h3>جست‌وجو و فیلتر</h3><p>اطلاعات در همین مرورگر ذخیره می‌شود.</p></div><button type="button" class="primary-btn" id="atlasPbNew">＋ ثبت شخص</button></div><div class="atlas-pb-toolbar"><input id="atlasPbSearch" type="search" placeholder="جست‌وجوی نام، شماره یا هر بخش از ساختار"><select id="atlasPbCity"><option value="">همه شهرها</option></select><select id="atlasPbSite"><option value="">همه مجتمع‌ها</option></select><select id="atlasPbUnit"><option value="">همه واحدها</option></select></div><form class="atlas-pb-form" id="atlasPbForm"><input name="name" required placeholder="نام و نام خانوادگی"><input name="position" placeholder="سمت سازمانی"><input name="area" placeholder="حوزه"><input name="city" placeholder="شهر"><input name="complex" placeholder="مجتمع / مرکز / ساختمان / ایستگاه"><input name="unit" placeholder="واحد"><textarea name="numbers" placeholder="هر شماره در یک خط؛ نمونه: داخلی: ۱۲۳"></textarea><div class="atlas-pb-actions"><button class="primary-btn" type="submit">ذخیره اطلاعات</button><button class="secondary-btn" type="button" id="atlasPbCancel">انصراف</button></div></form><div class="atlas-pb-results" id="atlasPbResults"></div></section></div>';
+    const form=section.querySelector('#atlasPbForm'),search=section.querySelector('#atlasPbSearch'),city=section.querySelector('#atlasPbCity'),site=section.querySelector('#atlasPbSite'),unit=section.querySelector('#atlasPbUnit');
+    function persist(){try{localStorage.setItem(PHONEBOOK_KEY,JSON.stringify(contacts));}catch(_){alert('ذخیره‌سازی انجام نشد؛ فضای ذخیره‌سازی مرورگر را بررسی کن.');}}
+    function refill(){[[city,'city','همه شهرها'],[site,'complex','همه مجتمع‌ها'],[unit,'unit','همه واحدها']].forEach(([el,key,label])=>{const previous=el.value;el.innerHTML='';const first=document.createElement('option');first.value='';first.textContent=label;el.appendChild(first);[...new Set(contacts.map(c=>c[key].trim()).filter(Boolean))].sort().forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;el.appendChild(o);});if([...el.options].some(o=>o.value===previous))el.value=previous;});}
+    function draw(){const q=search.value.trim().toLocaleLowerCase();const found=contacts.map((c,i)=>({c,i})).filter(({c})=>{const hay=[c.name,c.position,c.area,c.city,c.complex,c.unit,...c.numbers.map(n=>n.join(' '))].join(' ').toLocaleLowerCase();return(!q||hay.includes(q))&&(!city.value||c.city===city.value)&&(!site.value||c.complex===site.value)&&(!unit.value||c.unit===unit.value);});section.querySelector('#atlasPbResults').innerHTML=found.length?found.map(({c,i})=>'<article class="atlas-pb-card"><h3>'+escPb(c.name||'بدون نام')+'</h3><div class="atlas-pb-path">'+[['حوزه',c.area],['شهر',c.city],['مجتمع',c.complex],['واحد',c.unit],['سمت',c.position]].filter(p=>p[1]).map(p=>escPb(p[0])+': '+escPb(p[1])).join(' · ')+'</div><div class="atlas-pb-numbers">'+(c.numbers.length?c.numbers.map(n=>escPb(n[0])+': '+escPb(n[1])).join(' · '):'شماره‌ای ثبت نشده')+'</div><div class="atlas-pb-card-actions"><button type="button" class="secondary-btn" data-pb-edit="'+i+'">ویرایش</button><button type="button" class="secondary-btn" data-pb-delete="'+i+'">حذف</button></div></article>').join(''):'<div class="atlas-pb-empty">موردی با این مشخصات پیدا نشد.</div>';}
+    function reset(){form.reset();editIndex=-1;form.classList.remove('open');form.querySelector('[type=submit]').textContent='ذخیره اطلاعات';}
+    section.querySelector('#atlasPbNew').onclick=()=>{reset();form.classList.add('open');form.elements.name.focus();};
+    section.querySelector('#atlasPbCancel').onclick=reset;
+    form.onsubmit=event=>{event.preventDefault();const fd=new FormData(form);const numbers=String(fd.get('numbers')||'').split(/\r?\n/).map(line=>{const at=line.indexOf(':');return at<0?['شماره',line.trim()]:[line.slice(0,at).trim()||'شماره',line.slice(at+1).trim()];}).filter(n=>n[1]);const record={name:String(fd.get('name')||'').trim(),position:String(fd.get('position')||'').trim(),area:String(fd.get('area')||'').trim(),city:String(fd.get('city')||'').trim(),complex:String(fd.get('complex')||'').trim(),unit:String(fd.get('unit')||'').trim(),numbers};if(editIndex>=0)contacts[editIndex]=record;else contacts.push(record);persist();refill();draw();reset();};
+    section.querySelector('#atlasPbResults').onclick=event=>{const edit=event.target.closest('[data-pb-edit]'),del=event.target.closest('[data-pb-delete]');if(edit){editIndex=Number(edit.dataset.pbEdit);const c=contacts[editIndex];if(!c)return;for(const key of ['name','position','area','city','complex','unit'])form.elements[key].value=c[key];form.elements.numbers.value=c.numbers.map(n=>n[0]+': '+n[1]).join('\n');form.classList.add('open');form.querySelector('[type=submit]').textContent='ذخیره تغییرات';form.elements.name.focus();}else if(del){const i=Number(del.dataset.pbDelete);if(!Number.isInteger(i)||!contacts[i]||!confirm('این مخاطب حذف شود؟'))return;contacts.splice(i,1);persist();refill();draw();reset();}};
+    [search,city,site,unit].forEach(el=>{el.addEventListener('input',draw);el.addEventListener('change',draw);});refill();draw();
+  }
+
   function renderRoute(requestedView){
     let view='dashboard';
     try{view=requestedView||new URLSearchParams(window.location.search).get('view')||'dashboard'}catch(e){}
@@ -283,7 +323,9 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
     if(h)h.innerHTML=info.title;
     if(p)p.textContent=info.subtitle;
     if(k)k.textContent=info.kicker;
-    if(window.ATLAS_MODULES&&typeof window.ATLAS_MODULES.render==='function'){
+    if(view==='phonebook'){
+      renderPhonebook(section);
+    }else if(window.ATLAS_MODULES&&typeof window.ATLAS_MODULES.render==='function'){
       window.ATLAS_MODULES.render(view,section);
     }else if(!isDashboard){
       section.innerHTML='<article class="section-placeholder"><span class="section-badge">'+(info.icon||'✧')+' &nbsp; فضای کاری یکپارچه</span><h2>'+info.title.replace(/<[^>]*>/g,'')+'</h2><p>'+info.subtitle+'</p><div class="section-note">'+info.note+'</div><p>این صفحه هنوز در حال آماده‌سازی است.</p><div class="section-actions"><a class="primary" href="./index.html">بازگشت به داشبورد</a></div></article>';
