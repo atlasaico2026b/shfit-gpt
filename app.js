@@ -134,7 +134,7 @@
   });
   const phonebookCategory=$('#phonebookOptionCategory'),phonebookValue=$('#phonebookOptionValue'),phonebookList=$('#phonebookOptionList');
   const phonebookOptionLabels={area:'حوزه',city:'شهر',complex:'مجتمع',transferCenter:'مرکز انتقال نفت',station:'نام ایستگاه',building:'ساختمان',unit:'واحد',position:'سمت سازمانی'};
-  let phonebookOptionData={};
+  let phonebookOptionData={},editingPhonebookOption=null;
   try{phonebookOptionData=JSON.parse(localStorage.getItem('atlasShiftPhonebookOptionsV1')||'{}');}catch(_){}
   function renderPhonebookOptionList(){
     const key=phonebookCategory.value,values=Array.isArray(phonebookOptionData[key])?phonebookOptionData[key]:[];
@@ -144,19 +144,25 @@
     try{localStorage.setItem('atlasShiftPhonebookOptionsV1',JSON.stringify(phonebookOptionData));document.dispatchEvent(new CustomEvent('atlas-phonebook-options-updated'));renderPhonebookOptionList();}
     catch(_){toast('ذخیره فهرست انجام نشد.');}
   }
-  phonebookCategory.addEventListener('change',()=>{phonebookValue.value='';renderPhonebookOptionList();});
+  phonebookCategory.addEventListener('change',()=>{phonebookValue.value='';editingPhonebookOption=null;$('#phonebookOptionAdd').textContent='＋ افزودن';renderPhonebookOptionList();});
   $('#phonebookOptionAdd').addEventListener('click',()=>{
     const key=phonebookCategory.value,value=phonebookValue.value.trim();
     if(!value){phonebookValue.focus();return;}
     if(!Array.isArray(phonebookOptionData[key]))phonebookOptionData[key]=[];
-    if(!phonebookOptionData[key].includes(value))phonebookOptionData[key].push(value);
-    phonebookOptionData[key].sort((a,b)=>a.localeCompare(b,'fa'));phonebookValue.value='';savePhonebookOptionData();
+    if(editingPhonebookOption&&editingPhonebookOption.key===key){
+      const current=phonebookOptionData[key],oldValue=current[editingPhonebookOption.index];
+      if(oldValue!==undefined&&value!==oldValue&&current.includes(value)){toast('این مقدار از قبل در فهرست وجود دارد.');return;}
+      if(oldValue!==undefined)current[editingPhonebookOption.index]=value;
+      editingPhonebookOption=null;
+    }else if(!phonebookOptionData[key].includes(value)){phonebookOptionData[key].push(value);}
+    phonebookOptionData[key]=[...new Set(phonebookOptionData[key])].sort((a,b)=>a.localeCompare(b,'fa'));
+    phonebookValue.value='';$('#phonebookOptionAdd').textContent='＋ افزودن';savePhonebookOptionData();
   });
   phonebookList.addEventListener('click',event=>{
     const edit=event.target.closest('[data-pbo-edit]'),del=event.target.closest('[data-pbo-delete]');
     const key=phonebookCategory.value,values=phonebookOptionData[key]||[];
-    if(edit){const i=Number(edit.dataset.pboEdit),old=values[i];if(old===undefined)return;phonebookValue.value=old;values.splice(i,1);savePhonebookOptionData();phonebookValue.focus();}
-    else if(del){const i=Number(del.dataset.pboDelete);if(values[i]===undefined)return;if(!confirm('این مقدار از فهرست حذف شود؟'))return;values.splice(i,1);savePhonebookOptionData();}
+    if(edit){const i=Number(edit.dataset.pboEdit),old=values[i];if(old===undefined)return;editingPhonebookOption={key,index:i};phonebookValue.value=old;$('#phonebookOptionAdd').textContent='ذخیره اصلاح';phonebookValue.focus();}
+    else if(del){const i=Number(del.dataset.pboDelete);if(values[i]===undefined)return;if(!confirm('این مقدار از فهرست حذف شود؟'))return;values.splice(i,1);if(editingPhonebookOption&&editingPhonebookOption.key===key&&editingPhonebookOption.index===i){editingPhonebookOption=null;phonebookValue.value='';$('#phonebookOptionAdd').textContent='＋ افزودن';}savePhonebookOptionData();}
   });
   renderPhonebookOptionList();
   settingsButton.addEventListener('click',e=>{e.stopPropagation();const opening=!settingsPanel.classList.contains('open');settingsPanel.classList.toggle('open',opening);settingsPanel.setAttribute('aria-hidden',String(!opening));settingsButton.setAttribute('aria-expanded',String(opening));closeDrawer()});
