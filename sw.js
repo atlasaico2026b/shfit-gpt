@@ -1,5 +1,5 @@
 /* ATLAS SHIFT service worker — one canonical app shell and offline fallback */
-const CACHE_NAME = 'atlas-shift-v48-single-shell';
+const CACHE_NAME = 'atlas-shift-v49-phonebook-grouping';
 const APP_FILES = [
   './', './index.html', './styles.css', './module-table-fix.css', './theme-two.css',
   './theme-two-colorful.css', './theme-two.js', './app.js', './modules.js',
