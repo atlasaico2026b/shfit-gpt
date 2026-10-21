@@ -214,8 +214,11 @@
 <script src="./theme-two.js" defer></script>
 <script>
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
-    window.addEventListener('load', function () {
-      navigator.serviceWorker.register('./sw.js').catch(function () {});
+    window.addEventListener('load', async function () {
+      try {
+        const registration = await navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' });
+        await registration.update();
+      } catch (_) {}
     });
   }
 </script>
