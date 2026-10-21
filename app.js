@@ -120,6 +120,18 @@
   $('#cloudStrength').addEventListener('input',syncCloudBackground);
   $('#resetCloudBackground').addEventListener('click',()=>{applyCloudBackground(defaultCloudBackground);toast('پس‌زمینه به رنگ‌های پیش‌فرض برگشت.')});
   const settingsPanel=$('#settingsPanel'),settingsButton=$('#settingsButton');
+  const voiceDefaults={enabled:false,input:true,reply:false,confirm:true};
+  let voiceSettings=voiceDefaults;
+  try{voiceSettings=Object.assign({},voiceDefaults,JSON.parse(localStorage.getItem('atlasShiftVoiceV2')||'{}'));}catch(_){}
+  $('#voiceEnabled').checked=!!voiceSettings.enabled;
+  $('#voiceInput').checked=voiceSettings.input!==false;
+  $('#voiceReply').checked=!!voiceSettings.reply;
+  $('#voiceConfirm').checked=voiceSettings.confirm!==false;
+  $('#saveVoiceSettings').addEventListener('click',()=>{
+    const value={enabled:$('#voiceEnabled').checked,input:$('#voiceInput').checked,reply:$('#voiceReply').checked,confirm:$('#voiceConfirm').checked};
+    try{localStorage.setItem('atlasShiftVoiceV2',JSON.stringify(value));}catch(_){}
+    const toast=$('#toast');if(toast){toast.textContent='تنظیمات دستیار ذخیره شد.';toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),1800);}
+  });
   settingsButton.addEventListener('click',e=>{e.stopPropagation();const opening=!settingsPanel.classList.contains('open');settingsPanel.classList.toggle('open',opening);settingsPanel.setAttribute('aria-hidden',String(!opening));settingsButton.setAttribute('aria-expanded',String(opening));closeDrawer()});
   document.addEventListener('click',e=>{if(!e.target.closest('#settingsPanel')&&!e.target.closest('#settingsButton')){settingsPanel.classList.remove('open');settingsPanel.setAttribute('aria-hidden','true');settingsButton.setAttribute('aria-expanded','false')}});
   // Persian calendar and range presets for the dashboard's top-level filter bar.
