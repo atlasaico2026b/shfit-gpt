@@ -11,7 +11,7 @@
     const sections = [...panel.querySelectorAll(':scope > .settings-section')];
     if (!sections.length) return false;
 
-    const normalize = value => (value || '').normalize('NFKC').replace(/[\u064b-\u065f\u0670]/g, '').replace(/\s+/g, ' ').trim();
+    const normalize = value => (value || '').normalize('NFKC').replace(/[\u064b-\u065f\u0670]/g, '').replace(/[\u200c\u200d]/g, ' ').replace(/\s+/g, ' ').trim();
     const heading = section => normalize(section.querySelector('h4')?.textContent || '');
     const phonebook = sections.find(section => section.id === 'phonebookSettingsGroup');
     const dashboard = sections.filter(section => heading(section).includes('چیدمان پنجره ها'));
