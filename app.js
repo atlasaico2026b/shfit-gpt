@@ -174,16 +174,17 @@
     if(allowed.length&&!parentId){toast('برای این مورد، والد مربوط را انتخاب کن.');return;}
     if(!allowed.length&&parentId){toast('این مورد باید در ریشه ساختار باشد.');return;}
     if(parentId&&!pbTreeNodes.some(n=>n.id===parentId&&allowed.includes(n.type))){toast('والد انتخاب‌شده معتبر نیست.');return;}
-    if(type==='unitHead'&&pbTreeNodes.some(n=>n.type==='unitHead'&&n.parentId===parentId)){toast('برای این واحد، رئیس واحد از قبل تعریف شده است. ابتدا همان مورد را اصلاح کنید.');return;}\n    if(pbTreeNodes.some(n=>n.type===type&&n.name===name&&n.parentId===parentId)){toast('این مورد در همین شاخه از قبل وجود دارد.');return;}
+    if(type==='unitHead'&&pbTreeNodes.some(n=>n.type==='unitHead'&&n.parentId===parentId)){toast('برای این واحد، رئیس واحد از قبل تعریف شده است. ابتدا همان مورد را اصلاح کنید.');return;}
+    if(pbTreeNodes.some(n=>n.type===type&&n.name===name&&n.parentId===parentId)){toast('این مورد در همین شاخه از قبل وجود دارد.');return;}
     pbTreeNodes.push({id:'pbt-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),type,name,parentId});
     pbTreeSave();pbTreeSyncOptions();pbTreeName.value='';pbTreeRefresh();toast('مورد به ساختار مرتبط افزوده شد.');
   });
-  pbTreeView.addEventListener('click',event=>{
+  [pbLocationTreeView,pbOrgTreeView].forEach(treeView=>treeView.addEventListener('click',event=>{
     const edit=event.target.closest('[data-pbt-edit]'),del=event.target.closest('[data-pbt-delete]');
     if(edit){const node=pbTreeNodes.find(n=>n.id===edit.dataset.pbtEdit);if(!node)return;const next=prompt('نام جدید برای '+pbTreeLabels[node.type]+':',node.name);if(next===null)return;const name=next.trim();if(!name)return;if(pbTreeNodes.some(n=>n.id!==node.id&&n.type===node.type&&n.name===name&&n.parentId===node.parentId)){toast('این نام در همین شاخه وجود دارد.');return;}node.name=name;pbTreeSave();pbTreeSyncOptions();pbTreeRefresh();toast('نام مورد اصلاح شد.');return;}
     if(!del)return;const id=del.dataset.pbtDelete;if(pbTreeNodes.some(n=>n.parentId===id)){toast('ابتدا زیرمجموعه‌های این مورد را حذف یا جابه‌جا کن.');return;}
     if(!confirm('این مورد از ساختار مرتبط حذف شود؟'))return;pbTreeNodes=pbTreeNodes.filter(n=>n.id!==id);pbTreeSave();pbTreeSyncOptions();pbTreeRefresh();
-  });
+  }));
   function renderPhonebookOptionList(){const key=phonebookCategory.value,values=Array.isArray(phonebookOptionData[key])?phonebookOptionData[key]:[];phonebookList.innerHTML=values.length?values.map((value,i)=>'<div class="atlas-pb-option-row"><span>'+escTree(value)+'</span><div style="display:flex;gap:6px"><button class="secondary-btn" type="button" data-pbo-edit="'+i+'">اصلاح</button><button class="secondary-btn" type="button" data-pbo-delete="'+i+'">حذف</button></div></div>').join(''):'<div class="atlas-pb-empty">هنوز مقداری ثبت نشده است.</div>';}
   phonebookCategory.addEventListener('change',()=>{phonebookValue.value='';renderPhonebookOptionList();});
   $('#phonebookOptionAdd').addEventListener('click',()=>{const key=phonebookCategory.value,value=phonebookValue.value.trim();if(!value){phonebookValue.focus();return;}if(!Array.isArray(phonebookOptionData[key]))phonebookOptionData[key]=[];if(!phonebookOptionData[key].includes(value))phonebookOptionData[key].push(value);phonebookOptionData[key]=[...new Set(phonebookOptionData[key])].sort((a,b)=>a.localeCompare(b,'fa'));phonebookValue.value='';savePhonebookOptionData();});
