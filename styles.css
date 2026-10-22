@@ -374,7 +374,6 @@ html[data-atlas-theme="cloud-glass"] .module-list-panel,
 html[data-atlas-theme="cloud-glass"] .module-form-panel,
 html[data-atlas-theme="cloud-glass"] .module-summary>div,
 html[data-atlas-theme="cloud-glass"] .module-metric-grid>div,
-html[data-atlas-theme="cloud-glass"] .module-backup-card,
 html[data-atlas-theme="cloud-glass"] .module-report-card{background:linear-gradient(145deg,rgba(255,255,255,.82),rgba(222,241,255,.62));border-color:rgba(255,255,255,.92);box-shadow:0 13px 34px rgba(74,139,193,.1);color:#183e69}
 html[data-atlas-theme="cloud-glass"] .module-page-head p,
 html[data-atlas-theme="cloud-glass"] .module-list-head p,
@@ -401,7 +400,7 @@ html[data-atlas-theme="cloud-glass"] .module-empty{color:#55799d;border-color:rg
 html[data-atlas-theme="cloud-glass"] .module-report-card small{color:#227b9a}
 @media(max-width:1000px){.module-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.module-report-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.module-summary,.module-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.module-fields,.module-report-grid{grid-template-columns:1fr}.module-page-head{padding:15px}.module-list-panel,.module-form-panel{padding:12px}.module-list-tools{width:100%}.module-list-tools input{flex:1;width:auto;min-width:120px}.module-page-actions{width:100%}.module-page-actions button{flex:1}.module-form-actions{align-items:flex-start}.module-form-actions>div{display:flex;gap:6px;flex-wrap:wrap}}
-@media print{.app-menu,.topbar,.dashboard-controls,.widget-dock,.layout-hint,.module-page-actions,.module-list-tools,.module-bulk-tools,.module-row-actions,.module-local-note,.module-form-panel{display:none!important}body,body>main.shell{display:block!important;background:#fff!important;color:#111!important}.module-list-panel,.module-page-head{box-shadow:none!important;border:1px solid #bbb!important;background:#fff!important;color:#111!important}.module-table th,.module-table td{color:#111!important;background:#fff!important}}
+@media print{.app-menu,.topbar,.dashboard-controls,.widget-dock,.module-page-actions,.module-list-tools,.module-bulk-tools,.module-row-actions,.module-local-note,.module-form-panel{display:none!important}body,body>main.shell{display:block!important;background:#fff!important;color:#111!important}.module-list-panel,.module-page-head{box-shadow:none!important;border:1px solid #bbb!important;background:#fff!important;color:#111!important}.module-table th,.module-table td{color:#111!important;background:#fff!important}}
 
 /* Main module page must span the entire 12-column section grid. */
 .section-view > .module-wrap{grid-column:1 / -1;width:100%;min-width:0}
