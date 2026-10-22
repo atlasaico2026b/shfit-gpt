@@ -133,67 +133,53 @@
     const toast=$('#toast');if(toast){toast.textContent='تنظیمات دستیار ذخیره شد.';toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),1800);}
   });
   const phonebookCategory=$('#phonebookOptionCategory'),phonebookValue=$('#phonebookOptionValue'),phonebookList=$('#phonebookOptionList');
-  const phonebookOptionLabels={area:'حوزه',city:'شهر',complex:'مجتمع',transferCenter:'مرکز انتقال نفت',station:'نام ایستگاه',building:'ساختمان',unit:'واحد',position:'سمت سازمانی',supervision:'سرپرستی'};
-  let phonebookOptionData={},editingPhonebookOption=null;
-  try{phonebookOptionData=JSON.parse(localStorage.getItem('atlasShiftPhonebookOptionsV1')||'{}');}catch(_){}
+  const phonebookOptionLabels={phoneLabel:'عنوان شماره تماس'};
+  let phonebookOptionData={};try{phonebookOptionData=JSON.parse(localStorage.getItem('atlasShiftPhonebookOptionsV1')||'{}');}catch(_){}
   const pbTreeType=$('#pbTreeType'),pbTreeParent=$('#pbTreeParent'),pbTreeName=$('#pbTreeName'),pbTreeView=$('#pbTreeView');
-  const pbTreeLabels={area:'حوزه',city:'شهر',complex:'مجتمع',transferCenter:'مرکز انتقال نفت',station:'ایستگاه',building:'ساختمان',unit:'واحد'};
-  const pbTreeParents={area:[],city:['area'],complex:['area','city'],transferCenter:['area','city','complex'],station:['complex','transferCenter'],building:['station'],unit:['building']};
+  const pbTreeLabels={area:'حوزه',city:'شهر',complex:'مجتمع',transferCenter:'مرکز انتقال نفت',station:'ایستگاه مخابراتی',building:'ساختمان',supervision:'سرپرستی',unit:'واحد',position:'سمت سازمانی'};
+  const pbTreeParents={area:[],city:['area'],complex:['city'],transferCenter:['city'],station:['city'],building:['complex','transferCenter','station'],supervision:[],unit:['supervision'],position:['unit']};
   let pbTreeNodes=[];try{const saved=JSON.parse(localStorage.getItem('atlasShiftPhonebookTreeV1')||'[]');if(Array.isArray(saved))pbTreeNodes=saved;}catch(_){}
+  // Migrate older records: organization nodes and stricter city -> site hierarchy remain user-editable.
+  pbTreeNodes=pbTreeNodes.filter(n=>n&&n.id&&pbTreeLabels[n.type]).map(n=>({...n,parentId:n.parentId||''}));
   function pbTreeSave(){try{localStorage.setItem('atlasShiftPhonebookTreeV1',JSON.stringify(pbTreeNodes));}catch(_){toast('ذخیره ساختار درختی انجام نشد.');}}
+  function savePhonebookOptionData(){try{localStorage.setItem('atlasShiftPhonebookOptionsV1',JSON.stringify(phonebookOptionData));document.dispatchEvent(new CustomEvent('atlas-phonebook-options-updated'));renderPhonebookOptionList();}catch(_){toast('ذخیره فهرست انجام نشد.');}}
+  function pbTreeSyncOptions(){
+    const types=['area','city','complex','transferCenter','station','building','supervision','unit','position'];
+    types.forEach(type=>{phonebookOptionData[type]=[...new Set(pbTreeNodes.filter(n=>n.type===type).map(n=>n.name))].sort((a,b)=>a.localeCompare(b,'fa'));});
+    savePhonebookOptionData();
+  }
   function pbTreeRefresh(){
     const type=pbTreeType.value,allowed=pbTreeParents[type]||[],previous=pbTreeParent.value;
-    pbTreeParent.innerHTML='<option value="">'+(type==='area'?'بدون والد (ریشه)':'انتخاب والد')+'</option>';
+    pbTreeParent.innerHTML='<option value="">'+(allowed.length?'انتخاب والد':'بدون والد (ریشه)')+'</option>';
     pbTreeNodes.filter(n=>allowed.includes(n.type)).sort((a,b)=>a.name.localeCompare(b.name,'fa')).forEach(n=>{const o=document.createElement('option');o.value=n.id;o.textContent=pbTreeLabels[n.type]+' · '+n.name;pbTreeParent.appendChild(o);});
     if([...pbTreeParent.options].some(o=>o.value===previous))pbTreeParent.value=previous;
     const childrenOf=id=>pbTreeNodes.filter(n=>n.parentId===id).sort((a,b)=>a.name.localeCompare(b.name,'fa'));
-    const renderNode=(node,depth)=>'<div class="atlas-pb-option-row" style="margin-right:'+(depth*18)+'px"><span>↳ '+pbTreeLabels[node.type]+': '+escTree(node.name)+'</span><button class="secondary-btn" type="button" data-pbt-delete="'+escTree(node.id)+'">حذف</button></div>'+childrenOf(node.id).map(n=>renderNode(n,depth+1)).join('');
-    pbTreeView.innerHTML=pbTreeNodes.filter(n=>!pbTreeNodes.some(p=>p.id===n.parentId)).sort((a,b)=>a.name.localeCompare(b.name,'fa')).map(n=>renderNode(n,0)).join('')||'<div class="atlas-pb-empty">ساختار درختی هنوز تعریف نشده است.</div>';
+    const renderNode=(node,depth)=>'<div class="atlas-pb-option-row" style="margin-right:'+(depth*18)+'px"><span>↳ '+pbTreeLabels[node.type]+': '+escTree(node.name)+'</span><div style="display:flex;gap:6px"><button class="secondary-btn" type="button" data-pbt-edit="'+escTree(node.id)+'">اصلاح</button><button class="secondary-btn" type="button" data-pbt-delete="'+escTree(node.id)+'">حذف</button></div></div>'+childrenOf(node.id).map(n=>renderNode(n,depth+1)).join('');
+    pbTreeView.innerHTML=pbTreeNodes.filter(n=>!pbTreeNodes.some(p=>p.id===n.parentId)).sort((a,b)=>a.name.localeCompare(b.name,'fa')).map(n=>renderNode(n,0)).join('')||'<div class="atlas-pb-empty">ساختار هنوز تعریف نشده است.</div>';
   }
   function escTree(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   pbTreeType.addEventListener('change',pbTreeRefresh);
   $('#pbTreeAdd').addEventListener('click',()=>{
-    const type=pbTreeType.value,name=pbTreeName.value.trim(),parentId=pbTreeParent.value||'';
+    const type=pbTreeType.value,name=pbTreeName.value.trim(),parentId=pbTreeParent.value||'',allowed=pbTreeParents[type]||[];
     if(!name){pbTreeName.focus();return;}
-    if(type==='area'&&parentId){toast('حوزه باید در ریشه درخت باشد.');return;}
-    if(type!=='area'&&!parentId){toast('برای این مورد، والد را انتخاب کن.');return;}
+    if(allowed.length&&!parentId){toast('برای این مورد، والد مربوط را انتخاب کن.');return;}
+    if(!allowed.length&&parentId){toast('این مورد باید در ریشه ساختار باشد.');return;}
+    if(parentId&&!pbTreeNodes.some(n=>n.id===parentId&&allowed.includes(n.type))){toast('والد انتخاب‌شده معتبر نیست.');return;}
     if(pbTreeNodes.some(n=>n.type===type&&n.name===name&&n.parentId===parentId)){toast('این مورد در همین شاخه از قبل وجود دارد.');return;}
-    const node={id:'pbt-'+Date.now()+'-'+(pbTreeNodes.length+1),type,name,parentId};pbTreeNodes.push(node);pbTreeSave();
-    if(!Array.isArray(phonebookOptionData[type]))phonebookOptionData[type]=[];
-    if(!phonebookOptionData[type].includes(name)){phonebookOptionData[type].push(name);phonebookOptionData[type].sort((a,b)=>a.localeCompare(b,'fa'));savePhonebookOptionData();}
-    pbTreeName.value='';pbTreeRefresh();toast('مورد به ساختار درختی افزوده شد.');
+    pbTreeNodes.push({id:'pbt-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),type,name,parentId});
+    pbTreeSave();pbTreeSyncOptions();pbTreeName.value='';pbTreeRefresh();toast('مورد به ساختار مرتبط افزوده شد.');
   });
-  pbTreeView.addEventListener('click',event=>{const button=event.target.closest('[data-pbt-delete]');if(!button)return;const id=button.dataset.pbtDelete;if(pbTreeNodes.some(n=>n.parentId===id)){toast('ابتدا زیرمجموعه‌های این مورد را حذف یا جابه‌جا کن.');return;}if(!confirm('این مورد از ساختار درختی حذف شود؟'))return;pbTreeNodes=pbTreeNodes.filter(n=>n.id!==id);pbTreeSave();pbTreeRefresh();});
-  pbTreeRefresh();
-  function renderPhonebookOptionList(){
-    const key=phonebookCategory.value,values=Array.isArray(phonebookOptionData[key])?phonebookOptionData[key]:[];
-    phonebookList.innerHTML=values.length?values.map((value,i)=>'<div class="atlas-pb-option-row"><span>'+String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))+'</span><div style="display:flex;gap:6px"><button class="secondary-btn" type="button" data-pbo-edit="'+i+'">اصلاح</button><button class="secondary-btn" type="button" data-pbo-delete="'+i+'">حذف</button></div></div>').join(''):'<div class="atlas-pb-empty">هنوز مقداری ثبت نشده است.</div>';
-  }
-  function savePhonebookOptionData(){
-    try{localStorage.setItem('atlasShiftPhonebookOptionsV1',JSON.stringify(phonebookOptionData));document.dispatchEvent(new CustomEvent('atlas-phonebook-options-updated'));renderPhonebookOptionList();}
-    catch(_){toast('ذخیره فهرست انجام نشد.');}
-  }
-  phonebookCategory.addEventListener('change',()=>{phonebookValue.value='';editingPhonebookOption=null;$('#phonebookOptionAdd').textContent='＋ افزودن';renderPhonebookOptionList();});
-  $('#phonebookOptionAdd').addEventListener('click',()=>{
-    const key=phonebookCategory.value,value=phonebookValue.value.trim();
-    if(!value){phonebookValue.focus();return;}
-    if(!Array.isArray(phonebookOptionData[key]))phonebookOptionData[key]=[];
-    if(editingPhonebookOption&&editingPhonebookOption.key===key){
-      const current=phonebookOptionData[key],oldValue=current[editingPhonebookOption.index];
-      if(oldValue!==undefined&&value!==oldValue&&current.includes(value)){toast('این مقدار از قبل در فهرست وجود دارد.');return;}
-      if(oldValue!==undefined)current[editingPhonebookOption.index]=value;
-      editingPhonebookOption=null;
-    }else if(!phonebookOptionData[key].includes(value)){phonebookOptionData[key].push(value);}
-    phonebookOptionData[key]=[...new Set(phonebookOptionData[key])].sort((a,b)=>a.localeCompare(b,'fa'));
-    phonebookValue.value='';$('#phonebookOptionAdd').textContent='＋ افزودن';savePhonebookOptionData();
+  pbTreeView.addEventListener('click',event=>{
+    const edit=event.target.closest('[data-pbt-edit]'),del=event.target.closest('[data-pbt-delete]');
+    if(edit){const node=pbTreeNodes.find(n=>n.id===edit.dataset.pbtEdit);if(!node)return;const next=prompt('نام جدید برای '+pbTreeLabels[node.type]+':',node.name);if(next===null)return;const name=next.trim();if(!name)return;if(pbTreeNodes.some(n=>n.id!==node.id&&n.type===node.type&&n.name===name&&n.parentId===node.parentId)){toast('این نام در همین شاخه وجود دارد.');return;}node.name=name;pbTreeSave();pbTreeSyncOptions();pbTreeRefresh();toast('نام مورد اصلاح شد.');return;}
+    if(!del)return;const id=del.dataset.pbtDelete;if(pbTreeNodes.some(n=>n.parentId===id)){toast('ابتدا زیرمجموعه‌های این مورد را حذف یا جابه‌جا کن.');return;}
+    if(!confirm('این مورد از ساختار مرتبط حذف شود؟'))return;pbTreeNodes=pbTreeNodes.filter(n=>n.id!==id);pbTreeSave();pbTreeSyncOptions();pbTreeRefresh();
   });
-  phonebookList.addEventListener('click',event=>{
-    const edit=event.target.closest('[data-pbo-edit]'),del=event.target.closest('[data-pbo-delete]');
-    const key=phonebookCategory.value,values=phonebookOptionData[key]||[];
-    if(edit){const i=Number(edit.dataset.pboEdit),old=values[i];if(old===undefined)return;editingPhonebookOption={key,index:i};phonebookValue.value=old;$('#phonebookOptionAdd').textContent='ذخیره اصلاح';phonebookValue.focus();}
-    else if(del){const i=Number(del.dataset.pboDelete);if(values[i]===undefined)return;if(!confirm('این مقدار از فهرست حذف شود؟'))return;values.splice(i,1);if(editingPhonebookOption&&editingPhonebookOption.key===key&&editingPhonebookOption.index===i){editingPhonebookOption=null;phonebookValue.value='';$('#phonebookOptionAdd').textContent='＋ افزودن';}savePhonebookOptionData();}
-  });
-  renderPhonebookOptionList();
+  function renderPhonebookOptionList(){const key=phonebookCategory.value,values=Array.isArray(phonebookOptionData[key])?phonebookOptionData[key]:[];phonebookList.innerHTML=values.length?values.map((value,i)=>'<div class="atlas-pb-option-row"><span>'+escTree(value)+'</span><div style="display:flex;gap:6px"><button class="secondary-btn" type="button" data-pbo-edit="'+i+'">اصلاح</button><button class="secondary-btn" type="button" data-pbo-delete="'+i+'">حذف</button></div></div>').join(''):'<div class="atlas-pb-empty">هنوز مقداری ثبت نشده است.</div>';}
+  phonebookCategory.addEventListener('change',()=>{phonebookValue.value='';renderPhonebookOptionList();});
+  $('#phonebookOptionAdd').addEventListener('click',()=>{const key=phonebookCategory.value,value=phonebookValue.value.trim();if(!value){phonebookValue.focus();return;}if(!Array.isArray(phonebookOptionData[key]))phonebookOptionData[key]=[];if(!phonebookOptionData[key].includes(value))phonebookOptionData[key].push(value);phonebookOptionData[key]=[...new Set(phonebookOptionData[key])].sort((a,b)=>a.localeCompare(b,'fa'));phonebookValue.value='';savePhonebookOptionData();});
+  phonebookList.addEventListener('click',event=>{const edit=event.target.closest('[data-pbo-edit]'),del=event.target.closest('[data-pbo-delete]'),key=phonebookCategory.value,values=phonebookOptionData[key]||[];if(edit){const i=Number(edit.dataset.pboEdit);if(values[i]===undefined)return;const next=prompt('مقدار جدید:',values[i]);if(next===null)return;const value=next.trim();if(!value)return;values[i]=value;phonebookOptionData[key]=[...new Set(values)].sort((a,b)=>a.localeCompare(b,'fa'));savePhonebookOptionData();}else if(del){const i=Number(del.dataset.pboDelete);if(values[i]===undefined)return;if(!confirm('این مقدار حذف شود؟'))return;values.splice(i,1);savePhonebookOptionData();}});
+  pbTreeRefresh();renderPhonebookOptionList();
   settingsButton.addEventListener('click',e=>{e.stopPropagation();const opening=!settingsPanel.classList.contains('open');settingsPanel.classList.toggle('open',opening);settingsPanel.setAttribute('aria-hidden',String(!opening));settingsButton.setAttribute('aria-expanded',String(opening));closeDrawer()});
   document.addEventListener('click',e=>{if(!e.target.closest('#settingsPanel')&&!e.target.closest('#settingsButton')){settingsPanel.classList.remove('open');settingsPanel.setAttribute('aria-hidden','true');settingsButton.setAttribute('aria-expanded','false')}});
   // Persian calendar and range presets for the dashboard's top-level filter bar.
