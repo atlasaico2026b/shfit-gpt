@@ -22,6 +22,19 @@
     #settingsPanel .settings-tab-pane>.settings-section:first-child{border-top:0;padding-top:4px}
     @media(max-width:390px){#settingsPanel .settings-tab{font-size:11px;padding:9px 2px}}
   </style>
+
+<style id="atlas-phonebook-accordion-css">
+#settingsPanel .pb-structure-accordion{margin:8px 0;border:1px solid rgba(140,210,255,.2);border-radius:12px;background:rgba(80,140,200,.055);overflow:hidden}
+#settingsPanel .pb-structure-accordion>summary{display:flex;flex-direction:column;gap:3px;cursor:pointer;list-style:none;padding:11px 12px;font-weight:700;font-size:13px}
+#settingsPanel .pb-structure-accordion>summary::-webkit-details-marker{display:none}
+#settingsPanel .pb-structure-accordion>summary:after{content:'＋';float:left;align-self:flex-start;color:var(--muted);margin-top:-20px}
+#settingsPanel .pb-structure-accordion[open]>summary:after{content:'−'}
+#settingsPanel .pb-structure-accordion>summary span{font-size:11px;font-weight:400;color:var(--muted);padding-left:20px}
+#settingsPanel .pb-structure-content{padding:0 10px 10px;min-width:0}
+#settingsPanel .pb-structure-content .atlas-pb-option-row{gap:8px;flex-wrap:wrap;align-items:center}
+#settingsPanel .pb-structure-content .atlas-pb-option-row>span{min-width:0;overflow-wrap:anywhere}
+#settingsPanel .pb-structure-content .atlas-pb-option-row button{padding:6px 8px;font-size:11px}
+</style>
 </head>
 <body>
 
@@ -228,7 +241,38 @@
 <div class="settings-section"><h4>دستیار صوتی</h4><p>ترجیحات دستیار روی همین دستگاه ذخیره می‌شوند.</p><div class="atlas-voice-settings" style="display:grid;gap:10px;margin:12px 0"><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">فعال بودن دستیار صوتی<input id="voiceEnabled" type="checkbox"></label><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">دریافت فرمان صوتی فارسی<input id="voiceInput" type="checkbox"></label><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">پاسخ صوتی<input id="voiceReply" type="checkbox"></label><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">تأیید عملیات حساس<input id="voiceConfirm" type="checkbox"></label></div><button class="secondary-btn" id="saveVoiceSettings" type="button">ذخیره تنظیمات دستیار</button></div>
   </div>
   <div class="settings-tab-pane" id="settings-pane-phonebook" role="tabpanel" aria-labelledby="settings-tab-phonebook" hidden>
-<div class="settings-section" id="phonebookSettingsGroup"><h4>تنظیمات دفترچه تلفن</h4><p>تنظیم ساختار مکانی و مدیریت فهرست‌های قابل انتخاب در دفترچه تلفن.</p><div class="phonebook-settings-subsection" id="phonebookTreeSettings" style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(140,210,255,.18)"><h4>ساختار درختی حوزه‌ها و مکان‌ها</h4><h4>ساختار درختی حوزه‌ها و مکان‌ها</h4><p>ساختار مکانی: حوزه ← شهر ← مرکز/مجتمع/ایستگاه ← ساختمان. ساختار سازمانی: سرپرستی ← واحد ← سمت سازمانی. برای هر مورد، والد درست را انتخاب کن.</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px"><select id="pbTreeType" style="min-width:0;padding:10px;border-radius:10px;background:rgba(0,0,0,.16);color:inherit"><option value="area">حوزه</option><option value="city">شهر</option><option value="complex">مجتمع</option><option value="transferCenter">مرکز انتقال نفت</option><option value="station">ایستگاه مخابراتی</option><option value="building">ساختمان</option><option value="supervision">سرپرستی</option><option value="unit">واحد</option><option value="position">سمت سازمانی</option></select><select id="pbTreeParent" style="min-width:0;padding:10px;border-radius:10px;background:rgba(0,0,0,.16);color:inherit"><option value="">بدون والد (ریشه)</option></select><input id="pbTreeName" type="text" placeholder="نام مورد جدید" style="min-width:0;padding:10px;border-radius:10px;background:rgba(0,0,0,.16);color:inherit;border:1px solid rgba(140,210,255,.2)"><button class="secondary-btn" id="pbTreeAdd" type="button">＋ افزودن به درخت</button></div><div id="pbTreeView" class="atlas-pb-settings-list"></div></div><div class="phonebook-settings-subsection" id="phonebookSettings" style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(140,210,255,.18)"><h4>فهرست‌های قابل انتخاب</h4><p>مقادیر منوهای کشویی دفترچه تلفن را اضافه، ویرایش یا حذف کن.</p><label for="phonebookOptionCategory">فیلد موردنظر</label><select id="phonebookOptionCategory" style="width:100%;margin-top:8px;padding:10px;border-radius:10px;background:rgba(0,0,0,.16);color:inherit;border:1px solid rgba(140,210,255,.2)"><option value="phoneLabel">عنوان شماره تماس</option></select><div class="atlas-pb-settings-editor"><input id="phonebookOptionValue" type="text" placeholder="مقدار جدید یا مقدار اصلاح‌شده"><button class="secondary-btn" id="phonebookOptionAdd" type="button">＋ افزودن</button></div><div id="phonebookOptionList" class="atlas-pb-settings-list"></div></div></div>
+<div class="settings-section" id="phonebookSettingsGroup"><h4>تنظیمات دفترچه تلفن</h4><p>تنظیم ساختار مکانی و مدیریت فهرست‌های قابل انتخاب در دفترچه تلفن.</p><div class="phonebook-settings-subsection" id="phonebookTreeSettings">
+  <h4>مدیریت ساختارها</h4>
+  <p>هر مورد را به والد درست وصل کنید؛ تغییرات در همین دستگاه ذخیره می‌شود.</p>
+  <details class="pb-structure-accordion" open>
+    <summary>📍 ساختار مکان‌ها <span>حوزه ← شهر ← مجتمع/مرکز انتقال نفت/ایستگاه ← ساختمان</span></summary>
+    <div class="pb-structure-content"><div id="pbLocationTreeView" class="atlas-pb-settings-list"></div></div>
+  </details>
+  <details class="pb-structure-accordion">
+    <summary>🏢 ساختار سازمانی <span>سرپرستی ← واحد ← رئیس واحد و سمت‌ها</span></summary>
+    <div class="pb-structure-content"><div id="pbOrgTreeView" class="atlas-pb-settings-list"></div></div>
+  </details>
+  <details class="pb-structure-accordion">
+    <summary>＋ افزودن یا اصلاح مورد</summary>
+    <div class="pb-structure-content">
+      <label for="pbTreeType">نوع مورد</label>
+      <select id="pbTreeType" style="width:100%;min-width:0;padding:10px;border-radius:10px;background:rgba(0,0,0,.16);color:inherit">
+        <optgroup label="مکان‌ها">
+          <option value="area">حوزه</option><option value="city">شهر</option><option value="complex">مجتمع</option><option value="transferCenter">مرکز انتقال نفت</option><option value="station">ایستگاه مخابراتی</option><option value="building">ساختمان</option>
+        </optgroup>
+        <optgroup label="ساختار سازمانی">
+          <option value="supervision">سرپرستی</option><option value="unit">واحد</option><option value="unitHead">رئیس واحد</option><option value="position">سمت سازمانی</option>
+        </optgroup>
+      </select>
+      <label for="pbTreeParent" style="display:block;margin-top:8px">والد / محل قرارگیری</label>
+      <select id="pbTreeParent" style="width:100%;min-width:0;padding:10px;border-radius:10px;background:rgba(0,0,0,.16);color:inherit"><option value="">بدون والد (ریشه)</option></select>
+      <label for="pbTreeName" style="display:block;margin-top:8px">نام مورد</label>
+      <input id="pbTreeName" type="text" placeholder="نام جدید یا نام اصلاح‌شده" style="width:100%;box-sizing:border-box;min-width:0;padding:10px;margin-top:6px;border-radius:10px;background:rgba(0,0,0,.16);color:inherit;border:1px solid rgba(140,210,255,.2)">
+      <button class="secondary-btn" id="pbTreeAdd" type="button" style="width:100%;margin-top:8px">＋ افزودن</button>
+    </div>
+  </details>
+</div>
+<div class="phonebook-settings-subsection" id="phonebookSettings" style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(140,210,255,.18)"><h4>فهرست‌های قابل انتخاب</h4><p>مقادیر منوهای کشویی دفترچه تلفن را اضافه، ویرایش یا حذف کن.</p><label for="phonebookOptionCategory">فیلد موردنظر</label><select id="phonebookOptionCategory" style="width:100%;margin-top:8px;padding:10px;border-radius:10px;background:rgba(0,0,0,.16);color:inherit;border:1px solid rgba(140,210,255,.2)"><option value="phoneLabel">عنوان شماره تماس</option></select><div class="atlas-pb-settings-editor"><input id="phonebookOptionValue" type="text" placeholder="مقدار جدید یا مقدار اصلاح‌شده"><button class="secondary-btn" id="phonebookOptionAdd" type="button">＋ افزودن</button></div><div id="phonebookOptionList" class="atlas-pb-settings-list"></div></div></div>
   </div>
 </section>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
