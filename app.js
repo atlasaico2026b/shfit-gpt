@@ -135,27 +135,36 @@
   const phonebookCategory=$('#phonebookOptionCategory'),phonebookValue=$('#phonebookOptionValue'),phonebookList=$('#phonebookOptionList');
   const phonebookOptionLabels={phoneLabel:'عنوان شماره تماس'};
   let phonebookOptionData={};try{phonebookOptionData=JSON.parse(localStorage.getItem('atlasShiftPhonebookOptionsV1')||'{}');}catch(_){}
-  const pbTreeType=$('#pbTreeType'),pbTreeParent=$('#pbTreeParent'),pbTreeName=$('#pbTreeName'),pbTreeView=$('#pbTreeView');
-  const pbTreeLabels={area:'حوزه',city:'شهر',complex:'مجتمع',transferCenter:'مرکز انتقال نفت',station:'ایستگاه مخابراتی',building:'ساختمان',supervision:'سرپرستی',unit:'واحد',position:'سمت سازمانی'};
-  const pbTreeParents={area:[],city:['area'],complex:['city'],transferCenter:['city'],station:['city'],building:['complex','transferCenter','station'],supervision:[],unit:['supervision'],position:['unit']};
+  const pbTreeType=$('#pbTreeType'),pbTreeParent=$('#pbTreeParent'),pbTreeName=$('#pbTreeName'),pbLocationTreeView=$('#pbLocationTreeView'),pbOrgTreeView=$('#pbOrgTreeView');
+  const pbTreeLabels={area:'حوزه',city:'شهر',complex:'مجتمع',transferCenter:'مرکز انتقال نفت',station:'ایستگاه مخابراتی',building:'ساختمان',supervision:'سرپرستی',unit:'واحد',unitHead:'رئیس واحد',position:'سمت سازمانی'};
+  const pbTreeParents={area:[],city:['area'],complex:['city'],transferCenter:['city'],station:['city'],building:['complex','transferCenter','station'],supervision:[],unit:['supervision'],unitHead:['unit'],position:['unit']};
   let pbTreeNodes=[];try{const saved=JSON.parse(localStorage.getItem('atlasShiftPhonebookTreeV1')||'[]');if(Array.isArray(saved))pbTreeNodes=saved;}catch(_){}
   // Migrate older records: organization nodes and stricter city -> site hierarchy remain user-editable.
   pbTreeNodes=pbTreeNodes.filter(n=>n&&n.id&&pbTreeLabels[n.type]).map(n=>({...n,parentId:n.parentId||''}));
   function pbTreeSave(){try{localStorage.setItem('atlasShiftPhonebookTreeV1',JSON.stringify(pbTreeNodes));}catch(_){toast('ذخیره ساختار درختی انجام نشد.');}}
   function savePhonebookOptionData(){try{localStorage.setItem('atlasShiftPhonebookOptionsV1',JSON.stringify(phonebookOptionData));document.dispatchEvent(new CustomEvent('atlas-phonebook-options-updated'));renderPhonebookOptionList();}catch(_){toast('ذخیره فهرست انجام نشد.');}}
   function pbTreeSyncOptions(){
-    const types=['area','city','complex','transferCenter','station','building','supervision','unit','position'];
+    const types=['area','city','complex','transferCenter','station','building','supervision','unit','unitHead','position'];
     types.forEach(type=>{phonebookOptionData[type]=[...new Set(pbTreeNodes.filter(n=>n.type===type).map(n=>n.name))].sort((a,b)=>a.localeCompare(b,'fa'));});
     savePhonebookOptionData();
   }
   function pbTreeRefresh(){
     const type=pbTreeType.value,allowed=pbTreeParents[type]||[],previous=pbTreeParent.value;
-    pbTreeParent.innerHTML='<option value="">'+(allowed.length?'انتخاب والد':'بدون والد (ریشه)')+'</option>';
-    pbTreeNodes.filter(n=>allowed.includes(n.type)).sort((a,b)=>a.name.localeCompare(b.name,'fa')).forEach(n=>{const o=document.createElement('option');o.value=n.id;o.textContent=pbTreeLabels[n.type]+' · '+n.name;pbTreeParent.appendChild(o);});
+    pbTreeParent.innerHTML='<option value="">'+(allowed.length?'انتخاب والد الزامی است':'بدون والد (ریشه)')+'</option>';
+    pbTreeNodes.filter(n=>allowed.includes(n.type)).sort((a,b)=>a.name.localeCompare(b.name,'fa')).forEach(n=>{
+      const o=document.createElement('option');o.value=n.id;o.textContent=pbTreeLabels[n.type]+' · '+n.name;pbTreeParent.appendChild(o);
+    });
     if([...pbTreeParent.options].some(o=>o.value===previous))pbTreeParent.value=previous;
     const childrenOf=id=>pbTreeNodes.filter(n=>n.parentId===id).sort((a,b)=>a.name.localeCompare(b.name,'fa'));
-    const renderNode=(node,depth)=>'<div class="atlas-pb-option-row" style="margin-right:'+(depth*18)+'px"><span>↳ '+pbTreeLabels[node.type]+': '+escTree(node.name)+'</span><div style="display:flex;gap:6px"><button class="secondary-btn" type="button" data-pbt-edit="'+escTree(node.id)+'">اصلاح</button><button class="secondary-btn" type="button" data-pbt-delete="'+escTree(node.id)+'">حذف</button></div></div>'+childrenOf(node.id).map(n=>renderNode(n,depth+1)).join('');
-    pbTreeView.innerHTML=pbTreeNodes.filter(n=>!pbTreeNodes.some(p=>p.id===n.parentId)).sort((a,b)=>a.name.localeCompare(b.name,'fa')).map(n=>renderNode(n,0)).join('')||'<div class="atlas-pb-empty">ساختار هنوز تعریف نشده است.</div>';
+    const locationTypes=['area','city','complex','transferCenter','station','building'];
+    const orgTypes=['supervision','unit','unitHead','position'];
+    const renderNode=(node,depth)=>'<div class="atlas-pb-option-row" style="margin-right:'+(depth*14)+'px"><span>↳ '+pbTreeLabels[node.type]+': '+escTree(node.name)+'</span><div style="display:flex;gap:6px"><button class="secondary-btn" type="button" data-pbt-edit="'+escTree(node.id)+'">اصلاح</button><button class="secondary-btn" type="button" data-pbt-delete="'+escTree(node.id)+'">حذف</button></div></div>'+childrenOf(node.id).map(n=>renderNode(n,depth+1)).join('');
+    const renderGroup=(view,types)=>{
+      if(!view)return;
+      view.innerHTML=pbTreeNodes.filter(n=>types.includes(n.type)&&!pbTreeNodes.some(p=>p.id===n.parentId)).sort((a,b)=>a.name.localeCompare(b.name,'fa')).map(n=>renderNode(n,0)).join('')||'<div class="atlas-pb-empty">هنوز موردی تعریف نشده است.</div>';
+    };
+    renderGroup(pbLocationTreeView,locationTypes);
+    renderGroup(pbOrgTreeView,orgTypes);
   }
   function escTree(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   pbTreeType.addEventListener('change',pbTreeRefresh);
@@ -165,7 +174,7 @@
     if(allowed.length&&!parentId){toast('برای این مورد، والد مربوط را انتخاب کن.');return;}
     if(!allowed.length&&parentId){toast('این مورد باید در ریشه ساختار باشد.');return;}
     if(parentId&&!pbTreeNodes.some(n=>n.id===parentId&&allowed.includes(n.type))){toast('والد انتخاب‌شده معتبر نیست.');return;}
-    if(pbTreeNodes.some(n=>n.type===type&&n.name===name&&n.parentId===parentId)){toast('این مورد در همین شاخه از قبل وجود دارد.');return;}
+    if(type==='unitHead'&&pbTreeNodes.some(n=>n.type==='unitHead'&&n.parentId===parentId)){toast('برای این واحد، رئیس واحد از قبل تعریف شده است. ابتدا همان مورد را اصلاح کنید.');return;}\n    if(pbTreeNodes.some(n=>n.type===type&&n.name===name&&n.parentId===parentId)){toast('این مورد در همین شاخه از قبل وجود دارد.');return;}
     pbTreeNodes.push({id:'pbt-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),type,name,parentId});
     pbTreeSave();pbTreeSyncOptions();pbTreeName.value='';pbTreeRefresh();toast('مورد به ساختار مرتبط افزوده شد.');
   });
