@@ -447,9 +447,7 @@ html[data-atlas-theme="cloud-glass"] .module-report-card small{color:#227b9a}
 .module-report-range{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-top:12px}
 .module-report-range .module-field{flex:1 1 220px}
 .module-report-range>[data-module-action]{flex:0 0 auto}
-.module-settings-counts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.module-settings-counts>span{padding:8px 10px;border:1px solid var(--line);border-radius:10px;color:var(--muted);font-size:10px}
-.module-settings-counts b{color:var(--text)}
+
 
 /* Report output selector, styled with existing theme tokens. */
 .module-report-export{min-width:140px;max-width:190px;border:1px solid var(--line-hi);border-radius:12px;padding:9px 11px;background:rgba(255,255,255,.06);color:var(--text);font:inherit;font-size:11px;cursor:pointer}
