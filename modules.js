@@ -149,7 +149,6 @@
   function createEmptyState() {
     const state = {
       schemaVersion: 2,
-      settings: { employeeCustomFields: '' },
       references: { workplaces: ['اهواز','آبادان','اندیمشک','ماهشهر','بندر امام'] },
       history: [],
       shifts: [],
@@ -165,7 +164,6 @@
     MODULES.forEach(function (key) {
       if (Array.isArray(value[key])) out[key] = value[key].filter(function (item) { return item && typeof item === 'object'; });
     });
-    if (value.settings && typeof value.settings === 'object') out.settings = Object.assign(out.settings, value.settings);
     if (value.references && typeof value.references === 'object') out.references = Object.assign(out.references, value.references);
     if (Array.isArray(value.history)) out.history = value.history.slice(-3000);
     if (Array.isArray(value.shifts)) out.shifts = value.shifts.filter(function(item){return item&&typeof item==='object';});
@@ -418,13 +416,6 @@
 
   function fieldsFor(moduleKey) {
     const fields = specs[moduleKey].fields.slice();
-    if (moduleKey === 'employees') {
-      const custom = String(appData.settings.employeeCustomFields || '').split(/\r?\n/)
-        .map(function (line) { return line.trim(); }).filter(Boolean).slice(0, 20);
-      custom.forEach(function (label, index) {
-        fields.push({ key:'customField' + (index + 1), label:label, custom:true, wide:false });
-      });
-    }
     return fields;
   }
 
@@ -1058,18 +1049,6 @@
       rows.map(function(item){return '<tr><td>'+formatJalali(item.at,true)+'</td><td>'+esc(item.module==='shifts'?'برنامهٔ شیفت':(specs[item.module]?specs[item.module].title:item.module))+'</td><td>'+esc(item.recordLabel||'—')+'</td><td>'+esc(item.action)+'</td><td>'+esc((item.changes||[]).map(function(c){return c.field+': '+c.before+' ← '+c.after;}).join('؛ ')||'—')+'</td></tr>';}).join('')+'</tbody></table></div>';
   }
 
-  function renderSettings(section) {
-    section.innerHTML=rootWrap(
-      pageHead('تنظیمات','مدیریت محلی اطلاعات، فیلدهای پرسنلی قابل تنظیم و نسخهٔ پشتیبان. تم فعلی تغییر داده نمی‌شود.','')+
-      '<section class="module-list-panel"><div class="module-list-head"><div><h3>پشتیبان‌گیری و بازیابی</h3><p>نسخهٔ پشتیبان تمام پرونده‌ها، تاریخچه، تنظیمات و پیوست‌های محلی را دربر می‌گیرد.</p></div></div>'+
-      '<div class="module-backup-grid"><div class="module-backup-card"><strong>ساخت نسخهٔ پشتیبان</strong><p>یک فایل JSON از تمام داده‌های موجود در این دستگاه دریافت می‌کنی.</p><button type="button" class="primary-btn" data-module-action="backup">دریافت فایل پشتیبان</button></div>'+
-      '<div class="module-backup-card"><strong>بازیابی نسخهٔ پشتیبان</strong><p>بازیابی، داده‌های فعلی را جایگزین اطلاعات درون فایل انتخاب‌شده می‌کند.</p><button type="button" class="secondary-btn" data-module-action="restore-select">انتخاب فایل پشتیبان</button><input type="file" id="atlasRestoreFile" accept=".json,application/json" hidden></div></div></section>'+
-      '<section class="module-list-panel"><div class="module-list-head"><div><h3>فیلدهای سفارشی کارکنان</h3><p>هر خط یک عنوان فیلد است. حذف عنوان از این فهرست به معنی حذف مقدار قبلی از پرونده‌ها نیست.</p></div></div>'+
-      '<form data-custom-fields-form class="module-form"><label class="module-field module-field-wide"><span>عنوان فیلدها، هر کدام در یک خط</span><textarea name="employeeCustomFields" rows="5" placeholder="مثلاً: گواهینامه تخصصی&#10;شماره بیمه">'+esc(appData.settings.employeeCustomFields||'')+'</textarea></label><div class="module-form-actions"><span class="module-required-help">حداکثر ۲۰ فیلد سفارشی.</span><button type="submit" class="primary-btn">ذخیرهٔ فیلدها</button></div></form></section>'+
-      '<section class="module-list-panel"><div class="module-list-head"><div><h3>وضعیت نگهداری داده</h3><p>داده‌ها در پایگاه محلی مرورگر ذخیره می‌شوند و برای استفادهٔ روزمره به اتصال اینترنت نیاز ندارند.</p></div></div><div class="module-local-note">اطلاعات هر مرورگر مستقل است. پاک‌کردن داده‌های مرورگر می‌تواند اطلاعات را حذف کند؛ فایل پشتیبان را در محل امن نگهداری کن. همگام‌سازی خودکار فعال نیست.</div><div class="module-settings-counts">'+MODULES.map(function(key){return '<span>'+esc(specs[key].title)+': <b>'+faDigits(appData[key].length)+'</b></span>';}).join('')+'<span>برنامهٔ شیفت: <b>'+faDigits((appData.shifts||[]).length)+'</b></span></div></section>'
-    );
-  }
-
   function refreshCurrentView() {
     const section=document.getElementById('sectionView');
     const view=new URLSearchParams(window.location.search).get('view')||'dashboard';
@@ -1085,7 +1064,6 @@
     }
     if(specs[view])renderCrud(view,section);
     else if(view==='reports')renderReports(section);
-    else if(view==='settings')renderSettings(section);
     else{section.hidden=true;section.innerHTML='';}
   }
 
@@ -1412,55 +1390,6 @@
     return record.createdAt||'';
   }
 
-  function readStoredPreference(key) {
-    try { return localStorage.getItem(key); } catch (error) { return null; }
-  }
-
-  function exportBackup() {
-    const payload={
-      app:'ATLAS SHIFT',
-      schemaVersion:2,
-      exportedAt:new Date().toISOString(),
-      data:appData,
-      uiSettings:{
-        layout:readStoredPreference('atlasShiftLayout'),
-        appTheme:readStoredPreference('atlasShiftAppTheme'),
-        cloudBackground:readStoredPreference('atlasShiftCloudBackground')
-      }
-    };
-    downloadFile('ATLAS-SHIFT-backup-'+todayIso()+'.json',JSON.stringify(payload,null,2),'application/json;charset=utf-8');
-    toast('نسخهٔ پشتیبان شامل اطلاعات، تاریخچه و تنظیمات رابط آماده شد.');
-  }
-
-  async function restoreBackup(file) {
-    if(!file)return;
-    try {
-      const raw=await file.text();
-      const parsed=JSON.parse(raw);
-      const candidate=parsed&&parsed.data?parsed.data:parsed;
-      if(!candidate||!MODULES.every(function(key){return Array.isArray(candidate[key]);}))throw new Error('فایل پشتیبان معتبر نیست.');
-      if(!window.confirm('با بازیابی، اطلاعات فعلی و تنظیمات ذخیره‌شدهٔ این دستگاه با اطلاعات فایل جایگزین می‌شود. ادامه می‌دهی؟'))return;
-      appData=normalizeState(candidate);
-      const ok=await saveState();
-      if(!ok)return;
-      const ui=parsed&&parsed.uiSettings&&typeof parsed.uiSettings==='object'?parsed.uiSettings:null;
-      if(ui){
-        [['atlasShiftLayout','layout'],['atlasShiftAppTheme','appTheme'],['atlasShiftCloudBackground','cloudBackground']].forEach(function(pair){
-          if(!Object.prototype.hasOwnProperty.call(ui,pair[1]))return;
-          try{
-            if(typeof ui[pair[1]]==='string')localStorage.setItem(pair[0],ui[pair[1]]);
-            else localStorage.removeItem(pair[0]);
-          }catch(error){}
-        });
-        try{window.dispatchEvent(new CustomEvent('atlas-shift-ui-settings-restored'))}catch(error){}
-      }
-      refreshDashboard();refreshCurrentView();
-      toast('بازیابی اطلاعات و تنظیمات با موفقیت انجام شد.');
-    } catch(error) {
-      toast(error.message||'فایل انتخاب‌شده نسخهٔ پشتیبان معتبر ATLAS SHIFT نیست.');
-    }
-  }
-
   function openHistory(moduleKey, id) {
     const record=appData[moduleKey].find(function(item){return String(item.id)===String(id);});
     const rows=appData.history.filter(function(item){return item.module===moduleKey&&item.recordId===String(id);})
@@ -1536,10 +1465,6 @@
       exportAllCsv();
     }else if(action==='print'){
       window.print();
-    }else if(action==='backup'){
-      exportBackup();
-    }else if(action==='restore-select'){
-      const input=document.getElementById('atlasRestoreFile');if(input)input.click();
     }else if(action==='history'&&specs[moduleKey]){
       openHistory(moduleKey,button.dataset.id);
     }else if(action==='apply-report-range'){
@@ -1641,15 +1566,7 @@
       }
       return;
     }
-    const customForm=event.target.closest('[data-custom-fields-form]');
-    if(customForm){
-      event.preventDefault();
-      const input=customForm.querySelector('[name="employeeCustomFields"]');
-      const lines=String(input?input.value:'').split(/\r?\n/).map(function(x){return x.trim();}).filter(Boolean);
-      if(lines.length>20){toast('حداکثر ۲۰ فیلد سفارشی تعریف کن.');return;}
-      appData.settings.employeeCustomFields=lines.join('\n');
-      if(await saveState()){renderSettings(document.getElementById('sectionView'));toast('فیلدهای سفارشی ذخیره شدند.');}
-    }
+
   });
 
   document.addEventListener('input', function(event) {
@@ -1673,8 +1590,6 @@
       const section=document.getElementById('sectionView');
       section.querySelectorAll('[data-record-select]').forEach(function(box){box.checked=target.checked;});
       section.querySelectorAll('[data-module-select-all]').forEach(function(box){box.checked=target.checked;});
-    }else if(target.id==='atlasRestoreFile'){
-      const file=target.files&&target.files[0];if(file)restoreBackup(file);target.value='';
     }else if(target.matches('[data-report-period]')){
       reportPeriod=target.value;
       const region=document.getElementById('sectionView');
