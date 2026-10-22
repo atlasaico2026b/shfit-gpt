@@ -431,5 +431,5 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
   window.addEventListener('popstate',renderRoute);
   renderRoute();
 
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDrawer();calendarPanel.classList.remove('open');calendarPanel.setAttribute('aria-hidden','true');calendarToggle.setAttribute('aria-expanded','false');if(layoutMode)setLayoutMode(false)}});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDrawer();calendarPanel.classList.remove('open');calendarPanel.setAttribute('aria-hidden','true');calendarToggle.setAttribute('aria-expanded','false');}});
 })();
