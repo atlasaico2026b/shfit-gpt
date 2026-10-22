@@ -745,7 +745,7 @@
       '<span data-module-result-count>' + faDigits(recordsForView(moduleKey, data).length) + ' مورد از ' + faDigits(existing) + '</span></div>' +
       '<div data-module-list-region>' + renderTable(moduleKey, data) + '</div></section>' +
       (moduleKey === 'employees' ? renderShiftSchedule(data) : '') +
-      '<div class="module-local-note"><strong>ذخیره‌سازی محلی:</strong> اطلاعات در همین دستگاه ذخیره می‌شوند. برای انتقال دستگاه، از بخش تنظیمات نسخهٔ پشتیبان تهیه کن.</div>'
+      '<div class="module-local-note"><strong>ذخیره‌سازی محلی:</strong> اطلاعات در همین دستگاه ذخیره می‌شوند.</div>'
     );
   }
 
