@@ -1,10 +1,23 @@
 /* ATLAS SHIFT service worker — one canonical app shell and offline fallback */
-const CACHE_NAME = 'atlas-shift-v55-phonebook-settings-group-settings-hierarchy-1';
+const CACHE_NAME = 'atlas-shift-v56-settings-tabs-1';
 const APP_FILES = [
   './', './index.html', './styles.css', './module-table-fix.css', './theme-two.css',
-  './theme-two-colorful.css', './theme-two.js', './app.js', './modules.js',
+  './theme-two-colorful.css', './theme-two.js', './app.js', './modules.js', './settings-tabs.js',
   './manifest.json', './icon.svg'
 ];
+
+async function injectSettingsTabs(response) {
+  try {
+    const type = response.headers.get('content-type') || '';
+    if (!type.includes('text/html')) return response;
+    const html = await response.text();
+    if (html.includes('settings-tabs.js')) return new Response(html, {status: response.status, statusText: response.statusText, headers: response.headers});
+    const injected = html.replace('</body>', '<script src="./settings-tabs.js" defer></script>\\n</body>');
+    const headers = new Headers(response.headers);
+    headers.delete('content-length');
+    return new Response(injected, {status: response.status, statusText: response.statusText, headers});
+  } catch (_) { return response; }
+}
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
@@ -12,7 +25,7 @@ self.addEventListener('install', event => {
     await Promise.all(APP_FILES.map(async path => {
       try {
         const response = await fetch(path, { cache: 'no-store' });
-        if (response.ok) await cache.put(path, response);
+        if (response.ok) await cache.put(path, path === './index.html' ? await injectSettingsTabs(response.clone()) : response);
       } catch (_) {}
     }));
     await self.skipWaiting();
@@ -37,10 +50,10 @@ self.addEventListener('fetch', event => {
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
     try {
-      const response = await fetch(request, { cache: 'no-store' });
+      let response = await fetch(request, { cache: 'no-store' });
       if (response.ok) {
-        if (isNavigation) await cache.put('./index.html', response.clone());
-        else await cache.put(request, response.clone());
+        if (isNavigation) response = await injectSettingsTabs(response);
+        await cache.put(isNavigation ? './index.html' : request, response.clone());
       }
       return response;
     } catch (_) {
