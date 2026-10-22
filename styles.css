@@ -258,9 +258,9 @@ html[data-atlas-theme="cloud-glass"] .list-item:hover{background:rgba(255,255,25
 html[data-atlas-theme="cloud-glass"] .list-side strong{color:#24537c}
 html[data-atlas-theme="cloud-glass"] .drag-handle,html[data-atlas-theme="cloud-glass"] .size-btn{color:#315d85;background:rgba(255,255,255,.75);border-color:rgba(112,168,216,.28)}
 html[data-atlas-theme="cloud-glass"] .size-btn.selected{color:#fff;background:linear-gradient(120deg,#18cce8,#238cff);border-color:rgba(255,255,255,.95)}
-html[data-atlas-theme="cloud-glass"] .drawer,html[data-atlas-theme="cloud-glass"] .settings-popover{color:var(--text);background:rgba(241,249,255,.93);border-color:rgba(255,255,255,.96);box-shadow:0 25px 60px rgba(54,112,164,.22),inset 0 1px 0 #fff}
-html[data-atlas-theme="cloud-glass"] .drawer-head h2,html[data-atlas-theme="cloud-glass"] .settings-head h3,html[data-atlas-theme="cloud-glass"] .settings-section h4{color:#173f6a}
-html[data-atlas-theme="cloud-glass"] .drawer-head p,html[data-atlas-theme="cloud-glass"] .settings-head p,html[data-atlas-theme="cloud-glass"] .settings-section p{color:#577b9f}
+html[data-atlas-theme="cloud-glass"] .drawer{color:var(--text);background:rgba(241,249,255,.93);border-color:rgba(255,255,255,.96);box-shadow:0 25px 60px rgba(54,112,164,.22),inset 0 1px 0 #fff}
+html[data-atlas-theme="cloud-glass"] .drawer-head h2{color:#173f6a}
+html[data-atlas-theme="cloud-glass"] .drawer-head p{color:#577b9f}
 html[data-atlas-theme="cloud-glass"] .notice-card,html[data-atlas-theme="cloud-glass"] .notice-body b{color:#214b75}
 html[data-atlas-theme="cloud-glass"] .notice-body p,html[data-atlas-theme="cloud-glass"] .notice-body small{color:#58799b}
 html[data-atlas-theme="cloud-glass"] .drawer-backdrop{background:rgba(78,126,170,.2)}
