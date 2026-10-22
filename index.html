@@ -237,6 +237,11 @@
     <label class="cloud-strength" for="cloudStrength"><span>شدت رنگ‌ها</span><output id="cloudStrengthValue" for="cloudStrength">۳۲٪</output></label>
     <input class="cloud-strength-input" id="cloudStrength" type="range" min="8" max="38" step="1" value="32">
     <button class="secondary-btn" id="resetCloudBackground" type="button">بازگردانی رنگ‌های پیش‌فرض</button>
+    <div class="ui-scale-setting" style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(140,210,255,.18)">
+      <label for="uiScale" style="display:flex;justify-content:space-between;gap:12px;align-items:center"><span>اندازه کلی رابط برنامه</span><output id="uiScaleValue">۱۰۰٪</output></label>
+      <input id="uiScale" type="range" min="90" max="115" step="5" value="100" style="width:100%;margin-top:8px">
+      <p style="font-size:11px;margin:4px 0 0">اندازه را بین ۹۰ تا ۱۱۵ درصد تنظیم کنید؛ انتخاب شما روی همین دستگاه ذخیره می‌شود.</p>
+    </div>
   </div>
 <div class="settings-section"><h4>دستیار صوتی</h4><p>ترجیحات دستیار روی همین دستگاه ذخیره می‌شوند.</p><div class="atlas-voice-settings" style="display:grid;gap:10px;margin:12px 0"><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">فعال بودن دستیار صوتی<input id="voiceEnabled" type="checkbox"></label><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">دریافت فرمان صوتی فارسی<input id="voiceInput" type="checkbox"></label><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">پاسخ صوتی<input id="voiceReply" type="checkbox"></label><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">تأیید عملیات حساس<input id="voiceConfirm" type="checkbox"></label></div><button class="secondary-btn" id="saveVoiceSettings" type="button">ذخیره تنظیمات دستیار</button></div>
   </div>
@@ -290,6 +295,28 @@
       } catch (_) {}
     });
   }
+</script>
+
+<script id="atlas-ui-scale-script">
+(function(){
+  function setupScale(){
+    const slider=document.getElementById('uiScale'),output=document.getElementById('uiScaleValue');
+    if(!slider||!output||slider.dataset.ready==='1')return;
+    slider.dataset.ready='1';
+    let saved=100;try{saved=Number(localStorage.getItem('atlasShiftUiScale')||100)}catch(_){}
+    if(![90,95,100,105,110,115].includes(saved))saved=100;
+    function apply(value){
+      const scale=Number(value);
+      document.documentElement.style.fontSize=scale+'%';
+      slider.value=String(scale);
+      output.textContent=String(scale).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d])+'٪';
+      try{localStorage.setItem('atlasShiftUiScale',String(scale))}catch(_){}
+    }
+    slider.addEventListener('input',()=>apply(slider.value));
+    apply(saved);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setupScale,{once:true});else setupScale();
+})();
 </script>
 </body>
 </html>
