@@ -11,30 +11,6 @@
   <link rel="stylesheet" href="./styles.css">
   <link rel="stylesheet" href="./theme-two.css">
   <link rel="stylesheet" href="./module-table-fix.css">
-
-  <style id="atlas-settings-tabs-css">
-    #settingsPanel .settings-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:14px 0;padding:4px;border:1px solid rgba(140,210,255,.22);border-radius:14px;background:rgba(80,150,210,.09);direction:rtl}
-    #settingsPanel .settings-tab{min-width:0;padding:10px 4px;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--muted);font:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:normal}
-    #settingsPanel .settings-tab.is-active{color:var(--text);background:rgba(80,180,255,.2);border-color:rgba(100,190,255,.35);box-shadow:0 3px 12px rgba(40,130,210,.12)}
-    #settingsPanel .settings-tab:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
-    #settingsPanel .settings-tab-pane[hidden]{display:none!important}
-    #settingsPanel .settings-tab-pane{min-width:0}
-    #settingsPanel .settings-tab-pane>.settings-section:first-child{border-top:0;padding-top:4px}
-    @media(max-width:390px){#settingsPanel .settings-tab{font-size:11px;padding:9px 2px}}
-  </style>
-
-<style id="atlas-phonebook-accordion-css">
-#settingsPanel .pb-structure-accordion{margin:8px 0;border:1px solid rgba(140,210,255,.2);border-radius:12px;background:rgba(80,140,200,.055);overflow:hidden}
-#settingsPanel .pb-structure-accordion>summary{display:flex;flex-direction:column;gap:3px;cursor:pointer;list-style:none;padding:11px 12px;font-weight:700;font-size:13px}
-#settingsPanel .pb-structure-accordion>summary::-webkit-details-marker{display:none}
-#settingsPanel .pb-structure-accordion>summary:after{content:'＋';float:left;align-self:flex-start;color:var(--muted);margin-top:-20px}
-#settingsPanel .pb-structure-accordion[open]>summary:after{content:'−'}
-#settingsPanel .pb-structure-accordion>summary span{font-size:11px;font-weight:400;color:var(--muted);padding-left:20px}
-#settingsPanel .pb-structure-content{padding:0 10px 10px;min-width:0}
-#settingsPanel .pb-structure-content .atlas-pb-option-row{gap:8px;flex-wrap:wrap;align-items:center}
-#settingsPanel .pb-structure-content .atlas-pb-option-row>span{min-width:0;overflow-wrap:anywhere}
-#settingsPanel .pb-structure-content .atlas-pb-option-row button{padding:6px 8px;font-size:11px}
-</style>
 </head>
 <body>
 
@@ -52,7 +28,6 @@
     <a class="app-menu-item" href="./index.html?view=notes"><span>▤</span>یادداشت‌ها</a>
     <a class="app-menu-item" href="./index.html?view=phonebook"><span>☎</span>دفترچه تلفن</a>
     <a class="app-menu-item" href="./index.html?view=reports"><span>▥</span>گزارشات</a>
-    <a class="app-menu-item" href="./index.html?view=settings"><span>⚙</span>تنظیمات</a>
   </nav>
   <div class="app-menu-bottom"><span class="app-menu-live"></span><div><strong>حالت محلی</strong><small>پنجره‌های داشبورد نمایشی‌اند</small></div></div>
 </aside>
@@ -63,7 +38,7 @@
   </div>
   <div class="top-actions">
     <div class="clock-pill"><span class="live"></span><span id="dateText">در حال بارگذاری تاریخ</span><b id="clockText">--:--</b></div>
-    <button class="icon-btn" id="settingsButton" title="تنظیمات داشبورد" aria-label="بازکردن تنظیمات داشبورد" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.7a8 8 0 0 1-1.8 1l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.8-1l-1.7.7-1.4-2.4 1.4-1.1a7 7 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.7.7a8 8 0 0 1 1.8-1l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.8 1l1.7-.7 1.4 2.4-1.4 1.1a7 7 0 0 1 0 2Z" transform="translate(-1 -1) scale(1.08)"/></svg></button>
+    
     <button class="icon-btn" id="notificationButton" aria-label="بازکردن اعلان‌ها" title="اعلان‌ها" aria-haspopup="true"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span class="notification-count" id="notificationCount">۳</span></button>
   </div>
 </header>
@@ -202,90 +177,11 @@
     <div class="notice-card unread" data-notice="mission"><div class="notice-mark">⌁</div><div class="notice-body"><b>برنامه مأموریت جدید</b><p>بازدید میدانی در برنامه امروز قرار داده شده است.</p><small>امروز · مأموریت‌ها</small></div><span class="notice-unread"></span></div>
   </div>
 </aside>
-<section class="settings-popover" id="settingsPanel" aria-label="تنظیمات داشبورد" aria-hidden="true">
-  <div class="settings-head"><span class="setting-glyph"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="m19 13.5 1.2 1-.9 1.6-1.5-.5a6.8 6.8 0 0 1-1.4.8l-.3 1.6h-1.9l-.3-1.6a6.8 6.8 0 0 1-1.4-.8l-1.5.5-.9-1.6 1.2-1a6 6 0 0 1 0-1.6l-1.2-1 .9-1.6 1.5.5a6.8 6.8 0 0 1 1.4-.8l.3-1.6h1.9l.3 1.6a6.8 6.8 0 0 1 1.4.8l1.5-.5.9 1.6-1.2 1a6 6 0 0 1 0 1.6Z" transform="translate(-1 -1) scale(1.08)"/></svg></span><div><h3>تنظیمات داشبورد</h3><p>ظاهر و چیدمان پنجره‌های نمایش</p></div></div>  <div class="settings-tabs" role="tablist" aria-label="بخش‌های تنظیمات">
-    <button class="settings-tab is-active" id="settings-tab-dashboard" type="button" role="tab" aria-selected="true" aria-controls="settings-pane-dashboard">داشبورد</button>
-    <button class="settings-tab" id="settings-tab-appearance" type="button" role="tab" aria-selected="false" aria-controls="settings-pane-appearance" tabindex="-1">ظاهر برنامه</button>
-    <button class="settings-tab" id="settings-tab-phonebook" type="button" role="tab" aria-selected="false" aria-controls="settings-pane-phonebook" tabindex="-1">دفترچه تلفن</button>
-  </div>
-  <div class="settings-tab-pane" id="settings-pane-dashboard" role="tabpanel" aria-labelledby="settings-tab-dashboard">
-<div class="settings-section"><h4>چیدمان پنجره‌ها</h4><p>حالت تنظیم را فعال کن و با کشیدن دستگیرهٔ پنجره‌ها، جای آن‌ها را در داشبورد تغییر بده.</p><div class="settings-layout-actions"><button class="primary-btn" id="layoutButton" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="m14 6 4-4 4 4-4 4"/><path d="M18 2v12a4 4 0 0 1-4 4H3"/><path d="m7 14-4 4 4 4"/></svg><span id="layoutButtonText">تنظیم چیدمان</span></button><button class="secondary-btn" id="resetLayout"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>بازنشانی چیدمان</button></div></div>
-  </div>
-  <div class="settings-tab-pane" id="settings-pane-appearance" role="tabpanel" aria-labelledby="settings-tab-appearance" hidden>
-<div class="settings-section">
-    <h4>پوستهٔ برنامه</h4>
-    <p>برنامه دو جایگاه تم دارد. تم اول از تصویر مرجع شیشه‌ای ابروبادی پیروی می‌کند؛ تم دوم پس از دریافت طرح شما ساخته می‌شود.</p>
-    <div class="theme-choice-grid">
-      <button class="theme-option active" type="button" data-app-theme="cloud-glass" aria-pressed="true">
-        <span class="theme-preview theme-preview-cloud" aria-hidden="true"><i></i><i></i><i></i><b>ATLAS</b></span>
-        <span class="theme-option-copy"><strong>تم اول · شیشه‌ای ابروبادی</strong><small>تم مرجع فعلی</small></span>
-        <span class="theme-option-state">فعال</span>
-      </button>
-      <button class="theme-option pending" type="button" data-app-theme="theme-two" aria-pressed="false" disabled aria-disabled="true">
-        <span class="theme-preview theme-preview-pending" aria-hidden="true"><i></i><i></i><b>۲</b></span>
-        <span class="theme-option-copy"><strong>تم دوم</strong><small>منتظر طرح شما</small></span>
-        <span class="theme-option-state">رزرو</span>
-      </button>
-    </div>
-  </div>
-<div class="settings-section cloud-settings"><h4>پس‌زمینهٔ ابروبادی</h4><p>سه رنگ دلخواه را انتخاب کن؛ تغییرات فوراً اعمال می‌شوند و در همین مرورگر می‌مانند.</p>
-    <div class="cloud-color-grid">
-      <label class="cloud-color-field" for="cloudColor1"><span>رنگ اول</span><input class="cloud-color-input" id="cloudColor1" type="color" value="#8bdcff" aria-label="رنگ اول پس‌زمینه"></label>
-      <label class="cloud-color-field" for="cloudColor2"><span>رنگ دوم</span><input class="cloud-color-input" id="cloudColor2" type="color" value="#ffb8df" aria-label="رنگ دوم پس‌زمینه"></label>
-      <label class="cloud-color-field" for="cloudColor3"><span>رنگ سوم</span><input class="cloud-color-input" id="cloudColor3" type="color" value="#b7b9ff" aria-label="رنگ سوم پس‌زمینه"></label>
-    </div>
-    <label class="cloud-strength" for="cloudStrength"><span>شدت رنگ‌ها</span><output id="cloudStrengthValue" for="cloudStrength">۳۲٪</output></label>
-    <input class="cloud-strength-input" id="cloudStrength" type="range" min="8" max="38" step="1" value="32">
-    <button class="secondary-btn" id="resetCloudBackground" type="button">بازگردانی رنگ‌های پیش‌فرض</button>
-    <div class="ui-scale-setting" style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(140,210,255,.18)">
-      <label for="uiScale" style="display:flex;justify-content:space-between;gap:12px;align-items:center"><span>اندازه کلی رابط برنامه</span><output id="uiScaleValue">۱۰۰٪</output></label>
-      <input id="uiScale" type="range" min="90" max="115" step="5" value="100" style="width:100%;margin-top:8px">
-      <p style="font-size:11px;margin:4px 0 0">اندازه را بین ۹۰ تا ۱۱۵ درصد تنظیم کنید؛ انتخاب شما روی همین دستگاه ذخیره می‌شود.</p>
-    </div>
-  </div>
-<div class="settings-section"><h4>دستیار صوتی</h4><p>ترجیحات دستیار روی همین دستگاه ذخیره می‌شوند.</p><div class="atlas-voice-settings" style="display:grid;gap:10px;margin:12px 0"><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">فعال بودن دستیار صوتی<input id="voiceEnabled" type="checkbox"></label><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">دریافت فرمان صوتی فارسی<input id="voiceInput" type="checkbox"></label><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">پاسخ صوتی<input id="voiceReply" type="checkbox"></label><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">تأیید عملیات حساس<input id="voiceConfirm" type="checkbox"></label></div><button class="secondary-btn" id="saveVoiceSettings" type="button">ذخیره تنظیمات دستیار</button></div>
-  </div>
-  <div class="settings-tab-pane" id="settings-pane-phonebook" role="tabpanel" aria-labelledby="settings-tab-phonebook" hidden>
-<div class="settings-section" id="phonebookSettingsGroup"><h4>تنظیمات دفترچه تلفن</h4><p>تنظیم ساختار مکانی و مدیریت فهرست‌های قابل انتخاب در دفترچه تلفن.</p><div class="phonebook-settings-subsection" id="phonebookTreeSettings">
-  <h4>مدیریت ساختارها</h4>
-  <p>هر مورد را به والد درست وصل کنید؛ تغییرات در همین دستگاه ذخیره می‌شود.</p>
-  <details class="pb-structure-accordion" open>
-    <summary>📍 ساختار مکان‌ها <span>حوزه ← شهر ← مجتمع/مرکز انتقال نفت/ایستگاه ← ساختمان</span></summary>
-    <div class="pb-structure-content"><div id="pbLocationTreeView" class="atlas-pb-settings-list"></div></div>
-  </details>
-  <details class="pb-structure-accordion">
-    <summary>🏢 ساختار سازمانی <span>سرپرستی ← واحد ← رئیس واحد و سمت‌ها</span></summary>
-    <div class="pb-structure-content"><div id="pbOrgTreeView" class="atlas-pb-settings-list"></div></div>
-  </details>
-  <details class="pb-structure-accordion">
-    <summary>＋ افزودن یا اصلاح مورد</summary>
-    <div class="pb-structure-content">
-      <label for="pbTreeType">نوع مورد</label>
-      <select id="pbTreeType" style="width:100%;min-width:0;padding:10px;border-radius:10px;background:rgba(0,0,0,.16);color:inherit">
-        <optgroup label="مکان‌ها">
-          <option value="area">حوزه</option><option value="city">شهر</option><option value="complex">مجتمع</option><option value="transferCenter">مرکز انتقال نفت</option><option value="station">ایستگاه مخابراتی</option><option value="building">ساختمان</option>
-        </optgroup>
-        <optgroup label="ساختار سازمانی">
-          <option value="supervision">سرپرستی</option><option value="unit">واحد</option><option value="unitHead">رئیس واحد</option><option value="position">سمت سازمانی</option>
-        </optgroup>
-      </select>
-      <label for="pbTreeParent" style="display:block;margin-top:8px">والد / محل قرارگیری</label>
-      <select id="pbTreeParent" style="width:100%;min-width:0;padding:10px;border-radius:10px;background:rgba(0,0,0,.16);color:inherit"><option value="">بدون والد (ریشه)</option></select>
-      <label for="pbTreeName" style="display:block;margin-top:8px">نام مورد</label>
-      <input id="pbTreeName" type="text" placeholder="نام جدید یا نام اصلاح‌شده" style="width:100%;box-sizing:border-box;min-width:0;padding:10px;margin-top:6px;border-radius:10px;background:rgba(0,0,0,.16);color:inherit;border:1px solid rgba(140,210,255,.2)">
-      <button class="secondary-btn" id="pbTreeAdd" type="button" style="width:100%;margin-top:8px">＋ افزودن</button>
-    </div>
-  </details>
-</div>
-<div class="phonebook-settings-subsection" id="phonebookSettings" style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(140,210,255,.18)"><h4>فهرست‌های قابل انتخاب</h4><p>مقادیر منوهای کشویی دفترچه تلفن را اضافه، ویرایش یا حذف کن.</p><label for="phonebookOptionCategory">فیلد موردنظر</label><select id="phonebookOptionCategory" style="width:100%;margin-top:8px;padding:10px;border-radius:10px;background:rgba(0,0,0,.16);color:inherit;border:1px solid rgba(140,210,255,.2)"><option value="phoneLabel">عنوان شماره تماس</option></select><div class="atlas-pb-settings-editor"><input id="phonebookOptionValue" type="text" placeholder="مقدار جدید یا مقدار اصلاح‌شده"><button class="secondary-btn" id="phonebookOptionAdd" type="button">＋ افزودن</button></div><div id="phonebookOptionList" class="atlas-pb-settings-list"></div></div></div>
-  </div>
-</section>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="./modules.js" defer></script>
 <script src="./app.js" defer></script>
 <script src="./theme-two.js" defer></script>
-<script src="./settings-tabs.js" defer></script>
 <script>
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     window.addEventListener('load', async function () {
