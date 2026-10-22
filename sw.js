@@ -1,5 +1,5 @@
 /* ATLAS SHIFT service worker — canonical app shell and offline fallback */
-const CACHE_NAME = 'atlas-shift-v60-settings-rebuilt';
+const CACHE_NAME = 'atlas-shift-v61-static-settings-tabs';
 const APP_FILES = [
   './', './index.html', './styles.css', './module-table-fix.css', './theme-two.css',
   './theme-two-colorful.css', './theme-two.js', './app.js', './modules.js',
