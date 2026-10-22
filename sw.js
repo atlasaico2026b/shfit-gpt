@@ -1,23 +1,10 @@
-/* ATLAS SHIFT service worker — one canonical app shell and offline fallback */
-const CACHE_NAME = 'atlas-shift-v59-persian-tab-match-fix';
+/* ATLAS SHIFT service worker — canonical app shell and offline fallback */
+const CACHE_NAME = 'atlas-shift-v60-settings-rebuilt';
 const APP_FILES = [
   './', './index.html', './styles.css', './module-table-fix.css', './theme-two.css',
-  './theme-two-colorful.css', './theme-two.js', './app.js', './modules.js', './settings-tabs.js',
-  './manifest.json', './icon.svg'
+  './theme-two-colorful.css', './theme-two.js', './app.js', './modules.js',
+  './settings-tabs.js', './manifest.json', './icon.svg'
 ];
-
-async function injectSettingsTabs(response) {
-  try {
-    const type = response.headers.get('content-type') || '';
-    if (!type.includes('text/html')) return response;
-    const html = await response.text();
-    if (html.includes('settings-tabs.js')) return new Response(html, {status: response.status, statusText: response.statusText, headers: response.headers});
-    const injected = html.replace('</body>', '<script src="./settings-tabs.js" defer></script>\\n</body>');
-    const headers = new Headers(response.headers);
-    headers.delete('content-length');
-    return new Response(injected, {status: response.status, statusText: response.statusText, headers});
-  } catch (_) { return response; }
-}
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
@@ -25,7 +12,7 @@ self.addEventListener('install', event => {
     await Promise.all(APP_FILES.map(async path => {
       try {
         const response = await fetch(path, { cache: 'no-store' });
-        if (response.ok) await cache.put(path, path === './index.html' ? await injectSettingsTabs(response.clone()) : response);
+        if (response.ok) await cache.put(path, response);
       } catch (_) {}
     }));
     await self.skipWaiting();
@@ -35,7 +22,9 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter(key => key.startsWith('atlas-shift-') && key !== CACHE_NAME).map(key => caches.delete(key)));
+    await Promise.all(keys
+      .filter(key => key.startsWith('atlas-shift-') && key !== CACHE_NAME)
+      .map(key => caches.delete(key)));
     await self.clients.claim();
   })());
 });
@@ -45,25 +34,31 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  const isNavigation = request.mode === 'navigate' || url.pathname.endsWith('/index.html');
 
+  const isNavigation = request.mode === 'navigate' || url.pathname.endsWith('/index.html');
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
     try {
-      let response = await fetch(request, { cache: 'no-store' });
+      const response = await fetch(request, { cache: 'no-store' });
       if (response.ok) {
-        if (isNavigation) response = await injectSettingsTabs(response);
         await cache.put(isNavigation ? './index.html' : request, response.clone());
       }
       return response;
     } catch (_) {
       const key = isNavigation ? './index.html' : request;
-      const cached = await cache.match(key, { ignoreSearch: true }) || await caches.match(key, { ignoreSearch: true });
+      const cached = await cache.match(key, { ignoreSearch: true }) ||
+        await caches.match(key, { ignoreSearch: true });
       if (cached) return cached;
-      return new Response(isNavigation ? 'برنامه در حالت آفلاین در دسترس نیست. پس از اتصال دوباره بارگذاری کنید.' : '', {
-        status: 503,
-        headers: { 'Content-Type': isNavigation ? 'text/plain; charset=utf-8' : 'text/plain', 'Cache-Control': 'no-store' }
-      });
+      return new Response(
+        isNavigation ? 'برنامه در حالت آفلاین در دسترس نیست. پس از اتصال دوباره بارگذاری کنید.' : '',
+        {
+          status: 503,
+          headers: {
+            'Content-Type': isNavigation ? 'text/plain; charset=utf-8' : 'text/plain',
+            'Cache-Control': 'no-store'
+          }
+        }
+      );
     }
   })());
 });
