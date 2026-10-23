@@ -7,7 +7,7 @@
 
     const tabs = [...panel.querySelectorAll('.settings-tabs [role="tab"]')];
     const panes = [...panel.querySelectorAll('.settings-tab-pane[role="tabpanel"]')];
-    if (tabs.length !== 3 || panes.length !== 3) return false;
+    if (tabs.length !== 4 || panes.length !== 4) return false;
 
     function activate(index, moveFocus = false) {
       tabs.forEach((tab, i) => {
