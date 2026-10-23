@@ -123,7 +123,7 @@
         {key:'gases',label:'گازهای قابل‌اندازه‌گیری',type:'checks',options:['CO','O₂','LEL','H₂S']},
         {key:'sensorCount',label:'تعداد سنسورها (محاسبه خودکار)',type:'number',min:0},
         {key:'status',label:'وضعیت دستگاه',type:'select',required:true,listKey:'gasStatuses',options:['آماده استفاده','در کالیبراسیون','خارج از سرویس','در تعمیر']},
-        {key:'healthStatus',label:'وضعیت سلامت',type:'select',options:['سالم','نیازمند بررسی','دارای نقص','در حال تعمیر']},
+        {key:'healthStatus',label:'وضعیت سلامت',type:'select',listKey:'healthStatuses',options:['سالم','نیازمند بررسی','دارای نقص','در حال تعمیر']},
         {key:'location',label:'محل استقرار',placeholder:'خودرو، واحد، مرکز، ساختمان یا شخص'},
         {key:'locationSince',label:'تاریخ استقرار فعلی',type:'jalali'},
         {key:'locationHistory',label:'سوابق تغییر محل استقرار (هر مورد در یک خط)',type:'textarea',wide:true,placeholder:'تاریخ | محل قبلی | محل جدید | توضیح'},
