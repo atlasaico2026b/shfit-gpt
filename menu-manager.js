@@ -33,7 +33,9 @@
     const custom = Array.isArray(saved.custom) ? saved.custom.filter(item =>
       item && typeof item.id === 'string' && typeof item.title === 'string' && TARGETS[item.target]
     ) : [];
-    const order = Array.isArray(saved.order) ? saved.order.filter(id => typeof id === 'string') : [];
+    const savedOrder = Array.isArray(saved.order) ? saved.order.filter(id => typeof id === 'string') : [];
+    const defaultOrder = DEFAULTS.map(item => item.id);
+    const order = [...defaultOrder.filter(id => savedOrder.includes(id)), ...defaultOrder.filter(id => !savedOrder.includes(id)), ...savedOrder.filter(id => !defaultOrder.includes(id))];
     return { hidden: hidden.filter(id => !['dashboard', 'settings'].includes(id)), labels, custom, order };
   }
 
