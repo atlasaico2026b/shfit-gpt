@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="./module-table-fix.css">
 
   <style id="atlas-settings-tabs-css">
-    #settingsPanel .settings-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:14px 0;padding:4px;border:1px solid rgba(140,210,255,.22);border-radius:14px;background:rgba(80,150,210,.09);direction:rtl}
+    #settingsPanel .settings-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:14px 0;padding:4px;border:1px solid rgba(140,210,255,.22);border-radius:14px;background:rgba(80,150,210,.09);direction:rtl}
     #settingsPanel .settings-tab{min-width:0;padding:10px 4px;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--muted);font:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:normal}
     #settingsPanel .settings-tab.is-active{color:var(--text);background:rgba(80,180,255,.2);border-color:rgba(100,190,255,.35);box-shadow:0 3px 12px rgba(40,130,210,.12)}
     #settingsPanel .settings-tab:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
@@ -208,6 +208,7 @@
     <button class="settings-tab is-active" id="settings-tab-dashboard" type="button" role="tab" aria-selected="true" aria-controls="settings-pane-dashboard">داشبورد</button>
     <button class="settings-tab" id="settings-tab-appearance" type="button" role="tab" aria-selected="false" aria-controls="settings-pane-appearance" tabindex="-1">ظاهر برنامه</button>
     <button class="settings-tab" id="settings-tab-phonebook" type="button" role="tab" aria-selected="false" aria-controls="settings-pane-phonebook" tabindex="-1">دفترچه تلفن</button>
+    <button class="settings-tab" id="settings-tab-lists" type="button" role="tab" aria-selected="false" aria-controls="settings-pane-lists" tabindex="-1">منوها و فهرست‌ها</button>
   </div>
   <div class="settings-tab-pane" id="settings-pane-dashboard" role="tabpanel" aria-labelledby="settings-tab-dashboard">
 <div class="settings-section"><h4>چیدمان پنجره‌ها</h4><p>حالت تنظیم را فعال کن و با کشیدن دستگیرهٔ پنجره‌ها، جای آن‌ها را در داشبورد تغییر بده.</p><div class="settings-layout-actions"><button class="primary-btn" id="layoutButton" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="m14 6 4-4 4 4-4 4"/><path d="M18 2v12a4 4 0 0 1-4 4H3"/><path d="m7 14-4 4 4 4"/></svg><span id="layoutButtonText">تنظیم چیدمان</span></button><button class="secondary-btn" id="resetLayout"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>بازنشانی چیدمان</button></div></div>
@@ -246,6 +247,7 @@
   </div>
 <div class="settings-section"><h4>دستیار صوتی</h4><p>ترجیحات دستیار روی همین دستگاه ذخیره می‌شوند.</p><div class="atlas-voice-settings" style="display:grid;gap:10px;margin:12px 0"><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">فعال بودن دستیار صوتی<input id="voiceEnabled" type="checkbox"></label><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">دریافت فرمان صوتی فارسی<input id="voiceInput" type="checkbox"></label><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">پاسخ صوتی<input id="voiceReply" type="checkbox"></label><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">تأیید عملیات حساس<input id="voiceConfirm" type="checkbox"></label></div><button class="secondary-btn" id="saveVoiceSettings" type="button">ذخیره تنظیمات دستیار</button></div>
   </div>
+  <div class="settings-tab-pane" id="settings-pane-lists" role="tabpanel" aria-labelledby="settings-tab-lists" hidden><div class="settings-section"><h4>مدیریت منوها و فهرست‌ها</h4><p>برای افزودن، ویرایش یا حذف گزینه‌های فرم‌ها، صفحهٔ مدیریت فهرست‌ها را باز کن.</p><a class="primary-btn" href="./index.html?view=settings">بازکردن مدیریت منوها و فهرست‌ها</a></div></div>
   <div class="settings-tab-pane" id="settings-pane-phonebook" role="tabpanel" aria-labelledby="settings-tab-phonebook" hidden>
 <div class="settings-section" id="phonebookSettingsGroup"><h4>تنظیمات دفترچه تلفن</h4><p>تنظیم ساختار مکانی و مدیریت فهرست‌های قابل انتخاب در دفترچه تلفن.</p><div class="phonebook-settings-subsection" id="phonebookTreeSettings">
   <h4>مدیریت ساختارها</h4>
