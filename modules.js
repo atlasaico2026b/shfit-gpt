@@ -187,8 +187,6 @@
     }
   };
 
-  };
-
   function createEmptyState() {
     const state = {
       schemaVersion: 2,
