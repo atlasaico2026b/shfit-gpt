@@ -6,7 +6,7 @@
   const STORE_NAME = 'records';
   const STORE_KEY = 'main';
   const LEGACY_KEY = 'atlasShiftOperationalDataV1';
-  const MODULES = ['employees', 'missions', 'leaves', 'vehicles', 'gasmeters', 'notes'];
+  const MODULES = ['employees', 'missions', 'leaves', 'vehicles', 'gasmeters', 'notes', 'programs'];
   const formState = Object.create(null);
   const searchState = Object.create(null);
   const filterState = Object.create(null);
@@ -53,6 +53,10 @@
         {key:'origin',label:'مبدأ'},
         {key:'destination',label:'مقصد یا محل عملیات'},
         {key:'stops',label:'توقف‌ها و نقاط مسیر',type:'textarea',wide:true,placeholder:'هر نقطه را در یک خط وارد کن'},
+        {key:'pipelineSize',label:'قطر خط (اینچ)',type:'select',options:['۴','۶','۸','۱۰','۱۲','۱۴','۱۶','۲۰','۲۴','۳۰','۳۶']},
+        {key:'productType',label:'نوع فرآورده',type:'select',options:['نفت خام','نفت گاز','بنزین','نفت سفید','گاز مایع','آب آلوده','سایر']},
+        {key:'operationalRange',label:'محدوده عملیاتی / کیلومتر خط',placeholder:'مثلاً روستای سویسه، روستای الهایی، کیلومتر ۹۶ تا ۱۰۲'},
+        {key:'lineNotes',label:'شرح خط و نقطه عملیات',type:'textarea',wide:true},
         {key:'crewIds',label:'افراد اعزامی',type:'select',source:'employees',multiple:true,wide:true},
         {key:'crewText',label:'شرح گروه یا افراد خارج از فهرست',type:'textarea',wide:true},
         {key:'driverId',label:'راننده',type:'select',source:'employees'},
@@ -94,6 +98,9 @@
         {key:'currentPlace',label:'محل یا نقطهٔ استقرار'},
         {key:'occupants',label:'سرنشینان فعلی',type:'textarea',wide:true},
         {key:'currentKm',label:'کیلومتر فعلی',type:'number',min:0},
+        {key:'currentKmRecordedAt',label:'زمان آخرین ثبت کیلومتر',type:'text',placeholder:'با ثبت کیلومتر به‌صورت خودکار ثبت می‌شود'},
+        {key:'nextServiceKm',label:'کیلومتر سرویس بعدی',type:'number',min:0},
+        {key:'fuelAllowanceKm',label:'کیلومتر مبنای دریافت هزینه سوخت',type:'number',min:0},
         {key:'fuelKm',label:'کیلومتر ثبت سوخت',type:'number',min:0},
         {key:'lastOilKm',label:'کیلومتر آخرین تعویض روغن',type:'number',min:0},
         {key:'nextOilKm',label:'کیلومتر سرویس روغن بعدی',type:'number',min:0},
@@ -101,6 +108,7 @@
         {key:'faultsResolved',label:'ایرادهای رفع‌شده',type:'textarea',wide:true},
         {key:'equipment',label:'تجهیزات همراه خودرو',type:'textarea',wide:true},
         {key:'notes',label:'سوابق و توضیحات',type:'textarea',wide:true},
+        {key:'maintenanceLog',label:'سوابق ثبت سرویس، سوخت و کیلومتر (هر مورد در یک خط)',type:'textarea',wide:true,placeholder:'تاریخ | کیلومتر | نوع اقدام | توضیح'},
         {key:'attachments',label:'پیوست‌ها',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx'}
       ],
       columns: ['name','vehicleType','companyPlate','policePlate','status','currentCity','currentPlace','currentKm','nextOilKm','relatedMissions']
@@ -113,9 +121,12 @@
         {key:'model',label:'مدل دستگاه'},
         {key:'serial',label:'شمارهٔ سریال',required:true},
         {key:'gases',label:'گازهای قابل‌اندازه‌گیری',type:'checks',options:['CO','O₂','LEL','H₂S']},
+        {key:'sensorCount',label:'تعداد سنسورها (محاسبه خودکار)',type:'number',min:0},
         {key:'status',label:'وضعیت دستگاه',type:'select',required:true,options:['آماده استفاده','در کالیبراسیون','خارج از سرویس','در تعمیر']},
         {key:'healthStatus',label:'وضعیت سلامت',type:'select',options:['سالم','نیازمند بررسی','دارای نقص','در حال تعمیر']},
-        {key:'location',label:'محل استقرار'},
+        {key:'location',label:'محل استقرار',placeholder:'خودرو، واحد، مرکز، ساختمان یا شخص'},
+        {key:'locationSince',label:'تاریخ استقرار فعلی',type:'jalali'},
+        {key:'locationHistory',label:'سوابق تغییر محل استقرار (هر مورد در یک خط)',type:'textarea',wide:true,placeholder:'تاریخ | محل قبلی | محل جدید | توضیح'},
         {key:'responsibleId',label:'مسئول دستگاه',type:'select',source:'employees'},
         {key:'calibrationStart',label:'شروع اعتبار کالیبراسیون',type:'jalali'},
         {key:'calibrationEnd',label:'پایان اعتبار کالیبراسیون',type:'jalali',required:true},
@@ -133,7 +144,13 @@
       subtitle: 'نامه‌ها، خرید، استعلام، ارسال تجهیزات، بازرسی و اقدام‌های محوله',
       fields: [
         {key:'title',label:'عنوان',required:true},
-        {key:'actionType',label:'نوع مورد',type:'select',required:true,options:['نامه اداری','درخواست خرید','استعلام','برآورد هزینه','پیگیری قطعه','ارسال تجهیزات','بازدید','بازرسی','ممیزی','اقدام اصلاحی','یادداشت عمومی','سایر']},
+        {key:'actionType',label:'نوع مورد',type:'select',required:true,options:['نامه اداری','درخواست خرید','استعلام','برآورد هزینه','برآورد قیمت','برنامه‌ریزی مانور','تعمیر خودرو','ارسال کالیبراسیون','پاسخ نامه','پیگیری قطعه','ارسال تجهیزات','بازدید','بازرسی','ممیزی','اقدام اصلاحی','یادداشت عمومی','سایر']},
+        {key:'letterNumber',label:'شماره نامه'},
+        {key:'letterDate',label:'تاریخ نامه شمسی',type:'jalali'},
+        {key:'purchaseRequestNumber',label:'شماره درخواست خرید'},
+        {key:'pmrNumber',label:'شماره PMR'},
+        {key:'dueDays',label:'مهلت اقدام (روز)',type:'number',min:0},
+        {key:'comments',label:'گزارش پیگیری و کامنت‌ها (هر ثبت در یک خط)',type:'textarea',wide:true,placeholder:'تاریخ و ساعت | پیگیر | شرح اقدام | وضعیت'},
         {key:'date',label:'تاریخ ثبت شمسی',type:'jalali',required:true},
         {key:'dueDate',label:'موعد پیگیری شمسی',type:'jalali'},
         {key:'related',label:'موضوع یا محل مرتبط'},
@@ -143,7 +160,33 @@
         {key:'attachments',label:'پیوست‌ها',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx'}
       ],
       columns: ['title','actionType','date','dueDate','related','responsibleId','status']
+    },
+    programs: {
+      title: 'برنامه‌ها و پرونده‌های اقدام', singular: 'برنامه',
+      subtitle: 'برنامه‌ریزی کارها، نامه‌نگاری، خرید، اقدامات مرحله‌ای و بستن پرونده',
+      fields: [
+        {key:'title',label:'عنوان برنامه / پرونده',required:true},
+        {key:'programType',label:'نوع برنامه',type:'select',required:true,options:['مانور','تعمیر تجهیز','تعمیر خودرو','کالیبراسیون','بازرسی','اقدام اصلاحی','درخواست خرید','پروژه عملیاتی','سایر']},
+        {key:'location',label:'محل اجرا یا عملیات'},
+        {key:'plannedDate',label:'تاریخ برنامه‌ریزی شمسی',type:'jalali'},
+        {key:'dueDate',label:'مهلت نهایی شمسی',type:'jalali'},
+        {key:'responsibleId',label:'مسئول اصلی',type:'select',source:'employees'},
+        {key:'reportWriterId',label:'مسئول تهیه گزارش',type:'select',source:'employees'},
+        {key:'purchaseRequestNumber',label:'شماره درخواست خرید'},
+        {key:'pmrNumber',label:'شماره PMR'},
+        {key:'letterReferences',label:'شماره و تاریخ مکاتبات'},
+        {key:'initialReportStatus',label:'وضعیت گزارش اولیه',type:'select',options:['تهیه نشده','در حال تهیه','ارسال شده','نیازمند اصلاح']},
+        {key:'finalReportDue',label:'مهلت گزارش نهایی شمسی',type:'jalali'},
+        {key:'finalReportSent',label:'تاریخ ارسال گزارش نهایی شمسی',type:'jalali'},
+        {key:'status',label:'وضعیت پرونده',type:'select',required:true,options:['برنامه‌ریزی‌شده','در حال اقدام','در انتظار پاسخ','متوقف','تکمیل‌شده','لغوشده']},
+        {key:'actionsLog',label:'فهرست اقدامات مرحله‌ای (هر خط یک اقدام)',type:'textarea',wide:true,placeholder:'تاریخ | نفر/واحد | اقدام انجام‌شده | شماره نامه/درخواست | وضعیت'},
+        {key:'body',label:'شرح، نتیجه و مستندات',type:'textarea',wide:true},
+        {key:'attachments',label:'پیوست‌های پرونده',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx'}
+      ],
+      columns: ['title','programType','location','plannedDate','responsibleId','status','finalReportDue']
     }
+  };
+
   };
 
   function createEmptyState() {
@@ -442,6 +485,9 @@
       }).map(function (item) {
         return {value:item.id,label:(item.name || 'خودرو') + (item.companyPlate ? ' · ' + item.companyPlate : '')};
       });
+    }
+    if (field.listKey && data.references && Array.isArray(data.references[field.listKey])) {
+      return data.references[field.listKey].map(function (option) { return {value:option,label:option}; });
     }
     return (field.options || []).map(function (option) { return {value:option,label:option}; });
   }
@@ -1614,8 +1660,27 @@
         const values=await formValues(form,moduleKey,old);
         if(moduleKey==='leaves'&&values.startDate&&values.endDate&&values.endDate<values.startDate)throw new Error('تاریخ پایان مرخصی نباید قبل از تاریخ شروع باشد.');
         if(moduleKey==='missions'&&values.startAt&&values.endAt&&values.endAt<values.startAt)throw new Error('زمان پایان مأموریت نباید قبل از زمان شروع باشد.');
+        if(moduleKey==='programs'&&values.finalReportSent&&values.finalReportDue&&values.finalReportSent<values.finalReportDue&&values.status!=='تکمیل‌شده')throw new Error('تاریخ ارسال گزارش نهایی قبل از مهلت ثبت شده؛ وضعیت پرونده را بررسی کن.');
         if(moduleKey==='gasmeters'&&values.calibrationStart&&values.calibrationEnd&&values.calibrationEnd<values.calibrationStart)throw new Error('پایان اعتبار کالیبراسیون نباید قبل از شروع باشد.');
         const record=Object.assign({},old||{},values,{id:old?old.id:createId(),createdAt:old?old.createdAt||new Date().toISOString():new Date().toISOString(),updatedAt:new Date().toISOString()});
+        if(moduleKey==='gasmeters'){
+          record.gases=Array.isArray(record.gases)?record.gases:[];
+          record.sensorCount=record.gases.length;
+          if(old&&old.location!==record.location){
+            const stamp=formatJalali(new Date().toISOString(),false);
+            const entry=stamp+' | '+String(old.location||'نامشخص')+' | '+String(record.location||'نامشخص');
+            record.locationHistory=[String(record.locationHistory||'').trim(),entry].filter(Boolean).join('\\n');
+            record.locationSince=stamp;
+          } else if(!old&&record.location&&!record.locationSince){record.locationSince=record.createdAt.slice(0,10);}
+          if(record.status==='در کالیبراسیون'&&!record.calibrationDispatch)record.calibrationDispatch=formatJalali(new Date().toISOString(),false);
+          if(record.status!=='در کالیبراسیون'&&old&&old.status==='در کالیبراسیون'&&!record.calibrationReturn)throw new Error('برای خروج از وضعیت «در کالیبراسیون»، تاریخ برگشت را ثبت کن.');
+        }
+        if(moduleKey==='vehicles'&&String(old&&old.currentKm||'')!==String(record.currentKm||'')){
+          record.currentKmRecordedAt=new Date().toISOString();
+          const stamp=formatJalali(new Date().toISOString(),true);
+          const entry=stamp+' | کیلومتر '+String(record.currentKm||'ثبت‌نشده');
+          record.maintenanceLog=[String(record.maintenanceLog||'').trim(),entry].filter(Boolean).join('\\n');
+        }
         const customFields={};
         fieldsFor(moduleKey).filter(function(field){return field.custom;}).forEach(function(field){customFields[field.key]=values[field.key]||'';delete record[field.key];});
         if(Object.keys(customFields).length)record.customFields=customFields;
