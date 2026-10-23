@@ -6,3 +6,12 @@
 .module-row-actions .secondary-btn,.module-delete-btn{padding:6px 8px}
 @media(max-width:1100px){.module-table{min-width:720px}}
 @media(max-width:650px){.module-table{min-width:760px}.module-table th,.module-table td{padding:8px 9px;font-size:10px}.module-row-actions{min-width:116px}}
+
+
+/* ATLAS SHIFT: inline add control for centrally managed dropdowns */
+.module-select-with-add{display:flex;align-items:stretch;gap:6px;width:100%;min-width:0}
+.module-select-with-add select{flex:1;min-width:0;width:100%}
+.module-select-add{flex:0 0 38px;min-width:38px;border:1px solid rgba(130,210,255,.35);border-radius:10px;background:rgba(90,180,255,.12);color:inherit;font:inherit;font-size:20px;line-height:1;cursor:pointer;transition:background .15s,border-color .15s}
+.module-select-add:hover{background:rgba(90,180,255,.24);border-color:rgba(130,210,255,.65)}
+.module-select-add:focus-visible{outline:2px solid var(--accent2,#8bdcff);outline-offset:2px}
+.module-select-add:active{transform:scale(.97)}
