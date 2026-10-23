@@ -1683,9 +1683,9 @@
           if(old&&old.location!==record.location){
             const stamp=formatJalali(new Date().toISOString(),false);
             const entry=stamp+' | '+String(old.location||'نامشخص')+' | '+String(record.location||'نامشخص');
-            record.locationHistory=[String(record.locationHistory||'').trim(),entry].filter(Boolean).join('\\n');
+            record.locationHistory=[String(record.locationHistory||'').trim(),entry].filter(Boolean).join('\n');
             record.locationSince=stamp;
-          } else if(!old&&record.location&&!record.locationSince){record.locationSince=record.createdAt.slice(0,10);}
+          } else if(!old&&record.location&&!record.locationSince){record.locationSince=formatJalali(record.createdAt,false);}
           if(record.status==='در کالیبراسیون'&&!record.calibrationDispatch)record.calibrationDispatch=formatJalali(new Date().toISOString(),false);
           if(record.status!=='در کالیبراسیون'&&old&&old.status==='در کالیبراسیون'&&!record.calibrationReturn)throw new Error('برای خروج از وضعیت «در کالیبراسیون»، تاریخ برگشت را ثبت کن.');
         }
@@ -1693,7 +1693,7 @@
           record.currentKmRecordedAt=new Date().toISOString();
           const stamp=formatJalali(new Date().toISOString(),true);
           const entry=stamp+' | کیلومتر '+String(record.currentKm||'ثبت‌نشده');
-          record.maintenanceLog=[String(record.maintenanceLog||'').trim(),entry].filter(Boolean).join('\\n');
+          record.maintenanceLog=[String(record.maintenanceLog||'').trim(),entry].filter(Boolean).join('\n');
         }
         const customFields={};
         fieldsFor(moduleKey).filter(function(field){return field.custom;}).forEach(function(field){customFields[field.key]=values[field.key]||'';delete record[field.key];});
