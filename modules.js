@@ -1108,10 +1108,17 @@
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>پشتیبان‌گیری و بازیابی</h3><p>نسخهٔ پشتیبان تمام پرونده‌ها، تاریخچه، تنظیمات و پیوست‌های محلی را دربر می‌گیرد.</p></div></div>'+
       '<div class="module-backup-grid"><div class="module-backup-card"><strong>ساخت نسخهٔ پشتیبان</strong><p>یک فایل JSON از تمام داده‌های موجود در این دستگاه دریافت می‌کنی.</p><button type="button" class="primary-btn" data-module-action="backup">دریافت فایل پشتیبان</button></div>'+
       '<div class="module-backup-card"><strong>بازیابی نسخهٔ پشتیبان</strong><p>بازیابی، داده‌های فعلی را جایگزین اطلاعات درون فایل انتخاب‌شده می‌کند.</p><button type="button" class="secondary-btn" data-module-action="restore-select">انتخاب فایل پشتیبان</button><input type="file" id="atlasRestoreFile" accept=".json,application/json" hidden></div></div></section>'+
+      '<section class="module-list-panel"><div class="module-list-head"><div><h3>مدیریت منوها و فهرست‌ها</h3><p>گزینه‌های فهرست‌های قابل انتخاب را در همین دستگاه اضافه، اصلاح یا حذف کن.</p></div></div><div class="module-list-tools"><select id="referenceListKey"><option value="workplaces">شهرها و محل‌ها</option><option value="leaveTypes">انواع مرخصی</option><option value="missionTypes">انواع مأموریت</option><option value="pipelineSizes">قطر خطوط</option><option value="products">نوع فرآورده</option><option value="vehicleTypes">انواع خودرو</option><option value="vehicleStatuses">وضعیت خودرو</option><option value="gasStatuses">وضعیت گازسنج</option><option value="actionTypes">انواع یادداشت</option><option value="programTypes">انواع برنامه</option></select><input id="referenceListValue" type="text" placeholder="عنوان گزینه جدید"><button type="button" class="primary-btn" data-module-action="reference-add">＋ افزودن</button></div><div id="referenceListItems" class="module-local-note" style="margin-top:12px"></div></section>' +
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>فیلدهای سفارشی کارکنان</h3><p>هر خط یک عنوان فیلد است. حذف عنوان از این فهرست به معنی حذف مقدار قبلی از پرونده‌ها نیست.</p></div></div>'+
       '<form data-custom-fields-form class="module-form"><label class="module-field module-field-wide"><span>عنوان فیلدها، هر کدام در یک خط</span><textarea name="employeeCustomFields" rows="5" placeholder="مثلاً: گواهینامه تخصصی&#10;شماره بیمه">'+esc(appData.settings.employeeCustomFields||'')+'</textarea></label><div class="module-form-actions"><span class="module-required-help">حداکثر ۲۰ فیلد سفارشی.</span><button type="submit" class="primary-btn">ذخیرهٔ فیلدها</button></div></form></section>'+
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>وضعیت نگهداری داده</h3><p>داده‌ها در پایگاه محلی مرورگر ذخیره می‌شوند و برای استفادهٔ روزمره به اتصال اینترنت نیاز ندارند.</p></div></div><div class="module-local-note">اطلاعات هر مرورگر مستقل است. پاک‌کردن داده‌های مرورگر می‌تواند اطلاعات را حذف کند؛ فایل پشتیبان را در محل امن نگهداری کن. همگام‌سازی خودکار فعال نیست.</div><div class="module-settings-counts">'+MODULES.map(function(key){return '<span>'+esc(specs[key].title)+': <b>'+faDigits(appData[key].length)+'</b></span>';}).join('')+'<span>برنامهٔ شیفت: <b>'+faDigits((appData.shifts||[]).length)+'</b></span></div></section>'
     );
+    renderReferenceList();  }
+
+  function renderReferenceList(){
+    const key=document.getElementById('referenceListKey'),host=document.getElementById('referenceListItems');
+    if(!key||!host)return;
+    host.innerHTML=(appData.references[key.value]||[]).map(function(value,i){return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0"><span>'+esc(value)+'</span><span><button type="button" class="secondary-btn" data-module-action="reference-edit" data-index="'+i+'">ویرایش</button> <button type="button" class="secondary-btn" data-module-action="reference-delete" data-index="'+i+'">حذف</button></span></div>';}).join('')||'این فهرست هنوز گزینه‌ای ندارد.';
   }
 
   function refreshCurrentView() {
@@ -1540,10 +1547,19 @@
   });
 
   document.addEventListener('click', async function(event) {
+    const inline=event.target.closest('[data-add-list-option]');if(inline){const key=inline.dataset.addListOption,value=window.prompt('گزینهٔ جدید را وارد کن:');if(value!==null&&value.trim()){if(!Array.isArray(appData.references[key]))appData.references[key]=[];if(!appData.references[key].includes(value.trim()))appData.references[key].push(value.trim());if(await saveState()){render(inline.dataset.view,document.getElementById('sectionView'));toast('گزینه افزوده شد.');}}return;}
     const button=event.target.closest('[data-module-action]');
     if(!button)return;
     const action=button.dataset.moduleAction;
     const moduleKey=button.dataset.view||new URLSearchParams(window.location.search).get('view')||'dashboard';
+    if(action==='reference-add'||action==='reference-edit'||action==='reference-delete'){
+      const key=document.getElementById('referenceListKey'),input=document.getElementById('referenceListValue'),listKey=key&&key.value;
+      if(!listKey||!Array.isArray(appData.references[listKey]))return;
+      const list=appData.references[listKey];
+      if(action==='reference-add'){const value=String(input&&input.value||'').trim();if(!value){toast('عنوان گزینه را وارد کن.');return;}if(list.includes(value)){toast('این گزینه از قبل وجود دارد.');return;}list.push(value);if(input)input.value='';}
+      else{const i=Number(button.dataset.index);if(i<0||i>=list.length)return;if(action==='reference-edit'){const value=window.prompt('عنوان جدید گزینه:',list[i]);if(value===null||!value.trim())return;list[i]=value.trim();}else{if(!window.confirm('گزینه حذف شود؟ سوابق قبلی حفظ می‌شوند.'))return;list.splice(i,1);}}
+      if(await saveState()){renderReferenceList();toast('فهرست ذخیره شد.');}return;
+    }
     const section=document.getElementById('sectionView');
     if(action==='new'||action==='edit'){
       if(!specs[moduleKey])return;
@@ -1729,6 +1745,7 @@
 
   document.addEventListener('change', function(event) {
     const target=event.target;
+    if(target.id==='referenceListKey'){renderReferenceList();return;}
     if(target.matches('[data-module-filter]')){
       filterState[target.dataset.view]=target.value;
       render(target.dataset.view,document.getElementById('sectionView'));
