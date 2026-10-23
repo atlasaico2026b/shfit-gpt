@@ -30,12 +30,12 @@
         {key:'fullName',label:'نام و نام خانوادگی',required:true},
         {key:'mobile',label:'شمارهٔ همراه',type:'tel'},
         {key:'jobTitle',label:'عنوان شغلی',required:true},
-        {key:'workType',label:'نوع کار',type:'select',required:true,options:['شیفتی','روزکار']},
-        {key:'employmentType',label:'نوع استخدام',type:'select',required:true,options:['رسمی','پیمانی','قراردادی','شرکتی','سایر']},
+        {key:'workType',label:'نوع کار',type:'select',required:true,listKey:'workTypes',options:['شیفتی','روزکار']},
+        {key:'employmentType',label:'نوع استخدام',type:'select',required:true,listKey:'employmentTypes',options:['رسمی','پیمانی','قراردادی','شرکتی','سایر']},
         {key:'workplace',label:'محل سازمانی',type:'select',required:true,listKey:'workplaces',options:['اهواز','آبادان','اندیمشک','ماهشهر','بندر امام','آغاجاری','سایر']},
         {key:'assignedWorkplace',label:'محل خدمت فعلی',placeholder:'ایستگاه، محدوده یا محل مأموریت'},
-        {key:'shiftPattern',label:'الگوی شیفت',type:'select',options:['۱۲ ساعته روز/شب','۲۴/۴۸','ثابت روزکار','سایر']},
-        {key:'status',label:'وضعیت جاری',type:'select',required:true,options:['آماده‌کار','در حال کار','شیفت','مأموریت','مرخصی','استراحت','اضافه‌کار','غیرفعال']},
+        {key:'shiftPattern',label:'الگوی شیفت',type:'select',listKey:'shiftPatterns',options:['۱۲ ساعته روز/شب','۲۴/۴۸','ثابت روزکار','سایر']},
+        {key:'status',label:'وضعیت جاری',type:'select',required:true,listKey:'employeeStatuses',options:['آماده‌کار','در حال کار','شیفت','مأموریت','مرخصی','استراحت','اضافه‌کار','غیرفعال']},
         {key:'photo',label:'عکس پرسنلی',type:'file',accept:'image/*'},
         {key:'notes',label:'توضیحات',type:'textarea',wide:true}
       ],
@@ -49,7 +49,7 @@
         {key:'missionType',label:'نوع فعالیت',type:'select',required:true,listKey:'missionTypes',options:['نظارت بر جوشکاری','بررسی انشعاب یا نشتی','بررسی آلودگی خاک یا آب','بازدید ایستگاه','سرویس تجهیزات','بازدید ایمنی','سایر']},
         {key:'startAt',label:'زمان شروع',type:'jalali-datetime',required:true},
         {key:'endAt',label:'زمان پایان',type:'jalali-datetime'},
-        {key:'city',label:'شهر یا محدوده',type:'select',required:true,options:['اهواز','آبادان','اندیمشک','ماهشهر','بندر امام','آغاجاری','سایر']},
+        {key:'city',label:'شهر یا محدوده',type:'select',required:true,listKey:'workplaces',options:['اهواز','آبادان','اندیمشک','ماهشهر','بندر امام','آغاجاری','سایر']},
         {key:'origin',label:'مبدأ'},
         {key:'destination',label:'مقصد یا محل عملیات'},
         {key:'stops',label:'توقف‌ها و نقاط مسیر',type:'textarea',wide:true,placeholder:'هر نقطه را در یک خط وارد کن'},
@@ -61,7 +61,7 @@
         {key:'crewText',label:'شرح گروه یا افراد خارج از فهرست',type:'textarea',wide:true},
         {key:'driverId',label:'راننده',type:'select',source:'employees'},
         {key:'vehicleId',label:'خودرو',type:'select',source:'vehicles'},
-        {key:'status',label:'وضعیت مأموریت',type:'select',required:true,options:['برنامه‌ریزی‌شده','در جریان','انجام‌شده','لغو‌شده']},
+        {key:'status',label:'وضعیت مأموریت',type:'select',required:true,listKey:'missionStatuses',options:['برنامه‌ریزی‌شده','در جریان','انجام‌شده','لغو‌شده']},
         {key:'result',label:'شرح کار و نتیجه',type:'textarea',wide:true},
         {key:'attachments',label:'پیوست گزارش',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx'}
       ],
@@ -78,7 +78,7 @@
         {key:'endDate',label:'تا تاریخ شمسی',type:'jalali',required:true},
         {key:'expectedReturn',label:'بازگشت مورد انتظار',type:'jalali'},
         {key:'actualReturn',label:'تاریخ حضور واقعی',type:'jalali'},
-        {key:'status',label:'وضعیت درخواست',type:'select',required:true,options:['در انتظار بررسی','تأییدشده','ردشده','استفاده‌شده']},
+        {key:'status',label:'وضعیت درخواست',type:'select',required:true,listKey:'leaveStatuses',options:['در انتظار بررسی','تأییدشده','ردشده','استفاده‌شده']},
         {key:'reason',label:'دلیل و توضیحات',type:'textarea',wide:true}
       ],
       columns: ['employeeId','groupName','leaveType','startDate','endDate','expectedReturn','status']
@@ -93,8 +93,8 @@
         {key:'companyPlate',label:'پلاک سازمانی'},
         {key:'policePlate',label:'پلاک انتظامی'},
         {key:'status',label:'وضعیت عملیاتی',type:'select',required:true,listKey:'vehicleStatuses',options:['آماده','در سرویس','خارج از سرویس','در تعمیر']},
-        {key:'healthStatus',label:'وضعیت سلامت',type:'select',options:['سالم','نیازمند بررسی','دارای نقص','در حال تعمیر']},
-        {key:'currentCity',label:'شهر فعلی',type:'select',options:['اهواز','آبادان','اندیمشک','ماهشهر','بندر امام','آغاجاری','سایر']},
+        {key:'healthStatus',label:'وضعیت سلامت',type:'select',listKey:'healthStatuses',options:['سالم','نیازمند بررسی','دارای نقص','در حال تعمیر']},
+        {key:'currentCity',label:'شهر فعلی',type:'select',listKey:'workplaces',options:['اهواز','آبادان','اندیمشک','ماهشهر','بندر امام','آغاجاری','سایر']},
         {key:'currentPlace',label:'محل یا نقطهٔ استقرار'},
         {key:'occupants',label:'سرنشینان فعلی',type:'textarea',wide:true},
         {key:'currentKm',label:'کیلومتر فعلی',type:'number',min:0},
@@ -155,7 +155,7 @@
         {key:'dueDate',label:'موعد پیگیری شمسی',type:'jalali'},
         {key:'related',label:'موضوع یا محل مرتبط'},
         {key:'responsibleId',label:'مسئول پیگیری',type:'select',source:'employees'},
-        {key:'status',label:'وضعیت',type:'select',required:true,options:['شروع‌نشده','در حال انجام','در انتظار پاسخ','ارجاع‌شده','تکمیل‌شده','لغوشده','عقب‌افتاده']},
+        {key:'status',label:'وضعیت',type:'select',required:true,listKey:'noteStatuses',options:['شروع‌نشده','در حال انجام','در انتظار پاسخ','ارجاع‌شده','تکمیل‌شده','لغوشده','عقب‌افتاده']},
         {key:'body',label:'شرح و نتیجهٔ پیگیری',type:'textarea',wide:true,required:true},
         {key:'attachments',label:'پیوست‌ها',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx'}
       ],
@@ -175,10 +175,10 @@
         {key:'purchaseRequestNumber',label:'شماره درخواست خرید'},
         {key:'pmrNumber',label:'شماره PMR'},
         {key:'letterReferences',label:'شماره و تاریخ مکاتبات'},
-        {key:'initialReportStatus',label:'وضعیت گزارش اولیه',type:'select',options:['تهیه نشده','در حال تهیه','ارسال شده','نیازمند اصلاح']},
+        {key:'initialReportStatus',label:'وضعیت گزارش اولیه',type:'select',listKey:'reportStatuses',options:['تهیه نشده','در حال تهیه','ارسال شده','نیازمند اصلاح']},
         {key:'finalReportDue',label:'مهلت گزارش نهایی شمسی',type:'jalali'},
         {key:'finalReportSent',label:'تاریخ ارسال گزارش نهایی شمسی',type:'jalali'},
-        {key:'status',label:'وضعیت پرونده',type:'select',required:true,options:['برنامه‌ریزی‌شده','در حال اقدام','در انتظار پاسخ','متوقف','تکمیل‌شده','لغوشده']},
+        {key:'status',label:'وضعیت پرونده',type:'select',required:true,listKey:'programStatuses',options:['برنامه‌ریزی‌شده','در حال اقدام','در انتظار پاسخ','متوقف','تکمیل‌شده','لغوشده']},
         {key:'actionsLog',label:'فهرست اقدامات مرحله‌ای (هر خط یک اقدام)',type:'textarea',wide:true,placeholder:'تاریخ | نفر/واحد | اقدام انجام‌شده | شماره نامه/درخواست | وضعیت'},
         {key:'body',label:'شرح، نتیجه و مستندات',type:'textarea',wide:true},
         {key:'attachments',label:'پیوست‌های پرونده',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx'}
@@ -191,7 +191,7 @@
     const state = {
       schemaVersion: 2,
       settings: { employeeCustomFields: '' },
-      references: {"workplaces":["اهواز","آبادان","اندیمشک","ماهشهر","بندر امام","آغاجاری","سایر"],"leaveTypes":["استحقاقی","استعلاجی","بدون حقوق","ساعتی","سایر"],"missionTypes":["نظارت بر جوشکاری","بررسی انشعاب یا نشتی","بررسی آلودگی خاک یا آب","بازدید ایستگاه","سرویس تجهیزات","بازدید ایمنی","سایر"],"pipelineSizes":["۴","۶","۸","۱۰","۱۲","۱۴","۱۶","۲۰","۲۴","۳۰","۳۶"],"products":["نفت خام","نفت گاز","بنزین","نفت سفید","گاز مایع","آب آلوده","سایر"],"vehicleTypes":["خودروی آتش‌نشانی","خودروی پشتیبانی","وانت","سواری","مینی‌بوس","سایر"],"vehicleStatuses":["آماده","در سرویس","خارج از سرویس","در تعمیر"],"gasStatuses":["آماده استفاده","در کالیبراسیون","خارج از سرویس","در تعمیر"],"actionTypes":["نامه اداری","درخواست خرید","استعلام","برآورد هزینه","برآورد قیمت","برنامه‌ریزی مانور","تعمیر خودرو","ارسال کالیبراسیون","پاسخ نامه","پیگیری قطعه","ارسال تجهیزات","بازدید","بازرسی","ممیزی","اقدام اصلاحی","یادداشت عمومی","سایر"],"programTypes":["مانور","تعمیر تجهیز","تعمیر خودرو","کالیبراسیون","بازرسی","اقدام اصلاحی","درخواست خرید","پروژه عملیاتی","سایر"]},
+      references: {"workplaces":["اهواز","آبادان","اندیمشک","ماهشهر","بندر امام","آغاجاری","سایر"],"leaveTypes":["استحقاقی","استعلاجی","بدون حقوق","ساعتی","سایر"],"missionTypes":["نظارت بر جوشکاری","بررسی انشعاب یا نشتی","بررسی آلودگی خاک یا آب","بازدید ایستگاه","سرویس تجهیزات","بازدید ایمنی","سایر"],"pipelineSizes":["۴","۶","۸","۱۰","۱۲","۱۴","۱۶","۲۰","۲۴","۳۰","۳۶"],"products":["نفت خام","نفت گاز","بنزین","نفت سفید","گاز مایع","آب آلوده","سایر"],"vehicleTypes":["خودروی آتش‌نشانی","خودروی پشتیبانی","وانت","سواری","مینی‌بوس","سایر"],"vehicleStatuses":["آماده","در سرویس","خارج از سرویس","در تعمیر"],"gasStatuses":["آماده استفاده","در کالیبراسیون","خارج از سرویس","در تعمیر"],"actionTypes":["نامه اداری","درخواست خرید","استعلام","برآورد هزینه","برآورد قیمت","برنامه‌ریزی مانور","تعمیر خودرو","ارسال کالیبراسیون","پاسخ نامه","پیگیری قطعه","ارسال تجهیزات","بازدید","بازرسی","ممیزی","اقدام اصلاحی","یادداشت عمومی","سایر"],"programTypes":["مانور","تعمیر تجهیز","تعمیر خودرو","کالیبراسیون","بازرسی","اقدام اصلاحی","درخواست خرید","پروژه عملیاتی","سایر"],"workTypes":["شیفتی","روزکار"],"employmentTypes":["رسمی","پیمانی","قراردادی","شرکتی","سایر"],"shiftPatterns":["۱۲ ساعته روز/شب","۲۴/۴۸","ثابت روزکار","سایر"],"employeeStatuses":["آماده‌کار","در حال کار","شیفت","مأموریت","مرخصی","استراحت","اضافه‌کار","غیرفعال"],"missionStatuses":["برنامه‌ریزی‌شده","در جریان","انجام‌شده","لغو‌شده"],"leaveStatuses":["در انتظار بررسی","تأییدشده","ردشده","استفاده‌شده"],"healthStatuses":["سالم","نیازمند بررسی","دارای نقص","در حال تعمیر"],"noteStatuses":["شروع‌نشده","در حال انجام","در انتظار پاسخ","ارجاع‌شده","تکمیل‌شده","لغوشده","عقب‌افتاده"],"reportStatuses":["تهیه نشده","در حال تهیه","ارسال شده","نیازمند اصلاح"],"programStatuses":["برنامه‌ریزی‌شده","در حال اقدام","در انتظار پاسخ","متوقف","تکمیل‌شده","لغوشده"]},
       history: [],
       shifts: [],
       updatedAt: ''
@@ -504,6 +504,7 @@
           const selected = Array.isArray(value) ? value.map(String).includes(String(option.value)) : String(value) === String(option.value);
           return '<option value="' + esc(option.value) + '"' + (selected ? ' selected' : '') + '>' + esc(option.label) + '</option>';
         }).join('') + '</select>' +
+        (field.listKey && !field.multiple ? '<button type="button" class="module-select-add" data-add-list-option="' + esc(field.listKey) + '" data-view="' + esc(moduleKey) + '" aria-label="افزودن گزینه به ' + esc(field.label) + '" title="افزودن گزینه جدید">＋</button>' : '') +
         (field.multiple ? '<small class="module-field-hint">برای انتخاب چند نفر، کلید Ctrl را نگه‌دار؛ در موبایل انتخاب چندتایی را از فهرست انجام بده.</small>' : '');
     } else if (field.type === 'textarea') {
       control = '<textarea id="' + esc(id) + '" name="' + esc(field.key) + '" rows="3"' + required + ' placeholder="' + esc(field.placeholder || '') + '">' + esc(value) + '</textarea>';
@@ -535,6 +536,7 @@
         (field.min != null ? ' min="' + esc(field.min) + '"' : '') + required +
         ' value="' + esc(value) + '" placeholder="' + esc(field.placeholder || '') + '" autocomplete="off">';
     }
+    if (field.type === 'select' && field.listKey && !field.multiple) control = '<span class="module-select-with-add">' + control + '</span>';
     return '<label class="module-field' + (field.wide ? ' module-field-wide' : '') + '" for="' + esc(id) + '">' + label + control + '</label>';
   }
 
@@ -1108,17 +1110,22 @@
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>پشتیبان‌گیری و بازیابی</h3><p>نسخهٔ پشتیبان تمام پرونده‌ها، تاریخچه، تنظیمات و پیوست‌های محلی را دربر می‌گیرد.</p></div></div>'+
       '<div class="module-backup-grid"><div class="module-backup-card"><strong>ساخت نسخهٔ پشتیبان</strong><p>یک فایل JSON از تمام داده‌های موجود در این دستگاه دریافت می‌کنی.</p><button type="button" class="primary-btn" data-module-action="backup">دریافت فایل پشتیبان</button></div>'+
       '<div class="module-backup-card"><strong>بازیابی نسخهٔ پشتیبان</strong><p>بازیابی، داده‌های فعلی را جایگزین اطلاعات درون فایل انتخاب‌شده می‌کند.</p><button type="button" class="secondary-btn" data-module-action="restore-select">انتخاب فایل پشتیبان</button><input type="file" id="atlasRestoreFile" accept=".json,application/json" hidden></div></div></section>'+
-      '<section class="module-list-panel"><div class="module-list-head"><div><h3>مدیریت منوها و فهرست‌ها</h3><p>گزینه‌های فهرست‌های قابل انتخاب را در همین دستگاه اضافه، اصلاح یا حذف کن.</p></div></div><div class="module-list-tools"><select id="referenceListKey"><option value="workplaces">شهرها و محل‌ها</option><option value="leaveTypes">انواع مرخصی</option><option value="missionTypes">انواع مأموریت</option><option value="pipelineSizes">قطر خطوط</option><option value="products">نوع فرآورده</option><option value="vehicleTypes">انواع خودرو</option><option value="vehicleStatuses">وضعیت خودرو</option><option value="gasStatuses">وضعیت گازسنج</option><option value="actionTypes">انواع یادداشت</option><option value="programTypes">انواع برنامه</option></select><input id="referenceListValue" type="text" placeholder="عنوان گزینه جدید"><button type="button" class="primary-btn" data-module-action="reference-add">＋ افزودن</button></div><div id="referenceListItems" class="module-local-note" style="margin-top:12px"></div></section>' +
+      '<section class="module-list-panel"><div class="module-list-head"><div><h3>مدیریت منوها و فهرست‌ها</h3><p>تمام گزینه‌های کشویی قابل تنظیم در یک محل؛ افزودن فوری نیز از کنار فیلدهای مرتبط انجام می‌شود.</p></div></div><div class="module-list-tools"><select id="referenceListKey">'+Object.keys(appData.references).map(function(k){return '<option value="'+esc(k)+'">'+esc(referenceListTitle(k))+'</option>';}).join('')+'</select><input id="referenceListValue" type="text" placeholder="عنوان گزینه جدید"><button type="button" class="primary-btn" data-module-action="reference-add">＋ افزودن</button></div><div id="referenceListItems" class="module-local-note" style="margin-top:12px"></div></section>' +
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>فیلدهای سفارشی کارکنان</h3><p>هر خط یک عنوان فیلد است. حذف عنوان از این فهرست به معنی حذف مقدار قبلی از پرونده‌ها نیست.</p></div></div>'+
       '<form data-custom-fields-form class="module-form"><label class="module-field module-field-wide"><span>عنوان فیلدها، هر کدام در یک خط</span><textarea name="employeeCustomFields" rows="5" placeholder="مثلاً: گواهینامه تخصصی&#10;شماره بیمه">'+esc(appData.settings.employeeCustomFields||'')+'</textarea></label><div class="module-form-actions"><span class="module-required-help">حداکثر ۲۰ فیلد سفارشی.</span><button type="submit" class="primary-btn">ذخیرهٔ فیلدها</button></div></form></section>'+
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>وضعیت نگهداری داده</h3><p>داده‌ها در پایگاه محلی مرورگر ذخیره می‌شوند و برای استفادهٔ روزمره به اتصال اینترنت نیاز ندارند.</p></div></div><div class="module-local-note">اطلاعات هر مرورگر مستقل است. پاک‌کردن داده‌های مرورگر می‌تواند اطلاعات را حذف کند؛ فایل پشتیبان را در محل امن نگهداری کن. همگام‌سازی خودکار فعال نیست.</div><div class="module-settings-counts">'+MODULES.map(function(key){return '<span>'+esc(specs[key].title)+': <b>'+faDigits(appData[key].length)+'</b></span>';}).join('')+'<span>برنامهٔ شیفت: <b>'+faDigits((appData.shifts||[]).length)+'</b></span></div></section>'
     );
     renderReferenceList();  }
 
+  function referenceListTitle(key){
+    const titles={workplaces:'شهرها و محل‌ها',leaveTypes:'انواع مرخصی',missionTypes:'انواع مأموریت',pipelineSizes:'قطر خطوط',products:'نوع فرآورده',vehicleTypes:'انواع خودرو',vehicleStatuses:'وضعیت خودرو',gasStatuses:'وضعیت گازسنج',actionTypes:'انواع یادداشت و اقدام',programTypes:'انواع برنامه',workTypes:'نوع کار',employmentTypes:'نوع استخدام',shiftPatterns:'الگوی شیفت',employeeStatuses:'وضعیت کارکنان',missionStatuses:'وضعیت مأموریت',leaveStatuses:'وضعیت مرخصی',healthStatuses:'وضعیت سلامت',noteStatuses:'وضعیت یادداشت و پیگیری',reportStatuses:'وضعیت گزارش اولیه',programStatuses:'وضعیت پرونده'};
+    return titles[key]||key;
+  }
+
   function renderReferenceList(){
     const key=document.getElementById('referenceListKey'),host=document.getElementById('referenceListItems');
     if(!key||!host)return;
-    host.innerHTML=(appData.references[key.value]||[]).map(function(value,i){return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0"><span>'+esc(value)+'</span><span><button type="button" class="secondary-btn" data-module-action="reference-edit" data-index="'+i+'">ویرایش</button> <button type="button" class="secondary-btn" data-module-action="reference-delete" data-index="'+i+'">حذف</button></span></div>';}).join('')||'این فهرست هنوز گزینه‌ای ندارد.';
+    host.innerHTML=(appData.references[key.value]||[]).map(function(value,i){return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0;padding:7px;border-bottom:1px solid rgba(140,210,255,.12)"><span>'+esc(value)+'</span><span style="display:flex;gap:5px;flex-wrap:wrap"><button type="button" class="secondary-btn" data-module-action="reference-up" data-index="'+i+'" aria-label="انتقال به بالا" '+(i===0?'disabled':'')+'>↑</button><button type="button" class="secondary-btn" data-module-action="reference-down" data-index="'+i+'" aria-label="انتقال به پایین" '+(i===(appData.references[key.value]||[]).length-1?'disabled':'')+'>↓</button><button type="button" class="secondary-btn" data-module-action="reference-edit" data-index="'+i+'">ویرایش</button><button type="button" class="secondary-btn" data-module-action="reference-delete" data-index="'+i+'">حذف</button></span></div>';}).join('')||'این فهرست هنوز گزینه‌ای ندارد.';
   }
 
   function refreshCurrentView() {
@@ -1547,18 +1554,18 @@
   });
 
   document.addEventListener('click', async function(event) {
-    const inline=event.target.closest('[data-add-list-option]');if(inline){const key=inline.dataset.addListOption,value=window.prompt('گزینهٔ جدید را وارد کن:');if(value!==null&&value.trim()){if(!Array.isArray(appData.references[key]))appData.references[key]=[];if(!appData.references[key].includes(value.trim()))appData.references[key].push(value.trim());if(await saveState()){render(inline.dataset.view,document.getElementById('sectionView'));toast('گزینه افزوده شد.');}}return;}
+    const inline=event.target.closest('[data-add-list-option]');if(inline){const key=inline.dataset.addListOption,value=window.prompt('گزینهٔ جدید را وارد کن:');if(value!==null&&value.trim()){const clean=value.trim();if(!Array.isArray(appData.references[key]))appData.references[key]=[];if(appData.references[key].includes(clean)){toast('این گزینه از قبل وجود دارد.');return;}appData.references[key].push(clean);if(await saveState()){const field=inline.closest('.module-field');const select=field&&field.querySelector('select');if(select){const option=document.createElement('option');option.value=clean;option.textContent=clean;option.selected=true;select.appendChild(option);}toast('گزینه افزوده و ذخیره شد.');}}return;}
     const button=event.target.closest('[data-module-action]');
     if(!button)return;
     const action=button.dataset.moduleAction;
     const moduleKey=button.dataset.view||new URLSearchParams(window.location.search).get('view')||'dashboard';
-    if(action==='reference-add'||action==='reference-edit'||action==='reference-delete'){
+    if(action==='reference-add'||action==='reference-edit'||action==='reference-delete'||action==='reference-up'||action==='reference-down'){
       const key=document.getElementById('referenceListKey'),input=document.getElementById('referenceListValue'),listKey=key&&key.value;
       if(!listKey||!Array.isArray(appData.references[listKey]))return;
       const list=appData.references[listKey];
       if(action==='reference-add'){const value=String(input&&input.value||'').trim();if(!value){toast('عنوان گزینه را وارد کن.');return;}if(list.includes(value)){toast('این گزینه از قبل وجود دارد.');return;}list.push(value);if(input)input.value='';}
-      else{const i=Number(button.dataset.index);if(i<0||i>=list.length)return;if(action==='reference-edit'){const value=window.prompt('عنوان جدید گزینه:',list[i]);if(value===null||!value.trim())return;list[i]=value.trim();}else{if(!window.confirm('گزینه حذف شود؟ سوابق قبلی حفظ می‌شوند.'))return;list.splice(i,1);}}
-      if(await saveState()){renderReferenceList();toast('فهرست ذخیره شد.');}return;
+      else{const i=Number(button.dataset.index);if(i<0||i>=list.length)return;if(action==='reference-edit'){const value=window.prompt('عنوان جدید گزینه:',list[i]);if(value===null||!value.trim())return;const next=value.trim();if(list.includes(next)&&next!==list[i]){toast('این گزینه از قبل وجود دارد.');return;}const previous=list[i];list[i]=next;MODULES.forEach(function(m){(specs[m].fields||[]).forEach(function(field){if(field.listKey!==listKey)return;(appData[m]||[]).forEach(function(record){if(record[field.key]===previous)record[field.key]=next;else if(Array.isArray(record[field.key]))record[field.key]=record[field.key].map(function(v){return v===previous?next:v;});});});});}else if(action==='reference-delete'){if(!window.confirm('گزینه از فهرست حذف شود؟ سوابق قبلی حفظ می‌شوند و مقدارهای ثبت‌شده پاک نخواهند شد.'))return;list.splice(i,1);}else{const nextIndex=action==='reference-up'?i-1:i+1;if(nextIndex<0||nextIndex>=list.length)return;const swap=list[nextIndex];list[nextIndex]=list[i];list[i]=swap;}}
+      if(await saveState()){renderReferenceList();if(action==='reference-edit'){const current=document.getElementById('sectionView');const view=new URLSearchParams(window.location.search).get('view')||'dashboard';if(specs[view])render(view,current);}toast('فهرست ذخیره شد.');}return;
     }
     const section=document.getElementById('sectionView');
     if(action==='new'||action==='edit'){
