@@ -247,7 +247,25 @@
   </div>
 <div class="settings-section"><h4>دستیار صوتی</h4><p>ترجیحات دستیار روی همین دستگاه ذخیره می‌شوند.</p><div class="atlas-voice-settings" style="display:grid;gap:10px;margin:12px 0"><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">فعال بودن دستیار صوتی<input id="voiceEnabled" type="checkbox"></label><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">دریافت فرمان صوتی فارسی<input id="voiceInput" type="checkbox"></label><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">پاسخ صوتی<input id="voiceReply" type="checkbox"></label><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">تأیید عملیات حساس<input id="voiceConfirm" type="checkbox"></label></div><button class="secondary-btn" id="saveVoiceSettings" type="button">ذخیره تنظیمات دستیار</button></div>
   </div>
-  <div class="settings-tab-pane" id="settings-pane-lists" role="tabpanel" aria-labelledby="settings-tab-lists" hidden><div class="settings-section"><h4>مدیریت منوها و فهرست‌ها</h4><p>برای افزودن، ویرایش یا حذف گزینه‌های فرم‌ها، صفحهٔ مدیریت فهرست‌ها را باز کن.</p><a class="primary-btn" href="./index.html?view=settings">بازکردن مدیریت منوها و فهرست‌ها</a></div></div>
+  <div class="settings-tab-pane" id="settings-pane-lists" role="tabpanel" aria-labelledby="settings-tab-lists" hidden>
+    <div class="settings-section" id="mainMenuManager">
+      <h4>مدیریت منوهای اصلی</h4>
+      <p>منوهای موجود را نمایش یا پنهان کن، ترتیبشان را تغییر بده یا میان‌بر تازه‌ای به یکی از بخش‌های برنامه اضافه کن. این تغییرات فقط روی همین دستگاه ذخیره می‌شوند.</p>
+      <div id="mainMenuList" style="display:grid;gap:8px;margin:12px 0"></div>
+      <div style="border-top:1px solid rgba(140,210,255,.18);padding-top:12px;margin-top:12px">
+        <h4 style="margin-top:0">افزودن منو</h4>
+        <label for="newMenuTitle">عنوان منو</label>
+        <input id="newMenuTitle" type="text" maxlength="40" placeholder="مثلاً پیگیری تجهیزات" style="width:100%;box-sizing:border-box;margin:6px 0 10px;padding:10px;border-radius:10px;background:rgba(0,0,0,.16);color:inherit;border:1px solid rgba(140,210,255,.2)">
+        <label for="newMenuTarget">صفحه‌ای که منو باز می‌کند</label>
+        <select id="newMenuTarget" style="width:100%;box-sizing:border-box;margin:6px 0 10px;padding:10px;border-radius:10px;background:rgba(0,0,0,.16);color:inherit;border:1px solid rgba(140,210,255,.2)">
+          <option value="dashboard">داشبورد</option><option value="employees">کارکنان</option><option value="missions">مأموریت‌ها</option><option value="leaves">مرخصی‌ها</option><option value="vehicles">خودروها</option><option value="gasmeters">گازسنج‌ها</option><option value="notes">یادداشت‌ها و پیگیری‌ها</option><option value="programs">برنامه‌ها و پرونده‌ها</option><option value="phonebook">دفترچه تلفن</option><option value="reports">گزارشات</option>
+        </select>
+        <button class="primary-btn" id="addMainMenu" type="button">＋ افزودن منو</button>
+      </div>
+      <p id="mainMenuStatus" role="status" aria-live="polite" style="font-size:12px;margin-top:8px"></p>
+    </div>
+    <div class="settings-section"><h4>فهرست‌های داخل فرم‌ها</h4><p>مدیریت مقادیر قابل انتخاب فرم‌ها از بخش‌های مربوطه انجام می‌شود.</p></div>
+  </div>
   <div class="settings-tab-pane" id="settings-pane-phonebook" role="tabpanel" aria-labelledby="settings-tab-phonebook" hidden>
 <div class="settings-section" id="phonebookSettingsGroup"><h4>تنظیمات دفترچه تلفن</h4><p>تنظیم ساختار مکانی و مدیریت فهرست‌های قابل انتخاب در دفترچه تلفن.</p><div class="phonebook-settings-subsection" id="phonebookTreeSettings">
   <h4>مدیریت ساختارها</h4>
@@ -289,6 +307,7 @@
 <script src="./app.js" defer></script>
 <script src="./theme-two.js" defer></script>
 <script src="./settings-tabs.js" defer></script>
+<script src="./menu-manager.js" defer></script>
 <script>
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     window.addEventListener('load', async function () {
