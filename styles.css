@@ -498,3 +498,19 @@ html[data-atlas-theme="cloud-glass"] .module-report-card small{color:#227b9a}
 .module-report-export option{background:#fff;color:#183e69}
 html[data-atlas-theme="cloud-glass"] .module-report-export{background:rgba(255,255,255,.78);border-color:rgba(255,255,255,.96);color:#24547f}
 @media(max-width:650px){.module-report-export{flex:1 1 120px;max-width:none}}
+
+/* Per-page export bar, inline option editor and checkbox fields. */
+.module-select-with-add{display:flex;align-items:stretch;gap:6px;width:100%;min-width:0}
+.module-select-with-add select{flex:1 1 auto;min-width:0}
+.module-select-add{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:38px;min-height:38px;border:1px solid var(--line-hi);border-radius:10px;background:rgba(37,188,232,.14);color:var(--accent);font-family:inherit;font-size:16px;line-height:1;cursor:pointer;transition:background .15s ease,border-color .15s ease}
+.module-select-add:hover{background:rgba(37,188,232,.28);border-color:var(--accent)}
+.module-export-bar{display:flex;flex-wrap:wrap;gap:6px;padding:5px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.03)}
+.module-export-btn{border:1px solid var(--line-hi);border-radius:9px;background:rgba(255,255,255,.05);color:var(--text);font-family:inherit;font-size:11px;padding:7px 11px;cursor:pointer;transition:background .15s ease,border-color .15s ease}
+.module-export-btn:hover{background:rgba(37,188,232,.2);border-color:var(--accent)}
+.module-inline-add{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:8px 0 2px;padding:8px;border:1px dashed var(--accent);border-radius:10px;background:rgba(37,188,232,.07)}
+.module-inline-add input{flex:1 1 150px;min-width:130px}
+.module-check-toggle{display:inline-flex;align-items:center;gap:8px;min-height:38px;font-size:12px;color:var(--text)}
+.module-check-toggle input{width:17px;height:17px;accent-color:var(--accent)}
+#atlasPrintTitle{display:none}
+@media(max-width:650px){.module-page-actions .module-export-bar{width:100%}.module-export-bar .module-export-btn{flex:1 1 auto}}
+@media print{#atlasPrintTitle{display:block!important;font-size:15px;font-weight:700;margin:0 0 10px;color:#111!important}}
