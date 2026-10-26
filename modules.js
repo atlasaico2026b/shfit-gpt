@@ -569,8 +569,14 @@
     section.style.overflow = 'visible';
   }
 
-  function pageHead(title, subtitle, actions) {
-    return '<div class="module-page-head" style="width:100%;min-width:0"><div><span class="module-overline">ATLAS SHIFT / مدیریت عملیات</span>' +
+  const MODULE_ACCENT = {
+    employees: 'violet', missions: 'amber', leaves: 'emerald', vehicles: 'sky',
+    gasmeters: 'rose', notes: 'teal', programs: 'indigo', phonebook: 'orange',
+    reports: 'gold', settings: 'slate', dashboard: 'cyan'
+  };
+
+  function pageHead(title, subtitle, actions, accent) {
+    return '<div class="module-page-head" data-accent="' + esc(accent || 'cyan') + '" style="width:100%;min-width:0"><div><span class="module-overline">ATLAS SHIFT / مدیریت عملیات</span>' +
       '<h2>' + esc(title) + '</h2><p>' + esc(subtitle) + '</p></div><div class="module-page-actions">' + actions + '</div></div>';
   }
 
@@ -681,6 +687,20 @@
     return hasHistory ? '<button type="button" class="secondary-btn" data-module-action="history" data-view="' + esc(moduleKey) + '" data-id="' + esc(record.id) + '">سوابق</button> ' : '';
   }
 
+  function statusTone(text) {
+    const value = String(text || '');
+    if (/آماده|فعال|تکمیل|انجام‌شده|بسته|سالم|تأیید|تایید|سرویس‌شده|موجود/.test(value)) return 'ok';
+    if (/مرخصی|در حال|جریان|در انتظار|نوبت|برنامه|آزاد|موقت|نیاز|باز/.test(value)) return 'warn';
+    if (/لغو|غایب|خراب|نقص|تعمیر|عقب|رد|خارج|حادثه|غیرفعال|منقضی|کالیبره/.test(value)) return 'danger';
+    if (/ثبت|ارسال|ارجاع|جدید/.test(value)) return 'info';
+    return 'muted';
+  }
+
+  function statusTag(text) {
+    const label = String(text == null || text === '' ? 'ثبت نشده' : text);
+    return '<span class="module-tag" data-tone="' + statusTone(label) + '">' + esc(label) + '</span>';
+  }
+
   function renderTable(moduleKey, data) {
     const columns = specs[moduleKey].columns;
     const records = recordsForView(moduleKey, data);
@@ -707,11 +727,12 @@
             }
             const value = fieldsFor(moduleKey).find(function (field) { return field.key === key && field.custom; }) && record.customFields
               ? record.customFields[key] : record[key];
-            if (moduleKey === 'employees' && key === 'status') return '<td>' + esc(effectiveEmployeeStatus(record)) + '</td>';
+            if (moduleKey === 'employees' && key === 'status') return '<td>' + statusTag(effectiveEmployeeStatus(record)) + '</td>';
             if (moduleKey === 'notes' && key === 'status') {
               const overdue = record.dueDate && dueInDays(record.dueDate) < 0 && !['تکمیل‌شده','لغوشده'].includes(record.status);
-              return '<td><span class="module-tag' + (overdue ? ' module-tag-danger' : '') + '">' + esc(overdue ? 'عقب‌افتاده' : (record.status || 'ثبت نشده')) + '</span></td>';
+              return '<td>' + statusTag(overdue ? 'عقب‌افتاده' : record.status) + '</td>';
             }
+            if (key === 'status') return '<td>' + statusTag(record.status) + '</td>';
             return '<td>' + displayValue(moduleKey, key, value, data) + '</td>';
           }).join('') +
           '<td class="module-row-actions">' + renderHistoryButton(moduleKey, record) +
@@ -808,7 +829,7 @@
     const actions = exportBar(moduleKey) +
       '<button class="primary-btn" type="button" data-module-action="new" data-view="' + esc(moduleKey) + '">＋ ثبت مورد جدید</button>';
     section.innerHTML = rootWrap(
-      pageHead(specs[moduleKey].title, specs[moduleKey].subtitle, actions) +
+      pageHead(specs[moduleKey].title, specs[moduleKey].subtitle, actions, MODULE_ACCENT[moduleKey]) +
       '<div class="module-summary" style="width:100%"><div><span>تعداد کل</span><strong>' + faDigits(existing) + '</strong></div>' +
       '<div><span>ذخیره‌سازی</span><strong>محلی و آفلاین</strong></div><div><span>آخرین به‌روزرسانی</span><strong>' + (data.updatedAt ? displayDateTime(data.updatedAt) : '—') + '</strong></div></div>' +
       renderForm(moduleKey, data) +
@@ -1105,7 +1126,7 @@
     const openMissions=appData.missions.filter(function(item){return ['در جریان','برنامه‌ریزی‌شده'].includes(item.status);}).length;
     const dueMeters=appData.gasmeters.filter(function(item){return dueInDays(item.calibrationEnd)<=30;}).length;
     section.innerHTML=rootWrap(
-      pageHead('گزارش‌ها و آمار','خلاصهٔ اطلاعات ثبت‌شده در دستگاه و فیلتر براساس بازهٔ زمانی.',actions)+
+      pageHead('گزارش‌ها و آمار','خلاصهٔ اطلاعات ثبت‌شده در دستگاه و فیلتر براساس بازهٔ زمانی.',actions,'gold')+
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>بازهٔ گزارش</h3><p>برای بازهٔ سفارشی تاریخ شمسی را وارد کن.</p></div><div class="module-list-tools"><select data-report-period aria-label="بازهٔ گزارش">'+periods.map(function(item){return '<option value="'+item[0]+'"'+(reportPeriod===item[0]?' selected':'')+'>'+item[1]+'</option>';}).join('')+'</select></div></div>'+
       '<div class="module-report-range" data-report-custom'+(reportPeriod==='custom'?'':' hidden')+'><label class="module-field"><span>از تاریخ شمسی</span><input type="text" data-report-from value="'+esc(reportFrom)+'" placeholder="۱۴۰۵/۰۷/۰۱"></label><label class="module-field"><span>تا تاریخ شمسی</span><input type="text" data-report-to value="'+esc(reportTo)+'" placeholder="۱۴۰۵/۰۷/۳۰"></label><button type="button" class="primary-btn" data-module-action="apply-report-range">اعمال بازه</button></div></section>'+
       '<div class="module-metric-grid"><div><span>نیروی ثبت‌شدهٔ فعال</span><strong>'+faDigits(activeStaff)+'</strong></div><div><span>مأموریت‌های باز</span><strong>'+faDigits(openMissions)+'</strong></div><div><span>گازسنج با موعد تا ۳۰ روز</span><strong>'+faDigits(dueMeters)+'</strong></div></div>'+
@@ -1124,7 +1145,7 @@
 
   function renderSettings(section) {
     section.innerHTML=rootWrap(
-      pageHead('تنظیمات','مدیریت محلی اطلاعات، فیلدهای پرسنلی قابل تنظیم و نسخهٔ پشتیبان. تم فعلی تغییر داده نمی‌شود.','')+
+      pageHead('تنظیمات','مدیریت محلی اطلاعات، فیلدهای پرسنلی قابل تنظیم و نسخهٔ پشتیبان. تم فعلی تغییر داده نمی‌شود.','','slate')+
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>پشتیبان‌گیری و بازیابی</h3><p>نسخهٔ پشتیبان تمام پرونده‌ها، تاریخچه، تنظیمات و پیوست‌های محلی را دربر می‌گیرد.</p></div></div>'+
       '<div class="module-backup-grid"><div class="module-backup-card"><strong>ساخت نسخهٔ پشتیبان</strong><p>یک فایل JSON از تمام داده‌های موجود در این دستگاه دریافت می‌کنی.</p><button type="button" class="primary-btn" data-module-action="backup">دریافت فایل پشتیبان</button></div>'+
       '<div class="module-backup-card"><strong>بازیابی نسخهٔ پشتیبان</strong><p>بازیابی، داده‌های فعلی را جایگزین اطلاعات درون فایل انتخاب‌شده می‌کند.</p><button type="button" class="secondary-btn" data-module-action="restore-select">انتخاب فایل پشتیبان</button><input type="file" id="atlasRestoreFile" accept=".json,application/json" hidden></div></div></section>'+
