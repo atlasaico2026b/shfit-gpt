@@ -23,6 +23,25 @@
     phonebook: './index.html?view=phonebook', reports: './index.html?view=reports'
   };
   const ICONS = Object.fromEntries(DEFAULTS.map(item => [item.id, item.icon]));
+  const ICON_SVG = {
+    dashboard: '<rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/>',
+    employees: '<circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/><path d="M17 3.5a4 4 0 0 1 0 7.5"/><path d="M19 15h1a3 3 0 0 1 3 3v3"/>',
+    missions: '<path d="M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1Z"/><path d="M8 6H6a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-2"/><path d="M9 12h6M9 16h4"/>',
+    leaves: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/><path d="M12 14v3h2"/>',
+    vehicles: '<path d="M4 13l1.8-5.2A2 2 0 0 1 7.7 6.5h8.6a2 2 0 0 1 1.9 1.3L20 13"/><path d="M3 13h18v5a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H6v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5Z"/><circle cx="7.5" cy="15.5" r="1"/><circle cx="16.5" cy="15.5" r="1"/>',
+    gasmeters: '<circle cx="12" cy="12" r="9"/><path d="M12 12l4-3"/><path d="M12 3v2M21 12h-2M12 21v-2M3 12h2"/>',
+    notes: '<path d="M5 4h11l4 4v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z"/><path d="M15 4v5h5"/><path d="M8 13h8M8 17h5"/>',
+    programs: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m8 12 2.5 2.5L16 9"/>',
+    phonebook: '<path d="M6 3h3l2 5-2.5 1.5a12 12 0 0 0 6 6L16 13l5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 4 5a2 2 0 0 1 2-2Z"/>',
+    reports: '<path d="M4 20V4"/><path d="M4 20h16"/><rect x="7" y="12" width="3" height="5" rx="1"/><rect x="12" y="8" width="3" height="9" rx="1"/><rect x="17" y="5" width="3" height="12" rx="1"/>',
+    settings: '<circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.7a8 8 0 0 1-1.8 1l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.8-1l-1.7.7-1.4-2.4 1.4-1.1a7 7 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.7.7a8 8 0 0 1 1.8-1l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.8 1l1.7-.7 1.4 2.4-1.4 1.1a7 7 0 0 1 0 2Z"/>'
+  };
+  const ACCENTS = {
+    dashboard: 'cyan', employees: 'violet', missions: 'amber', leaves: 'emerald',
+    vehicles: 'sky', gasmeters: 'rose', notes: 'teal', programs: 'indigo',
+    phonebook: 'orange', reports: 'gold', settings: 'slate'
+  };
+  const FALLBACK_SVG = '<circle cx="12" cy="12" r="7"/><path d="M12 8v8M8 12h8"/>';
   let config = load();
 
   function load() {
@@ -77,13 +96,18 @@
     const nav = document.querySelector('.app-menu-nav');
     if (!nav) return;
     const fragment = document.createDocumentFragment();
+    const currentView = (new URLSearchParams(location.search).get('view') || 'dashboard').trim() || 'dashboard';
     items.filter(item => !item.hidden).forEach(item => {
       const a = document.createElement('a');
-      a.className = 'app-menu-item';
+      const active = (item.target || item.id) === currentView || (currentView === 'dashboard' && item.id === 'dashboard');
+      a.className = 'app-menu-item' + (active ? ' active' : '');
       a.href = item.href;
       a.dataset.menuId = item.id;
+      a.dataset.accent = ACCENTS[item.id] || ACCENTS[item.target] || 'slate';
+      if (active) a.setAttribute('aria-current', 'page');
       const icon = document.createElement('span');
-      icon.textContent = item.icon;
+      icon.className = 'app-menu-icon';
+      icon.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICON_SVG[item.id] || ICON_SVG[item.target] || FALLBACK_SVG) + '</svg>';
       a.append(icon, document.createTextNode(item.title));
       fragment.appendChild(a);
     });
