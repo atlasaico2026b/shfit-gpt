@@ -52,11 +52,11 @@
   $$('.notice-card').forEach(n=>n.addEventListener('click',()=>{n.classList.remove('unread');$('.notice-unread',n)?.remove();updateNotificationBadge()}));
   updateNotificationBadge();
   // Theme 1 is the glass-cloud reference; theme 2 remains reserved until the user supplies its design.
-  const appThemes={'cloud-glass':{accent:'#168bff',rgb:'22,139,255',accent2:'#24cbe0'}};
+  const appThemes={'cloud-glass':{accent:'#22d3ee',rgb:'34,211,238',accent2:'#f97316'}};
   function applyTheme(name,persist=true){
     const selected=Object.prototype.hasOwnProperty.call(appThemes,name)?name:'cloud-glass';
     const theme=appThemes[selected];
-    document.documentElement.dataset.atlasTheme=selected;
+    document.documentElement.dataset.atlasTheme='atlas-flat';
     document.documentElement.style.setProperty('--accent',theme.accent);
     document.documentElement.style.setProperty('--accent-rgb',theme.rgb);
     document.documentElement.style.setProperty('--accent2',theme.accent2);

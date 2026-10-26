@@ -1,0 +1,4 @@
+{
+  "build": "rm -rf dist && mkdir -p dist && cp index.html app.js modules.js settings-tabs.js menu-manager.js visual-engine.js theme-two.js theme-two.css theme-two-colorful.css styles.css pdf-theme.css module-table-fix.css manifest.json sw.js icon.svg dist/",
+  "outDir": "dist"
+}
