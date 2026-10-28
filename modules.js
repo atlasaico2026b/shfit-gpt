@@ -171,6 +171,7 @@
       subtitle: 'برنامه‌ریزی کارها، نامه‌نگاری، خرید، اقدامات مرحله‌ای و بستن پرونده',
       fields: [
         {key:'title',label:'عنوان برنامه / پرونده',required:true},
+        {key:'programCategory',label:'دستهٔ برنامه',type:'select',required:true,listKey:'programCategories',options:['هدف','برنامه فعالیت','مانور','روتین','دوره آموزشی','سایر']},
         {key:'programType',label:'نوع برنامه',type:'select',required:true,listKey:'programTypes',options:['مانور','تعمیر تجهیز','تعمیر خودرو','کالیبراسیون','بازرسی','اقدام اصلاحی','درخواست خرید','پروژه عملیاتی','سایر']},
         {key:'location',label:'محل اجرا یا عملیات'},
         {key:'plannedDate',label:'تاریخ برنامه‌ریزی شمسی',type:'jalali'},
@@ -196,7 +197,7 @@
     const state = {
       schemaVersion: 2,
       settings: { employeeCustomFields: '' },
-      references: {"workplaces":["اهواز","آبادان","اندیمشک","ماهشهر","بندر امام","آغاجاری","سایر"],"leaveTypes":["استحقاقی","استعلاجی","بدون حقوق","ساعتی","سایر"],"missionTypes":["نظارت بر جوشکاری","بررسی انشعاب یا نشتی","بررسی آلودگی خاک یا آب","بازدید ایستگاه","سرویس تجهیزات","بازدید ایمنی","سایر"],"pipelineSizes":["۴","۶","۸","۱۰","۱۲","۱۴","۱۶","۲۰","۲۴","۳۰","۳۶"],"products":["نفت خام","نفت گاز","بنزین","نفت سفید","گاز مایع","آب آلوده","سایر"],"vehicleTypes":["خودروی آتش‌نشانی","خودروی پشتیبانی","وانت","سواری","مینی‌بوس","سایر"],"vehicleStatuses":["آماده","در سرویس","خارج از سرویس","در تعمیر"],"gasStatuses":["آماده استفاده","در کالیبراسیون","خارج از سرویس","در تعمیر"],"actionTypes":["نامه اداری","درخواست خرید","استعلام","برآورد هزینه","برآورد قیمت","برنامه‌ریزی مانور","تعمیر خودرو","ارسال کالیبراسیون","پاسخ نامه","پیگیری قطعه","ارسال تجهیزات","بازدید","بازرسی","ممیزی","اقدام اصلاحی","یادداشت عمومی","سایر"],"programTypes":["مانور","تعمیر تجهیز","تعمیر خودرو","کالیبراسیون","بازرسی","اقدام اصلاحی","درخواست خرید","پروژه عملیاتی","سایر"],"workTypes":["شیفتی","روزکار"],"employmentTypes":["رسمی","پیمانی","قراردادی","شرکتی","سایر"],"shiftPatterns":["۱۲ ساعته روز/شب","۲۴/۴۸","ثابت روزکار","سایر"],"employeeStatuses":["آماده‌کار","در حال کار","شیفت","مأموریت","مرخصی","استراحت","اضافه‌کار","غیرفعال"],"missionStatuses":["برنامه‌ریزی‌شده","در جریان","انجام‌شده","لغو‌شده"],"leaveStatuses":["در انتظار بررسی","تأییدشده","ردشده","استفاده‌شده"],"healthStatuses":["سالم","نیازمند بررسی","دارای نقص","در حال تعمیر"],"noteStatuses":["شروع‌نشده","در حال انجام","در انتظار پاسخ","ارجاع‌شده","تکمیل‌شده","لغوشده","عقب‌افتاده"],"reportStatuses":["تهیه نشده","در حال تهیه","ارسال شده","نیازمند اصلاح"],"programStatuses":["برنامه‌ریزی‌شده","در حال اقدام","در انتظار پاسخ","متوقف","تکمیل‌شده","لغوشده"],"operationalPoints":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","محور جاده"],"gasSensorTypes":["گازسنج چهارکاره","گازسنج تک‌کاره","آشکارساز H₂S","آشکارساز LEL","آشکارساز O₂","سایر"],"gasSensorLocations":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","محور جاده","دفتر مرکزی","سایر"],"operationalRanges":["روستای سویسه","روستای الهایی","کیلومتر ۹۶ تا ۱۰۲","کیلومتر ۱۲۰ تا ۱۳۵","محور اهواز – آبادان"],"vehicleServiceTypes":["تعویض روغن","سرویس دوره‌ای","سوخت‌گیری","تعویض فیلتر","معاینه فنی","تعمیر اضطراری"]},
+      references: {"workplaces":["اهواز","آبادان","اندیمشک","ماهشهر","بندر امام","آغاجاری","سایر"],"leaveTypes":["استحقاقی","استعلاجی","بدون حقوق","ساعتی","سایر"],"missionTypes":["نظارت بر جوشکاری","بررسی انشعاب یا نشتی","بررسی آلودگی خاک یا آب","بازدید ایستگاه","سرویس تجهیزات","بازدید ایمنی","سایر"],"pipelineSizes":["۴","۶","۸","۱۰","۱۲","۱۴","۱۶","۲۰","۲۴","۳۰","۳۶"],"products":["نفت خام","نفت گاز","بنزین","نفت سفید","گاز مایع","آب آلوده","سایر"],"vehicleTypes":["خودروی آتش‌نشانی","خودروی پشتیبانی","وانت","سواری","مینی‌بوس","سایر"],"vehicleStatuses":["آماده","در سرویس","خارج از سرویس","در تعمیر"],"gasStatuses":["آماده استفاده","در کالیبراسیون","خارج از سرویس","در تعمیر"],"actionTypes":["نامه اداری","درخواست خرید","استعلام","برآورد هزینه","برآورد قیمت","برنامه‌ریزی مانور","تعمیر خودرو","ارسال کالیبراسیون","پاسخ نامه","پیگیری قطعه","ارسال تجهیزات","بازدید","بازرسی","ممیزی","اقدام اصلاحی","یادداشت عمومی","سایر"],"programCategories":["هدف","برنامه فعالیت","مانور","روتین","دوره آموزشی","سایر"],"programTypes":["مانور","تعمیر تجهیز","تعمیر خودرو","کالیبراسیون","بازرسی","اقدام اصلاحی","درخواست خرید","پروژه عملیاتی","سایر"],"workTypes":["شیفتی","روزکار"],"employmentTypes":["رسمی","پیمانی","قراردادی","شرکتی","سایر"],"shiftPatterns":["۱۲ ساعته روز/شب","۲۴/۴۸","ثابت روزکار","سایر"],"employeeStatuses":["آماده‌کار","در حال کار","شیفت","مأموریت","مرخصی","استراحت","اضافه‌کار","غیرفعال"],"missionStatuses":["برنامه‌ریزی‌شده","در جریان","انجام‌شده","لغو‌شده"],"leaveStatuses":["در انتظار بررسی","تأییدشده","ردشده","استفاده‌شده"],"healthStatuses":["سالم","نیازمند بررسی","دارای نقص","در حال تعمیر"],"noteStatuses":["شروع‌نشده","در حال انجام","در انتظار پاسخ","ارجاع‌شده","تکمیل‌شده","لغوشده","عقب‌افتاده"],"reportStatuses":["تهیه نشده","در حال تهیه","ارسال شده","نیازمند اصلاح"],"programStatuses":["برنامه‌ریزی‌شده","در حال اقدام","در انتظار پاسخ","متوقف","تکمیل‌شده","لغوشده"],"operationalPoints":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","محور جاده"],"gasSensorTypes":["گازسنج چهارکاره","گازسنج تک‌کاره","آشکارساز H₂S","آشکارساز LEL","آشکارساز O₂","سایر"],"gasSensorLocations":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","محور جاده","دفتر مرکزی","سایر"],"operationalRanges":["روستای سویسه","روستای الهایی","کیلومتر ۹۶ تا ۱۰۲","کیلومتر ۱۲۰ تا ۱۳۵","محور اهواز – آبادان"],"vehicleServiceTypes":["تعویض روغن","سرویس دوره‌ای","سوخت‌گیری","تعویض فیلتر","معاینه فنی","تعمیر اضطراری"]},
       history: [],
       shifts: [],
       updatedAt: ''
@@ -210,6 +211,10 @@
     if (!value || typeof value !== 'object') return out;
     MODULES.forEach(function (key) {
       if (Array.isArray(value[key])) out[key] = value[key].filter(function (item) { return item && typeof item === 'object'; });
+    });
+    out.programs.forEach(function (record) {
+      if (!Array.isArray(record.stages)) record.stages = [];
+      if (!record.programCategory) record.programCategory = record.programType === 'مانور' ? 'مانور' : 'برنامه فعالیت';
     });
     if (value.settings && typeof value.settings === 'object') out.settings = Object.assign(out.settings, value.settings);
     if (value.references && typeof value.references === 'object') out.references = Object.assign(out.references, value.references);
@@ -1144,6 +1149,97 @@
     render(view,section);
   }
 
+  const PROGRAM_CATEGORIES = ['هدف', 'برنامه فعالیت', 'مانور', 'روتین', 'دوره آموزشی', 'سایر'];
+  let programFilter = 'all';
+
+  function programStages(record) {
+    if (!Array.isArray(record.stages)) record.stages = [];
+    return record.stages;
+  }
+
+  function programCategoryOf(record) {
+    return record.programCategory || (record.programType === 'مانور' ? 'مانور' : 'برنامه فعالیت');
+  }
+
+  function programProgress(record) {
+    const stages = programStages(record);
+    if (stages.length) {
+      const done = stages.filter(function (stage) { return stage.done; }).length;
+      return Math.round((done / stages.length) * 100);
+    }
+    if (record.status === 'تکمیل‌شده') return 100;
+    if (record.status === 'در حال اقدام') return 50;
+    if (record.status === 'در انتظار پاسخ') return 35;
+    if (record.status === 'متوقف') return 20;
+    return 0;
+  }
+
+  function programOwnerName(record) {
+    if (!record.responsibleId) return '';
+    const person = (appData.employees || []).find(function (item) { return String(item.id) === String(record.responsibleId); });
+    return person ? String(person.fullName || '') : '';
+  }
+
+  function renderProgramCard(record) {
+    const stages = programStages(record);
+    const pct = programProgress(record);
+    const doneStages = stages.filter(function (stage) { return stage.done; }).length;
+    const meta = [];
+    const owner = programOwnerName(record);
+    if (owner) meta.push('مسئول: ' + owner);
+    if (record.plannedDate) meta.push('شروع: ' + record.plannedDate);
+    if (record.dueDate) meta.push('مهلت: ' + record.dueDate);
+    if (record.location) meta.push(record.location);
+    const stageRows = stages.map(function (stage) {
+      return '<div class="program-stage' + (stage.done ? ' done' : '') + '">' +
+        '<input type="checkbox" data-program-stage data-program="' + esc(record.id) + '" data-stage="' + esc(stage.id) + '"' + (stage.done ? ' checked' : '') + ' aria-label="' + esc(stage.title) + '">' +
+        '<span>' + esc(stage.title) + '</span>' +
+        '<button type="button" data-program-action="stage-delete" data-program="' + esc(record.id) + '" data-stage="' + esc(stage.id) + '" aria-label="حذف مرحله">×</button></div>';
+    }).join('');
+    return '<article class="program-card">' +
+      '<div class="program-head"><div class="program-title-wrap"><div class="program-title">' + esc(record.title || 'بدون عنوان') + '</div>' +
+      '<div class="program-chips"><span class="program-chip">' + esc(programCategoryOf(record)) + '</span>' +
+      (record.programType ? '<span class="program-chip">' + esc(record.programType) + '</span>' : '') + '</div></div>' +
+      '<div class="program-score"><div class="program-pct">' + faDigits(pct) + '٪</div>' +
+      '<div class="program-meta">' + (stages.length ? faDigits(doneStages) + ' از ' + faDigits(stages.length) + ' مرحله' : 'بدون مرحله') + '</div></div></div>' +
+      '<div class="progress-track"><div class="progress-bar" style="width:' + pct + '%"></div></div>' +
+      (meta.length ? '<div class="program-meta">' + esc(meta.join(' · ')) + '</div>' : '') +
+      (record.status ? '<div class="program-meta">وضعیت: ' + esc(record.status) + '</div>' : '') +
+      (stageRows ? '<div class="program-stages">' + stageRows + '</div>' : '') +
+      '<div class="program-stage-add"><input type="text" data-program-stage-input="' + esc(record.id) + '" placeholder="نام مرحلهٔ جدید"><button class="secondary-btn" type="button" data-program-action="stage-add" data-program="' + esc(record.id) + '">افزودن مرحله</button></div>' +
+      '<div class="program-chips"><button type="button" data-program-action="edit" data-program="' + esc(record.id) + '">ویرایش</button><button type="button" data-program-action="delete" data-program="' + esc(record.id) + '">حذف</button></div>' +
+    '</article>';
+  }
+
+  function renderPrograms(section) {
+    const records = (appData.programs || []).slice();
+    const total = records.length;
+    const complete = records.filter(function (record) { return programProgress(record) === 100; }).length;
+    const running = records.filter(function (record) { const pct = programProgress(record); return pct > 0 && pct < 100; }).length;
+    const average = total ? Math.round(records.reduce(function (sum, record) { return sum + programProgress(record); }, 0) / total) : 0;
+    const categories = PROGRAM_CATEGORIES;
+    const visible = programFilter === 'all' ? records : records.filter(function (record) { return programCategoryOf(record) === programFilter; });
+    const actions = '<button class="secondary-btn" type="button" data-module-action="export" data-view="programs">خروجی CSV</button>' +
+      '<button class="primary-btn" type="button" data-module-action="new" data-view="programs">＋ برنامهٔ جدید</button>';
+    const kpis = [['کل برنامه‌ها', faDigits(total)], ['در جریان', faDigits(running)], ['تکمیل‌شده', faDigits(complete)], ['میانگین پیشرفت', faDigits(average) + '٪']]
+      .map(function (pair) { return '<div class="mini-stat"><div class="program-meta">' + pair[0] + '</div><strong class="program-pct">' + pair[1] + '</strong></div>'; })
+      .join('');
+    const chips = ['all'].concat(categories).map(function (category) {
+      return '<button type="button" data-program-action="filter" data-category="' + esc(category) + '" class="' + (programFilter === category ? 'active' : '') + '">' + esc(category === 'all' ? 'همه' : category) + '</button>';
+    }).join('');
+    const body = visible.length
+      ? '<div class="program-grid">' + visible.map(renderProgramCard).join('') + '</div>'
+      : '<div class="module-empty">هنوز برنامه‌ای ثبت نشده. با «برنامهٔ جدید» اولین هدف یا برنامه را بساز، بعد مراحلش را اضافه کن تا درصد پیشرفت خودکار محاسبه شود.</div>';
+    section.innerHTML = rootWrap(
+      pageHead('برنامه‌ها و اهداف', 'اهداف، برنامه‌های فعالیت، مانور، روتین و دوره‌های آموزشی؛ هر برنامه با مراحل و درصد پیشرفت', actions) +
+      '<div class="program-kpis">' + kpis + '</div>' +
+      renderForm('programs', appData) +
+      '<div class="program-chips">' + chips + '</div>' +
+      body +
+      '<div class="module-local-note"><strong>درصد پیشرفت:</strong> نسبت مراحل انجام‌شده به کل مراحل هر برنامه. برنامهٔ بدون مرحله از روی وضعیتش تخمین زده می‌شود.</div>'
+    );
+  }
+
   function render(view, section) {
     if(!section)return;
     prepareSection(section);
@@ -1151,7 +1247,8 @@
       section.innerHTML=rootWrap('<div class="module-empty">در حال آماده‌سازی اطلاعات محلی…</div>');
       return;
     }
-    if(specs[view])renderCrud(view,section);
+    if(view==='programs')renderPrograms(section);
+    else if(specs[view])renderCrud(view,section);
     else if(view==='reports')renderReports(section);
     else if(view==='settings')renderSettings(section);
     else{section.hidden=true;section.innerHTML='';}
@@ -1787,6 +1884,66 @@
       end: detail.end || null
     };
     refreshDashboard();
+  });
+
+  document.addEventListener('change', function (event) {
+    const box = event.target.closest('[data-program-stage]');
+    if (!box) return;
+    const record = (appData.programs || []).find(function (item) { return String(item.id) === String(box.dataset.program); });
+    if (!record) return;
+    const stage = programStages(record).find(function (item) { return String(item.id) === String(box.dataset.stage); });
+    if (!stage) return;
+    stage.done = !!box.checked;
+    stage.doneAt = box.checked ? new Date().toISOString() : '';
+    saveState();
+    render('programs', document.getElementById('sectionView'));
+    refreshDashboard();
+  });
+
+  document.addEventListener('click', function (event) {
+    const button = event.target.closest('[data-program-action]');
+    if (!button) return;
+    const action = button.dataset.programAction;
+    const section = document.getElementById('sectionView');
+    if (action === 'filter') {
+      programFilter = button.dataset.category || 'all';
+      render('programs', section);
+      return;
+    }
+    if (action === 'edit') {
+      formState.programs = { open: true, id: button.dataset.program };
+      render('programs', section);
+      return;
+    }
+    const record = (appData.programs || []).find(function (item) { return String(item.id) === String(button.dataset.program); });
+    if (!record) return;
+    if (action === 'stage-add') {
+      const input = section.querySelector('[data-program-stage-input="' + record.id + '"]');
+      const title = String(input && input.value || '').trim();
+      if (!title) { toast('نام مرحله را وارد کن.'); return; }
+      programStages(record).push({ id: createId(), title: title, done: false, doneAt: '' });
+      saveState();
+      render('programs', section);
+      refreshDashboard();
+      toast('مرحله اضافه شد.');
+      return;
+    }
+    if (action === 'stage-delete') {
+      record.stages = programStages(record).filter(function (item) { return String(item.id) !== String(button.dataset.stage); });
+      saveState();
+      render('programs', section);
+      refreshDashboard();
+      return;
+    }
+    if (action === 'delete') {
+      if (!window.confirm('«' + (record.title || 'برنامه') + '» حذف شود؟')) return;
+      appData.programs = appData.programs.filter(function (item) { return String(item.id) !== String(record.id); });
+      addHistory('programs', record, 'حذف', []);
+      saveState();
+      render('programs', section);
+      refreshDashboard();
+      toast('برنامه حذف شد.');
+    }
   });
 
   window.ATLAS_MODULES = {

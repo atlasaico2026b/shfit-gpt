@@ -498,3 +498,28 @@ html[data-atlas-theme="cloud-glass"] .module-report-card small{color:#227b9a}
 .module-report-export option{background:#fff;color:#183e69}
 html[data-atlas-theme="cloud-glass"] .module-report-export{background:rgba(255,255,255,.78);border-color:rgba(255,255,255,.96);color:#24547f}
 @media(max-width:650px){.module-report-export{flex:1 1 120px;max-width:none}}
+
+/* Programs & goals board */
+.program-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;width:100%}
+.program-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;width:100%}
+.program-card{display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid rgba(255,255,255,.07);border-radius:16px;background:rgba(255,255,255,.03);min-width:0}
+.program-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.program-title-wrap{min-width:0;flex:1}
+.program-title{font-size:13px;font-weight:700;line-height:1.8;word-break:break-word}
+.program-score{flex:none;text-align:left}
+.program-pct{font-size:17px;font-weight:800;letter-spacing:-.3px;display:block}
+.program-meta{font-size:10px;color:var(--muted);line-height:1.9;word-break:break-word}
+.program-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:99px;font-size:9.5px;border:1px solid rgba(var(--accent-rgb),.25);background:rgba(var(--accent-rgb),.12);color:var(--accent2);white-space:nowrap}
+.program-chips{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+.program-chips button{padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:rgba(255,255,255,.03);font-size:10.5px;color:var(--muted);cursor:pointer;transition:background .2s,color .2s}
+.program-chips button.active{background:rgba(var(--accent-rgb),.18);border-color:rgba(var(--accent-rgb),.35);color:var(--accent2)}
+.program-stages{display:flex;flex-direction:column;gap:6px}
+.program-stage{display:flex;align-items:center;gap:8px;font-size:11px;padding:6px 9px;border-radius:10px;background:rgba(255,255,255,.035)}
+.program-stage input{accent-color:var(--accent);flex:none;width:15px;height:15px;cursor:pointer}
+.program-stage span{flex:1;min-width:0;line-height:1.7}
+.program-stage.done span{text-decoration:line-through;opacity:.55}
+.program-stage button{background:none;border:0;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;padding:2px 4px}
+.program-stage-add{display:flex;gap:6px}
+.program-stage-add input{flex:1;min-width:0;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:inherit;font-size:11px}
+.program-stage-add button{flex:none;padding:8px 12px;font-size:11px}
+@media (max-width:520px){.program-grid{grid-template-columns:1fr}}
