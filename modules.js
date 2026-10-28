@@ -1136,7 +1136,12 @@
   function refreshCurrentView() {
     const section=document.getElementById('sectionView');
     const view=new URLSearchParams(window.location.search).get('view')||'dashboard';
-    if (section) render(view,section);
+    if (!section) return;
+    if (!specs[view] && view !== 'reports' && view !== 'settings') {
+      if (typeof window.ATLAS_ROUTE === 'function') window.ATLAS_ROUTE(view);
+      return;
+    }
+    render(view,section);
   }
 
   function render(view, section) {

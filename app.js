@@ -623,6 +623,7 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
       settingsPanel.classList.remove('open');settingsPanel.setAttribute('aria-hidden','true');settingsButton.setAttribute('aria-expanded','false');
     }
   }
+  window.ATLAS_ROUTE=renderRoute;
   document.addEventListener('click',event=>{
     if(event.target.closest('[data-open-settings-panel]')){
       settingsPanel.classList.add('open');settingsPanel.setAttribute('aria-hidden','false');settingsButton.setAttribute('aria-expanded','true');
