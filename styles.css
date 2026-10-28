@@ -523,3 +523,30 @@ html[data-atlas-theme="cloud-glass"] .module-report-export{background:rgba(255,2
 .program-stage-add input{flex:1;min-width:0;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:inherit;font-size:11px}
 .program-stage-add button{flex:none;padding:8px 12px;font-size:11px}
 @media (max-width:520px){.program-grid{grid-template-columns:1fr}}
+
+/* Jalali date field: split typing + calendar picker */
+.jalali-field{display:flex;align-items:flex-end;gap:6px;width:100%;min-width:0}
+.jalali-segments{display:flex;gap:6px;flex:1;min-width:0}
+.jalali-seg{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.jalali-seg span{font-size:9px;color:var(--muted);padding-right:2px}
+.jalali-seg input{width:100%;min-width:0;padding:9px 8px;border-radius:11px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:inherit;font-size:12px;text-align:center;font-variant-numeric:tabular-nums}
+.jalali-seg input:focus{outline:none;border-color:rgba(var(--accent-rgb),.55);background:rgba(var(--accent-rgb),.08)}
+.jalali-seg input::placeholder{color:var(--muted);opacity:.6;font-size:10px}
+.jalali-open{flex:none;width:38px;height:38px;border-radius:11px;border:1px solid var(--line);background:rgba(var(--accent-rgb),.12);color:var(--accent2);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.jalali-open:hover{background:rgba(var(--accent-rgb),.24)}
+.jalali-popover{position:fixed;z-index:9999;padding:12px;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:rgba(12,20,34,.97);box-shadow:0 24px 60px rgba(0,0,0,.6)}
+.jalali-pop-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.jalali-pop-title{font-size:12px;font-weight:700}
+.jalali-nav{width:28px;height:28px;border-radius:9px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:inherit;cursor:pointer;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center}
+.jalali-nav:hover{background:rgba(var(--accent-rgb),.18)}
+.jalali-week{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px}
+.jalali-week span{text-align:center;font-size:9px;color:var(--muted)}
+.jalali-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.jalali-day{aspect-ratio:1;border-radius:9px;border:1px solid transparent;background:rgba(255,255,255,.03);color:inherit;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
+.jalali-day:hover{background:rgba(var(--accent-rgb),.2)}
+.jalali-day.is-empty{background:none;pointer-events:none}
+.jalali-day.is-today{border-color:rgba(var(--accent-rgb),.45)}
+.jalali-day.is-selected{background:rgba(var(--accent-rgb),.35);border-color:rgba(var(--accent-rgb),.65);font-weight:700}
+.jalali-pop-foot{display:flex;gap:6px;margin-top:10px}
+.jalali-pop-foot button{flex:1;padding:7px 10px;font-size:10.5px}
+@media (max-width:520px){.jalali-segments{gap:4px}.jalali-open{width:34px;height:34px}}

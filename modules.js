@@ -1099,7 +1099,7 @@
     section.innerHTML=rootWrap(
       pageHead('گزارش‌ها و آمار','خلاصهٔ اطلاعات ثبت‌شده در دستگاه و فیلتر براساس بازهٔ زمانی.',actions)+
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>بازهٔ گزارش</h3><p>برای بازهٔ سفارشی تاریخ شمسی را وارد کن.</p></div><div class="module-list-tools"><select data-report-period aria-label="بازهٔ گزارش">'+periods.map(function(item){return '<option value="'+item[0]+'"'+(reportPeriod===item[0]?' selected':'')+'>'+item[1]+'</option>';}).join('')+'</select></div></div>'+
-      '<div class="module-report-range" data-report-custom'+(reportPeriod==='custom'?'':' hidden')+'><label class="module-field"><span>از تاریخ شمسی</span><input type="text" data-report-from value="'+esc(reportFrom)+'" placeholder="۱۴۰۵/۰۷/۰۱"></label><label class="module-field"><span>تا تاریخ شمسی</span><input type="text" data-report-to value="'+esc(reportTo)+'" placeholder="۱۴۰۵/۰۷/۳۰"></label><button type="button" class="primary-btn" data-module-action="apply-report-range">اعمال بازه</button></div></section>'+
+      '<div class="module-report-range" data-report-custom'+(reportPeriod==='custom'?'':' hidden')+'><label class="module-field"><span>از تاریخ شمسی</span><input type="text" data-jalali-input="jalali" data-report-from value="'+esc(reportFrom)+'" placeholder="۱۴۰۵/۰۷/۰۱"></label><label class="module-field"><span>تا تاریخ شمسی</span><input type="text" data-jalali-input="jalali" data-report-to value="'+esc(reportTo)+'" placeholder="۱۴۰۵/۰۷/۳۰"></label><button type="button" class="primary-btn" data-module-action="apply-report-range">اعمال بازه</button></div></section>'+
       '<div class="module-metric-grid"><div><span>نیروی ثبت‌شدهٔ فعال</span><strong>'+faDigits(activeStaff)+'</strong></div><div><span>مأموریت‌های باز</span><strong>'+faDigits(openMissions)+'</strong></div><div><span>گازسنج با موعد تا ۳۰ روز</span><strong>'+faDigits(dueMeters)+'</strong></div></div>'+
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>خلاصهٔ پرونده‌ها</h3><p>تعداد هر بخش مطابق بازهٔ انتخاب‌شده.</p></div></div><div class="module-report-grid">'+cards+'</div></section>'+
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>تاریخچهٔ عملیات</h3><p>آخرین تغییرات ثبت‌شده در این دستگاه.</p></div></div>'+renderGlobalHistory()+'</section>'+
@@ -1252,6 +1252,7 @@
     else if(view==='reports')renderReports(section);
     else if(view==='settings')renderSettings(section);
     else{section.hidden=true;section.innerHTML='';}
+    enhanceJalaliInputs(section);
   }
 
   async function readFileAsDataUrl(file) {
@@ -1944,6 +1945,231 @@
       refreshDashboard();
       toast('برنامه حذف شد.');
     }
+  });
+
+  const JALALI_MONTHS = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+  const JALALI_WEEK = ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'];
+  let jalaliPopover = null;
+  let jalaliTarget = null;
+  let jalaliView = { year: 0, month: 0 };
+
+  function splitJalaliText(value) {
+    const raw = persianDigitsToLatin(String(value == null ? '' : value)).trim();
+    const match = raw.match(/^(\d{4})\s*[\/.-]\s*(\d{1,2})\s*[\/.-]\s*(\d{1,2})(?:\s*[^\d]{0,4}\s*(\d{1,2}):(\d{2}))?$/);
+    if (!match) return { year: '', month: '', day: '', time: '' };
+    return {
+      year: match[1],
+      month: String(Number(match[2])),
+      day: String(Number(match[3])),
+      time: match[4] ? String(match[4]).padStart(2, '0') + ':' + match[5] : ''
+    };
+  }
+
+  function jalaliMonthStartDate(jy, jm) {
+    const first = jalaliYearStart(jy);
+    const offset = jm <= 6 ? (jm - 1) * 31 : 186 + (jm - 7) * 30;
+    return new Date(first.getFullYear(), first.getMonth(), first.getDate() + offset, 12, 0, 0, 0);
+  }
+
+  function jalaliMonthLength(jy, jm) {
+    const start = jalaliMonthStartDate(jy, jm);
+    const next = jm === 12 ? jalaliMonthStartDate(jy + 1, 1) : jalaliMonthStartDate(jy, jm + 1);
+    return Math.round((next.getTime() - start.getTime()) / 86400000);
+  }
+
+  function syncJalaliField(wrap) {
+    const hidden = wrap.querySelector('input.jalali-value');
+    if (!hidden) return;
+    const read = function (name) {
+      const box = wrap.querySelector('[data-jalali-seg="' + name + '"]');
+      return box ? persianDigitsToLatin(box.value).replace(/[^\d:]/g, '') : '';
+    };
+    const year = read('year');
+    const month = read('month');
+    const day = read('day');
+    const time = read('time');
+    const complete = year.length === 4 && month && day;
+    hidden.value = complete
+      ? year + '/' + month.padStart(2, '0') + '/' + day.padStart(2, '0') + (time ? ' ' + time : '')
+      : '';
+  }
+
+  function enhanceJalaliInputs(root) {
+    if (!root || !root.querySelectorAll) return;
+    Array.prototype.forEach.call(root.querySelectorAll('input[data-jalali-input]'), function (input) {
+      if (input.dataset.jalaliReady) return;
+      input.dataset.jalaliReady = '1';
+      const withTime = input.dataset.jalaliInput === 'jalali-datetime';
+      const parts = splitJalaliText(input.value);
+      const wrap = document.createElement('div');
+      wrap.className = 'jalali-field';
+      wrap.innerHTML =
+        '<div class="jalali-segments">' +
+          '<label class="jalali-seg"><span>سال</span><input type="text" inputmode="numeric" autocomplete="off" maxlength="4" data-jalali-seg="year" value="' + esc(parts.year) + '" placeholder="۱۴۰۵"></label>' +
+          '<label class="jalali-seg"><span>ماه</span><input type="text" inputmode="numeric" autocomplete="off" maxlength="2" data-jalali-seg="month" value="' + esc(parts.month) + '" placeholder="۰۷"></label>' +
+          '<label class="jalali-seg"><span>روز</span><input type="text" inputmode="numeric" autocomplete="off" maxlength="2" data-jalali-seg="day" value="' + esc(parts.day) + '" placeholder="۲۸"></label>' +
+          (withTime ? '<label class="jalali-seg jalali-seg-time"><span>ساعت</span><input type="text" inputmode="numeric" autocomplete="off" maxlength="5" data-jalali-seg="time" value="' + esc(parts.time) + '" placeholder="۰۸:۳۰"></label>' : '') +
+        '</div>' +
+        '<button type="button" class="jalali-open" data-jalali-open aria-label="باز کردن سالنامه" title="انتخاب از سالنامه"><span aria-hidden="true">▦</span></button>';
+      input.parentNode.insertBefore(wrap, input);
+      input.type = 'hidden';
+      input.removeAttribute('required');
+      input.removeAttribute('data-jalali-input');
+      input.classList.add('jalali-value');
+      wrap.appendChild(input);
+      syncJalaliField(wrap);
+    });
+  }
+
+  function jalaliPopoverEl() {
+    if (!jalaliPopover) {
+      jalaliPopover = document.createElement('div');
+      jalaliPopover.className = 'jalali-popover';
+      jalaliPopover.hidden = true;
+      jalaliPopover.setAttribute('role', 'dialog');
+      jalaliPopover.setAttribute('aria-label', 'سالنامه');
+      document.body.appendChild(jalaliPopover);
+    }
+    return jalaliPopover;
+  }
+
+  function renderJalaliPopover() {
+    const pop = jalaliPopoverEl();
+    const length = jalaliMonthLength(jalaliView.year, jalaliView.month);
+    const first = jalaliMonthStartDate(jalaliView.year, jalaliView.month);
+    const leading = (first.getDay() + 1) % 7;
+    const today = intlJalaliParts(new Date());
+    const hidden = jalaliTarget ? jalaliTarget.querySelector('input.jalali-value') : null;
+    const selected = splitJalaliText(hidden ? hidden.value : '');
+    let cells = '';
+    for (let i = 0; i < leading; i += 1) cells += '<span class="jalali-day is-empty"></span>';
+    for (let day = 1; day <= length; day += 1) {
+      const isToday = today.year === jalaliView.year && today.month === jalaliView.month && today.day === day;
+      const isSelected = Number(selected.year) === jalaliView.year && Number(selected.month) === jalaliView.month && Number(selected.day) === day;
+      cells += '<button type="button" class="jalali-day' + (isToday ? ' is-today' : '') + (isSelected ? ' is-selected' : '') + '" data-jalali-day="' + day + '">' + faDigits(day) + '</button>';
+    }
+    pop.innerHTML =
+      '<div class="jalali-pop-head">' +
+        '<button type="button" class="jalali-nav" data-jalali-nav="prev" aria-label="ماه قبل">‹</button>' +
+        '<div class="jalali-pop-title">' + esc(JALALI_MONTHS[jalaliView.month - 1] || '') + ' ' + faDigits(jalaliView.year) + '</div>' +
+        '<button type="button" class="jalali-nav" data-jalali-nav="next" aria-label="ماه بعد">›</button>' +
+      '</div>' +
+      '<div class="jalali-week">' + JALALI_WEEK.map(function (label) { return '<span>' + label + '</span>'; }).join('') + '</div>' +
+      '<div class="jalali-grid">' + cells + '</div>' +
+      '<div class="jalali-pop-foot"><button type="button" class="secondary-btn" data-jalali-action="today">امروز</button><button type="button" class="secondary-btn" data-jalali-action="close">بستن</button></div>';
+  }
+
+  function openJalaliPopover(wrap, opener) {
+    if (!wrap) return;
+    jalaliTarget = wrap;
+    const hidden = wrap.querySelector('input.jalali-value');
+    const parts = splitJalaliText(hidden ? hidden.value : '');
+    const today = intlJalaliParts(new Date());
+    jalaliView = { year: Number(parts.year) || today.year, month: Number(parts.month) || today.month };
+    const pop = jalaliPopoverEl();
+    renderJalaliPopover();
+    pop.hidden = false;
+    const rect = opener.getBoundingClientRect();
+    const width = Math.min(272, window.innerWidth - 16);
+    let left = rect.left + rect.width / 2 - width / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - width - 8));
+    let top = rect.bottom + 8;
+    const height = pop.offsetHeight || 320;
+    if (top + height > window.innerHeight) top = Math.max(8, rect.top - height - 8);
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+    pop.style.width = width + 'px';
+  }
+
+  function closeJalaliPopover() {
+    if (jalaliPopover) jalaliPopover.hidden = true;
+  }
+
+  function pickJalaliDay(day) {
+    if (!jalaliTarget) return;
+    const wrap = jalaliTarget;
+    const set = function (name, value) {
+      const box = wrap.querySelector('[data-jalali-seg="' + name + '"]');
+      if (box) box.value = value;
+    };
+    set('year', String(jalaliView.year));
+    set('month', String(jalaliView.month).padStart(2, '0'));
+    set('day', String(day).padStart(2, '0'));
+    const timeBox = wrap.querySelector('[data-jalali-seg="time"]');
+    if (timeBox && !timeBox.value) timeBox.value = '08:30';
+    syncJalaliField(wrap);
+    closeJalaliPopover();
+    const hidden = wrap.querySelector('input.jalali-value');
+    if (hidden) hidden.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  document.addEventListener('focusin', function (event) {
+    const segment = event.target.closest && event.target.closest('[data-jalali-seg]');
+    if (segment) segment.select();
+  });
+
+  document.addEventListener('input', function (event) {
+    const segment = event.target.closest('[data-jalali-seg]');
+    if (!segment) return;
+    const wrap = segment.closest('.jalali-field');
+    segment.value = persianDigitsToLatin(segment.value).replace(/[^\d:]/g, '');
+    const max = Number(segment.getAttribute('maxlength') || 4);
+    if (segment.value.length >= max) {
+      const nextLabel = segment.parentNode.nextElementSibling;
+      const nextBox = nextLabel ? nextLabel.querySelector('input') : null;
+      if (nextBox) nextBox.focus();
+    }
+    syncJalaliField(wrap);
+  });
+
+  document.addEventListener('blur', function (event) {
+    const segment = event.target.closest && event.target.closest('[data-jalali-seg]');
+    if (!segment) return;
+    const name = segment.dataset.jalaliSeg;
+    if (name === 'month' || name === 'day') {
+      const digits = persianDigitsToLatin(segment.value).replace(/\D/g, '');
+      if (digits) segment.value = digits.padStart(2, '0');
+    }
+    syncJalaliField(segment.closest('.jalali-field'));
+  }, true);
+
+  document.addEventListener('click', function (event) {
+    const opener = event.target.closest('[data-jalali-open]');
+    if (opener) {
+      openJalaliPopover(opener.closest('.jalali-field'), opener);
+      return;
+    }
+    const nav = event.target.closest('[data-jalali-nav]');
+    if (nav) {
+      let month = jalaliView.month + (nav.dataset.jalaliNav === 'next' ? 1 : -1);
+      let year = jalaliView.year;
+      if (month > 12) { month = 1; year += 1; }
+      if (month < 1) { month = 12; year -= 1; }
+      jalaliView = { year: year, month: month };
+      renderJalaliPopover();
+      return;
+    }
+    const dayButton = event.target.closest('[data-jalali-day]');
+    if (dayButton) {
+      pickJalaliDay(Number(dayButton.dataset.jalaliDay));
+      return;
+    }
+    const action = event.target.closest('[data-jalali-action]');
+    if (action) {
+      if (action.dataset.jalaliAction === 'today') {
+        const today = intlJalaliParts(new Date());
+        jalaliView = { year: today.year, month: today.month };
+        pickJalaliDay(today.day);
+      } else {
+        closeJalaliPopover();
+      }
+      return;
+    }
+    if (jalaliPopover && !jalaliPopover.hidden && !event.target.closest('.jalali-popover')) closeJalaliPopover();
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && jalaliPopover && !jalaliPopover.hidden) closeJalaliPopover();
   });
 
   window.ATLAS_MODULES = {
