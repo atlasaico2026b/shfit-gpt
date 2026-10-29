@@ -423,7 +423,7 @@ body > .drawer-backdrop,body > .drawer,body > .settings-popover,body > .toast{po
 
 /* ── دفتر اشکالات ── */
 .fault-kpis{margin-bottom:6px}
-.fault-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.fault-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,520px));justify-content:start;gap:12px}
 .fault-card{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:16px;border:1px solid rgba(var(--surf-rgb),.3);background:linear-gradient(150deg,rgba(var(--surf-rgb),.16),rgba(var(--c-white-rgb),.02))}
 .fault-card.is-resolved{opacity:.72}
 .fault-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
