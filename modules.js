@@ -1728,6 +1728,7 @@
       }
       reportFrom=from?from.value.trim():'';reportTo=to?to.value.trim():'';
       renderReports(section);
+      enhanceJalaliInputs(section);
     }
   });
 
@@ -1874,6 +1875,7 @@
       reportPeriod=target.value;
       const region=document.getElementById('sectionView');
       renderReports(region);
+      enhanceJalaliInputs(region);
     }
   });
 
