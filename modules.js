@@ -27,9 +27,10 @@
       subtitle: 'پروندهٔ پرسنلی، نوع کار، محل خدمت، شیفت و وضعیت روزانه',
       fields: [
         {key:'personnelId',label:'شمارهٔ پرسنلی'},
-        {key:'fullName',label:'نام و نام خانوادگی',required:true},
+        {key:'firstName',label:'نام',required:true},
+        {key:'lastName',label:'نام خانوادگی',required:true},
         {key:'mobile',label:'شمارهٔ همراه',type:'tel'},
-        {key:'jobTitle',label:'عنوان شغلی',required:true},
+        {key:'jobTitle',label:'عنوان شغلی',type:'select',required:true,listKey:'jobTitles',options:['اپراتور','تکنسین','سرپرست شیفت','کارشناس ایمنی','کارشناس HSE','راننده','نگهبان','انباردار','سایر']},
         {key:'workType',label:'نوع کار',type:'select',required:true,listKey:'workTypes',options:['شیفتی','روزکار']},
         {key:'employmentType',label:'نوع استخدام',type:'select',required:true,listKey:'employmentTypes',options:['رسمی','پیمانی','قراردادی','شرکتی','سایر']},
         {key:'workplace',label:'محل سازمانی',type:'select',required:true,listKey:'workplaces',options:['اهواز','آبادان','اندیمشک','ماهشهر','بندر امام','آغاجاری','سایر']},
@@ -40,7 +41,7 @@
         {key:'photo',label:'عکس پرسنلی',type:'file',accept:'image/*'},
         {key:'notes',label:'توضیحات',type:'textarea',wide:true}
       ],
-      columns: ['personnelId','fullName','jobTitle','workType','employmentType','workplace','assignedWorkplace','status']
+      columns: ['personnelId','firstName','lastName','jobTitle','workType','employmentType','workplace','assignedWorkplace','status']
     },
     missions: {
       title: 'مأموریت‌ها', singular: 'مأموریت',
@@ -197,7 +198,7 @@
     const state = {
       schemaVersion: 2,
       settings: { employeeCustomFields: '' },
-      references: {"workplaces":["اهواز","آبادان","اندیمشک","ماهشهر","بندر امام","آغاجاری","سایر"],"leaveTypes":["استحقاقی","استعلاجی","بدون حقوق","ساعتی","سایر"],"missionTypes":["نظارت بر جوشکاری","بررسی انشعاب یا نشتی","بررسی آلودگی خاک یا آب","بازدید ایستگاه","سرویس تجهیزات","بازدید ایمنی","سایر"],"pipelineSizes":["۴","۶","۸","۱۰","۱۲","۱۴","۱۶","۲۰","۲۴","۳۰","۳۶"],"products":["نفت خام","نفت گاز","بنزین","نفت سفید","گاز مایع","آب آلوده","سایر"],"vehicleTypes":["خودروی آتش‌نشانی","خودروی پشتیبانی","وانت","سواری","مینی‌بوس","سایر"],"vehicleStatuses":["آماده","در سرویس","خارج از سرویس","در تعمیر"],"gasStatuses":["آماده استفاده","در کالیبراسیون","خارج از سرویس","در تعمیر"],"actionTypes":["نامه اداری","درخواست خرید","استعلام","برآورد هزینه","برآورد قیمت","برنامه‌ریزی مانور","تعمیر خودرو","ارسال کالیبراسیون","پاسخ نامه","پیگیری قطعه","ارسال تجهیزات","بازدید","بازرسی","ممیزی","اقدام اصلاحی","یادداشت عمومی","سایر"],"programCategories":["هدف","برنامه فعالیت","مانور","روتین","دوره آموزشی","سایر"],"programTypes":["مانور","تعمیر تجهیز","تعمیر خودرو","کالیبراسیون","بازرسی","اقدام اصلاحی","درخواست خرید","پروژه عملیاتی","سایر"],"workTypes":["شیفتی","روزکار"],"employmentTypes":["رسمی","پیمانی","قراردادی","شرکتی","سایر"],"shiftPatterns":["۱۲ ساعته روز/شب","۲۴/۴۸","ثابت روزکار","سایر"],"employeeStatuses":["آماده‌کار","در حال کار","شیفت","مأموریت","مرخصی","استراحت","اضافه‌کار","غیرفعال"],"missionStatuses":["برنامه‌ریزی‌شده","در جریان","انجام‌شده","لغو‌شده"],"leaveStatuses":["در انتظار بررسی","تأییدشده","ردشده","استفاده‌شده"],"healthStatuses":["سالم","نیازمند بررسی","دارای نقص","در حال تعمیر"],"noteStatuses":["شروع‌نشده","در حال انجام","در انتظار پاسخ","ارجاع‌شده","تکمیل‌شده","لغوشده","عقب‌افتاده"],"reportStatuses":["تهیه نشده","در حال تهیه","ارسال شده","نیازمند اصلاح"],"programStatuses":["برنامه‌ریزی‌شده","در حال اقدام","در انتظار پاسخ","متوقف","تکمیل‌شده","لغوشده"],"operationalPoints":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","محور جاده"],"gasSensorTypes":["گازسنج چهارکاره","گازسنج تک‌کاره","آشکارساز H₂S","آشکارساز LEL","آشکارساز O₂","سایر"],"gasSensorLocations":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","محور جاده","دفتر مرکزی","سایر"],"operationalRanges":["روستای سویسه","روستای الهایی","کیلومتر ۹۶ تا ۱۰۲","کیلومتر ۱۲۰ تا ۱۳۵","محور اهواز – آبادان"],"vehicleServiceTypes":["تعویض روغن","سرویس دوره‌ای","سوخت‌گیری","تعویض فیلتر","معاینه فنی","تعمیر اضطراری"]},
+      references: {"workplaces":["اهواز","آبادان","اندیمشک","ماهشهر","بندر امام","آغاجاری","سایر"],"leaveTypes":["استحقاقی","استعلاجی","بدون حقوق","ساعتی","سایر"],"missionTypes":["نظارت بر جوشکاری","بررسی انشعاب یا نشتی","بررسی آلودگی خاک یا آب","بازدید ایستگاه","سرویس تجهیزات","بازدید ایمنی","سایر"],"pipelineSizes":["۴","۶","۸","۱۰","۱۲","۱۴","۱۶","۲۰","۲۴","۳۰","۳۶"],"products":["نفت خام","نفت گاز","بنزین","نفت سفید","گاز مایع","آب آلوده","سایر"],"vehicleTypes":["خودروی آتش‌نشانی","خودروی پشتیبانی","وانت","سواری","مینی‌بوس","سایر"],"vehicleStatuses":["آماده","در سرویس","خارج از سرویس","در تعمیر"],"gasStatuses":["آماده استفاده","در کالیبراسیون","خارج از سرویس","در تعمیر"],"actionTypes":["نامه اداری","درخواست خرید","استعلام","برآورد هزینه","برآورد قیمت","برنامه‌ریزی مانور","تعمیر خودرو","ارسال کالیبراسیون","پاسخ نامه","پیگیری قطعه","ارسال تجهیزات","بازدید","بازرسی","ممیزی","اقدام اصلاحی","یادداشت عمومی","سایر"],"programCategories":["هدف","برنامه فعالیت","مانور","روتین","دوره آموزشی","سایر"],"programTypes":["مانور","تعمیر تجهیز","تعمیر خودرو","کالیبراسیون","بازرسی","اقدام اصلاحی","درخواست خرید","پروژه عملیاتی","سایر"],"workTypes":["شیفتی","روزکار"],"jobTitles":["اپراتور","تکنسین","سرپرست شیفت","کارشناس ایمنی","کارشناس HSE","راننده","نگهبان","انباردار","سایر"],"employmentTypes":["رسمی","پیمانی","قراردادی","شرکتی","سایر"],"shiftPatterns":["۱۲ ساعته روز/شب","۲۴/۴۸","ثابت روزکار","سایر"],"employeeStatuses":["آماده‌کار","در حال کار","شیفت","مأموریت","مرخصی","استراحت","اضافه‌کار","غیرفعال"],"missionStatuses":["برنامه‌ریزی‌شده","در جریان","انجام‌شده","لغو‌شده"],"leaveStatuses":["در انتظار بررسی","تأییدشده","ردشده","استفاده‌شده"],"healthStatuses":["سالم","نیازمند بررسی","دارای نقص","در حال تعمیر"],"noteStatuses":["شروع‌نشده","در حال انجام","در انتظار پاسخ","ارجاع‌شده","تکمیل‌شده","لغوشده","عقب‌افتاده"],"reportStatuses":["تهیه نشده","در حال تهیه","ارسال شده","نیازمند اصلاح"],"programStatuses":["برنامه‌ریزی‌شده","در حال اقدام","در انتظار پاسخ","متوقف","تکمیل‌شده","لغوشده"],"operationalPoints":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","محور جاده"],"gasSensorTypes":["گازسنج چهارکاره","گازسنج تک‌کاره","آشکارساز H₂S","آشکارساز LEL","آشکارساز O₂","سایر"],"gasSensorLocations":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","محور جاده","دفتر مرکزی","سایر"],"operationalRanges":["روستای سویسه","روستای الهایی","کیلومتر ۹۶ تا ۱۰۲","کیلومتر ۱۲۰ تا ۱۳۵","محور اهواز – آبادان"],"vehicleServiceTypes":["تعویض روغن","سرویس دوره‌ای","سوخت‌گیری","تعویض فیلتر","معاینه فنی","تعمیر اضطراری"]},
       history: [],
       shifts: [],
       updatedAt: ''
@@ -211,6 +212,16 @@
     if (!value || typeof value !== 'object') return out;
     MODULES.forEach(function (key) {
       if (Array.isArray(value[key])) out[key] = value[key].filter(function (item) { return item && typeof item === 'object'; });
+    });
+    out.employees.forEach(function (record) {
+      if ((record.firstName || record.lastName) && !record.fullName) return;
+      const whole = String(record.fullName || '').trim();
+      if (!record.firstName && !record.lastName && whole) {
+        const parts = whole.split(/\s+/);
+        record.firstName = parts.shift() || '';
+        record.lastName = parts.join(' ');
+      }
+      delete record.fullName;
     });
     out.programs.forEach(function (record) {
       if (!Array.isArray(record.stages)) record.stages = [];
@@ -462,29 +473,69 @@
     return type === 'jalali-datetime' ? '۱۴۰۵/۰۷/۲۸ ۰۸:۳۰' : '۱۴۰۵/۰۷/۲۸';
   }
 
+  // نام کامل کارمند از دو فیلد جدا ساخته می‌شود؛ رکوردهای قدیمی که فقط
+  // fullName دارند هم پشتیبانی می‌شوند.
+  function employeeName(person) {
+    if (!person) return '';
+    const joined = [person.firstName, person.lastName].map(function (part) {
+      return String(part == null ? '' : part).trim();
+    }).filter(Boolean).join(' ');
+    return joined || String(person.fullName || '').trim();
+  }
+
   function recordLabel(moduleKey, record) {
     if (!record) return specs[moduleKey] ? specs[moduleKey].singular : '';
-    return record.fullName || record.title || record.name || record.code || record.personnelId || record.serial || specs[moduleKey].singular;
+    return (moduleKey === 'employees' ? employeeName(record) : '') || record.title || record.name || record.code || record.personnelId || record.serial || specs[moduleKey].singular;
   }
 
   function fieldsFor(moduleKey) {
     const fields = specs[moduleKey].fields.slice();
     if (moduleKey === 'employees') {
-      const custom = String(appData.settings.employeeCustomFields || '').split(/\r?\n/)
-        .map(function (line) { return line.trim(); }).filter(Boolean).slice(0, 20);
-      custom.forEach(function (label, index) {
-        fields.push({ key:'customField' + (index + 1), label:label, custom:true, wide:false });
+      customFieldDefs().forEach(function (def, index) {
+        fields.push({
+          key: 'customField' + (index + 1),
+          label: def.label,
+          custom: true,
+          type: def.type,
+          wide: def.type === 'textarea' || def.type === 'jalali-datetime'
+        });
       });
     }
     return fields;
   }
 
+  // نوع هر فیلد سفارشی، شکل کادر ورودی را تعیین می‌کند.
+  const CUSTOM_FIELD_TYPES = {
+    text: 'متن',
+    number: 'عدد',
+    tel: 'شمارهٔ تماس',
+    jalali: 'تاریخ شمسی',
+    'jalali-datetime': 'تاریخ و ساعت',
+    textarea: 'متن بلند'
+  };
+
+  function customFieldDefs() {
+    return String(appData.settings.employeeCustomFields || '').split(/\r?\n/)
+      .map(function (line) { return line.trim(); })
+      .filter(Boolean)
+      .slice(0, 20)
+      .map(function (line) {
+        const parts = line.split('|');
+        const type = String(parts[1] || 'text').trim();
+        return {
+          label: String(parts[0] || '').trim(),
+          type: CUSTOM_FIELD_TYPES[type] ? type : 'text'
+        };
+      })
+      .filter(function (def) { return def.label; });
+  }
+
   function getSelectOptions(field, data) {
     if (field.source === 'employees') {
       return data.employees.slice().sort(function (a, b) {
-        return String(a.fullName || '').localeCompare(String(b.fullName || ''), 'fa');
+        return employeeName(a).localeCompare(employeeName(b), 'fa');
       }).map(function (item) {
-        return {value:item.id,label:(item.fullName || 'بدون نام') + (item.personnelId ? ' · ' + item.personnelId : '')};
+        return {value:item.id,label:(employeeName(item) || 'بدون نام') + (item.personnelId ? ' · ' + item.personnelId : '')};
       });
     }
     if (field.source === 'vehicles') {
@@ -576,7 +627,7 @@
     if (!state || !state.open) return '';
     const existing = state.id ? (data[moduleKey] || []).find(function (item) { return String(item.id) === String(state.id); }) : null;
     const fields = fieldsFor(moduleKey);
-    const fileNotice = '<p class="module-field-hint">فایل‌ها در حافظهٔ محلی برنامه ذخیره می‌شوند؛ اندازهٔ هر فایل بهتر است کمتر از ۱۰ مگابایت باشد.</p>';
+    const fileNotice = '<p class="module-field-hint">فایل پیوست همراه همین پرونده نگه‌داری می‌شود؛ اندازهٔ هر فایل بهتر است کمتر از ۱۰ مگابایت باشد.</p>';
     let relatedVehicleHistory = '';
     if (moduleKey === 'vehicles' && existing) {
       const linked = (data.missions || []).filter(function (mission) {
@@ -587,7 +638,7 @@
           linked.slice(0,30).map(function(mission) {
             const crew=(mission.crewIds||[]).map(function(id) {
               const person=(data.employees||[]).find(function(item){return String(item.id)===String(id);});
-              return person?person.fullName||person.personnelId:'';
+              return person?employeeName(person)||person.personnelId:'';
             }).filter(Boolean).join('، ');
             return '<tr><td>' + esc(mission.title||'مأموریت بدون عنوان') + '</td><td>' + esc(mission.missionType||'—') + '</td><td>' +
               formatJalali(mission.startAt,true) + '</td><td>' + formatJalali(mission.endAt,true) + '</td><td>' +
@@ -595,16 +646,18 @@
           }).join('') + '</tbody></table></div>' : '<div class="module-empty">برای این خودرو هنوز مأموریتی ثبت نشده است.</div>') +
         '</section>';
     }
-    return '<section class="module-form-panel" style="width:100%;min-width:0"><div class="module-form-head"><div><h3>' +
+    return '<div class="atlas-modal-backdrop" data-modal-backdrop data-view="' + esc(moduleKey) + '">' +
+      '<div class="atlas-modal" role="dialog" aria-modal="true" aria-labelledby="atlasModalTitle">' +
+      '<div class="atlas-modal-head"><div><h3 id="atlasModalTitle">' +
       (existing ? 'ویرایش ' : 'ثبت ') + esc(specs[moduleKey].singular) + '</h3><p>پس از ذخیره، اطلاعات به فهرست، داشبورد و گزارش‌های مرتبط منتقل می‌شود.</p></div>' +
-      '<button type="button" class="secondary-btn" data-module-action="cancel" data-view="' + esc(moduleKey) + '">بستن فرم</button></div>' +
-      '<form class="module-form" data-module-form data-view="' + esc(moduleKey) + '" data-id="' + esc(existing ? existing.id : '') + '">' +
+      '<button type="button" class="atlas-modal-close" data-module-action="cancel" data-view="' + esc(moduleKey) + '" aria-label="بستن پنجره">×</button></div>' +
+      '<div class="atlas-modal-body"><form class="module-form" data-module-form data-view="' + esc(moduleKey) + '" data-id="' + esc(existing ? existing.id : '') + '">' +
       '<div class="module-fields">' + fields.map(function (field) { return renderField(moduleKey, field, existing, data); }).join('') + '</div>' +
       fileNotice +
       '<div class="module-form-actions"><span class="module-required-help">موارد دارای * ضروری هستند.</span><div>' +
       '<button type="button" class="secondary-btn" data-module-action="cancel" data-view="' + esc(moduleKey) + '">انصراف</button> ' +
       '<button type="submit" class="primary-btn">' + (existing ? 'ذخیرهٔ تغییرات' : 'ثبت ' + esc(specs[moduleKey].singular)) + '</button></div></div></form>' +
-      relatedVehicleHistory + '</section>';
+      relatedVehicleHistory + '</div></div></div>';
   }
 
   // معناى وضعیت‌ها؛ رنگ هر معنا در design/tones.css تعیین می‌شود.
@@ -636,7 +689,7 @@
     if (field && field.source === 'employees') {
       const findName = function (id) {
         const item = data.employees.find(function (person) { return String(person.id) === String(id); });
-        return item ? item.fullName || item.personnelId || 'کارمند' : id;
+        return item ? employeeName(item) || item.personnelId || 'کارمند' : id;
       };
       return esc(Array.isArray(value) ? value.map(findName).join('، ') : findName(value));
     }
@@ -662,7 +715,7 @@
       let value = field.custom && record.customFields ? record.customFields[field.key] : record[field.key];
       return field.label + ' ' + (Array.isArray(value) ? value.join(' ') : String(value == null ? '' : value));
     }).join(' ').toLocaleLowerCase();
-    const related = (data.employees || []).filter(function (item) { return String(record.crewIds || '').includes(String(item.id)); }).map(function (item) { return item.fullName; }).join(' ');
+    const related = (data.employees || []).filter(function (item) { return String(record.crewIds || '').includes(String(item.id)); }).map(function (item) { return employeeName(item); }).join(' ');
     return (values + ' ' + related).toLocaleLowerCase().includes(term);
   }
 
@@ -695,7 +748,9 @@
   }
 
   function renderTable(moduleKey, data) {
-    const columns = specs[moduleKey].columns;
+    const columns = specs[moduleKey].columns.concat(moduleKey === 'employees'
+      ? customFieldDefs().map(function (def, index) { return 'customField' + (index + 1); })
+      : []);
     const records = recordsForView(moduleKey, data);
     if (!records.length) {
       return '<div class="module-empty">' + ((data[moduleKey] || []).length ?
@@ -725,18 +780,40 @@
               const overdue = record.dueDate && dueInDays(record.dueDate) < 0 && !['تکمیل‌شده','لغوشده'].includes(record.status);
               return '<td>' + statusTag(overdue ? 'عقب‌افتاده' : (record.status || 'ثبت نشده')) + '</td>';
             }
+            const def = fieldsFor(moduleKey).find(function (field) { return field.key === key; });
+            if (def && def.custom) {
+              if (def.type === 'jalali' || def.type === 'jalali-datetime') {
+                return '<td>' + (value ? formatJalali(value, def.type === 'jalali-datetime') : '—') + '</td>';
+              }
+              if (def.type === 'tel') return '<td dir="ltr" style="text-align:right">' + esc(value || '—') + '</td>';
+              if (def.type === 'textarea') return '<td>' + esc(value || '—') + '</td>';
+              return '<td>' + (value === '' || value == null ? '—' : esc(value)) + '</td>';
+            }
             return '<td>' + displayValue(moduleKey, key, value, data) + '</td>';
           }).join('') +
-          '<td class="module-row-actions">' + renderHistoryButton(moduleKey, record) +
+          '<td class="module-row-actions">' + (moduleKey === 'employees' ? renderContactActions(record) : '') + renderHistoryButton(moduleKey, record) +
           '<button type="button" class="secondary-btn" data-module-action="edit" data-view="' + esc(moduleKey) + '" data-id="' + esc(record.id) + '">ویرایش</button> ' +
           '<button type="button" class="module-delete-btn" data-module-action="delete" data-view="' + esc(moduleKey) + '" data-id="' + esc(record.id) + '">حذف</button></td></tr>';
       }).join('') + '</tbody></table></div>';
   }
 
+  // تماس و پیام سریع از روی فهرست کارکنان.
+  function renderContactActions(record) {
+    const raw = String(record.mobile || record.phone || '').trim();
+    const dial = raw.replace(/[^\d+]/g, '');
+    if (!dial) return '';
+    const name = employeeName(record) || 'همکار';
+    const body = encodeURIComponent('درود ' + name + '، ');
+    return '<a class="module-contact-btn" href="tel:' + esc(dial) + '" title="تماس با ' + esc(name) + '" aria-label="تماس با ' + esc(name) + '">' +
+      '<span aria-hidden="true">📞</span> تماس</a> ' +
+      '<a class="module-contact-btn" href="sms:' + esc(dial) + '?&body=' + body + '" title="ارسال پیام به ' + esc(name) + '" aria-label="ارسال پیام به ' + esc(name) + '">' +
+      '<span aria-hidden="true">💬</span> پیام</a> ';
+  }
+
   function shiftLabel(record, data) {
     const employees = (record.employeeIds || []).map(function (id) {
       const person = (data.employees || []).find(function (item) { return String(item.id) === String(id); });
-      return person ? (person.fullName || person.personnelId || 'کارمند') : '';
+      return person ? (employeeName(person) || person.personnelId || 'کارمند') : '';
     }).filter(Boolean);
     return employees.join('، ') || 'شیفت بدون نیروی ثبت‌شده';
   }
@@ -760,18 +837,19 @@
     const current = existing || {};
     const chosen = Array.isArray(current.employeeIds) ? current.employeeIds.map(String) : [];
     const employeeOptions = (data.employees || []).slice().sort(function (a, b) {
-      return String(a.fullName || '').localeCompare(String(b.fullName || ''), 'fa');
+      return employeeName(a).localeCompare(employeeName(b), 'fa');
     }).map(function (person) {
       return '<option value="' + esc(person.id) + '"' + (chosen.includes(String(person.id)) ? ' selected' : '') + '>' +
-        esc((person.fullName || 'بدون نام') + (person.personnelId ? ' · ' + person.personnelId : '')) + '</option>';
+        esc((employeeName(person) || 'بدون نام') + (person.personnelId ? ' · ' + person.personnelId : '')) + '</option>';
     }).join('');
     const startValue = current.startAt ? jalaliInputValue(current.startAt, true) : jalaliInputValue('', true);
     const endValue = current.endAt ? jalaliInputValue(current.endAt, true) : '';
-    return '<section class="module-form-panel" style="width:100%;min-width:0"><div class="module-form-head"><div><h3>' +
+    return '<div class="atlas-modal-backdrop" data-modal-backdrop data-modal-kind="shift" data-view="employees">' +
+      '<div class="atlas-modal" role="dialog" aria-modal="true" aria-labelledby="atlasShiftModalTitle"><div class="atlas-modal-head"><div><h3 id="atlasShiftModalTitle">' +
       (existing ? 'ویرایش برنامهٔ شیفت' : 'ثبت برنامهٔ شیفت') +
       '</h3><p>نوع روز/شب و زمان شروع و پایان را مشخص کن. برای شیفت شب، تاریخ پایان روز بعد را وارد کن.</p></div>' +
-      '<button type="button" class="secondary-btn" data-shift-action="cancel">بستن فرم</button></div>' +
-      '<form class="module-form" data-shift-form data-shift-id="' + esc(existing ? existing.id : '') + '"><div class="module-fields">' +
+      '<button type="button" class="atlas-modal-close" data-shift-action="cancel" aria-label="بستن پنجره">×</button></div>' +
+      '<div class="atlas-modal-body"><form class="module-form" data-shift-form data-shift-id="' + esc(existing ? existing.id : '') + '"><div class="module-fields">' +
       '<label class="module-field"><span>نوع شیفت <i>*</i></span><select name="shiftType" required><option value="">انتخاب کنید</option>' +
       ['۱۲ ساعته روز','۱۲ ساعته شب','روزکار'].map(function (option) {
         return '<option value="' + esc(option) + '"' + (current.shiftType === option ? ' selected' : '') + '>' + esc(option) + '</option>';
@@ -790,7 +868,7 @@
       '<label class="module-field module-field-wide"><span>توضیحات</span><textarea name="notes" rows="3">' + esc(current.notes || '') + '</textarea></label>' +
       '</div><div class="module-form-actions"><span class="module-required-help">برنامه‌های ثبت‌شده در تقویم روزانه و وضعیت کارکنان منعکس می‌شوند.</span><div>' +
       '<button type="button" class="secondary-btn" data-shift-action="cancel">انصراف</button> ' +
-      '<button type="submit" class="primary-btn">' + (existing ? 'ذخیرهٔ تغییرات' : 'ثبت برنامهٔ شیفت') + '</button></div></div></form></section>';
+      '<button type="submit" class="primary-btn">' + (existing ? 'ذخیرهٔ تغییرات' : 'ثبت برنامهٔ شیفت') + '</button></div></div></form></div></div></div>';
   }
 
   function renderShiftSchedule(data) {
@@ -806,6 +884,7 @@
     }).join('') : '<tr><td colspan="7"><div class="module-empty">هنوز برنامهٔ شیفتی ثبت نشده است.</div></td></tr>';
     return '<section class="module-list-panel" id="shift-schedule" style="width:100%;min-width:0"><div class="module-list-head"><div><h3>برنامهٔ شیفت‌ها</h3>' +
       '<p>ثبت و پیگیری برنامهٔ ۱۲ ساعتهٔ روز/شب و جایگزینی روزکار، در کنار پروندهٔ کارکنان.</p></div><div class="module-page-actions">' +
+      '<button type="button" class="secondary-btn" data-shift-action="print">چاپ شیفت‌ها</button> ' +
       '<button type="button" class="secondary-btn" data-shift-action="export">خروجی CSV شیفت‌ها</button> ' +
       '<button type="button" class="primary-btn" data-shift-action="new">＋ ثبت شیفت</button></div></div>' +
       renderShiftForm(data) + '<div class="module-table-wrap" style="width:100%;max-width:100%;min-width:0"><table class="module-table"><thead><tr>' +
@@ -818,20 +897,19 @@
     const data = appData;
     const records = data[moduleKey] || [];
     const existing = records.length;
-    const actions = '<button class="secondary-btn" type="button" data-module-action="export" data-view="' + esc(moduleKey) + '">خروجی CSV</button>' +
+    const actions = exportMenu(moduleKey) +
       '<button class="primary-btn" type="button" data-module-action="new" data-view="' + esc(moduleKey) + '">＋ ثبت مورد جدید</button>';
     section.innerHTML = rootWrap(
       pageHead(specs[moduleKey].title, specs[moduleKey].subtitle, actions) +
       '<div class="module-summary" style="width:100%"><div data-tone="info"><span>تعداد کل</span><strong>' + faDigits(existing) + '</strong></div>' +
-      '<div data-tone="ok"><span>ذخیره‌سازی</span><strong>محلی و آفلاین</strong></div><div data-tone="special"><span>آخرین به‌روزرسانی</span><strong>' + (data.updatedAt ? displayDateTime(data.updatedAt) : '—') + '</strong></div></div>' +
+      '<div data-tone="ok"><span>امروز ثبت‌شده</span><strong>' + faDigits(records.filter(function(item){return String(item.createdAt||'').slice(0,10)===todayIso();}).length) + '</strong></div><div data-tone="special"><span>آخرین به‌روزرسانی</span><strong>' + (data.updatedAt ? displayDateTime(data.updatedAt) : '—') + '</strong></div></div>' +
       renderForm(moduleKey, data) +
       '<section class="module-list-panel" style="width:100%;min-width:0"><div class="module-list-head"><div><h3>فهرست ' + esc(specs[moduleKey].title) + '</h3><p>جست‌وجو، فیلتر، انتخاب چند ردیف و ویرایش از همین بخش انجام می‌شود.</p></div>' +
       '<div class="module-list-tools"><input type="search" data-module-search data-view="' + esc(moduleKey) + '" value="' + esc(searchState[moduleKey] || '') + '" placeholder="جست‌وجو در فهرست" aria-label="جست‌وجو">' + renderStatusFilter(moduleKey) + '</div></div>' +
       '<div class="module-bulk-tools"><label><input type="checkbox" data-module-select-all> انتخاب همه</label><button type="button" class="module-delete-btn" data-module-action="bulk-delete" data-view="' + esc(moduleKey) + '">حذف انتخاب‌شده‌ها</button>' +
       '<span data-module-result-count>' + faDigits(recordsForView(moduleKey, data).length) + ' مورد از ' + faDigits(existing) + '</span></div>' +
       '<div data-module-list-region>' + renderTable(moduleKey, data) + '</div></section>' +
-      (moduleKey === 'employees' ? renderShiftSchedule(data) : '') +
-      '<div class="module-local-note"><strong>ذخیره‌سازی محلی:</strong> اطلاعات در همین دستگاه ذخیره می‌شوند. برای انتقال دستگاه، از بخش تنظیمات نسخهٔ پشتیبان تهیه کن.</div>'
+      (moduleKey === 'employees' ? renderShiftSchedule(data) : '')
     );
   }
 
@@ -964,7 +1042,7 @@
       if(list){
         const recent=dashboardMissions.slice().sort(function(a,b){return String(b.startAt||'').localeCompare(String(a.startAt||''));}).slice(0,6);
         list.innerHTML=recent.length?recent.map(function(m,index){
-          const names=(m.crewIds||[]).map(function(id){const person=staff.find(function(e){return String(e.id)===String(id)});return person?person.fullName:''}).filter(Boolean);
+          const names=(m.crewIds||[]).map(function(id){const person=staff.find(function(e){return String(e.id)===String(id)});return person?employeeName(person):''}).filter(Boolean);
           const crew=[names.join('، '),m.crewText].filter(Boolean).join('؛ ');
           return '<div class="list-item"><div class="route-mark"><b>'+esc((m.city||'—').slice(0,3))+'</b><span>مسیر '+faDigits(index+1)+'</span></div><div class="list-main"><b>'+esc(m.title||'مأموریت')+'</b><span>'+esc([m.origin,m.destination,m.city].filter(Boolean).join(' ← '))+' · '+esc(crew||'گروه ثبت نشده')+'</span></div><div class="list-side"><strong>'+esc(m.status||'ثبت نشده')+'</strong><span class="status-pill">'+formatJalali(m.startAt,true)+'</span></div></div>';
         }).join(''):'<div class="module-empty">هنوز مأموریتی ثبت نشده است.</div>';
@@ -1025,7 +1103,7 @@
         return String(l.startDate||'')<=selectedEnd&&String(l.endDate||l.startDate||'')>=selectedStart&&l.status!=='ردشده';
       }).forEach(function(l){
         const person=staff.find(function(e){return String(e.id)===String(l.employeeId)});
-        items.push({sortKey:String(l.startDate||''),date:String(l.startDate||''),time:'',type:'مرخصی',title:person?person.fullName:(l.groupName||'مرخصی'),detail:l.leaveType||''});
+        items.push({sortKey:String(l.startDate||''),date:String(l.startDate||''),time:'',type:'مرخصی',title:person?employeeName(person):(l.groupName||'مرخصی'),detail:l.leaveType||''});
       });
       items.sort(function(a,b){return String(a.sortKey).localeCompare(String(b.sortKey));});
       agenda.innerHTML=items.length?items.slice(0,8).map(function(item){
@@ -1058,7 +1136,7 @@
       summary.textContent='مأموریت‌های ثبت‌شده در بازهٔ '+faDigits(dashboardMissions.length)+' مورد است.';
     }
     const foot=document.querySelector('.footnote');
-    if(foot){const parts=foot.querySelectorAll('span');if(parts[1])parts[1].textContent='اطلاعات ثبت‌شده در همین دستگاه';if(parts[3])parts[3].textContent='ذخیره‌سازی محلی · بدون اتصال ابری';}
+    if(foot){const parts=foot.querySelectorAll('span');if(parts[1])parts[1].textContent='اطلاعات ثبت‌شده در همین دستگاه';if(parts[3])parts[3].textContent='داده‌های نمونه برای بازبینی جریان کار';}
   }
 
   function reportDateFor(moduleKey, record) {
@@ -1107,7 +1185,7 @@
       ['today','امروز'],['yesterday','دیروز'],['threeDays','۳ روز اخیر'],['week','هفته'],['tenDays','۱۰ روز اخیر'],
       ['month','ماه جاری'],['threeMonths','۳ ماه اخیر'],['sixMonths','۶ ماه اخیر'],['year','سال جاری'],['all','همهٔ اطلاعات'],['custom','بازهٔ دلخواه']
     ];
-    const actions = '<select id="reportExportFormat" class="module-report-export" aria-label="قالب خروجی گزارش"><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option><option value="docx">Word (.docx)</option><option value="pptx">PowerPoint (.pptx)</option></select><button class="primary-btn" type="button" data-module-action="export-report">دریافت گزارش</button><button class="secondary-btn" type="button" data-module-action="print">چاپ / ذخیرهٔ PDF</button><button class="secondary-btn" type="button" data-module-action="export-all">CSV همهٔ اطلاعات</button>';
+    const actions = '<select id="reportExportFormat" class="module-report-export" aria-label="قالب خروجی گزارش"><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option><option value="docx">Word (.docx)</option><option value="pptx">PowerPoint (.pptx)</option><option value="png">تصویر PNG</option></select><button class="primary-btn" type="button" data-module-action="export-report">دریافت گزارش</button><button class="secondary-btn" type="button" data-module-action="print">چاپ / ذخیرهٔ PDF</button><button class="secondary-btn" type="button" data-module-action="export-all">CSV همهٔ اطلاعات</button>';
     const cards = MODULES.map(function (key) {
       const total=appData[key].filter(function(record){return isInRange(key,record,reportPeriod);}).length;
       return '<a class="module-report-card" href="./index.html?view='+esc(key)+'"><span>'+esc(specs[key].title)+'</span><strong>'+faDigits(total)+'</strong><small>مشاهدهٔ فهرست ←</small></a>';
@@ -1135,6 +1213,22 @@
       rows.map(function(item){return '<tr><td>'+formatJalali(item.at,true)+'</td><td>'+esc(item.module==='shifts'?'برنامهٔ شیفت':(specs[item.module]?specs[item.module].title:item.module))+'</td><td>'+esc(item.recordLabel||'—')+'</td><td>'+esc(item.action)+'</td><td>'+esc((item.changes||[]).map(function(c){return c.field+': '+c.before+' ← '+c.after;}).join('؛ ')||'—')+'</td></tr>';}).join('')+'</tbody></table></div>';
   }
 
+  function customFieldTypeOptions(selected) {
+    return Object.keys(CUSTOM_FIELD_TYPES).map(function (key) {
+      return '<option value="' + esc(key) + '"' + (key === selected ? ' selected' : '') + '>' + esc(CUSTOM_FIELD_TYPES[key]) + '</option>';
+    }).join('');
+  }
+
+  function customFieldRowHtml(line) {
+    const parts = String(line || '').split('|');
+    const label = String(parts[0] || '').trim();
+    const type = CUSTOM_FIELD_TYPES[String(parts[1] || 'text').trim()] ? String(parts[1]).trim() : 'text';
+    return '<div class="module-custom-field-row" data-custom-field-row>' +
+      '<input type="text" data-cf-label value="' + esc(label) + '" placeholder="عنوان فیلد" aria-label="عنوان فیلد سفارشی">' +
+      '<select data-cf-type aria-label="نوع فیلد">' + customFieldTypeOptions(type) + '</select>' +
+      '<button type="button" class="module-delete-btn" data-module-action="custom-field-remove">حذف</button></div>';
+  }
+
   function renderSettings(section) {
     section.innerHTML=rootWrap(
       pageHead('تنظیمات','مدیریت محلی اطلاعات، فیلدهای پرسنلی قابل تنظیم و نسخهٔ پشتیبان. تم فعلی تغییر داده نمی‌شود.','')+
@@ -1142,14 +1236,14 @@
       '<div class="module-backup-grid"><div class="module-backup-card"><strong>ساخت نسخهٔ پشتیبان</strong><p>یک فایل JSON از تمام داده‌های موجود در این دستگاه دریافت می‌کنی.</p><button type="button" class="primary-btn" data-module-action="backup">دریافت فایل پشتیبان</button></div>'+
       '<div class="module-backup-card"><strong>بازیابی نسخهٔ پشتیبان</strong><p>بازیابی، داده‌های فعلی را جایگزین اطلاعات درون فایل انتخاب‌شده می‌کند.</p><button type="button" class="secondary-btn" data-module-action="restore-select">انتخاب فایل پشتیبان</button><input type="file" id="atlasRestoreFile" accept=".json,application/json" hidden></div></div></section>'+
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>مدیریت منوها و فهرست‌ها</h3><p>تمام گزینه‌های کشویی قابل تنظیم در یک محل؛ افزودن فوری نیز از کنار فیلدهای مرتبط انجام می‌شود.</p></div></div><div class="module-list-tools"><select id="referenceListKey">'+Object.keys(appData.references).map(function(k){return '<option value="'+esc(k)+'">'+esc(referenceListTitle(k))+'</option>';}).join('')+'</select><input id="referenceListValue" type="text" placeholder="عنوان گزینه جدید"><button type="button" class="primary-btn" data-module-action="reference-add">＋ افزودن</button></div><div id="referenceListItems" class="module-local-note" style="margin-top:12px"></div></section>' +
-      '<section class="module-list-panel"><div class="module-list-head"><div><h3>فیلدهای سفارشی کارکنان</h3><p>هر خط یک عنوان فیلد است. حذف عنوان از این فهرست به معنی حذف مقدار قبلی از پرونده‌ها نیست.</p></div></div>'+
-      '<form data-custom-fields-form class="module-form"><label class="module-field module-field-wide"><span>عنوان فیلدها، هر کدام در یک خط</span><textarea name="employeeCustomFields" rows="5" placeholder="مثلاً: گواهینامه تخصصی&#10;شماره بیمه">'+esc(appData.settings.employeeCustomFields||'')+'</textarea></label><div class="module-form-actions"><span class="module-required-help">حداکثر ۲۰ فیلد سفارشی.</span><button type="submit" class="primary-btn">ذخیرهٔ فیلدها</button></div></form></section>'+
-      '<section class="module-list-panel"><div class="module-list-head"><div><h3>وضعیت نگهداری داده</h3><p>داده‌ها در پایگاه محلی مرورگر ذخیره می‌شوند و برای استفادهٔ روزمره به اتصال اینترنت نیاز ندارند.</p></div></div><div class="module-local-note">اطلاعات هر مرورگر مستقل است. پاک‌کردن داده‌های مرورگر می‌تواند اطلاعات را حذف کند؛ فایل پشتیبان را در محل امن نگهداری کن. همگام‌سازی خودکار فعال نیست.</div><div class="module-settings-counts">'+MODULES.map(function(key){return '<span>'+esc(specs[key].title)+': <b>'+faDigits(appData[key].length)+'</b></span>';}).join('')+'<span>برنامهٔ شیفت: <b>'+faDigits((appData.shifts||[]).length)+'</b></span></div></section>'
+      '<section class="module-list-panel"><div class="module-list-head"><div><h3>فیلدهای سفارشی کارکنان</h3><p>برای هر فیلد یک عنوان و یک نوع انتخاب کن؛ نوع همان کادری را می‌سازد که هنگام ثبت پرونده می‌بینی: عدد، تاریخ شمسی، تاریخ و ساعت، متن بلند و …</p></div></div>'+
+      '<form data-custom-fields-form class="module-form"><div class="module-custom-fields" data-custom-field-rows>'+(appData.settings.employeeCustomFields||'').split(/\r?\n/).map(function(l){return l.trim();}).filter(Boolean).map(customFieldRowHtml).join('')+'</div>'+
+      '<div class="module-form-actions"><span class="module-required-help">حداکثر ۲۰ فیلد سفارشی.</span><div><button type="button" class="secondary-btn" data-module-action="custom-field-add">＋ افزودن فیلد</button> <button type="submit" class="primary-btn">ذخیرهٔ فیلدها</button></div></div></form></section>'
     );
     renderReferenceList();  }
 
   function referenceListTitle(key){
-    const titles={workplaces:'شهرها و محل‌ها',leaveTypes:'انواع مرخصی',missionTypes:'انواع مأموریت',pipelineSizes:'قطر خطوط',products:'نوع فرآورده',vehicleTypes:'انواع خودرو',vehicleStatuses:'وضعیت خودرو',gasStatuses:'وضعیت گازسنج',actionTypes:'انواع یادداشت و اقدام',programTypes:'انواع برنامه',workTypes:'نوع کار',employmentTypes:'نوع استخدام',shiftPatterns:'الگوی شیفت',employeeStatuses:'وضعیت کارکنان',missionStatuses:'وضعیت مأموریت',leaveStatuses:'وضعیت مرخصی',healthStatuses:'وضعیت سلامت',noteStatuses:'وضعیت یادداشت و پیگیری',reportStatuses:'وضعیت گزارش اولیه',programStatuses:'وضعیت پرونده',operationalPoints:'نقاط عملیاتی',gasSensorTypes:'نوع سنسور گازسنج',gasSensorLocations:'محل‌های استقرار',operationalRanges:'محدوده‌های عملیاتی',vehicleServiceTypes:'انواع سرویس خودرو'};
+    const titles={workplaces:'شهرها و محل‌ها',leaveTypes:'انواع مرخصی',missionTypes:'انواع مأموریت',pipelineSizes:'قطر خطوط',products:'نوع فرآورده',vehicleTypes:'انواع خودرو',vehicleStatuses:'وضعیت خودرو',gasStatuses:'وضعیت گازسنج',actionTypes:'انواع یادداشت و اقدام',programTypes:'انواع برنامه',workTypes:'نوع کار',jobTitles:'عنوان‌های شغلی',employmentTypes:'نوع استخدام',shiftPatterns:'الگوی شیفت',employeeStatuses:'وضعیت کارکنان',missionStatuses:'وضعیت مأموریت',leaveStatuses:'وضعیت مرخصی',healthStatuses:'وضعیت سلامت',noteStatuses:'وضعیت یادداشت و پیگیری',reportStatuses:'وضعیت گزارش اولیه',programStatuses:'وضعیت پرونده',operationalPoints:'نقاط عملیاتی',gasSensorTypes:'نوع سنسور گازسنج',gasSensorLocations:'محل‌های استقرار',operationalRanges:'محدوده‌های عملیاتی',vehicleServiceTypes:'انواع سرویس خودرو'};
     return titles[key]||key;
   }
 
@@ -1214,7 +1308,7 @@
   function programOwnerName(record) {
     if (!record.responsibleId) return '';
     const person = (appData.employees || []).find(function (item) { return String(item.id) === String(record.responsibleId); });
-    return person ? String(person.fullName || '') : '';
+    return person ? employeeName(person) : '';
   }
 
   function renderProgramCard(record) {
@@ -1256,7 +1350,7 @@
     const average = total ? Math.round(records.reduce(function (sum, record) { return sum + programProgress(record); }, 0) / total) : 0;
     const categories = PROGRAM_CATEGORIES;
     const visible = programFilter === 'all' ? records : records.filter(function (record) { return programCategoryOf(record) === programFilter; });
-    const actions = '<button class="secondary-btn" type="button" data-module-action="export" data-view="programs">خروجی CSV</button>' +
+    const actions = exportMenu('programs') +
       '<button class="primary-btn" type="button" data-module-action="new" data-view="programs">＋ برنامهٔ جدید</button>';
     const kpis = [['کل برنامه‌ها', faDigits(total), 'info'], ['در جریان', faDigits(running), 'warn'], ['تکمیل‌شده', faDigits(complete), 'ok'], ['میانگین پیشرفت', faDigits(average) + '٪', 'special']]
       .map(function (pair) { return '<div class="program-kpi mini-stat" data-tone="' + pair[2] + '"><div class="program-meta">' + pair[0] + '</div><strong class="program-pct">' + pair[1] + '</strong></div>'; })
@@ -1528,21 +1622,9 @@
       '</p:txBody></p:sp>';
   }
 
-  function exportReportPptx() {
-    const rows=currentReportRows();
-    const summary=MODULES.map(function(key){
-      const count=appData[key].filter(function(record){return isInRange(key,record,reportPeriod);}).length;
-      return specs[key].title+': '+faDigits(count);
-    });
-    summary.push('برنامهٔ شیفت‌ها: '+faDigits((appData.shifts||[]).filter(function(record){return isInRange('shifts',record,reportPeriod);}).length));
-    summary.push('کل ردیف‌های گزارش: '+faDigits(Math.max(0,rows.length-1)));
-    summary.push('تهیه‌شده در '+formatJalali(new Date().toISOString(),true));
+  function pptxPackage(slide) {
     const groupTree='<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>';
-    const slide='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-      '<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld name="ATLAS SHIFT"><p:spTree>'+groupTree+
-      pptTextShape(2,'عنوان گزارش',500000,350000,11100000,900000,[currentReportTitle()],2800,true)+
-      pptTextShape(3,'خلاصه گزارش',500000,1500000,11100000,5200000,summary.slice(0,18),1800,false)+
-      '</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>';
+
     const master='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
       '<p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld name="ATLAS SHIFT"><p:spTree>'+groupTree+'</p:spTree></p:cSld>'+
       '<p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>'+
@@ -1558,7 +1640,7 @@
       '<a:lnStyleLst><a:ln w="6350" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:round/></a:ln><a:ln w="12700" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:round/></a:ln><a:ln w="19050" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:round/></a:ln></a:lnStyleLst>'+
       '<a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst>'+
       '<a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"><a:lumMod val="95000"/><a:lumOff val="5000"/></a:schemeClr></a:solidFill><a:solidFill><a:schemeClr val="phClr"><a:lumMod val="90000"/><a:lumOff val="10000"/></a:schemeClr></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements><a:objectDefaults/><a:extraClrSchemeLst/></a:theme>';
-    const files=[
+    return [
       {name:'[Content_Types].xml',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/><Override PartName="/ppt/slides/slide1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/><Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/><Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/><Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/></Types>'},
       {name:'_rels/.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/></Relationships>'},
       {name:'ppt/presentation.xml',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst><p:sldIdLst><p:sldId id="256" r:id="rId2"/></p:sldIdLst><p:sldSz cx="12192000" cy="6858000" type="screen16x9"/><p:notesSz cx="6858000" cy="9144000"/><p:defaultTextStyle><a:defPPr><a:defRPr lang="fa-IR"/></a:defPPr></p:defaultTextStyle></p:presentation>'},
@@ -1571,7 +1653,205 @@
       {name:'ppt/slideMasters/_rels/slideMaster1.xml.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/></Relationships>'},
       {name:'ppt/theme/theme1.xml',content:theme}
     ];
-    downloadBlob('ATLAS-SHIFT-report-'+todayIso()+'.pptx',zipStored(files));
+  }
+
+  function exportReportPptx() {
+    const rows=currentReportRows();
+    const summary=MODULES.map(function(key){
+      const count=appData[key].filter(function(record){return isInRange(key,record,reportPeriod);}).length;
+      return specs[key].title+': '+faDigits(count);
+    });
+    summary.push('برنامهٔ شیفت‌ها: '+faDigits((appData.shifts||[]).filter(function(record){return isInRange('shifts',record,reportPeriod);}).length));
+    summary.push('کل ردیف‌های گزارش: '+faDigits(Math.max(0,rows.length-1)));
+    summary.push('تهیه‌شده در '+formatJalali(new Date().toISOString(),true));
+    const slide='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld name="ATLAS SHIFT"><p:spTree>'+groupTree+
+      pptTextShape(2,'عنوان گزارش',500000,350000,11100000,900000,[currentReportTitle()],2800,true)+
+      pptTextShape(3,'خلاصه گزارش',500000,1500000,11100000,5200000,summary.slice(0,18),1800,false)+
+      '</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>';
+    downloadBlob('ATLAS-SHIFT-report-'+todayIso()+'.pptx',zipStored(pptxPackage(slide)));
+  }
+
+  // ── خروجی یکپارچه: CSV، اکسل، ورد، پاورپوینت، تصویر و چاپ ─────────────────
+  function moduleExportRows(moduleKey) {
+    const fields = fieldsFor(moduleKey);
+    const rows = [fields.map(function (field) { return field.label; })];
+    (appData[moduleKey] || []).forEach(function (record) {
+      rows.push(fields.map(function (field) {
+        const value = field.custom && record.customFields ? record.customFields[field.key] : record[field.key];
+        if (field.type === 'file' || field.type === 'file-multiple') {
+          return Array.isArray(value) ? value.map(function (x) { return x.name; }).join('; ') : (value ? 'پیوست' : '');
+        }
+        if (field.type === 'jalali' || field.type === 'jalali-datetime') {
+          return value ? formatJalali(value, field.type === 'jalali-datetime') : '';
+        }
+        if (Array.isArray(value)) return value.join('، ');
+        return String(value == null ? '' : value);
+      }));
+    });
+    return rows;
+  }
+
+  function exportRowsXlsx(rows, filename, sheetName) {
+    const sheetRows = rows.map(function (row, rowIndex) {
+      const cells = row.map(function (value, columnIndex) {
+        return '<c r="' + excelColumn(columnIndex) + (rowIndex + 1) + '" t="inlineStr"><is><t xml:space="preserve">' + xmlEscape(value) + '</t></is></c>';
+      }).join('');
+      return '<row r="' + (rowIndex + 1) + '">' + cells + '</row>';
+    }).join('');
+    const files = [
+      {name:'[Content_Types].xml',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>'},
+      {name:'_rels/.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},
+      {name:'xl/workbook.xml',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="' + xmlEscape(sheetName || 'ATLAS SHIFT') + '" sheetId="1" r:id="rId1"/></sheets></workbook>'},
+      {name:'xl/_rels/workbook.xml.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>'},
+      {name:'xl/worksheets/sheet1.xml',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:' + excelColumn(Math.max(0, rows[0].length - 1)) + Math.max(1, rows.length) + '"/><sheetViews><sheetView workbookViewId="0"/></sheetViews><sheetFormatPr defaultRowHeight="18"/><sheetData>' + sheetRows + '</sheetData></worksheet>'}
+    ];
+    downloadBlob(filename, zipStored(files));
+  }
+
+  function exportRowsDocx(rows, title, filename) {
+    const paragraphs = wordParagraph(title, true, false) +
+      wordParagraph('تاریخ تهیه: ' + formatJalali(new Date().toISOString(), true), false, false) +
+      wordParagraph('تعداد ردیف‌ها: ' + faDigits(Math.max(0, rows.length - 1)), false, false);
+    const documentXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + paragraphs + wordTable(rows) +
+      '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720" w:header="360" w:footer="360" w:gutter="0"/></w:sectPr></w:body></w:document>';
+    const files = [
+      {name:'[Content_Types].xml',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>'},
+      {name:'_rels/.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>'},
+      {name:'word/document.xml',content:documentXml}
+    ];
+    downloadBlob(filename, zipStored(files));
+  }
+
+  function exportRowsPptx(rows, title, filename) {
+    const header = rows[0] || [];
+    const lines = rows.slice(1, 15).map(function (row) {
+      return row.map(function (cell, index) {
+        const label = header[index] ? header[index] + ': ' : '';
+        return label + String(cell || '');
+      }).join(' | ');
+    });
+    if (rows.length > 15) lines.push('… و ' + faDigits(rows.length - 15) + ' ردیف دیگر');
+    if (!lines.length) lines.push('داده‌ای برای نمایش ثبت نشده است.');
+    const groupTree = '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>';
+    const slide = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld name="ATLAS SHIFT"><p:spTree>' + groupTree +
+      pptTextShape(2, 'عنوان', 500000, 350000, 11100000, 900000, [title], 2600, true) +
+      pptTextShape(3, 'داده‌ها', 500000, 1400000, 11100000, 5200000, lines, 1500, false) +
+      '</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>';
+    downloadBlob(filename, zipStored(pptxPackage(slide)));
+  }
+
+  // تصویر: همان قالب جدول، سفید و سیاه (مناسب چاپ و اشتراک‌گذاری)
+  function exportRowsPng(rows, title, filename) {
+    const scale = 2, pad = 26, rowH = 36, fontSize = 15;
+    const measure = document.createElement('canvas').getContext('2d');
+    const font = '600 ' + fontSize + 'px Vazirmatn, Tahoma, sans-serif';
+    measure.font = font;
+    const columns = Math.max.apply(null, rows.map(function (row) { return row.length; }));
+    const widths = [];
+    for (let i = 0; i < columns; i += 1) widths.push(96);
+    rows.forEach(function (row) {
+      for (let i = 0; i < columns; i += 1) {
+        const width = measure.measureText(String(row[i] == null ? '' : row[i])).width + 26;
+        if (width > widths[i]) widths[i] = width;
+      }
+    });
+    const totalWidth = widths.reduce(function (a, b) { return a + b; }, 0);
+    const width = Math.max(720, totalWidth + pad * 2);
+    const height = pad * 2 + 52 + rows.length * rowH;
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(width * scale);
+    canvas.height = Math.round(height * scale);
+    const ctx = canvas.getContext('2d');
+    ctx.scale(scale, scale);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = '#000000';
+    ctx.textBaseline = 'middle';
+    ctx.direction = 'rtl';
+    ctx.textAlign = 'right';
+    ctx.font = '700 19px Vazirmatn, Tahoma, sans-serif';
+    ctx.fillText(title, width - pad, pad + 16);
+    ctx.font = '400 12px Vazirmatn, Tahoma, sans-serif';
+    ctx.fillText('ATLAS SHIFT · ' + formatJalali(new Date().toISOString(), true), width - pad, pad + 38);
+    let y = pad + 52;
+    rows.forEach(function (row, rowIndex) {
+      ctx.font = rowIndex === 0 ? '700 ' + fontSize + 'px Vazirmatn, Tahoma, sans-serif' : '400 ' + fontSize + 'px Vazirmatn, Tahoma, sans-serif';
+      let x = width - pad;
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = rowIndex === 0 ? 1.4 : 0.8;
+      ctx.beginPath();
+      ctx.moveTo(pad, y + rowH);
+      ctx.lineTo(width - pad, y + rowH);
+      ctx.stroke();
+      for (let i = 0; i < columns; i += 1) {
+        const cell = String(row[i] == null ? '' : row[i]);
+        const columnWidth = widths[i];
+        x -= columnWidth;
+        ctx.fillStyle = '#000000';
+        const text = cell.length > 34 ? cell.slice(0, 33) + '…' : cell;
+        ctx.fillText(text, x + columnWidth - 13, y + rowH / 2);
+        ctx.strokeStyle = 'rgba(0,0,0,.35)';
+        ctx.lineWidth = 0.6;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, y + rowH);
+        ctx.stroke();
+      }
+      y += rowH;
+    });
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 1.2;
+    ctx.strokeRect(pad, pad + 52, width - pad * 2, rows.length * rowH);
+    canvas.toBlob(function (blob) { if (blob) downloadBlob(filename, blob); }, 'image/png');
+  }
+
+  // چاپ کم‌مصرف: پس‌زمینه سفید، خطوط و متن سیاه
+  function printRows(rows, title) {
+    let host = document.getElementById('atlasPrintArea');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'atlasPrintArea';
+      document.body.appendChild(host);
+    }
+    host.innerHTML = '<h1>' + esc(title) + '</h1><p class="atlas-print-meta">ATLAS SHIFT · ' + formatJalali(new Date().toISOString(), true) + '</p>' +
+      '<table><thead><tr>' + (rows[0] || []).map(function (cell) { return '<th>' + esc(cell) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      rows.slice(1).map(function (row) {
+        return '<tr>' + row.map(function (cell) { return '<td>' + esc(cell) + '</td>'; }).join('') + '</tr>';
+      }).join('') + '</tbody></table>';
+    document.body.classList.add('atlas-printing');
+    const cleanup = function () { document.body.classList.remove('atlas-printing'); window.removeEventListener('afterprint', cleanup); };
+    window.addEventListener('afterprint', cleanup);
+    window.print();
+    setTimeout(cleanup, 1500);
+  }
+
+  function exportModule(moduleKey, format) {
+    if (!specs[moduleKey]) return;
+    const title = specs[moduleKey].title + ' · ATLAS SHIFT';
+    const rows = moduleExportRows(moduleKey);
+    const base = 'ATLAS-SHIFT-' + moduleKey + '-' + todayIso();
+    if (format === 'xlsx') exportRowsXlsx(rows, base + '.xlsx', specs[moduleKey].title);
+    else if (format === 'docx') exportRowsDocx(rows, title, base + '.docx');
+    else if (format === 'pptx') exportRowsPptx(rows, title, base + '.pptx');
+    else if (format === 'png') exportRowsPng(rows, title, base + '.png');
+    else if (format === 'print') printRows(rows, title);
+    else exportCsv(moduleKey);
+  }
+
+  function exportMenu(moduleKey) {
+    return '<div class="module-export" data-export-menu>' +
+      '<button type="button" class="secondary-btn module-export-toggle" data-module-action="export-toggle" aria-haspopup="true" aria-expanded="false">⬇ خروجی و چاپ</button>' +
+      '<div class="module-export-list" hidden>' +
+      '<button type="button" data-module-action="export" data-format="csv" data-view="' + esc(moduleKey) + '">CSV (صفحه‌گسترده)</button>' +
+      '<button type="button" data-module-action="export" data-format="xlsx" data-view="' + esc(moduleKey) + '">Excel (.xlsx)</button>' +
+      '<button type="button" data-module-action="export" data-format="docx" data-view="' + esc(moduleKey) + '">Word (.docx)</button>' +
+      '<button type="button" data-module-action="export" data-format="pptx" data-view="' + esc(moduleKey) + '">PowerPoint (.pptx)</button>' +
+      '<button type="button" data-module-action="export" data-format="png" data-view="' + esc(moduleKey) + '">تصویر PNG</button>' +
+      '<button type="button" data-module-action="export" data-format="print" data-view="' + esc(moduleKey) + '">چاپ کم‌مصرف</button>' +
+      '</div></div>';
   }
 
   function exportCsv(moduleKey) {
@@ -1582,10 +1862,19 @@
       rows.push([record.id].concat(fields.map(function(field){
         const value=field.custom&&record.customFields?record.customFields[field.key]:record[field.key];
         if(field.type==='file'||field.type==='file-multiple')return Array.isArray(value)?value.map(function(x){return x.name;}).join('; '):(value?'تصویر پیوست':'');
+        if(field.type==='jalali'||field.type==='jalali-datetime')return value?formatJalali(value,field.type==='jalali-datetime'):'';
         return Array.isArray(value)?value.join('، '):String(value==null?'':value);
       })));
     });
     downloadFile('ATLAS-SHIFT-'+moduleKey+'-'+todayIso()+'.csv','\uFEFF'+rows.map(function(row){return row.map(csvEscape).join(',');}).join('\r\n'),'text/csv;charset=utf-8;');
+  }
+
+  function shiftPrintRows() {
+    const rows=[['شروع','پایان','نوع شیفت','کارکنان','محل خدمت','وضعیت','توضیحات']];
+    (appData.shifts||[]).forEach(function(record){
+      rows.push([formatJalali(record.startAt,true),formatJalali(record.endAt,true),record.shiftType||'',shiftLabel(record,appData),record.workplace||'',record.status||'',record.notes||'']);
+    });
+    return rows;
   }
 
   function exportShiftsCsv() {
@@ -1695,11 +1984,61 @@
       if(await saveState()){render('employees',section);refreshDashboard();toast('برنامهٔ شیفت حذف شد.');}
     }else if(action==='export'){
       exportShiftsCsv();
+    }else if(action==='print'){
+      printRows(shiftPrintRows(),'برنامهٔ شیفت‌ها · ATLAS SHIFT');
     }
   });
 
   document.addEventListener('click', async function(event) {
-    const inline=event.target.closest('[data-add-list-option]');if(inline){const key=inline.dataset.addListOption,value=window.prompt('گزینهٔ جدید را وارد کن:');if(value!==null&&value.trim()){const clean=value.trim();if(!Array.isArray(appData.references[key]))appData.references[key]=[];if(appData.references[key].includes(clean)){toast('این گزینه از قبل وجود دارد.');return;}appData.references[key].push(clean);if(await saveState()){const field=inline.closest('.module-field');const select=field&&field.querySelector('select');if(select){const option=document.createElement('option');option.value=clean;option.textContent=clean;option.selected=true;select.appendChild(option);}toast('گزینه افزوده و ذخیره شد.');}}return;}
+    const inline=event.target.closest('[data-add-list-option]');
+    if(inline){
+      const field=inline.closest('.module-field');
+      if(!field)return;
+      const open=field.querySelector('.module-add-option-form');
+      if(open){const current=open.querySelector('input');if(current)current.focus();return;}
+      const wrap=document.createElement('span');
+      wrap.className='module-add-option-form';
+      wrap.innerHTML='<input type="text" autocomplete="off" placeholder="گزینهٔ جدید" aria-label="گزینهٔ جدید">' +
+        '<button type="button" class="primary-btn" data-add-list-confirm>ثبت</button>' +
+        '<button type="button" class="secondary-btn" data-add-list-cancel aria-label="بستن">×</button>';
+      const holder=field.querySelector('.module-select-with-add')||inline;
+      holder.insertAdjacentElement('afterend',wrap);
+      const box=wrap.querySelector('input');
+      if(box){
+        box.focus();
+        box.addEventListener('keydown',function(ev){
+          if(ev.key==='Enter'){ev.preventDefault();const go=wrap.querySelector('[data-add-list-confirm]');if(go)go.click();}
+          else if(ev.key==='Escape'){ev.preventDefault();wrap.remove();}
+        });
+      }
+      return;
+    }
+    if(event.target.closest('[data-add-list-cancel]')){
+      const wrap=event.target.closest('.module-add-option-form');
+      if(wrap)wrap.remove();
+      return;
+    }
+    const confirmInline=event.target.closest('[data-add-list-confirm]');
+    if(confirmInline){
+      const wrap=confirmInline.closest('.module-add-option-form');
+      const field=confirmInline.closest('.module-field');
+      const box=wrap&&wrap.querySelector('input');
+      const toggle=field&&field.querySelector('[data-add-list-option]');
+      const key=toggle?toggle.dataset.addListOption:'';
+      const clean=String(box&&box.value||'').trim();
+      if(!key||!wrap)return;
+      if(!clean){toast('عنوان گزینه را وارد کن.');if(box)box.focus();return;}
+      if(!Array.isArray(appData.references[key]))appData.references[key]=[];
+      if(appData.references[key].includes(clean)){toast('این گزینه از قبل وجود دارد.');if(box)box.select();return;}
+      appData.references[key].push(clean);
+      if(await saveState()){
+        const select=field.querySelector('select');
+        if(select){const option=document.createElement('option');option.value=clean;option.textContent=clean;option.selected=true;select.appendChild(option);}
+        wrap.remove();
+        toast('گزینه افزوده و ذخیره شد.');
+      }
+      return;
+    }
     const button=event.target.closest('[data-module-action]');
     if(!button)return;
     const action=button.dataset.moduleAction;
@@ -1712,13 +2051,28 @@
       else{const i=Number(button.dataset.index);if(i<0||i>=list.length)return;if(action==='reference-edit'){const value=window.prompt('عنوان جدید گزینه:',list[i]);if(value===null||!value.trim())return;const next=value.trim();if(list.includes(next)&&next!==list[i]){toast('این گزینه از قبل وجود دارد.');return;}const previous=list[i];list[i]=next;MODULES.forEach(function(m){(specs[m].fields||[]).forEach(function(field){if(field.listKey!==listKey)return;(appData[m]||[]).forEach(function(record){if(record[field.key]===previous)record[field.key]=next;else if(Array.isArray(record[field.key]))record[field.key]=record[field.key].map(function(v){return v===previous?next:v;});});});});}else if(action==='reference-delete'){if(!window.confirm('گزینه از فهرست حذف شود؟ سوابق قبلی حفظ می‌شوند و مقدارهای ثبت‌شده پاک نخواهند شد.'))return;list.splice(i,1);}else{const nextIndex=action==='reference-up'?i-1:i+1;if(nextIndex<0||nextIndex>=list.length)return;const swap=list[nextIndex];list[nextIndex]=list[i];list[i]=swap;}}
       if(await saveState()){renderReferenceList();if(action==='reference-edit'){const current=document.getElementById('sectionView');const view=new URLSearchParams(window.location.search).get('view')||'dashboard';if(specs[view])render(view,current);}toast('فهرست ذخیره شد.');}return;
     }
+    if(action==='custom-field-add'||action==='custom-field-remove'){
+      const form=button.closest('[data-custom-fields-form]');
+      const rows=form&&form.querySelector('[data-custom-field-rows]');
+      if(!rows)return;
+      if(action==='custom-field-add'){
+        if(rows.querySelectorAll('[data-custom-field-row]').length>=20){toast('حداکثر ۲۰ فیلد سفارشی تعریف کن.');return;}
+        rows.insertAdjacentHTML('beforeend',customFieldRowHtml(''));
+        const fresh=rows.lastElementChild&&rows.lastElementChild.querySelector('[data-cf-label]');
+        if(fresh)fresh.focus();
+      }else{
+        const row=button.closest('[data-custom-field-row]');
+        if(row)row.remove();
+      }
+      return;
+    }
     const section=document.getElementById('sectionView');
     if(action==='new'||action==='edit'){
       if(!specs[moduleKey])return;
       formState[moduleKey]={open:true,id:action==='edit'?button.dataset.id:null};
       render(moduleKey,section);
     }else if(action==='cancel'){
-      delete formState[moduleKey];render(moduleKey,section);
+      delete formState[moduleKey];closeModal(moduleKey);
     }else if(action==='delete'){
       if(!specs[moduleKey])return;
       const record=appData[moduleKey].find(function(item){return String(item.id)===String(button.dataset.id);});
@@ -1735,19 +2089,29 @@
       appData[moduleKey]=appData[moduleKey].filter(function(item){return !selected.includes(String(item.id));});
       removed.forEach(function(record){addHistory(moduleKey,record,'حذف گروهی',[]);});
       if(await saveState()){render(moduleKey,section);refreshDashboard();toast('موارد انتخاب‌شده حذف شدند.')}
+    }else if(action==='export-toggle'){
+      const menu=button.closest('[data-export-menu]');
+      const list=menu&&menu.querySelector('.module-export-list');
+      if(list){list.hidden=!list.hidden;button.setAttribute('aria-expanded',String(!list.hidden));}
     }else if(action==='export'&&specs[moduleKey]){
-      exportCsv(moduleKey);
+      const menu=button.closest('[data-export-menu]');
+      const list=menu&&menu.querySelector('.module-export-list');
+      if(list)list.hidden=true;
+      exportModule(moduleKey, button.dataset.format||'csv');
     }else if(action==='export-report'){
       const selector=document.getElementById('reportExportFormat');
       const format=selector?selector.value:'csv';
       if(format==='xlsx')exportReportXlsx();
       else if(format==='docx')exportReportDocx();
       else if(format==='pptx')exportReportPptx();
+      else if(format==='png')exportRowsPng(currentReportRows(), currentReportTitle(), 'ATLAS-SHIFT-report-'+todayIso()+'.png');
       else exportReportCsv();
     }else if(action==='export-all'){
       exportAllCsv();
     }else if(action==='print'){
-      window.print();
+      if(specs[moduleKey])printRows(moduleExportRows(moduleKey), specs[moduleKey].title+' · ATLAS SHIFT');
+      else if(document.getElementById('reportExportFormat'))printRows(currentReportRows(), currentReportTitle());
+      else window.print();
     }else if(action==='backup'){
       exportBackup();
     }else if(action==='restore-select'){
@@ -1767,6 +2131,36 @@
       renderReports(section);
       enhanceJalaliInputs(section);
     }
+  });
+
+  function closeModal(view) {
+    const backdrop = document.querySelector('[data-modal-backdrop]');
+    if (backdrop && backdrop.dataset.modalKind === 'shift') {
+      shiftFormState = { open: false, id: null };
+      const host = document.getElementById('sectionView');
+      if (host) render('employees', host);
+      return true;
+    }
+    const target = view || (backdrop ? backdrop.dataset.view : '');
+    if (!target) return false;
+    delete formState[target];
+    const section = document.getElementById('sectionView');
+    if (section) render(target, section);
+    return true;
+  }
+
+  // کلیک روی پس‌زمینهٔ تیره (بیرون از پنجره) یا کلید Escape، پنجرهٔ فرم را می‌بندد.
+  document.addEventListener('click', function (event) {
+    const backdrop = event.target.closest('[data-modal-backdrop]');
+    if (!backdrop || event.target !== backdrop) return;
+    closeModal(backdrop.dataset.view);
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape') return;
+    if (!document.querySelector('[data-modal-backdrop]')) return;
+    event.preventDefault();
+    closeModal();
   });
 
   // Delegate clicks for dynamically generated notification cards as well as the initial markup.
@@ -1876,8 +2270,11 @@
     const customForm=event.target.closest('[data-custom-fields-form]');
     if(customForm){
       event.preventDefault();
-      const input=customForm.querySelector('[name="employeeCustomFields"]');
-      const lines=String(input?input.value:'').split(/\r?\n/).map(function(x){return x.trim();}).filter(Boolean);
+      const lines=Array.from(customForm.querySelectorAll('[data-custom-field-row]')).map(function(row){
+        const label=String((row.querySelector('[data-cf-label]')||{}).value||'').trim();
+        const type=String((row.querySelector('[data-cf-type]')||{}).value||'text').trim();
+        return label?label+'|'+(CUSTOM_FIELD_TYPES[type]?type:'text'):'';
+      }).filter(Boolean);
       if(lines.length>20){toast('حداکثر ۲۰ فیلد سفارشی تعریف کن.');return;}
       appData.settings.employeeCustomFields=lines.join('\n');
       if(await saveState()){renderSettings(document.getElementById('sectionView'));toast('فیلدهای سفارشی ذخیره شدند.');}

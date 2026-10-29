@@ -15,6 +15,8 @@
 | `settings-tabs.css` | تب‌های تنظیمات |
 | `phonebook.css` | دفترچه تلفن |
 | `option-manager.css` | پنل مدیریت گزینه‌ها + میزبان تنظیمات داشبورد |
+| `modals-export.css` | پنجرهٔ فرم روی زمین، اکشن تماس/پیام ردیف، منوی خروجی، سازندهٔ فیلد سفارشی |
+| `print.css` | خروجی چاپ: سیاه روی سفید، مستقل از پوسته (`--print-ink` / `--print-paper`) |
 | `theme-switch.js` | تنها فایل JS طراحی: انتخاب پوسته را روی `<html>` می‌گذارد |
 | `skins/cloud-glass.css` | پوستهٔ روشن آماده (غیرفعال، در صورت نیاز لینک شود) |
 | `skins/theme-two.css` · `skins/theme-two-colorful.css` | پوستهٔ دوم آماده (غیرفعال) |
@@ -30,6 +32,8 @@
 6) design/settings-tabs.css
 7) design/phonebook.css
 8) design/option-manager.css
+9) design/modals-export.css
+10) design/print.css
    … سپس design/theme-switch.js پیش از app.js
 ```
 
@@ -69,8 +73,9 @@
 > اگر در فایل‌های **لایهٔ فعال** رنگی بیرون از `tokens.css` دیدی، باگ است.
 
 لایهٔ فعال یعنی: `styles.css` · `skins/flat.css` · `tones.css` · `table-fix.css` ·
-`settings-tabs.css` · `phonebook.css` · `option-manager.css` · `theme-switch.js`.
-هر هشت فایل باید صفر
+`settings-tabs.css` · `phonebook.css` · `option-manager.css` ·
+`modals-export.css` · `print.css` · `theme-switch.js`.
+هر ده فایل باید صفر
 مقدار رنگ ثابت داشته باشند (نه hex، نه `rgb(...)`، نه نام رنگ).
 
 ## استثنا: پوسته‌های آماده (`skins/`)
@@ -86,7 +91,8 @@
 ```bash
 python3 .tmp/audit-colors.py design/styles.css design/tones.css \
   design/table-fix.css design/settings-tabs.css design/phonebook.css \
-  design/option-manager.css design/skins/flat.css design/theme-switch.js
+  design/option-manager.css design/modals-export.css design/print.css \
+  design/skins/flat.css design/theme-switch.js
 # انتظار: total 0
 ```
 

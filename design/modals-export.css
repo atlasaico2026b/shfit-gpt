@@ -1,0 +1,220 @@
+/* ATLAS SHIFT — پنجرهٔ فرم روی زمین، اکشن‌های تماس و منوی خروجی */
+
+/* 1 · MODAL ───────────────────────────────────────────────────────────── */
+.atlas-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(var(--c-black-rgb), .58);
+  overflow-y: auto;
+}
+
+.atlas-modal {
+  width: min(720px, 100%);
+  max-height: min(88vh, 900px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line-hi);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+
+.atlas-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel-2);
+}
+
+.atlas-modal-head h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.atlas-modal-head p {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.8;
+  color: var(--muted);
+}
+
+.atlas-modal-close {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line-hi);
+  border-radius: var(--radius-pill);
+  background: var(--white-a04);
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.atlas-modal-close:hover {
+  background: var(--white-a10);
+}
+
+.atlas-modal-body {
+  padding: 16px 18px 18px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.atlas-modal .module-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.atlas-modal .module-form-actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px 0 2px;
+  background: var(--panel);
+}
+
+@media (max-width: 640px) {
+  .atlas-modal-backdrop {
+    align-items: flex-start;
+    padding: 10px;
+  }
+
+  .atlas-modal {
+    max-height: 94vh;
+    border-radius: var(--radius-sm);
+  }
+
+  .atlas-modal-head,
+  .atlas-modal-body {
+    padding: 13px 13px;
+  }
+}
+
+/* 2 · CONTACT ROW ACTIONS ─────────────────────────────────────────────── */
+.module-contact-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  margin-inline-end: 4px;
+  border: 1px solid var(--line-hi);
+  border-radius: var(--radius-pill);
+  background: var(--white-a04);
+  color: var(--text);
+  font-size: 10.5px;
+  line-height: 1.6;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.module-contact-btn:hover {
+  background: var(--white-a10);
+  border-color: var(--accent-line);
+}
+
+.module-contact-btn span {
+  font-size: 11px;
+}
+
+/* 3 · EXPORT MENU ─────────────────────────────────────────────────────── */
+.module-export {
+  position: relative;
+  display: inline-flex;
+}
+
+.module-export-toggle {
+  white-space: nowrap;
+}
+
+.module-export-list {
+  position: absolute;
+  z-index: 60;
+  inset-inline-start: 0;
+  inset-inline-end: auto;
+  top: calc(100% + 6px);
+  min-width: 190px;
+  max-width: calc(100vw - 24px);
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  border: 1px solid var(--line-hi);
+  border-radius: var(--radius-sm);
+  background: var(--panel-3);
+  box-shadow: var(--shadow-soft);
+}
+
+.module-export-list[hidden] {
+  display: none;
+}
+
+.module-export-list button {
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 11.5px;
+  text-align: start;
+  cursor: pointer;
+}
+
+.module-export-list button:hover {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+/* 4 · CUSTOM FIELD BUILDER (تنظیمات) ─────────────────────────────────── */
+.module-custom-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.module-custom-field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.module-custom-field-row input[type="text"] {
+  flex: 1 1 190px;
+  min-width: 0;
+}
+
+.module-custom-field-row select {
+  flex: 0 1 150px;
+}
+
+/* 5 · INLINE ADD OPTION ──────────────────────────────────────────────── */
+.module-add-option-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 100%;
+  margin-top: 6px;
+}
+
+.module-add-option-form input {
+  flex: 1 1 auto;
+  min-width: 0;
+}

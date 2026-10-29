@@ -1,0 +1,85 @@
+/* ATLAS SHIFT — خروجی چاپ: سفید و سیاه، بدون رنگ و بدون اجزای رابط */
+
+#atlasPrintArea {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    background: var(--print-paper) !important;
+    color: var(--print-ink) !important;
+  }
+
+  body.atlas-printing > *:not(#atlasPrintArea) {
+    display: none !important;
+  }
+
+  body.atlas-printing #atlasPrintArea {
+    display: block !important;
+    color: var(--print-ink) !important;
+    background: var(--print-paper) !important;
+    font-family: "Vazirmatn", Tahoma, sans-serif;
+  }
+
+  #atlasPrintArea h1 {
+    margin: 0 0 4px;
+    font-size: 15pt;
+    font-weight: 700;
+    color: var(--print-ink);
+    text-align: right;
+  }
+
+  #atlasPrintArea .atlas-print-meta {
+    margin: 0 0 10px;
+    font-size: 8pt;
+    color: var(--print-ink);
+    text-align: right;
+  }
+
+  #atlasPrintArea table {
+    width: 100%;
+    border-collapse: collapse;
+    direction: rtl;
+    font-size: 8pt;
+  }
+
+  #atlasPrintArea thead {
+    display: table-header-group;
+  }
+
+  #atlasPrintArea tr {
+    page-break-inside: avoid;
+  }
+
+  #atlasPrintArea th,
+  #atlasPrintArea td {
+    padding: 4px 5px;
+    border: 0.6pt solid var(--print-ink);
+    color: var(--print-ink);
+    background: var(--print-paper);
+    text-align: right;
+    vertical-align: middle;
+    line-height: 1.6;
+  }
+
+  #atlasPrintArea th {
+    font-weight: 700;
+    border-width: 1pt;
+  }
+
+  #atlasPrintArea a {
+    color: var(--print-ink);
+    text-decoration: none;
+  }
+
+  #atlasPrintArea img,
+  #atlasPrintArea button {
+    display: none !important;
+  }
+}

@@ -138,6 +138,10 @@
   --om-input-bg: rgba(0, 0, 0, .14);
   --om-delete-bg: rgba(255, 60, 95, .12);
 
+  /* 8 · PRINT — خروجی چاپ همیشه سیاه روی سفید است، مستقل از پوستهٔ صفحه */
+  --print-ink: #000000;
+  --print-paper: #ffffff;
+
   /* 7 · THEME PRESETS — رنگ پیش‌فرض ابر پس‌زمینه (JS از همین‌جا می‌خواند) */
   --cloud-default-1: #22d3ee;
   --cloud-default-2: #f97316;
