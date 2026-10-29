@@ -1,0 +1,193 @@
+/* ============================================================================
+   OPTION MANAGER
+   ----------------------------------------------------------------------------
+   پنل مدیریت گزینه‌ها و میزبان تنظیمات داشبورد.
+
+   این قواعد قبلاً به‌صورت یک بلوک CSS داخل theme-two.js تزریق می‌شدند و رنگ‌های
+   هگز/آلفا داشتند؛ حالا اینجا هستند و فقط از توکن‌های tokens.css استفاده می‌کنند.
+   ========================================================================== */
+
+.atlas-option-inline {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+}
+
+.atlas-option-inline select {
+  flex: 1;
+  min-width: 0;
+}
+
+.atlas-option-add-input {
+  width: 118px;
+  min-width: 90px;
+  border: 1px solid var(--om-field-border);
+  border-radius: 10px;
+  padding: 8px 9px;
+  background: var(--white-a08);
+  color: inherit;
+  font: inherit;
+  font-size: 11px;
+}
+
+.atlas-option-add-btn,
+.atlas-option-manager-button {
+  border: 1px solid var(--om-accent-border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: linear-gradient(135deg, var(--om-gradient-from), var(--om-gradient-to));
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.atlas-option-manager-button {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  text-align: right;
+}
+
+.atlas-option-manager {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  background: var(--om-scrim);
+  backdrop-filter: blur(12px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.atlas-option-manager.open {
+  display: flex;
+}
+
+.atlas-option-manager-card {
+  width: min(980px, 96vw);
+  max-height: 90vh;
+  overflow: hidden;
+  border: 1px solid var(--om-card-border);
+  border-radius: 22px;
+  background: linear-gradient(145deg, var(--om-card-from), var(--om-card-to));
+  box-shadow: var(--om-shadow);
+}
+
+.atlas-option-manager-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--white-a10);
+}
+
+.atlas-option-manager-body {
+  padding: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  overflow: auto;
+  max-height: calc(90vh - 85px);
+}
+
+.atlas-option-category {
+  border: 1px solid var(--white-a10);
+  border-radius: 16px;
+  padding: 13px;
+  background: var(--white-a05);
+}
+
+.atlas-option-category-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.atlas-option-manager-add {
+  display: flex;
+  gap: 7px;
+  margin-bottom: 10px;
+}
+
+.atlas-option-manager-add input,
+.atlas-option-row input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--om-field-border-soft);
+  border-radius: 9px;
+  padding: 8px;
+  background: var(--om-input-bg);
+  color: inherit;
+  font: inherit;
+  font-size: 11px;
+}
+
+.atlas-option-manager-add button,
+.atlas-option-row button {
+  border: 1px solid var(--white-a12);
+  border-radius: 9px;
+  padding: 7px 9px;
+  background: var(--white-a07);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.atlas-option-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.atlas-option-row .delete {
+  background: var(--om-delete-bg);
+}
+
+/* میزبان تنظیمات داشبورد: پنل شناور به یک کارت درون‌صفحه‌ای تبدیل می‌شود */
+.atlas-dashboard-settings-host {
+  width: 100%;
+  margin-top: 0;
+}
+
+.atlas-dashboard-settings-host .settings-popover {
+  position: static !important;
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  overflow: visible !important;
+  margin: 0 !important;
+  padding: 20px !important;
+  border-radius: 20px !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+
+.atlas-dashboard-settings-host .theme-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 720px) {
+  .atlas-option-inline {
+    flex-wrap: wrap;
+  }
+
+  .atlas-option-inline select {
+    flex-basis: 100%;
+  }
+
+  .atlas-option-add-input {
+    flex: 1;
+  }
+
+  .atlas-dashboard-settings-host .theme-choice-grid {
+    grid-template-columns: 1fr;
+  }
+}

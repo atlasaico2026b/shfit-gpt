@@ -1,9 +1,9 @@
 /* ATLAS SHIFT service worker — canonical app shell and offline fallback */
-const CACHE_NAME = 'atlas-shift-v77-design-layer';
+const CACHE_NAME = 'atlas-shift-v78-option-manager';
 const APP_FILES = [
   './', './index.html',
   './design/tokens.css', './design/styles.css', './design/skins/flat.css', './design/tones.css',
-  './design/table-fix.css', './design/settings-tabs.css', './design/phonebook.css',
+  './design/table-fix.css', './design/settings-tabs.css', './design/phonebook.css', './design/option-manager.css',
   './design/theme-switch.js',
   './app.js', './modules.js', './theme-two.js', './settings-tabs.js', './menu-manager.js',
   './visual-engine.js', './manifest.json', './icon.svg'

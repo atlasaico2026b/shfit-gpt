@@ -103,6 +103,7 @@
   --white-a06: rgba(var(--c-white-rgb), .06);
   --white-a07: rgba(var(--c-white-rgb), .07);
   --white-a08: rgba(var(--c-white-rgb), .08);
+  --white-a10: rgba(var(--c-white-rgb), .1);
   --white-a12: rgba(var(--c-white-rgb), .12);
   --white-a16: rgba(var(--c-white-rgb), .16);
   --white-a50: rgba(var(--c-white-rgb), .5);
@@ -123,7 +124,21 @@
   --rail-w: 82px;
   --atlas-heading-font: "Vazirmatn", "B Titr", "B Titr Bold", Tahoma, sans-serif;
 
-  /* 6 · THEME PRESETS — رنگ پیش‌فرض ابر پس‌زمینه (JS از همین‌جا می‌خواند) */
+  /* 6 · OPTION MANAGER — پالت مدیریت گزینه‌ها (از theme-two.js استخراج شد) */
+  --om-field-border: rgba(125, 190, 255, .34);
+  --om-field-border-soft: rgba(125, 190, 255, .25);
+  --om-accent-border: rgba(61, 205, 255, .38);
+  --om-gradient-from: rgba(0, 195, 255, .22);
+  --om-gradient-to: rgba(174, 61, 255, .18);
+  --om-scrim: rgba(3, 8, 25, .58);
+  --om-card-border: rgba(91, 210, 255, .35);
+  --om-card-from: rgba(11, 28, 67, .96);
+  --om-card-to: rgba(31, 13, 69, .94);
+  --om-shadow: 0 24px 80px rgba(0, 0, 0, .42);
+  --om-input-bg: rgba(0, 0, 0, .14);
+  --om-delete-bg: rgba(255, 60, 95, .12);
+
+  /* 7 · THEME PRESETS — رنگ پیش‌فرض ابر پس‌زمینه (JS از همین‌جا می‌خواند) */
   --cloud-default-1: #22d3ee;
   --cloud-default-2: #f97316;
   --cloud-default-3: #a78bfa;
