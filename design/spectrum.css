@@ -1,0 +1,265 @@
+/* ============================================================================
+   ATLAS SHIFT · SPECTRUM
+   ----------------------------------------------------------------------------
+   تمام رنگ‌های پالت، به‌ترتیب، روی بلوک‌های تکراری رابط می‌نشینند:
+   پنجره‌های داشبورد، کارت‌های خلاصه، ریل منو، سربرگ بخش‌ها، سرستون جدول‌ها،
+   بخش‌های تنظیمات و سربرگ پنجره‌های شناور.
+   هر رنگ از توکن‌های --surf-* و --hue-* در tokens.css می‌آید؛ اینجا مقدار رنگی
+   تعریف نمی‌شود، فقط تخصیص داده می‌شود.
+   ========================================================================== */
+
+/* 1 · DASHBOARD WIDGETS ─ هر پنجره یک رنگ، شش‌تایی ─────────────────────── */
+.dashboard article.widget:nth-of-type(6n+1) { --widget-hue: var(--surf-1-rgb); }
+.dashboard article.widget:nth-of-type(6n+2) { --widget-hue: var(--surf-2-rgb); }
+.dashboard article.widget:nth-of-type(6n+3) { --widget-hue: var(--surf-3-rgb); }
+.dashboard article.widget:nth-of-type(6n+4) { --widget-hue: var(--surf-4-rgb); }
+.dashboard article.widget:nth-of-type(6n+5) { --widget-hue: var(--surf-5-rgb); }
+.dashboard article.widget:nth-of-type(6n+6) { --widget-hue: var(--surf-6-rgb); }
+
+.dashboard .widget {
+  background-image:
+    linear-gradient(150deg,
+      rgba(var(--widget-hue, var(--surf-1-rgb)), .46) 0%,
+      rgba(var(--widget-hue, var(--surf-1-rgb)), .22) 52%,
+      rgba(var(--widget-hue, var(--surf-1-rgb)), .12) 100%);
+  border-color: rgba(var(--widget-hue, var(--surf-1-rgb)), .58);
+}
+
+.dashboard .widget:after {
+  background: rgba(var(--widget-hue, var(--surf-1-rgb)), .55);
+}
+
+.dashboard .widget .widget-icon {
+  color: var(--c-white);
+  background: rgba(var(--c-white-rgb), .20);
+  border-color: rgba(var(--c-white-rgb), .40);
+}
+
+.dashboard .widget .widget-title h2,
+.dashboard .widget .big-number,
+.dashboard .widget .list-main b,
+.dashboard .widget .vehicle-info b,
+.dashboard .widget .ring-label b {
+  color: var(--c-white);
+}
+
+.dashboard .widget .widget-title p,
+.dashboard .widget .big-number small,
+.dashboard .widget .ring-label span,
+.dashboard .widget .mini-stat .label,
+.dashboard .widget .list-main span,
+.dashboard .widget .list-side,
+.dashboard .widget .vehicle-info span,
+.dashboard .widget .chart-labels,
+.dashboard .widget .widget-meta {
+  color: rgba(var(--c-white-rgb), .86);
+}
+
+.dashboard .widget .status-pill {
+  color: var(--c-white);
+  background: rgba(var(--c-white-rgb), .18);
+  border-color: rgba(var(--c-white-rgb), .34);
+}
+
+.dashboard .widget .mini-stat,
+.dashboard .widget .list-item,
+.dashboard .widget .vehicle,
+.dashboard .widget .progress-track,
+.dashboard .widget .shift-line,
+.dashboard .widget .alert-item,
+.dashboard .widget .stat-card,
+.dashboard .widget .notice-card {
+  background: rgba(var(--c-white-rgb), .12);
+  border-color: rgba(var(--c-white-rgb), .22);
+}
+
+/* 2 · RAIL MENU ─ هر آیتم یک تراشهٔ رنگی ──────────────────────────────── */
+.app-menu-item:nth-child(9n+1) > span { --item-hue: var(--hue-1-rgb); }
+.app-menu-item:nth-child(9n+2) > span { --item-hue: var(--hue-2-rgb); }
+.app-menu-item:nth-child(9n+3) > span { --item-hue: var(--hue-3-rgb); }
+.app-menu-item:nth-child(9n+4) > span { --item-hue: var(--hue-4-rgb); }
+.app-menu-item:nth-child(9n+5) > span { --item-hue: var(--hue-5-rgb); }
+.app-menu-item:nth-child(9n+6) > span { --item-hue: var(--hue-6-rgb); }
+.app-menu-item:nth-child(9n+7) > span { --item-hue: var(--hue-7-rgb); }
+.app-menu-item:nth-child(9n+8) > span { --item-hue: var(--hue-8-rgb); }
+.app-menu-item:nth-child(9n+9) > span { --item-hue: var(--hue-9-rgb); }
+
+.app-menu-item > span {
+  color: var(--c-white);
+  background: rgba(var(--item-hue, var(--accent-rgb)), .42);
+  box-shadow: inset 0 0 0 1px rgba(var(--item-hue, var(--accent-rgb)), .55);
+}
+
+.app-menu-item:hover > span,
+.app-menu-item.active > span {
+  color: var(--c-white);
+  background: rgba(var(--item-hue, var(--accent-rgb)), .78);
+}
+
+.app-menu-item.active {
+  background: linear-gradient(120deg,
+    rgba(var(--item-hue, var(--accent-rgb)), .38),
+    rgba(var(--item-hue, var(--accent-rgb)), .12));
+  border-color: rgba(var(--item-hue, var(--accent-rgb)), .55);
+}
+
+.app-menu-item:hover {
+  background: linear-gradient(120deg,
+    rgba(var(--item-hue, var(--accent-rgb)), .24),
+    rgba(var(--item-hue, var(--accent-rgb)), .08));
+  border-color: rgba(var(--item-hue, var(--accent-rgb)), .38);
+}
+
+/* 3 · MODULE HEADER ─ نوار سه‌رنگ ─────────────────────────────────────── */
+.module-page-head {
+  background-image: linear-gradient(100deg,
+    rgba(var(--surf-2-rgb), .42) 0%,
+    rgba(var(--surf-3-rgb), .38) 48%,
+    rgba(var(--surf-4-rgb), .40) 100%);
+  border-color: rgba(var(--surf-3-rgb), .48);
+}
+
+.module-page-head h2 {
+  color: var(--c-white);
+}
+
+.module-page-head p {
+  color: rgba(var(--c-white-rgb), .88);
+}
+
+/* 4 · SUMMARY / METRIC CARDS ─ چرخش رنگ (بر tones.css مقدم است) ───────── */
+.module-summary > div:nth-child(3n+1),
+.module-metric-grid > div:nth-child(3n+1) { --card-hue: var(--surf-1-rgb); }
+.module-summary > div:nth-child(3n+2),
+.module-metric-grid > div:nth-child(3n+2) { --card-hue: var(--surf-5-rgb); }
+.module-summary > div:nth-child(3n+3),
+.module-metric-grid > div:nth-child(3n+3) { --card-hue: var(--surf-2-rgb); }
+
+.module-summary > div,
+.module-metric-grid > div,
+.module-summary > div[data-tone],
+.module-metric-grid > div[data-tone] {
+  background-color: var(--glass);
+  background-image: linear-gradient(140deg,
+    rgba(var(--card-hue, var(--surf-1-rgb)), .50),
+    rgba(var(--card-hue, var(--surf-1-rgb)), .20) 76%);
+  border-color: rgba(var(--card-hue, var(--surf-1-rgb)), .55);
+}
+
+.module-summary > div span,
+.module-metric-grid > div span,
+.module-summary > div[data-tone] span,
+.module-metric-grid > div[data-tone] span {
+  color: rgba(var(--c-white-rgb), .88);
+}
+
+.module-summary > div strong,
+.module-metric-grid > div strong,
+.module-summary > div[data-tone] strong,
+.module-metric-grid > div[data-tone] strong {
+  color: var(--c-white);
+}
+
+/* 5 · TABLE HEAD ──────────────────────────────────────────────────────── */
+.module-table thead th {
+  background-image: linear-gradient(90deg,
+    rgba(var(--surf-3-rgb), .58),
+    rgba(var(--surf-4-rgb), .44) 62%,
+    rgba(var(--surf-1-rgb), .34));
+  color: var(--c-white);
+}
+
+.module-table tbody tr:nth-child(even) td {
+  background: rgba(var(--surf-4-rgb), .10);
+}
+
+/* 6 · SECTION PANELS ─ رنگ ملایم برای هر پنل ───────────────────────────── */
+.module-root > .module-list-panel:nth-of-type(3n+1) { --panel-hue: var(--surf-1-rgb); }
+.module-root > .module-list-panel:nth-of-type(3n+2) { --panel-hue: var(--surf-4-rgb); }
+.module-root > .module-list-panel:nth-of-type(3n+3) { --panel-hue: var(--surf-2-rgb); }
+
+.module-list-panel,
+.module-report-card,
+.module-form-panel {
+  background-image: linear-gradient(160deg,
+    rgba(var(--panel-hue, var(--surf-3-rgb)), .30),
+    rgba(var(--panel-hue, var(--surf-3-rgb)), .10) 68%);
+  border-color: rgba(var(--panel-hue, var(--surf-3-rgb)), .34);
+}
+
+/* 7 · SETTINGS SECTIONS ─ نشانگر رنگی کنار هر بخش ──────────────────────── */
+.settings-section:nth-child(4n+1) { --section-hue: var(--hue-1-rgb); }
+.settings-section:nth-child(4n+2) { --section-hue: var(--hue-4-rgb); }
+.settings-section:nth-child(4n+3) { --section-hue: var(--hue-2-rgb); }
+.settings-section:nth-child(4n+4) { --section-hue: var(--hue-5-rgb); }
+
+.settings-section {
+  border-inline-start: 2px solid rgba(var(--section-hue, var(--accent-rgb)), .75);
+  padding-inline-start: 12px;
+}
+
+.settings-section h4 {
+  color: var(--c-white);
+}
+
+/* 8 · MODALS ──────────────────────────────────────────────────────────── */
+.atlas-modal-head {
+  background-image: linear-gradient(110deg,
+    rgba(var(--surf-4-rgb), .54),
+    rgba(var(--surf-1-rgb), .40) 62%,
+    rgba(var(--surf-6-rgb), .30));
+}
+
+.atlas-modal-head h3 {
+  color: var(--c-white);
+}
+
+/* 9 · HERO + QUICK CHIPS ──────────────────────────────────────────────── */
+.hero {
+  background-image: linear-gradient(100deg,
+    rgba(var(--surf-1-rgb), .34),
+    rgba(var(--surf-4-rgb), .30) 46%,
+    rgba(var(--surf-5-rgb), .26) 100%);
+  border-radius: 22px;
+}
+
+.quick-chip:nth-child(9n+1) { --chip-hue: var(--hue-1-rgb); }
+.quick-chip:nth-child(9n+2) { --chip-hue: var(--hue-2-rgb); }
+.quick-chip:nth-child(9n+3) { --chip-hue: var(--hue-3-rgb); }
+.quick-chip:nth-child(9n+4) { --chip-hue: var(--hue-4-rgb); }
+.quick-chip:nth-child(9n+5) { --chip-hue: var(--hue-5-rgb); }
+.quick-chip:nth-child(9n+6) { --chip-hue: var(--hue-6-rgb); }
+.quick-chip:nth-child(9n+7) { --chip-hue: var(--hue-7-rgb); }
+.quick-chip:nth-child(9n+8) { --chip-hue: var(--hue-8-rgb); }
+.quick-chip:nth-child(9n+9) { --chip-hue: var(--hue-9-rgb); }
+
+.quick-chip {
+  background-image: linear-gradient(135deg,
+    rgba(var(--chip-hue, var(--accent-rgb)), .46),
+    rgba(var(--chip-hue, var(--accent-rgb)), .16));
+  border-color: rgba(var(--chip-hue, var(--accent-rgb)), .48);
+  color: var(--c-white);
+}
+
+/* 10 · PRINT ─ هیچ رنگی در چاپ ─────────────────────────────────────────── */
+@media print {
+  .dashboard .widget,
+  .module-page-head,
+  .module-summary > div,
+  .module-metric-grid > div,
+  .module-summary > div[data-tone],
+  .module-metric-grid > div[data-tone],
+  .module-list-panel,
+  .module-report-card,
+  .module-form-panel,
+  .module-table thead th,
+  .module-table tbody tr:nth-child(even) td,
+  .atlas-modal-head,
+  .hero,
+  .quick-chip,
+  .app-menu-item > span {
+    background-image: none !important;
+    background-color: var(--print-paper) !important;
+    border-color: var(--print-ink) !important;
+  }
+}

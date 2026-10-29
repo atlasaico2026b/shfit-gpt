@@ -46,19 +46,19 @@
   --c-blue-deep: #1d4ed8;
 
   /* 2 · SURFACES ─ رنگین‌کمانی: بنفش-نیلی به‌جای مشکی ───────────────────── */
-  --bg: #171a4d;
-  --bg2: #1e2364;
-  --bg-deep: #131540;
-  --bg-mid: #1b1f59;
-  --panel: #262c74;
-  --panel-2: #2d3483;
-  --panel-3: #353d94;
-  --rail-bg: #1c2160;
-  --rail-bg-rgb: 28, 33, 96;
-  --navy-rgb: 23, 26, 77;
+  --bg: #14162c;
+  --bg2: #1a1c3a;
+  --bg-deep: #101226;
+  --bg-mid: #171933;
+  --panel: #1e2038;
+  --panel-2: #24263f;
+  --panel-3: #2b2d4a;
+  --rail-bg: #191b30;
+  --rail-bg-rgb: 25, 27, 48;
+  --navy-rgb: 20, 22, 44;
 
-  --glass: #242a70;
-  --glass-strong: #2b3280;
+  --glass: #1c1e35;
+  --glass-strong: #232541;
   /* پردهٔ پنجره‌های شناور: بنفش تیره، نه مشکی */
   --scrim: rgba(13, 16, 52, .62);
 
@@ -89,6 +89,37 @@
   --highlight-rgb: var(--c-pink-rgb);
   --special: var(--c-purple);
   --special-rgb: var(--c-purple-rgb);
+
+  /* رنگ آماده برای واژهٔ تأکید عنوان هر صفحه */
+  --tone-1: var(--c-cyan);
+  --tone-2: var(--c-green);
+  --tone-3: var(--c-yellow);
+  --tone-4: var(--c-orange);
+  --tone-5: var(--c-pink);
+  --tone-6: var(--c-purple);
+  --tone-7: var(--c-blue);
+  --tone-8: var(--c-red);
+  --tone-9: var(--c-cyan);
+
+  /* 9 ردیف رنگی: هر بلوک تکراری رابط یکی از این‌ها را می‌گیرد (design/spectrum.css) */
+  --hue-1-rgb: var(--c-cyan-rgb);
+  --hue-2-rgb: var(--c-green-rgb);
+  --hue-3-rgb: var(--c-yellow-rgb);
+  --hue-4-rgb: var(--c-orange-rgb);
+  --hue-5-rgb: var(--c-pink-rgb);
+  --hue-6-rgb: var(--c-purple-rgb);
+  --hue-7-rgb: var(--c-blue-rgb);
+  --hue-8-rgb: var(--c-red-rgb);
+  --hue-9-rgb: var(--c-cyan-rgb);
+
+  /* شش رنگ «سطح»: برای پرکردن پنل‌ها و پنجره‌ها (زرد در سطح بزرگ قهوه‌ای می‌شود،
+     پس زرد فقط در تراشه‌ها، حاشیه‌ها و نشانگرها می‌آید) */
+  --surf-1-rgb: var(--c-cyan-rgb);
+  --surf-2-rgb: var(--c-green-rgb);
+  --surf-3-rgb: var(--c-blue-rgb);
+  --surf-4-rgb: var(--c-purple-rgb);
+  --surf-5-rgb: var(--c-pink-rgb);
+  --surf-6-rgb: var(--c-orange-rgb);
 
   /* شیشه‌های رنگی پس‌زمینه: هر کدام از پالت گرفته می‌شود */
   --wash-accent: rgba(var(--accent-rgb), .30);
