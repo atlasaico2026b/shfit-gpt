@@ -384,9 +384,11 @@ body > .drawer-backdrop,body > .drawer,body > .settings-popover,body > .toast{po
 /* Jalali date field: split typing + calendar picker */
 .jalali-field{display:flex;align-items:flex-end;gap:6px;width:100%;min-width:0}
 .jalali-segments{display:flex;gap:6px;flex:1;min-width:0}
-.jalali-seg{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.jalali-seg{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1 1 0}
+.jalali-seg:first-child{flex:1.3 1 0;min-width:52px}
+.jalali-seg-time{flex:1.25 1 0;min-width:64px}
 .jalali-seg span{font-size:9px;color:var(--muted);padding-right:2px}
-.jalali-seg input{width:100%;min-width:0;padding:9px 8px;border-radius:11px;border:1px solid var(--line);background:rgba(var(--c-white-rgb),.04);color:inherit;font-size:12px;text-align:center;font-variant-numeric:tabular-nums}
+.jalali-seg input{width:100%;min-width:0;padding:9px 6px;border-radius:11px;border:1px solid var(--line);background:rgba(var(--c-white-rgb),.04);color:inherit;font-size:12px;text-align:center;font-variant-numeric:tabular-nums}
 .jalali-seg input:focus{outline:none;border-color:rgba(var(--accent-rgb),.55);background:rgba(var(--accent-rgb),.08)}
 .jalali-seg input::placeholder{color:var(--muted);opacity:.6;font-size:10px}
 .jalali-open{flex:none;width:38px;height:38px;border-radius:11px;border:1px solid var(--line);background:rgba(var(--accent-rgb),.12);color:var(--c-cyan);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:background .2s}
@@ -406,4 +408,67 @@ body > .drawer-backdrop,body > .drawer,body > .settings-popover,body > .toast{po
 .jalali-day.is-selected{background:rgba(var(--accent-rgb),.35);border-color:rgba(var(--accent-rgb),.65);font-weight:700}
 .jalali-pop-foot{display:flex;gap:6px;margin-top:10px}
 .jalali-pop-foot button{flex:1;padding:7px 10px;font-size:10.5px}
-@media (max-width:520px){.jalali-segments{gap:4px}.jalali-open{width:34px;height:34px}}
+@media (max-width:520px){.jalali-segments{gap:4px}.jalali-seg:first-child{min-width:48px}.jalali-seg-time{min-width:60px}.jalali-open{width:34px;height:34px}}
+
+/* ── ثبت سریع داشبورد ── */
+.quick-add{display:flex;flex-direction:column;gap:10px;padding:14px 16px;border-radius:18px;border:1px solid var(--line);background:rgba(var(--c-white-rgb),.03);margin:0 0 4px}
+.quick-add-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.quick-add-title{font-weight:700;font-size:13px}
+.quick-add-head small{color:var(--muted);font-size:11px}
+.quick-add-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.quick-add-btn{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:13px;border:1px solid rgba(var(--surf-rgb),.28);background:rgba(var(--surf-rgb),.14);color:inherit;font:inherit;font-size:12px;cursor:pointer;transition:background .18s ease,border-color .18s ease,transform .18s ease}
+.quick-add-btn:hover,.quick-add-btn:focus-visible{background:rgba(var(--surf-rgb),.26);border-color:rgba(var(--surf-rgb),.55);transform:translateY(-1px);outline:none}
+.quick-add-icon{display:grid;place-items:center;width:26px;height:26px;border-radius:9px;background:rgba(var(--surf-rgb),.3);flex:none}
+.quick-add-icon svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── دفتر اشکالات ── */
+.fault-kpis{margin-bottom:6px}
+.fault-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.fault-card{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:16px;border:1px solid rgba(var(--surf-rgb),.3);background:linear-gradient(150deg,rgba(var(--surf-rgb),.16),rgba(var(--c-white-rgb),.02))}
+.fault-card.is-resolved{opacity:.72}
+.fault-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.fault-card-head h3{margin:0;font-size:13px}
+.fault-card-head p{margin:3px 0 0;font-size:11px;color:var(--muted)}
+.fault-progress{display:flex;align-items:center;gap:8px}
+.fault-progress .progress-track{flex:1}
+.fault-progress strong{font-size:11px;color:var(--muted)}
+.fault-desc{margin:0;font-size:11.5px;line-height:1.7;color:rgba(var(--c-white-rgb),.82)}
+.fault-steps{margin:0;padding-inline-start:16px;font-size:11px;line-height:1.9;color:rgba(var(--c-white-rgb),.76)}
+.fault-steps-empty{font-size:11px;color:var(--muted)}
+.fault-card-foot{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:9px}
+.fault-priority{font-size:10.5px;padding:3px 9px;border-radius:999px;background:rgba(var(--surf-rgb),.22)}
+.fault-step-add{display:flex;gap:6px;flex:1;min-width:170px}
+.fault-step-add input{flex:1;min-width:0;padding:7px 10px;border-radius:10px;border:1px solid var(--line);background:rgba(var(--c-white-rgb),.04);color:inherit;font:inherit;font-size:11px}
+.fault-card-actions{display:flex;gap:6px;flex-wrap:wrap}
+
+/* ── دفتر سرویس خودرو ── */
+.service-book{display:flex;flex-direction:column;gap:10px}
+.service-folder{border:1px solid rgba(var(--surf-rgb),.28);border-radius:15px;background:rgba(var(--surf-rgb),.1);overflow:hidden}
+.service-folder>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;flex-wrap:wrap}
+.service-folder>summary::-webkit-details-marker{display:none}
+.service-folder>summary strong{font-size:13px}
+.service-folder>summary span{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.service-folder-meta{display:flex;gap:10px;flex-wrap:wrap;font-size:10.5px;color:var(--muted)}
+.service-body{border-top:1px solid var(--line);padding:10px 14px 14px}
+.service-row{display:grid;grid-template-columns:92px 1fr auto auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px dashed var(--line);font-size:11.5px}
+.service-row:last-of-type{border-bottom:0}
+.service-date{font-variant-numeric:tabular-nums;color:var(--muted)}
+.service-main strong{display:block;font-size:12px}
+.service-main span{display:block;color:rgba(var(--c-white-rgb),.72);font-size:11px;margin-top:2px}
+.service-meta{color:var(--muted);font-size:10.5px;white-space:nowrap}
+.service-actions{display:flex;gap:5px}
+.service-empty{font-size:11px;color:var(--muted);padding:6px 0}
+.service-folder-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.cell-sub{font-size:10px;color:var(--muted);margin-top:2px}
+@media (max-width:640px){
+  .service-row{grid-template-columns:1fr;gap:4px}
+  .fault-grid{grid-template-columns:1fr}
+  .quick-add-grid{grid-template-columns:repeat(2,1fr)}
+}
+
+/* در صفحه‌های ماژول، کارت‌های آماری جمع‌وجورتر می‌نشینند تا عدد و برچسب کنار هم دیده شوند. */
+.module-wrap .stat-row,.module-root .stat-row{grid-template-columns:repeat(auto-fit,minmax(148px,236px));justify-content:start}
+.module-wrap .stat-row .mini-stat,.module-root .stat-row .mini-stat{display:flex;flex-direction:column;gap:4px}
+@media (max-width:640px){
+  .module-wrap .stat-row,.module-root .stat-row{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+}

@@ -6,7 +6,7 @@
   const STORE_NAME = 'records';
   const STORE_KEY = 'main';
   const LEGACY_KEY = 'atlasShiftOperationalDataV1';
-  const MODULES = ['employees', 'missions', 'leaves', 'vehicles', 'gasmeters', 'notes', 'programs'];
+  const MODULES = ['employees', 'missions', 'leaves', 'vehicles', 'gasmeters', 'notes', 'programs', 'faults', 'maintenance', 'gaslogs'];
   const formState = Object.create(null);
   const searchState = Object.create(null);
   const filterState = Object.create(null);
@@ -47,7 +47,7 @@
       title: 'مأموریت‌ها', singular: 'مأموریت',
       subtitle: 'ثبت مسیر، افراد اعزامی، خودرو، زمان‌بندی و نتیجهٔ مأموریت',
       fields: [
-        {key:'title',label:'عنوان مأموریت',required:true},
+        {key:'title',label:'عنوان مأموریت',type:'select',required:true,listKey:'missionTitles',options:['بازدید دورهای خط','رفع نشتی','نظارت بر جوشکاری','بررسی انشعاب','پایش ایمنی','سرویس تجهیزات','مأموریت اضطراری','سایر']},
         {key:'missionType',label:'نوع فعالیت',type:'select',required:true,listKey:'missionTypes',options:['نظارت بر جوشکاری','بررسی انشعاب یا نشتی','بررسی آلودگی خاک یا آب','بازدید ایستگاه','سرویس تجهیزات','بازدید ایمنی','سایر']},
         {key:'startAt',label:'زمان شروع',type:'jalali-datetime',required:true},
         {key:'endAt',label:'زمان پایان',type:'jalali-datetime'},
@@ -72,10 +72,9 @@
     },
     leaves: {
       title: 'مرخصی‌ها', singular: 'درخواست مرخصی',
-      subtitle: 'ثبت مرخصی فردی یا گروهی، وضعیت درخواست و زمان بازگشت',
+      subtitle: 'ثبت مرخصی فردی، وضعیت درخواست و زمان بازگشت',
       fields: [
         {key:'employeeId',label:'کارمند',type:'select',source:'employees'},
-        {key:'groupName',label:'گروه یا واحد',placeholder:'برای درخواست گروهی، نام گروه را وارد کن'},
         {key:'leaveType',label:'نوع مرخصی',type:'select',required:true,listKey:'leaveTypes',options:['استحقاقی','استعلاجی','بدون حقوق','ساعتی','سایر']},
         {key:'startDate',label:'از تاریخ شمسی',type:'jalali',required:true},
         {key:'endDate',label:'تا تاریخ شمسی',type:'jalali',required:true},
@@ -84,13 +83,13 @@
         {key:'status',label:'وضعیت درخواست',type:'select',required:true,listKey:'leaveStatuses',options:['در انتظار بررسی','تأییدشده','ردشده','استفاده‌شده']},
         {key:'reason',label:'دلیل و توضیحات',type:'textarea',wide:true}
       ],
-      columns: ['employeeId','groupName','leaveType','startDate','endDate','expectedReturn','status']
+      columns: ['employeeId','leaveType','startDate','endDate','expectedReturn','status']
     },
     vehicles: {
       title: 'خودروها', singular: 'خودرو',
       subtitle: 'مشخصات ناوگان، موقعیت فعلی، خرابی‌ها، کیلومتر و سرویس',
       fields: [
-        {key:'name',label:'نام یا عنوان خودرو',required:true},
+        {key:'name',label:'نام یا عنوان خودرو',type:'select',required:true,listKey:'vehicleNames',options:['خودروی آتشنشانی ۱','خودروی پشتیبانی ۱','وانت عملیاتی ۱','سواری اداری ۱','مینیبوس ایاب و ذهاب']},
         {key:'vehicleType',label:'نوع خودرو',type:'select',listKey:'vehicleTypes',options:['خودروی آتش‌نشانی','خودروی پشتیبانی','وانت','سواری','مینی‌بوس','سایر']},
         {key:'model',label:'مدل خودرو'},
         {key:'companyPlate',label:'پلاک سازمانی'},
@@ -122,14 +121,14 @@
       subtitle: 'مشخصات دستگاه، محل و مسئول، کالیبراسیون، تعمیرات و گواهی',
       fields: [
         {key:'code',label:'کد دستگاه',required:true},
-        {key:'model',label:'مدل دستگاه'},
+        {key:'model',label:'مدل دستگاه',type:'select',listKey:'gasModels',options:['MX4','MX6','Tetra','Altair 4X','Altair 5X','Ventis Pro','GasAlert MicroClip','سایر']},
         {key:'sensorType',label:'نوع سنسور گازسنج',type:'select',listKey:'gasSensorTypes',options:['گازسنج چهارکاره','گازسنج تک‌کاره','آشکارساز H₂S','آشکارساز LEL','آشکارساز O₂','سایر']},
         {key:'serial',label:'شمارهٔ سریال',required:true},
         {key:'gases',label:'گازهای قابل‌اندازه‌گیری',type:'checks',options:['CO','O₂','LEL','H₂S']},
         {key:'sensorCount',label:'تعداد سنسورها (محاسبه خودکار)',type:'number',min:0},
         {key:'status',label:'وضعیت دستگاه',type:'select',required:true,listKey:'gasStatuses',options:['آماده استفاده','در کالیبراسیون','خارج از سرویس','در تعمیر']},
         {key:'healthStatus',label:'وضعیت سلامت',type:'select',listKey:'healthStatuses',options:['سالم','نیازمند بررسی','دارای نقص','در حال تعمیر']},
-        {key:'location',label:'محل استقرار',placeholder:'خودرو، واحد، مرکز، ساختمان یا شخص'},
+        {key:'location',label:'محل استقرار',type:'select',listKey:'deploymentLocations',options:['پارکینگ مرکزی','تعمیرگاه مرکزی','انبار مرکزی','محور جاده','دفتر مرکزی','سایر']},
         {key:'locationPoint',label:'محل استقرار (فهرست نقاط)',type:'select',listKey:'gasSensorLocations',options:['پارکینگ مرکزی','تعمیرگاه مرکزی','انبار مرکزی','محور جاده','دفتر مرکزی','سایر']},
         {key:'locationSince',label:'تاریخ استقرار فعلی',type:'jalali'},
         {key:'locationHistory',label:'سوابق تغییر محل استقرار (هر مورد در یک خط)',type:'textarea',wide:true,placeholder:'تاریخ | محل قبلی | محل جدید | توضیح'},
@@ -174,7 +173,7 @@
         {key:'title',label:'عنوان برنامه / پرونده',required:true},
         {key:'programCategory',label:'دستهٔ برنامه',type:'select',required:true,listKey:'programCategories',options:['هدف','برنامه فعالیت','مانور','روتین','دوره آموزشی','سایر']},
         {key:'programType',label:'نوع برنامه',type:'select',required:true,listKey:'programTypes',options:['مانور','تعمیر تجهیز','تعمیر خودرو','کالیبراسیون','بازرسی','اقدام اصلاحی','درخواست خرید','پروژه عملیاتی','سایر']},
-        {key:'location',label:'محل اجرا یا عملیات'},
+        {key:'location',label:'محل اجرا یا عملیات',type:'select',listKey:'maneuverLocations',options:['پارکینگ مرکزی','تعمیرگاه مرکزی','انبار مرکزی','دفتر مرکزی','ایستگاه شماره ۱','محور جاده','سایر']},
         {key:'plannedDate',label:'تاریخ برنامه‌ریزی شمسی',type:'jalali'},
         {key:'dueDate',label:'مهلت نهایی شمسی',type:'jalali'},
         {key:'responsibleId',label:'مسئول اصلی',type:'select',source:'employees'},
@@ -191,6 +190,62 @@
         {key:'attachments',label:'پیوست‌های پرونده',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx'}
       ],
       columns: ['title','programType','location','plannedDate','responsibleId','status','finalReportDue']
+    },
+    faults: {
+      title: 'اشکالات و رفع اشکال', singular: 'اشکال',
+      subtitle: 'ثبت اشکال خودرو، گازسنج و تجهیزات با روند رفع، مسئول و تاریخ رفع',
+      fields: [
+        {key:'title',label:'عنوان اشکال',required:true,placeholder:'مثلاً نشتی روغن گیربکس'},
+        {key:'assetType',label:'نوع دارایی',type:'select',required:true,listKey:'faultAssetTypes',options:['خودرو','گازسنج','تجهیزات ایمنی','تأسیسات','سایر']},
+        {key:'vehicleId',label:'خودرو',type:'select',source:'vehicles'},
+        {key:'gasmeterId',label:'گازسنج',type:'select',source:'gasmeters'},
+        {key:'category',label:'دستهٔ اشکال',type:'select',listKey:'faultCategories',options:['مکانیکی','برقی','الکترونیکی','سنسور','بدنه','نرم‌افزاری','سایر']},
+        {key:'priority',label:'اولویت',type:'select',required:true,listKey:'faultPriorities',options:['کم','متوسط','زیاد','بحرانی']},
+        {key:'reportedAt',label:'تاریخ ثبت شمسی',type:'jalali',required:true},
+        {key:'reportedById',label:'ثبت‌کننده',type:'select',source:'employees'},
+        {key:'description',label:'شرح اشکال',type:'textarea',wide:true,required:true},
+        {key:'status',label:'وضعیت رفع',type:'select',required:true,listKey:'faultStatuses',options:['ثبت‌شده','در حال بررسی','در حال تعمیر','رفع شد','بسته‌شده']},
+        {key:'progress',label:'درصد پیشرفت رفع',type:'number',min:0,max:100},
+        {key:'steps',label:'روند رفع اشکال (هر مورد در یک خط)',type:'textarea',wide:true,placeholder:'تاریخ | اقدام انجام‌شده | انجام‌دهنده | وضعیت'},
+        {key:'resolvedAt',label:'تاریخ رفع شمسی',type:'jalali'},
+        {key:'responsibleId',label:'مسئول رفع',type:'select',source:'employees'},
+        {key:'attachments',label:'پیوست‌ها',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx'}
+      ],
+      columns: ['title','assetType','vehicleId','gasmeterId','priority','reportedAt','status','progress']
+    },
+    maintenance: {
+      title: 'سوابق سرویس و تعمیر', singular: 'سابقهٔ سرویس',
+      subtitle: 'دفتر سرویس هر خودرو: تاریخ، کیلومتر، نوع اقدام، هزینه و سرویس بعدی',
+      fields: [
+        {key:'vehicleId',label:'خودرو',type:'select',source:'vehicles',required:true},
+        {key:'date',label:'تاریخ سرویس شمسی',type:'jalali',required:true},
+        {key:'km',label:'کیلومتر در زمان سرویس',type:'number',min:0},
+        {key:'type',label:'نوع اقدام',type:'select',required:true,listKey:'maintenanceTypes',options:['سرویس دوره‌ای','تعویض روغن','تعویض فیلتر','تعمیر مکانیکی','تعمیر برقی','معاینه فنی','تعویض لاستیک','سایر']},
+        {key:'description',label:'شرح اقدام و قطعات',type:'textarea',wide:true,required:true},
+        {key:'cost',label:'هزینه (ریال)',type:'number',min:0},
+        {key:'workshop',label:'تعمیرگاه یا پیمانکار'},
+        {key:'technicianId',label:'مجری / تکنسین',type:'select',source:'employees'},
+        {key:'nextServiceKm',label:'کیلومتر سرویس بعدی',type:'number',min:0},
+        {key:'nextServiceDate',label:'تاریخ سرویس بعدی شمسی',type:'jalali'},
+        {key:'status',label:'وضعیت',type:'select',required:true,listKey:'maintenanceStatuses',options:['انجام‌شده','در انتظار قطعه','در حال انجام','لغوشده']},
+        {key:'attachments',label:'پیوست‌ها (فاکتور، رسید)',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx'}
+      ],
+      columns: ['vehicleId','date','type','km','cost','workshop','nextServiceDate','status']
+    },
+    gaslogs: {
+      title: 'سوابق گازسنج', singular: 'سابقهٔ گازسنج',
+      subtitle: 'قرائت، کالیبراسیون، تعمیر و جابه‌جایی هر گازسنج با تاریخ و مسئول',
+      fields: [
+        {key:'gasmeterId',label:'گازسنج',type:'select',source:'gasmeters',required:true},
+        {key:'date',label:'تاریخ شمسی',type:'jalali',required:true},
+        {key:'logType',label:'نوع سابقه',type:'select',required:true,listKey:'gasLogTypes',options:['ثبت قرائت','کالیبراسیون','تعمیر','جابه‌جایی','تست عملکرد','سایر']},
+        {key:'value',label:'مقدار قرائت یا نتیجه'},
+        {key:'location',label:'محل استقرار در این تاریخ',type:'select',listKey:'deploymentLocations',options:['پارکینگ مرکزی','تعمیرگاه مرکزی','انبار مرکزی','محور جاده','دفتر مرکزی','سایر']},
+        {key:'description',label:'شرح و توضیحات',type:'textarea',wide:true},
+        {key:'operatorId',label:'ثبت‌کننده',type:'select',source:'employees'},
+        {key:'attachments',label:'پیوست‌ها',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx'}
+      ],
+      columns: ['gasmeterId','date','logType','value','location','operatorId']
     }
   };
 
@@ -198,7 +253,7 @@
     const state = {
       schemaVersion: 2,
       settings: { employeeCustomFields: '' },
-      references: {"workplaces":["اهواز","آبادان","اندیمشک","ماهشهر","بندر امام","آغاجاری","سایر"],"leaveTypes":["استحقاقی","استعلاجی","بدون حقوق","ساعتی","سایر"],"missionTypes":["نظارت بر جوشکاری","بررسی انشعاب یا نشتی","بررسی آلودگی خاک یا آب","بازدید ایستگاه","سرویس تجهیزات","بازدید ایمنی","سایر"],"pipelineSizes":["۴","۶","۸","۱۰","۱۲","۱۴","۱۶","۲۰","۲۴","۳۰","۳۶"],"products":["نفت خام","نفت گاز","بنزین","نفت سفید","گاز مایع","آب آلوده","سایر"],"vehicleTypes":["خودروی آتش‌نشانی","خودروی پشتیبانی","وانت","سواری","مینی‌بوس","سایر"],"vehicleStatuses":["آماده","در سرویس","خارج از سرویس","در تعمیر"],"gasStatuses":["آماده استفاده","در کالیبراسیون","خارج از سرویس","در تعمیر"],"actionTypes":["نامه اداری","درخواست خرید","استعلام","برآورد هزینه","برآورد قیمت","برنامه‌ریزی مانور","تعمیر خودرو","ارسال کالیبراسیون","پاسخ نامه","پیگیری قطعه","ارسال تجهیزات","بازدید","بازرسی","ممیزی","اقدام اصلاحی","یادداشت عمومی","سایر"],"programCategories":["هدف","برنامه فعالیت","مانور","روتین","دوره آموزشی","سایر"],"programTypes":["مانور","تعمیر تجهیز","تعمیر خودرو","کالیبراسیون","بازرسی","اقدام اصلاحی","درخواست خرید","پروژه عملیاتی","سایر"],"workTypes":["شیفتی","روزکار"],"jobTitles":["اپراتور","تکنسین","سرپرست شیفت","کارشناس ایمنی","کارشناس HSE","راننده","نگهبان","انباردار","سایر"],"employmentTypes":["رسمی","پیمانی","قراردادی","شرکتی","سایر"],"shiftPatterns":["۱۲ ساعته روز/شب","۲۴/۴۸","ثابت روزکار","سایر"],"employeeStatuses":["آماده‌کار","در حال کار","شیفت","مأموریت","مرخصی","استراحت","اضافه‌کار","غیرفعال"],"missionStatuses":["برنامه‌ریزی‌شده","در جریان","انجام‌شده","لغو‌شده"],"leaveStatuses":["در انتظار بررسی","تأییدشده","ردشده","استفاده‌شده"],"healthStatuses":["سالم","نیازمند بررسی","دارای نقص","در حال تعمیر"],"noteStatuses":["شروع‌نشده","در حال انجام","در انتظار پاسخ","ارجاع‌شده","تکمیل‌شده","لغوشده","عقب‌افتاده"],"reportStatuses":["تهیه نشده","در حال تهیه","ارسال شده","نیازمند اصلاح"],"programStatuses":["برنامه‌ریزی‌شده","در حال اقدام","در انتظار پاسخ","متوقف","تکمیل‌شده","لغوشده"],"operationalPoints":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","محور جاده"],"gasSensorTypes":["گازسنج چهارکاره","گازسنج تک‌کاره","آشکارساز H₂S","آشکارساز LEL","آشکارساز O₂","سایر"],"gasSensorLocations":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","محور جاده","دفتر مرکزی","سایر"],"operationalRanges":["روستای سویسه","روستای الهایی","کیلومتر ۹۶ تا ۱۰۲","کیلومتر ۱۲۰ تا ۱۳۵","محور اهواز – آبادان"],"vehicleServiceTypes":["تعویض روغن","سرویس دوره‌ای","سوخت‌گیری","تعویض فیلتر","معاینه فنی","تعمیر اضطراری"]},
+      references: {"workplaces":["اهواز","آبادان","اندیمشک","ماهشهر","بندر امام","آغاجاری","سایر"],"leaveTypes":["استحقاقی","استعلاجی","بدون حقوق","ساعتی","سایر"],"missionTypes":["نظارت بر جوشکاری","بررسی انشعاب یا نشتی","بررسی آلودگی خاک یا آب","بازدید ایستگاه","سرویس تجهیزات","بازدید ایمنی","سایر"],"pipelineSizes":["۴","۶","۸","۱۰","۱۲","۱۴","۱۶","۲۰","۲۴","۳۰","۳۶"],"products":["نفت خام","نفت گاز","بنزین","نفت سفید","گاز مایع","آب آلوده","سایر"],"vehicleTypes":["خودروی آتش‌نشانی","خودروی پشتیبانی","وانت","سواری","مینی‌بوس","سایر"],"vehicleStatuses":["آماده","در سرویس","خارج از سرویس","در تعمیر"],"gasStatuses":["آماده استفاده","در کالیبراسیون","خارج از سرویس","در تعمیر"],"actionTypes":["نامه اداری","درخواست خرید","استعلام","برآورد هزینه","برآورد قیمت","برنامه‌ریزی مانور","تعمیر خودرو","ارسال کالیبراسیون","پاسخ نامه","پیگیری قطعه","ارسال تجهیزات","بازدید","بازرسی","ممیزی","اقدام اصلاحی","یادداشت عمومی","سایر"],"programCategories":["هدف","برنامه فعالیت","مانور","روتین","دوره آموزشی","سایر"],"programTypes":["مانور","تعمیر تجهیز","تعمیر خودرو","کالیبراسیون","بازرسی","اقدام اصلاحی","درخواست خرید","پروژه عملیاتی","سایر"],"workTypes":["شیفتی","روزکار"],"jobTitles":["اپراتور","تکنسین","سرپرست شیفت","کارشناس ایمنی","کارشناس HSE","راننده","نگهبان","انباردار","سایر"],"employmentTypes":["رسمی","پیمانی","قراردادی","شرکتی","سایر"],"shiftPatterns":["۱۲ ساعته روز/شب","۲۴/۴۸","ثابت روزکار","سایر"],"employeeStatuses":["آماده‌کار","در حال کار","شیفت","مأموریت","مرخصی","استراحت","اضافه‌کار","غیرفعال"],"missionStatuses":["برنامه‌ریزی‌شده","در جریان","انجام‌شده","لغو‌شده"],"leaveStatuses":["در انتظار بررسی","تأییدشده","ردشده","استفاده‌شده"],"healthStatuses":["سالم","نیازمند بررسی","دارای نقص","در حال تعمیر"],"noteStatuses":["شروع‌نشده","در حال انجام","در انتظار پاسخ","ارجاع‌شده","تکمیل‌شده","لغوشده","عقب‌افتاده"],"reportStatuses":["تهیه نشده","در حال تهیه","ارسال شده","نیازمند اصلاح"],"programStatuses":["برنامه‌ریزی‌شده","در حال اقدام","در انتظار پاسخ","متوقف","تکمیل‌شده","لغوشده"],"operationalPoints":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","محور جاده"],"gasSensorTypes":["گازسنج چهارکاره","گازسنج تک‌کاره","آشکارساز H₂S","آشکارساز LEL","آشکارساز O₂","سایر"],"gasSensorLocations":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","محور جاده","دفتر مرکزی","سایر"],"operationalRanges":["روستای سویسه","روستای الهایی","کیلومتر ۹۶ تا ۱۰۲","کیلومتر ۱۲۰ تا ۱۳۵","محور اهواز – آبادان"],"vehicleServiceTypes":["تعویض روغن","سرویس دوره‌ای","سوخت‌گیری","تعویض فیلتر","معاینه فنی","تعمیر اضطراری"],"missionTitles":["بازدید دوره‌ای خط","رفع نشتی","نظارت بر جوشکاری","بررسی انشعاب","پایش ایمنی","سرویس تجهیزات","مأموریت اضطراری","سایر"],"vehicleNames":["خودروی آتش‌نشانی ۱","خودروی پشتیبانی ۱","وانت عملیاتی ۱","سواری اداری ۱","مینی‌بوس ایاب و ذهاب"],"gasModels":["MX4","MX6","Tetra","Altair 4X","Altair 5X","Ventis Pro","GasAlert MicroClip","سایر"],"deploymentLocations":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","محور جاده","دفتر مرکزی","سایر"],"maneuverLocations":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","دفتر مرکزی","ایستگاه شماره ۱","محور جاده","سایر"],"faultAssetTypes":["خودرو","گازسنج","تجهیزات ایمنی","تأسیسات","سایر"],"faultCategories":["مکانیکی","برقی","الکترونیکی","سنسور","بدنه","نرم‌افزاری","سایر"],"faultPriorities":["کم","متوسط","زیاد","بحرانی"],"faultStatuses":["ثبت‌شده","در حال بررسی","در حال تعمیر","رفع شد","بسته‌شده"],"maintenanceTypes":["سرویس دوره‌ای","تعویض روغن","تعویض فیلتر","تعمیر مکانیکی","تعمیر برقی","معاینه فنی","تعویض لاستیک","سایر"],"gasLogTypes":["ثبت قرائت","کالیبراسیون","تعمیر","جابه‌جایی","تست عملکرد","سایر"],"maintenanceStatuses":["انجام‌شده","در انتظار قطعه","در حال انجام","لغوشده"]},
       history: [],
       shifts: [],
       updatedAt: ''
@@ -233,6 +288,7 @@
     if (Array.isArray(value.shifts)) out.shifts = value.shifts.filter(function(item){return item&&typeof item==='object';});
     out.schemaVersion = 2;
     out.updatedAt = value.updatedAt || '';
+    ensureReferenceLists(out);
     return out;
   }
 
@@ -485,6 +541,15 @@
 
   function recordLabel(moduleKey, record) {
     if (!record) return specs[moduleKey] ? specs[moduleKey].singular : '';
+    if (moduleKey === 'maintenance') {
+      const vehicle = (appData.vehicles || []).find(function (item) { return String(item.id) === String(record.vehicleId); });
+      return [vehicle ? vehicle.name : '', record.date ? formatJalali(record.date, false) : '', record.type].filter(Boolean).join(' · ') || 'سابقهٔ سرویس';
+    }
+    if (moduleKey === 'gaslogs') {
+      const meter = (appData.gasmeters || []).find(function (item) { return String(item.id) === String(record.gasmeterId); });
+      return [meter ? meter.code : '', record.date ? formatJalali(record.date, false) : '', record.logType].filter(Boolean).join(' · ') || 'سابقهٔ گازسنج';
+    }
+    if (moduleKey === 'faults') return record.title || 'اشکال';
     return (moduleKey === 'employees' ? employeeName(record) : '') || record.title || record.name || record.code || record.personnelId || record.serial || specs[moduleKey].singular;
   }
 
@@ -545,6 +610,13 @@
         return {value:item.id,label:(item.name || 'خودرو') + (item.companyPlate ? ' · ' + item.companyPlate : '')};
       });
     }
+    if (field.source === 'gasmeters') {
+      return (data.gasmeters || []).slice().sort(function (a, b) {
+        return String(a.code || '').localeCompare(String(b.code || ''), 'fa');
+      }).map(function (item) {
+        return {value:item.id,label:(item.code || 'گازسنج') + (item.serial ? ' · ' + item.serial : '')};
+      });
+    }
     if (field.listKey && data.references && Array.isArray(data.references[field.listKey])) {
       return data.references[field.listKey].map(function (option) { return {value:option,label:option}; });
     }
@@ -559,14 +631,24 @@
     let control = '';
     if (field.type === 'select') {
       const options = getSelectOptions(field, data);
-      control = '<select id="' + esc(id) + '" name="' + esc(field.key) + '"' + (field.multiple ? ' multiple size="4"' : '') + required + '>' +
-        (field.multiple ? '' : '<option value="">انتخاب کنید</option>') +
-        options.map(function (option) {
-          const selected = Array.isArray(value) ? value.map(String).includes(String(option.value)) : String(value) === String(option.value);
-          return '<option value="' + esc(option.value) + '"' + (selected ? ' selected' : '') + '>' + esc(option.label) + '</option>';
-        }).join('') + '</select>' +
-        (field.listKey && !field.multiple ? '<button type="button" class="module-select-add" data-add-list-option="' + esc(field.listKey) + '" data-view="' + esc(moduleKey) + '" aria-label="افزودن گزینه به ' + esc(field.label) + '" title="افزودن گزینه جدید">+</button>' : '') +
-        (field.multiple ? '<small class="module-field-hint">برای انتخاب چند نفر، کلید Ctrl را نگه‌دار؛ در موبایل انتخاب چندتایی را از فهرست انجام بده.</small>' : '');
+      const chosenList = Array.isArray(value) ? value.map(String) : String(value || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+      if (field.multiple && field.source === 'employees') {
+        control = '<div class="module-check-options module-check-people">' + options.map(function (option) {
+          return '<label><input type="checkbox" name="' + esc(field.key) + '" value="' + esc(option.value) + '"' + (chosenList.includes(String(option.value)) ? ' checked' : '') + '><span>' + esc(option.label) + '</span></label>';
+        }).join('') + '</div><small class="module-field-hint">هر نفر را با تیک انتخاب کن؛ نیازی به کلید کمکی نیست.</small>';
+      } else {
+        if (!field.multiple && value != null && value !== '' && !options.some(function (option) { return String(option.value) === String(value); })) {
+          options.unshift({value:String(value),label:String(value)});
+        }
+        control = '<select id="' + esc(id) + '" name="' + esc(field.key) + '"' + (field.multiple ? ' multiple size="4"' : '') + required + '>' +
+          (field.multiple ? '' : '<option value="">انتخاب کنید</option>') +
+          options.map(function (option) {
+            const selected = field.multiple ? chosenList.includes(String(option.value)) : String(value) === String(option.value);
+            return '<option value="' + esc(option.value) + '"' + (selected ? ' selected' : '') + '>' + esc(option.label) + '</option>';
+          }).join('') + '</select>' +
+          (field.listKey && !field.multiple ? '<button type="button" class="module-select-add" data-add-list-option="' + esc(field.listKey) + '" data-view="' + esc(moduleKey) + '" aria-label="افزودن گزینه به ' + esc(field.label) + '" title="افزودن گزینه جدید">+</button>' : '') +
+          (field.multiple ? '<small class="module-field-hint">برای انتخاب چند مورد، کلید Ctrl را نگه‌دار.</small>' : '');
+      }
     } else if (field.type === 'textarea') {
       control = '<textarea id="' + esc(id) + '" name="' + esc(field.key) + '" rows="3"' + required + ' placeholder="' + esc(field.placeholder || '') + '">' + esc(value) + '</textarea>';
     } else if (field.type === 'checks') {
@@ -626,6 +708,7 @@
     const state = formState[moduleKey];
     if (!state || !state.open) return '';
     const existing = state.id ? (data[moduleKey] || []).find(function (item) { return String(item.id) === String(state.id); }) : null;
+    const draft = existing || (state.preset || null);
     const fields = fieldsFor(moduleKey);
     const fileNotice = '<p class="module-field-hint">فایل پیوست همراه همین پرونده نگه‌داری می‌شود؛ اندازهٔ هر فایل بهتر است کمتر از ۱۰ مگابایت باشد.</p>';
     let relatedVehicleHistory = '';
@@ -652,7 +735,7 @@
       (existing ? 'ویرایش ' : 'ثبت ') + esc(specs[moduleKey].singular) + '</h3><p>پس از ذخیره، اطلاعات به فهرست، داشبورد و گزارش‌های مرتبط منتقل می‌شود.</p></div>' +
       '<button type="button" class="atlas-modal-close" data-module-action="cancel" data-view="' + esc(moduleKey) + '" aria-label="بستن پنجره">×</button></div>' +
       '<div class="atlas-modal-body"><form class="module-form" data-module-form data-view="' + esc(moduleKey) + '" data-id="' + esc(existing ? existing.id : '') + '">' +
-      '<div class="module-fields">' + fields.map(function (field) { return renderField(moduleKey, field, existing, data); }).join('') + '</div>' +
+      '<div class="module-fields">' + fields.map(function (field) { return renderField(moduleKey, field, draft, data); }).join('') + '</div>' +
       fileNotice +
       '<div class="module-form-actions"><span class="module-required-help">موارد دارای * ضروری هستند.</span><div>' +
       '<button type="button" class="secondary-btn" data-module-action="cancel" data-view="' + esc(moduleKey) + '">انصراف</button> ' +
@@ -696,6 +779,10 @@
     if (field && field.source === 'vehicles') {
       const item = data.vehicles.find(function (vehicle) { return String(vehicle.id) === String(value); });
       return esc(item ? (item.name || 'خودرو') + (item.companyPlate ? ' · ' + item.companyPlate : '') : value);
+    }
+    if (field && field.source === 'gasmeters') {
+      const item = (data.gasmeters || []).find(function (meter) { return String(meter.id) === String(value); });
+      return esc(item ? (item.code || 'گازسنج') + (item.serial ? ' · ' + item.serial : '') : value);
     }
     if (field && (field.type === 'file' || field.type === 'file-multiple')) {
       const count = Array.isArray(value) ? value.length : (value ? 1 : 0);
@@ -949,6 +1036,18 @@
         alerts.push({key:'oil-' + vehicle.id,critical:next <= km,title:'سررسید سرویس روغن',detail:(vehicle.name || 'خودرو') + ' · ' + (next <= km ? 'موعد گذشته' : faDigits(next - km) + ' کیلومتر مانده'),at:vehicle.updatedAt});
       }
     });
+    (appData.faults || []).forEach(function (fault) {
+      const open = fault.status !== 'رفع شد' && fault.status !== 'بسته‌شده';
+      if (!open) return;
+      alerts.push({
+        key:'fault-' + fault.id,
+        critical:fault.priority === 'بحرانی' || fault.priority === 'زیاد',
+        title:'اشکال باز: ' + (fault.title || 'بدون عنوان'),
+        detail:(faultAssetLabel(fault) || '') + ' · ' + (fault.status || 'ثبت‌شده') + ' · ' + faDigits(faultProgress(fault)) + '٪ رفع',
+        at:fault.reportedAt,
+        view:'faults'
+      });
+    });
     appData.notes.forEach(function (note) {
       const left = dueInDays(note.dueDate);
       if (note.dueDate && left < 0 && !['تکمیل‌شده','لغوشده'].includes(note.status)) {
@@ -1103,7 +1202,7 @@
         return String(l.startDate||'')<=selectedEnd&&String(l.endDate||l.startDate||'')>=selectedStart&&l.status!=='ردشده';
       }).forEach(function(l){
         const person=staff.find(function(e){return String(e.id)===String(l.employeeId)});
-        items.push({sortKey:String(l.startDate||''),date:String(l.startDate||''),time:'',type:'مرخصی',title:person?employeeName(person):(l.groupName||'مرخصی'),detail:l.leaveType||''});
+        items.push({sortKey:String(l.startDate||''),date:String(l.startDate||''),time:'',type:'مرخصی',title:person?employeeName(person):'مرخصی',detail:l.leaveType||''});
       });
       items.sort(function(a,b){return String(a.sortKey).localeCompare(String(b.sortKey));});
       agenda.innerHTML=items.length?items.slice(0,8).map(function(item){
@@ -1235,7 +1334,7 @@
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>پشتیبان‌گیری و بازیابی</h3><p>نسخهٔ پشتیبان تمام پرونده‌ها، تاریخچه، تنظیمات و پیوست‌های محلی را دربر می‌گیرد.</p></div></div>'+
       '<div class="module-backup-grid"><div class="module-backup-card"><strong>ساخت نسخهٔ پشتیبان</strong><p>یک فایل JSON از تمام داده‌های موجود در این دستگاه دریافت می‌کنی.</p><button type="button" class="primary-btn" data-module-action="backup">دریافت فایل پشتیبان</button></div>'+
       '<div class="module-backup-card"><strong>بازیابی نسخهٔ پشتیبان</strong><p>بازیابی، داده‌های فعلی را جایگزین اطلاعات درون فایل انتخاب‌شده می‌کند.</p><button type="button" class="secondary-btn" data-module-action="restore-select">انتخاب فایل پشتیبان</button><input type="file" id="atlasRestoreFile" accept=".json,application/json" hidden></div></div></section>'+
-      '<section class="module-list-panel"><div class="module-list-head"><div><h3>مدیریت منوها و فهرست‌ها</h3><p>تمام گزینه‌های کشویی قابل تنظیم در یک محل؛ افزودن فوری نیز از کنار فیلدهای مرتبط انجام می‌شود.</p></div></div><div class="module-list-tools"><select id="referenceListKey">'+Object.keys(appData.references).map(function(k){return '<option value="'+esc(k)+'">'+esc(referenceListTitle(k))+'</option>';}).join('')+'</select><input id="referenceListValue" type="text" placeholder="عنوان گزینه جدید"><button type="button" class="primary-btn" data-module-action="reference-add">+ افزودن</button></div><div id="referenceListItems" class="module-local-note" style="margin-top:12px"></div></section>' +
+      '<section class="module-list-panel"><div class="module-list-head"><div><h3>مدیریت منوها و فهرست‌ها</h3><p>تمام گزینه‌های کشویی قابل تنظیم در یک محل؛ افزودن فوری نیز از کنار فیلدهای مرتبط انجام می‌شود.</p></div></div><div class="module-list-tools"><select id="referenceListKey">'+referenceKeys().map(function(k){return '<option value="'+esc(k)+'">'+esc(referenceListTitle(k))+'</option>';}).join('')+'</select><input id="referenceListValue" type="text" placeholder="عنوان گزینه جدید"><button type="button" class="primary-btn" data-module-action="reference-add">+ افزودن</button></div><div id="referenceListItems" class="module-local-note" style="margin-top:12px"></div></section>' +
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>فیلدهای سفارشی کارکنان</h3><p>برای هر فیلد یک عنوان و یک نوع انتخاب کن؛ نوع همان کادری را می‌سازد که هنگام ثبت پرونده می‌بینی: عدد، تاریخ شمسی، تاریخ و ساعت، متن بلند و …</p></div></div>'+
       '<form data-custom-fields-form class="module-form"><div class="module-custom-fields" data-custom-field-rows>'+(appData.settings.employeeCustomFields||'').split(/\r?\n/).map(function(l){return l.trim();}).filter(Boolean).map(customFieldRowHtml).join('')+'</div>'+
       '<div class="module-form-actions"><span class="module-required-help">حداکثر ۲۰ فیلد سفارشی.</span><div><button type="button" class="secondary-btn" data-module-action="custom-field-add">+ افزودن فیلد</button> <button type="submit" class="primary-btn">ذخیرهٔ فیلدها</button></div></div></form></section>'
@@ -1243,8 +1342,31 @@
     renderReferenceList();  }
 
   function referenceListTitle(key){
-    const titles={workplaces:'شهرها و محل‌ها',leaveTypes:'انواع مرخصی',missionTypes:'انواع مأموریت',pipelineSizes:'قطر خطوط',products:'نوع فرآورده',vehicleTypes:'انواع خودرو',vehicleStatuses:'وضعیت خودرو',gasStatuses:'وضعیت گازسنج',actionTypes:'انواع یادداشت و اقدام',programTypes:'انواع برنامه',workTypes:'نوع کار',jobTitles:'عنوان‌های شغلی',employmentTypes:'نوع استخدام',shiftPatterns:'الگوی شیفت',employeeStatuses:'وضعیت کارکنان',missionStatuses:'وضعیت مأموریت',leaveStatuses:'وضعیت مرخصی',healthStatuses:'وضعیت سلامت',noteStatuses:'وضعیت یادداشت و پیگیری',reportStatuses:'وضعیت گزارش اولیه',programStatuses:'وضعیت پرونده',operationalPoints:'نقاط عملیاتی',gasSensorTypes:'نوع سنسور گازسنج',gasSensorLocations:'محل‌های استقرار',operationalRanges:'محدوده‌های عملیاتی',vehicleServiceTypes:'انواع سرویس خودرو'};
+    const titles={workplaces:'شهرها و محل‌ها',leaveTypes:'انواع مرخصی',missionTypes:'انواع مأموریت',pipelineSizes:'قطر خطوط',products:'نوع فرآورده',vehicleTypes:'انواع خودرو',vehicleStatuses:'وضعیت خودرو',gasStatuses:'وضعیت گازسنج',actionTypes:'انواع یادداشت و اقدام',programTypes:'انواع برنامه',workTypes:'نوع کار',jobTitles:'عنوان‌های شغلی',employmentTypes:'نوع استخدام',shiftPatterns:'الگوی شیفت',employeeStatuses:'وضعیت کارکنان',missionStatuses:'وضعیت مأموریت',leaveStatuses:'وضعیت مرخصی',healthStatuses:'وضعیت سلامت',noteStatuses:'وضعیت یادداشت و پیگیری',reportStatuses:'وضعیت گزارش اولیه',programStatuses:'وضعیت پرونده',operationalPoints:'نقاط عملیاتی',gasSensorTypes:'نوع سنسور گازسنج',gasSensorLocations:'محل‌های استقرار',operationalRanges:'محدوده‌های عملیاتی',vehicleServiceTypes:'انواع سرویس خودرو',missionTitles:'عنوان‌های مأموریت',vehicleNames:'نام خودروها',gasModels:'مدل گازسنج‌ها',deploymentLocations:'محل‌های استقرار',maneuverLocations:'محل‌های اجرای مانور',faultAssetTypes:'نوع دارایی اشکال',faultCategories:'دسته‌های اشکال',faultPriorities:'اولویت اشکال',faultStatuses:'وضعیت رفع اشکال',maintenanceTypes:'نوع سرویس و تعمیر',maintenanceStatuses:'وضعیت سرویس',gasLogTypes:'نوع سابقهٔ گازسنج',programCategories:'دسته‌های برنامه'};
     return titles[key]||key;
+  }
+
+  // هر فهرستی که در فرم‌ها استفاده شود، حتی اگر هنوز ساخته نشده باشد، در تنظیمات دیده می‌شود.
+  function referenceKeys(target){
+    const keys=Object.keys((target||appData).references||{});
+    MODULES.forEach(function(moduleKey){
+      (specs[moduleKey].fields||[]).forEach(function(field){
+        if(field.listKey&&keys.indexOf(field.listKey)<0)keys.push(field.listKey);
+      });
+    });
+    return keys.sort(function(a,b){return referenceListTitle(a).localeCompare(referenceListTitle(b),'fa');});
+  }
+
+  function ensureReferenceLists(target){
+    const state=target||appData;
+    if(!state.references||typeof state.references!=='object')state.references={};
+    referenceKeys().forEach(function(key){
+      if(!Array.isArray(state.references[key])){
+        const field=MODULES.map(function(m){return (specs[m].fields||[]).filter(function(f){return f.listKey===key;})[0];}).filter(Boolean)[0];
+        state.references[key]=(field&&Array.isArray(field.options)?field.options.slice():[]);
+      }
+    });
+    return state.references;
   }
 
   function renderReferenceList(){
@@ -1371,6 +1493,293 @@
     );
   }
 
+  // ── دفتر اشکالات: کارت‌های اشکال با روند رفع، درصد پیشرفت و سابقهٔ اقدام ──
+  let faultFilter = 'all';
+
+  function faultProgress(record) {
+    const raw = Number(record.progress);
+    if (!Number.isNaN(raw) && record.progress !== '' && record.progress != null) return Math.max(0, Math.min(100, Math.round(raw)));
+    if (record.status === 'رفع شد' || record.status === 'بسته‌شده') return 100;
+    if (record.status === 'در حال تعمیر') return 60;
+    if (record.status === 'در حال بررسی') return 25;
+    return 5;
+  }
+
+  function faultSteps(record) {
+    return String(record.steps || '').split(/\r?\n/).map(function (line) { return line.trim(); }).filter(Boolean);
+  }
+
+  function faultAssetLabel(record) {
+    if (record.vehicleId) {
+      const vehicle = (appData.vehicles || []).find(function (item) { return String(item.id) === String(record.vehicleId); });
+      if (vehicle) return (vehicle.name || 'خودرو') + (vehicle.companyPlate ? ' · ' + vehicle.companyPlate : '');
+    }
+    if (record.gasmeterId) {
+      const meter = (appData.gasmeters || []).find(function (item) { return String(item.id) === String(record.gasmeterId); });
+      if (meter) return (meter.code || 'گازسنج') + (meter.serial ? ' · ' + meter.serial : '');
+    }
+    return record.assetType || 'بدون دارایی';
+  }
+
+  function renderFaultCard(record) {
+    const pct = faultProgress(record);
+    const steps = faultSteps(record);
+    const open = record.status !== 'رفع شد' && record.status !== 'بسته‌شده';
+    const stepsHtml = steps.length
+      ? '<ol class="fault-steps">' + steps.map(function (line) { return '<li>' + esc(line) + '</li>'; }).join('') + '</ol>'
+      : '<div class="fault-steps-empty">اقدامی ثبت نشده است.</div>';
+    return '<article class="fault-card' + (open ? '' : ' is-resolved') + '" data-tone="' + (record.priority === 'بحرانی' ? 'danger' : record.priority === 'زیاد' ? 'attention' : open ? 'warn' : 'ok') + '">' +
+      '<header class="fault-card-head"><div><h3>' + esc(record.title || 'اشکال') + '</h3>' +
+      '<p>' + esc(faultAssetLabel(record)) + (record.category ? ' · ' + esc(record.category) : '') + (record.reportedAt ? ' · ' + formatJalali(record.reportedAt, false) : '') + '</p></div>' +
+      statusTag(record.status || 'ثبت‌شده') + '</header>' +
+      '<div class="fault-progress"><div class="progress-track"><div class="progress-bar" style="width:' + pct + '%"></div></div><strong>' + faDigits(pct) + '٪</strong></div>' +
+      (record.description ? '<p class="fault-desc">' + esc(record.description) + '</p>' : '') +
+      stepsHtml +
+      '<div class="fault-card-foot"><span class="fault-priority" data-tone="' + (record.priority === 'بحرانی' ? 'danger' : record.priority === 'زیاد' ? 'attention' : 'info') + '">اولویت: ' + esc(record.priority || '—') + '</span>' +
+      (open ? '<div class="fault-step-add"><input type="text" data-fault-step-input="' + esc(record.id) + '" placeholder="اقدام انجام‌شده را بنویس و Enter بزن"><button type="button" class="secondary-btn" data-fault-action="add-step" data-fault="' + esc(record.id) + '">+ اقدام</button></div>' : '') +
+      '<div class="fault-card-actions"><button type="button" class="secondary-btn" data-module-action="edit" data-view="faults" data-id="' + esc(record.id) + '">ویرایش</button>' +
+      (open ? '<button type="button" class="secondary-btn" data-fault-action="resolve" data-fault="' + esc(record.id) + '">علامت‌گذاری رفع شد</button>' : '') +
+      '<button type="button" class="module-delete-btn" data-module-action="delete" data-view="faults" data-id="' + esc(record.id) + '">حذف</button></div></div></article>';
+  }
+
+  function renderFaults(section) {
+    const records = (appData.faults || []).slice().sort(function (a, b) {
+      const rank = { 'بحرانی': 0, 'زیاد': 1, 'متوسط': 2, 'کم': 3 };
+      const openA = a.status === 'رفع شد' || a.status === 'بسته‌شده' ? 1 : 0;
+      const openB = b.status === 'رفع شد' || b.status === 'بسته‌شده' ? 1 : 0;
+      if (openA !== openB) return openA - openB;
+      const pa = rank[a.priority] == null ? 9 : rank[a.priority];
+      const pb = rank[b.priority] == null ? 9 : rank[b.priority];
+      if (pa !== pb) return pa - pb;
+      return String(b.reportedAt || '').localeCompare(String(a.reportedAt || ''));
+    });
+    const open = records.filter(function (r) { return r.status !== 'رفع شد' && r.status !== 'بسته‌شده'; });
+    const critical = open.filter(function (r) { return r.priority === 'بحرانی'; }).length;
+    const repairing = records.filter(function (r) { return r.status === 'در حال تعمیر'; }).length;
+    const resolved = records.filter(function (r) { return r.status === 'رفع شد' || r.status === 'بسته‌شده'; }).length;
+    const statuses = ['all'].concat((appData.references.faultStatuses || []));
+    const visible = faultFilter === 'all' ? records : records.filter(function (r) { return (r.status || 'ثبت‌شده') === faultFilter; });
+    const kpis = [['اشکال باز', faDigits(open.length), 'warn'], ['بحرانی', faDigits(critical), 'danger'], ['در حال تعمیر', faDigits(repairing), 'info'], ['رفع‌شده', faDigits(resolved), 'ok']]
+      .map(function (pair) { return '<div class="mini-stat" data-tone="' + pair[2] + '"><div class="value">' + pair[1] + '</div><div class="label"><i class="tiny-dot"></i>' + pair[0] + '</div></div>'; }).join('');
+    const chips = statuses.map(function (status) {
+      return '<button type="button" class="program-chip ' + (faultFilter === status ? 'active' : '') + '" data-tone="' + (status === 'all' ? 'accent' : programTone(status)) + '" data-fault-action="filter" data-status="' + esc(status) + '">' + esc(status === 'all' ? 'همه' : status) + '</button>';
+    }).join('');
+    const body = visible.length
+      ? '<div class="fault-grid">' + visible.map(renderFaultCard).join('') + '</div>'
+      : '<div class="module-empty">هنوز اشکالی ثبت نشده. با «ثبت اشکال» اولین مورد را ثبت کن تا روند رفع و اعلان‌ها فعال شود.</div>';
+    const actions = exportMenu('faults') + '<button class="primary-btn" type="button" data-module-action="new" data-view="faults">+ ثبت اشکال</button>';
+    section.innerHTML = rootWrap(
+      pageHead('اشکالات و رفع اشکال', 'هر اشکال با تاریخ، وضعیت، درصد پیشرفت و روند رفع؛ تا بسته‌شدن در اعلان‌ها می‌ماند', actions) +
+      '<div class="stat-row fault-kpis">' + kpis + '</div>' +
+      renderForm('faults', appData) +
+      '<div class="program-chips">' + chips + '</div>' +
+      body +
+      '<div class="module-local-note"><strong>اعلان:</strong> اشکال‌های باز با اولویت زیاد و بحرانی در زنگ اعلان داشبورد و در «اشکالات باز» می‌آیند و تا رفع کامل حذف نمی‌شوند.</div>'
+    );
+  }
+
+  // ── دفتر گازسنج‌ها: وضعیت سلامت، محل، کالیبراسیون و مانده روز ──
+  let gasFilter = { location: 'all', status: 'all', calibration: 'all', sort: 'calibration' };
+
+  function gasCalibrationState(record) {
+    const left = dueInDays(record.calibrationEnd);
+    if (!isFinite(left)) return { key: 'unknown', label: 'بدون تاریخ', tone: 'muted', left: null };
+    if (left < 0) return { key: 'expired', label: 'منقضی', tone: 'danger', left: left };
+    if (left <= 30) return { key: 'soon', label: 'نزدیک انقضا', tone: 'attention', left: left };
+    return { key: 'valid', label: 'معتبر', tone: 'ok', left: left };
+  }
+
+  function renderGasRegistry(section) {
+    const records = (appData.gasmeters || []).slice();
+    const stateOf = function (record) { return gasCalibrationState(record); };
+    const locations = ['all'].concat(appData.references.deploymentLocations || []);
+    const statuses = ['all'].concat(appData.references.gasStatuses || []);
+    const visible = records.filter(function (record) {
+      if (gasFilter.location !== 'all' && String(record.location || '') !== gasFilter.location) return false;
+      if (gasFilter.status !== 'all' && String(record.status || '') !== gasFilter.status) return false;
+      if (gasFilter.calibration !== 'all' && stateOf(record).key !== gasFilter.calibration) return false;
+      return true;
+    }).sort(function (a, b) {
+      if (gasFilter.sort === 'location') return String(a.location || '').localeCompare(String(b.location || ''), 'fa');
+      if (gasFilter.sort === 'code') return String(a.code || '').localeCompare(String(b.code || ''), 'fa', { numeric: true });
+      if (gasFilter.sort === 'health') return String(a.healthStatus || '').localeCompare(String(b.healthStatus || ''), 'fa');
+      const leftA = stateOf(a).left == null ? 99999 : stateOf(a).left;
+      const leftB = stateOf(b).left == null ? 99999 : stateOf(b).left;
+      return leftA - leftB;
+    });
+    const expired = records.filter(function (r) { return stateOf(r).key === 'expired'; }).length;
+    const soon = records.filter(function (r) { return stateOf(r).key === 'soon'; }).length;
+    const valid = records.filter(function (r) { return stateOf(r).key === 'valid'; }).length;
+    const kpis = [['کل گازسنج‌ها', faDigits(records.length), 'info'], ['کالیبراسیون معتبر', faDigits(valid), 'ok'], ['نزدیک انقضا', faDigits(soon), 'warn'], ['منقضی‌شده', faDigits(expired), 'danger']]
+      .map(function (pair) { return '<div class="mini-stat" data-tone="' + pair[2] + '"><div class="value">' + pair[1] + '</div><div class="label"><i class="tiny-dot"></i>' + pair[0] + '</div></div>'; }).join('');
+    const rows = visible.map(function (record) {
+      const state = stateOf(record);
+      const responsible = (appData.employees || []).find(function (item) { return String(item.id) === String(record.responsibleId); });
+      const logs = (appData.gaslogs || []).filter(function (log) { return String(log.gasmeterId) === String(record.id); }).length;
+      return '<tr><td><strong>' + esc(record.code || '—') + '</strong>' + (record.serial ? '<div class="cell-sub">' + esc(record.serial) + '</div>' : '') + '</td>' +
+        '<td>' + esc(record.model || '—') + '</td>' +
+        '<td>' + statusTag(record.status || '—') + '</td>' +
+        '<td>' + statusTag(record.healthStatus || '—') + '</td>' +
+        '<td>' + esc(record.location || record.locationPoint || '—') + '</td>' +
+        '<td>' + esc(responsible ? employeeName(responsible) : '—') + '</td>' +
+        '<td>' + (record.calibrationEnd ? formatJalali(record.calibrationEnd, false) : '—') + '</td>' +
+        '<td>' + statusTag(state.label) + '<div class="cell-sub">' + (state.left == null ? '—' : (state.left < 0 ? faDigits(Math.abs(state.left)) + ' روز گذشته' : faDigits(state.left) + ' روز مانده')) + '</div></td>' +
+        '<td>' + faDigits(logs) + ' مورد</td>' +
+        '<td class="module-row-actions"><button type="button" class="secondary-btn" data-gas-action="log" data-gas="' + esc(record.id) + '">+ سابقه</button>' +
+        '<button type="button" class="secondary-btn" data-module-action="edit" data-view="gasmeters" data-id="' + esc(record.id) + '">ویرایش</button>' +
+        '<button type="button" class="module-delete-btn" data-module-action="delete" data-view="gasmeters" data-id="' + esc(record.id) + '">حذف</button></td></tr>';
+    }).join('');
+    const table = visible.length
+      ? '<div class="module-table-wrap"><table class="module-table"><thead><tr><th>کد / سریال</th><th>مدل</th><th>وضعیت</th><th>سلامت</th><th>محل استقرار</th><th>مسئول</th><th>پایان کالیبراسیون</th><th>مانده کالیبراسیون</th><th>سوابق</th><th>عملیات</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
+      : '<div class="module-empty">موردی با این فیلترها پیدا نشد.</div>';
+    const actions = exportMenu('gasmeters') + '<button class="primary-btn" type="button" data-module-action="new" data-view="gasmeters">+ ثبت گازسنج</button>';
+    section.innerHTML = rootWrap(
+      pageHead('مدیریت گازسنج‌ها', 'وضعیت سلامت، محل استقرار، کالیبراسیون و مانده روز تا پایان اعتبار هر دستگاه', actions) +
+      '<div class="stat-row">' + kpis + '</div>' +
+      renderForm('gasmeters', appData) +
+      '<section class="module-list-panel"><div class="module-list-head"><div><h3>فهرست گازسنج‌ها</h3><p>بر اساس محل، وضعیت یا کالیبراسیون مرتب و فیلتر کن.</p></div>' +
+      '<div class="module-list-tools">' +
+      '<select data-gas-filter="location"><option value="all">همه محل‌ها</option>' + locations.slice(1).map(function (value) { return '<option value="' + esc(value) + '"' + (gasFilter.location === value ? ' selected' : '') + '>' + esc(value) + '</option>'; }).join('') + '</select>' +
+      '<select data-gas-filter="status"><option value="all">همه وضعیت‌ها</option>' + statuses.slice(1).map(function (value) { return '<option value="' + esc(value) + '"' + (gasFilter.status === value ? ' selected' : '') + '>' + esc(value) + '</option>'; }).join('') + '</select>' +
+      '<select data-gas-filter="calibration"><option value="all">همه کالیبراسیون‌ها</option>' +
+      [['valid', 'معتبر'], ['soon', 'نزدیک انقضا'], ['expired', 'منقضی'], ['unknown', 'بدون تاریخ']].map(function (pair) { return '<option value="' + pair[0] + '"' + (gasFilter.calibration === pair[0] ? ' selected' : '') + '>' + pair[1] + '</option>'; }).join('') + '</select>' +
+      '<select data-gas-filter="sort"><option value="calibration"' + (gasFilter.sort === 'calibration' ? ' selected' : '') + '>مرتب‌سازی: مانده کالیبراسیون</option><option value="location"' + (gasFilter.sort === 'location' ? ' selected' : '') + '>محل استقرار</option><option value="code"' + (gasFilter.sort === 'code' ? ' selected' : '') + '>کد دستگاه</option><option value="health"' + (gasFilter.sort === 'health' ? ' selected' : '') + '>وضعیت سلامت</option></select>' +
+      '</div></div>' + table + '</section>' +
+      '<div class="module-local-note"><strong>هشدار کالیبراسیون:</strong> دستگاه‌هایی که کمتر از ۳۰ روز تا پایان اعتبارشان مانده یا منقضی شده‌اند، در زنگ اعلان داشبورد هم نمایش داده می‌شوند.</div>'
+    );
+  }
+
+  // ── دفتر سرویس خودروها: سوابق زونکن‌بندی‌شده برای هر خودرو ──
+  function renderServiceBook(section) {
+    const vehicles = (appData.vehicles || []).slice();
+    const logs = (appData.maintenance || []).slice().sort(function (a, b) { return String(b.date || '').localeCompare(String(a.date || '')); });
+    const totalCost = logs.reduce(function (sum, item) { return sum + (Number(item.cost) || 0); }, 0);
+    const folders = vehicles.map(function (vehicle) {
+      const entries = logs.filter(function (item) { return String(item.vehicleId) === String(vehicle.id); });
+      const last = entries[0];
+      const cost = entries.reduce(function (sum, item) { return sum + (Number(item.cost) || 0); }, 0);
+      const rows = entries.length ? entries.map(function (item) {
+        return '<div class="service-row"><div class="service-date">' + (item.date ? formatJalali(item.date, false) : '—') + '</div>' +
+          '<div class="service-main"><strong>' + esc(item.type || 'سرویس') + '</strong><span>' + esc(item.description || '') + '</span></div>' +
+          '<div class="service-meta">' + (item.km ? faDigits(item.km) + ' کیلومتر' : '') + (item.cost ? ' · ' + faDigits(item.cost) + ' ریال' : '') + '</div>' +
+          '<div class="service-actions"><button type="button" class="secondary-btn" data-module-action="edit" data-view="maintenance" data-id="' + esc(item.id) + '">ویرایش</button>' +
+          '<button type="button" class="module-delete-btn" data-module-action="delete" data-view="maintenance" data-id="' + esc(item.id) + '">حذف</button></div></div>';
+      }).join('') : '<div class="service-empty">برای این خودرو سرویسی ثبت نشده است.</div>';
+      return '<details class="service-folder"' + (entries.length ? '' : ' data-empty="1"') + '><summary><div><strong>' + esc(vehicle.name || 'خودرو') + '</strong>' +
+        '<span>' + esc([vehicle.vehicleType, vehicle.companyPlate, vehicle.status].filter(Boolean).join(' · ') || 'بدون مشخصات') + '</span></div>' +
+        '<div class="service-folder-meta"><span>' + faDigits(entries.length) + ' سرویس</span>' + (cost ? '<span>' + faDigits(cost) + ' ریال</span>' : '') +
+        (last && last.date ? '<span>آخرین: ' + formatJalali(last.date, false) + '</span>' : '') + '</div></summary>' +
+        '<div class="service-body">' + rows +
+        '<div class="service-folder-actions"><button type="button" class="primary-btn" data-service-action="add" data-vehicle="' + esc(vehicle.id) + '">+ ثبت سرویس برای این خودرو</button>' +
+        '<button type="button" class="secondary-btn" data-service-action="export" data-vehicle="' + esc(vehicle.id) + '">خروجی اکسل این خودرو</button></div></div></details>';
+    }).join('');
+    const kpis = [['کل سوابق', faDigits(logs.length), 'info'], ['خودروهای دارای سابقه', faDigits(vehicles.filter(function (v) { return logs.some(function (l) { return String(l.vehicleId) === String(v.id); }); }).length), 'ok'], ['مجموع هزینه', faDigits(totalCost), 'special']]
+      .map(function (pair) { return '<div class="mini-stat" data-tone="' + pair[2] + '"><div class="value">' + pair[1] + '</div><div class="label"><i class="tiny-dot"></i>' + pair[0] + '</div></div>'; }).join('');
+    const actions = exportMenu('maintenance') + '<button class="primary-btn" type="button" data-module-action="new" data-view="maintenance">+ ثبت سرویس</button>';
+    section.innerHTML = rootWrap(
+      pageHead('دفتر سرویس و تعمیرات خودرو', 'هر خودرو یک زونکن: تاریخ، کیلومتر، نوع اقدام، هزینه و سرویس بعدی؛ قابل خروجی و تاریخچه', actions) +
+      '<div class="stat-row">' + kpis + '</div>' +
+      renderForm('maintenance', appData) +
+      (vehicles.length ? '<div class="service-book">' + folders + '</div>' : '<div class="module-empty">اول خودروها را ثبت کن؛ بعد برای هر خودرو سابقهٔ سرویس اینجا زونکن می‌شود.</div>')
+    );
+  }
+
+  // ── ثبت سریع از داشبورد: فرم همان بخش را باز می‌کند ──
+  document.addEventListener('click', function (event) {
+    const quick = event.target.closest('[data-quick-add]');
+    if (!quick) return;
+    const view = quick.dataset.quickAdd;
+    if (!view) return;
+    let preset = null;
+    try { preset = quick.dataset.preset ? JSON.parse(quick.dataset.preset) : null; } catch (error) { preset = null; }
+    if (view === 'faults') preset = Object.assign({ reportedAt: todayIso() }, preset || {});
+    if (view === 'gaslogs' || view === 'maintenance') preset = Object.assign({ date: todayIso() }, preset || {});
+    formState[view] = { open:true, id:null, preset:preset };
+    const url = new URL(window.location.href);
+    url.searchParams.set('view', view);
+    window.history.pushState({}, '', url.pathname + '?' + url.searchParams.toString());
+    if (typeof window.ATLAS_ROUTE === 'function') window.ATLAS_ROUTE(view);
+    else render(view, document.getElementById('sectionView'));
+    window.scrollTo({ top:0, behavior:'smooth' });
+  });
+
+  // ── اقدام‌های دفتر اشکالات، دفتر گازسنج و دفتر سرویس ──
+  document.addEventListener('click', async function (event) {
+    const faultBtn = event.target.closest('[data-fault-action]');
+    if (faultBtn) {
+      const action = faultBtn.dataset.faultAction;
+      const section = document.getElementById('sectionView');
+      if (action === 'filter') { faultFilter = faultBtn.dataset.status || 'all'; renderFaults(section); return; }
+      const record = (appData.faults || []).find(function (item) { return String(item.id) === String(faultBtn.dataset.fault); });
+      if (!record) return;
+      if (action === 'add-step') {
+        const input = section.querySelector('[data-fault-step-input="' + record.id + '"]');
+        const text = String(input && input.value || '').trim();
+        if (!text) { if (input) input.focus(); return; }
+        const entry = formatJalali(new Date().toISOString(), false) + ' | ' + text;
+        record.steps = [String(record.steps || '').trim(), entry].filter(Boolean).join('\n');
+        record.updatedAt = new Date().toISOString();
+        if (await saveState()) { renderFaults(section); refreshDashboard(); toast('اقدام به روند رفع اضافه شد.'); }
+        return;
+      }
+      if (action === 'resolve') {
+        if (!window.confirm('این اشکال «رفع شد» علامت بخورد؟')) return;
+        const entry = formatJalali(new Date().toISOString(), false) + ' | رفع کامل و بستن مورد';
+        record.status = 'رفع شد';
+        record.progress = 100;
+        record.resolvedAt = todayIso();
+        record.steps = [String(record.steps || '').trim(), entry].filter(Boolean).join('\n');
+        record.updatedAt = new Date().toISOString();
+        addHistory('faults', record, 'رفع شد', [{ field: 'وضعیت', before: 'باز', after: 'رفع شد' }]);
+        if (await saveState()) { renderFaults(section); refreshDashboard(); toast('اشکال رفع شد و از اعلان‌ها خارج شد.'); }
+        return;
+      }
+      return;
+    }
+
+    const gasBtn = event.target.closest('[data-gas-action]');
+    if (gasBtn && gasBtn.dataset.gasAction === 'log') {
+      const meter = (appData.gasmeters || []).find(function (item) { return String(item.id) === String(gasBtn.dataset.gas); });
+      if (!meter) return;
+      formState.gaslogs = { open:true, id:null, preset:{ gasmeterId:String(meter.id), date:todayIso(), location:meter.location || '' } };
+      document.body.insertAdjacentHTML('beforeend', renderForm('gaslogs', appData));
+      enhanceJalaliInputs(document.body);
+      const first = document.querySelector('[data-modal-backdrop] [name="logType"]');
+      if (first) first.focus();
+      return;
+    }
+
+    const serviceBtn = event.target.closest('[data-service-action]');
+    if (serviceBtn) {
+      const section = document.getElementById('sectionView');
+      const vehicleId = serviceBtn.dataset.vehicle || '';
+      if (serviceBtn.dataset.serviceAction === 'add') {
+        formState.maintenance = { open:true, id:null, preset:{ vehicleId:String(vehicleId), date:todayIso() } };
+        document.body.insertAdjacentHTML('beforeend', renderForm('maintenance', appData));
+        enhanceJalaliInputs(document.body);
+        return;
+      }
+      if (serviceBtn.dataset.serviceAction === 'export') {
+        const fields = fieldsFor('maintenance');
+        const rows = [fields.map(function (field) { return field.label; })];
+        (appData.maintenance || []).filter(function (item) { return String(item.vehicleId) === String(vehicleId); })
+          .sort(function (a, b) { return String(a.date || '').localeCompare(String(b.date || '')); })
+          .forEach(function (item) { rows.push(fields.map(function (field) { return exportValue('maintenance', field, item, appData); })); });
+        const vehicle = (appData.vehicles || []).find(function (item) { return String(item.id) === String(vehicleId); });
+        exportRowsXlsx(rows, 'ATLAS-SHIFT-servicebook-' + (vehicle ? vehicle.name : vehicleId) + '-' + todayIso() + '.xlsx', 'سوابق سرویس');
+        toast('خروجی سوابق این خودرو آماده شد.');
+        return;
+      }
+    }
+  });
+
+  document.addEventListener('change', function (event) {
+    const filter = event.target.closest('[data-gas-filter]');
+    if (!filter) return;
+    gasFilter[filter.dataset.gasFilter] = filter.value;
+    renderGasRegistry(document.getElementById('sectionView'));
+  });
+
   function render(view, section) {
     if(!section)return;
     prepareSection(section);
@@ -1379,6 +1788,9 @@
       return;
     }
     if(view==='programs')renderPrograms(section);
+    else if(view==='faults')renderFaults(section);
+    else if(view==='gasmeters')renderGasRegistry(section);
+    else if(view==='maintenance')renderServiceBook(section);
     else if(specs[view])renderCrud(view,section);
     else if(view==='reports')renderReports(section);
     else if(view==='settings')renderSettings(section);
@@ -1532,15 +1944,15 @@
   }
 
   function currentReportRows() {
-    const rows=[['بخش','شناسه','عنوان یا نام','وضعیت','تاریخ','شرح']];
+    const rows=[['بخش','عنوان یا نام','وضعیت','تاریخ','شرح']];
     MODULES.forEach(function(moduleKey){
       appData[moduleKey].filter(function(record){return isInRange(moduleKey,record,reportPeriod);}).forEach(function(record){
-        const summary=record.notes||record.body||record.result||record.reason||record.destination||record.related||'';
-        rows.push([specs[moduleKey].title,record.id,recordLabel(moduleKey,record),record.status||'',recordDateForCsv(moduleKey,record),summary]);
+        const summary=record.notes||record.body||record.result||record.reason||record.destination||record.related||record.description||'';
+        rows.push([specs[moduleKey].title,recordLabel(moduleKey,record),record.status||'',recordDateForCsv(moduleKey,record),summary]);
       });
     });
     (appData.shifts||[]).filter(function(record){return isInRange('shifts',record,reportPeriod);}).forEach(function(record){
-      rows.push(['برنامهٔ شیفت',record.id,shiftLabel(record,appData),record.status||'',record.startAt||'',[record.workplace,record.notes].filter(Boolean).join(' · ')]);
+      rows.push(['برنامهٔ شیفت',shiftLabel(record,appData),record.status||'',record.startAt||'',[record.workplace,record.notes].filter(Boolean).join(' · ')]);
     });
     return rows;
   }
@@ -1673,21 +2085,69 @@
   }
 
   // ── خروجی یکپارچه: CSV، اکسل، ورد، پاورپوینت، تصویر و چاپ ─────────────────
-  function moduleExportRows(moduleKey) {
+  // متن سادهٔ هر فیلد برای خروجی؛ نام افراد و خودرو جای شناسه‌ها نوشته می‌شود.
+  function exportValue(moduleKey, field, record, data) {
+    const value = field.custom && record.customFields ? record.customFields[field.key] : record[field.key];
+    if (field.type === 'file' || field.type === 'file-multiple') {
+      const list = Array.isArray(value) ? value : (value ? [value] : []);
+      return list.map(function (item) { return item && item.name ? item.name : 'پیوست'; }).join('; ');
+    }
+    if (field.type === 'jalali' || field.type === 'jalali-datetime' || field.type === 'date') {
+      return value ? formatJalali(value, field.type === 'jalali-datetime') : '';
+    }
+    if (field.source === 'employees') {
+      const find = function (id) {
+        const person = (data.employees || []).find(function (item) { return String(item.id) === String(id); });
+        return person ? (employeeName(person) || person.personnelId || '') : '';
+      };
+      return (Array.isArray(value) ? value.map(find) : [find(value)]).filter(Boolean).join('، ');
+    }
+    if (field.source === 'vehicles') {
+      const vehicle = (data.vehicles || []).find(function (item) { return String(item.id) === String(value); });
+      return vehicle ? [vehicle.name, vehicle.companyPlate].filter(Boolean).join(' · ') : String(value || '');
+    }
+    if (field.source === 'gasmeters') {
+      const meter = (data.gasmeters || []).find(function (item) { return String(item.id) === String(value); });
+      return meter ? [meter.code, meter.serial].filter(Boolean).join(' · ') : String(value || '');
+    }
+    if (Array.isArray(value)) return value.join('، ');
+    return String(value == null ? '' : value);
+  }
+
+  function exportColumnsSetting(moduleKey) {
+    const stored = appData.settings && appData.settings.exportColumns ? appData.settings.exportColumns[moduleKey] : null;
+    return Array.isArray(stored) && stored.length ? stored : null;
+  }
+
+  function selectedExportFields(moduleKey) {
     const fields = fieldsFor(moduleKey);
+    const chosen = exportColumnsSetting(moduleKey);
+    if (!chosen) return fields;
+    const picked = fields.filter(function (field) { return chosen.indexOf(field.key) >= 0; });
+    return picked.length ? picked : fields;
+  }
+
+  function exportColumnsModal(moduleKey) {
+    const fields = fieldsFor(moduleKey);
+    const chosen = exportColumnsSetting(moduleKey) || fields.map(function (field) { return field.key; });
+    return '<div class="atlas-modal-backdrop" data-modal-backdrop data-modal-kind="export-columns" data-view="' + esc(moduleKey) + '">' +
+      '<div class="atlas-modal" role="dialog" aria-modal="true"><div class="atlas-modal-head"><div><h3>ستون‌های گزارش</h3>' +
+      '<p>هر ستونی را که در خروجی لازم داری تیک بزن؛ بقیه در فایل نمی‌آید تا گزارش شلوغ نشود.</p></div>' +
+      '<button type="button" class="atlas-modal-close" data-module-action="export-columns-cancel" data-view="' + esc(moduleKey) + '" aria-label="بستن">×</button></div>' +
+      '<div class="atlas-modal-body"><div class="module-check-options module-check-people" data-export-columns>' +
+      fields.map(function (field) {
+        return '<label><input type="checkbox" value="' + esc(field.key) + '"' + (chosen.indexOf(field.key) >= 0 ? ' checked' : '') + '><span>' + esc(field.label) + '</span></label>';
+      }).join('') + '</div>' +
+      '<div class="module-form-actions"><span class="module-required-help">حداقل یک ستون لازم است.</span><div>' +
+      '<button type="button" class="secondary-btn" data-module-action="export-columns-all" data-view="' + esc(moduleKey) + '">انتخاب همه</button> ' +
+      '<button type="button" class="primary-btn" data-module-action="export-columns-save" data-view="' + esc(moduleKey) + '">ذخیرهٔ ستون‌ها</button></div></div></div></div></div>';
+  }
+
+  function moduleExportRows(moduleKey) {
+    const fields = selectedExportFields(moduleKey);
     const rows = [fields.map(function (field) { return field.label; })];
     (appData[moduleKey] || []).forEach(function (record) {
-      rows.push(fields.map(function (field) {
-        const value = field.custom && record.customFields ? record.customFields[field.key] : record[field.key];
-        if (field.type === 'file' || field.type === 'file-multiple') {
-          return Array.isArray(value) ? value.map(function (x) { return x.name; }).join('; ') : (value ? 'پیوست' : '');
-        }
-        if (field.type === 'jalali' || field.type === 'jalali-datetime') {
-          return value ? formatJalali(value, field.type === 'jalali-datetime') : '';
-        }
-        if (Array.isArray(value)) return value.join('، ');
-        return String(value == null ? '' : value);
-      }));
+      rows.push(fields.map(function (field) { return exportValue(moduleKey, field, record, appData); }));
     });
     return rows;
   }
@@ -1851,21 +2311,12 @@
       '<button type="button" data-module-action="export" data-format="pptx" data-view="' + esc(moduleKey) + '">PowerPoint (.pptx)</button>' +
       '<button type="button" data-module-action="export" data-format="png" data-view="' + esc(moduleKey) + '">تصویر PNG</button>' +
       '<button type="button" data-module-action="export" data-format="print" data-view="' + esc(moduleKey) + '">چاپ کم‌مصرف</button>' +
+      '<button type="button" class="module-export-columns" data-module-action="export-columns" data-view="' + esc(moduleKey) + '">⚙ انتخاب ستون‌های گزارش</button>' +
       '</div></div>';
   }
 
   function exportCsv(moduleKey) {
-    const rows=[];
-    const fields=fieldsFor(moduleKey);
-    rows.push(['شناسه'].concat(fields.map(function(field){return field.label;})));
-    appData[moduleKey].forEach(function(record){
-      rows.push([record.id].concat(fields.map(function(field){
-        const value=field.custom&&record.customFields?record.customFields[field.key]:record[field.key];
-        if(field.type==='file'||field.type==='file-multiple')return Array.isArray(value)?value.map(function(x){return x.name;}).join('; '):(value?'تصویر پیوست':'');
-        if(field.type==='jalali'||field.type==='jalali-datetime')return value?formatJalali(value,field.type==='jalali-datetime'):'';
-        return Array.isArray(value)?value.join('، '):String(value==null?'':value);
-      })));
-    });
+    const rows = moduleExportRows(moduleKey);
     downloadFile('ATLAS-SHIFT-'+moduleKey+'-'+todayIso()+'.csv','\uFEFF'+rows.map(function(row){return row.map(csvEscape).join(',');}).join('\r\n'),'text/csv;charset=utf-8;');
   }
 
@@ -1886,13 +2337,13 @@
   }
 
   function exportAllCsv() {
-    const rows=[['بخش','شناسه','عنوان','وضعیت','تاریخ','شرح']];
+    const rows=[['بخش','عنوان','وضعیت','تاریخ','شرح']];
     MODULES.forEach(function(key){
       appData[key].forEach(function(record){
-        rows.push([specs[key].title,record.id,recordLabel(key,record),record.status||'',recordDateForCsv(key,record),record.notes||record.body||record.result||record.reason||'']);
+        rows.push([specs[key].title,recordLabel(key,record),record.status||'',recordDateForCsv(key,record),record.notes||record.body||record.result||record.reason||record.description||'']);
       });
     });
-    (appData.shifts||[]).forEach(function(record){rows.push(['برنامهٔ شیفت',record.id,shiftLabel(record,appData),record.status||'',record.startAt||'',record.workplace||record.notes||'']);});
+    (appData.shifts||[]).forEach(function(record){rows.push(['برنامهٔ شیفت',shiftLabel(record,appData),record.status||'',record.startAt||'',record.workplace||record.notes||'']);});
     downloadFile('ATLAS-SHIFT-report-'+todayIso()+'.csv','\uFEFF'+rows.map(function(row){return row.map(csvEscape).join(',');}).join('\r\n'),'text/csv;charset=utf-8;');
   }
 
@@ -2093,6 +2544,28 @@
       const menu=button.closest('[data-export-menu]');
       const list=menu&&menu.querySelector('.module-export-list');
       if(list){list.hidden=!list.hidden;button.setAttribute('aria-expanded',String(!list.hidden));}
+    }else if(action==='export-columns'&&specs[moduleKey]){
+      const menu=button.closest('[data-export-menu]');
+      const list=menu&&menu.querySelector('.module-export-list');
+      if(list)list.hidden=true;
+      document.body.insertAdjacentHTML('beforeend',exportColumnsModal(moduleKey));
+    }else if(action==='export-columns-cancel'){
+      const modal=button.closest('[data-modal-backdrop]');
+      if(modal)modal.remove();
+    }else if(action==='export-columns-all'){
+      const modal=button.closest('[data-modal-backdrop]');
+      if(modal)modal.querySelectorAll('[data-export-columns] input').forEach(function(box){box.checked=true;});
+    }else if(action==='export-columns-save'&&specs[moduleKey]){
+      const modal=button.closest('[data-modal-backdrop]');
+      const picked=modal?Array.from(modal.querySelectorAll('[data-export-columns] input:checked')).map(function(box){return box.value;}):[];
+      if(!picked.length){toast('حداقل یک ستون را انتخاب کن.');return;}
+      if(!appData.settings.exportColumns)appData.settings.exportColumns={};
+      appData.settings.exportColumns[moduleKey]=picked;
+      if(await saveState()){
+        if(modal)modal.remove();
+        toast('ستون‌های گزارش ذخیره شد؛ خروجی‌ها فقط همین ستون‌ها را دارند.');
+        render(moduleKey,section);
+      }
     }else if(action==='export'&&specs[moduleKey]){
       const menu=button.closest('[data-export-menu]');
       const list=menu&&menu.querySelector('.module-export-list');
@@ -2133,12 +2606,24 @@
     }
   });
 
+  // پنجره‌هایی که مستقیم به body اضافه می‌شوند (مثل «+ سابقه» یا انتخاب ستون‌های گزارش)
+  // با رندر دوبارهٔ بخش حذف نمی‌شوند و باید صریح بسته شوند.
+  function clearDetachedModals() {
+    document.querySelectorAll('body > [data-modal-backdrop]').forEach(function (node) { node.remove(); });
+  }
+
   function closeModal(view) {
     const backdrop = document.querySelector('[data-modal-backdrop]');
     if (backdrop && backdrop.dataset.modalKind === 'shift') {
       shiftFormState = { open: false, id: null };
       const host = document.getElementById('sectionView');
       if (host) render('employees', host);
+      return true;
+    }
+    const host = document.getElementById('sectionView');
+    if (backdrop && (!host || !host.contains(backdrop))) {
+      delete formState[backdrop.dataset.view];
+      backdrop.remove();
       return true;
     }
     const target = view || (backdrop ? backdrop.dataset.view : '');
@@ -2259,7 +2744,8 @@
         const ok=await saveState();
         if(!ok)return;
         delete formState[moduleKey];
-        render(moduleKey,document.getElementById('sectionView'));
+        clearDetachedModals();
+        refreshCurrentView();
         refreshDashboard();
         toast(old?'تغییرات ذخیره شد.':'اطلاعات جدید ثبت شد.');
       }catch(error){

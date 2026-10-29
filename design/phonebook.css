@@ -62,3 +62,16 @@
 #settingsPanel .pb-structure-content .atlas-pb-option-row{gap:8px;flex-wrap:wrap;align-items:center}
 #settingsPanel .pb-structure-content .atlas-pb-option-row>span{min-width:0;overflow-wrap:anywhere}
 #settingsPanel .pb-structure-content .atlas-pb-option-row button{padding:6px 8px;font-size:11px}
+
+/* پیش‌شماره، شمارهٔ دفتر و نام منشی */
+.atlas-pb-phone-inputs{display:flex;gap:8px;align-items:center;flex:1;min-width:0;flex-wrap:wrap}
+.atlas-pb-phone-inputs input[type="tel"]{flex:1 1 150px;min-width:0}
+.atlas-pb-phone-inputs .atlas-pb-prefix{flex:0 0 84px;max-width:84px;font-size:11px;padding:7px 8px;text-align:center;letter-spacing:.06em;opacity:.9}
+.atlas-pb-phone-inputs .atlas-pb-secretary{flex:1 1 130px;font-size:12px}
+.atlas-pb-phone-inputs [hidden]{display:none!important}
+.atlas-pb-prefix{display:inline-block;font-size:10.5px;opacity:.72;letter-spacing:.05em;margin-inline-end:7px;padding:1px 6px;border-radius:7px;background:rgba(var(--c-white-rgb),.06)}
+.atlas-pb-secretary-note{font-size:10.5px;color:var(--muted)}
+.atlas-pb-contact{display:inline-flex;align-items:center;gap:4px;margin-inline-start:6px;padding:2px 8px;border-radius:999px;font-size:10.5px;text-decoration:none;color:inherit;background:rgba(var(--surf-rgb),.2);border:1px solid rgba(var(--surf-rgb),.35)}
+.atlas-pb-contact:hover{background:rgba(var(--surf-rgb),.34)}
+.atlas-pb-form-error{margin:0;padding:9px 12px;border-radius:11px;font-size:11.5px;line-height:1.7;color:var(--danger);background:var(--danger-soft);border:1px solid var(--danger-line)}
+.atlas-pb-form-error[hidden]{display:none}

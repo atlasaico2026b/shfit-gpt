@@ -351,7 +351,10 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
     missions:{title:'مدیریت <span style="color:var(--tone-6)">مأموریت‌ها</span>',subtitle:'مأموریت‌های شهری و بین‌شهری، مسیر، کیلومتر و فعالیت میدانی',kicker:'مدیریت عملیات / مأموریت‌ها',icon:'↗',note:'فرم‌های ثبت مأموریت، مبدأ و مقصد، تاریخ، خودرو، نفرات و گزارش‌های دوره‌ای در همین بخش پیاده‌سازی خواهند شد.'},
     leaves:{title:'مدیریت <span style="color:var(--tone-2)">مرخصی‌ها</span>',subtitle:'برنامه‌ریزی مرخصی و مشاهده وضعیت نیروها',kicker:'مدیریت عملیات / مرخصی‌ها',icon:'◷',note:'ثبت بازه مرخصی، پیوند آن با برنامه شیفت و گزارش مرخصی‌ها در این بخش پیاده‌سازی خواهد شد.'},
     vehicles:{title:'مدیریت <span style="color:var(--tone-5)">خودروها</span>',subtitle:'وضعیت ناوگان، محل استقرار، سرنشینان و سرویس دوره‌ای',kicker:'مدیریت عملیات / خودروها',icon:'▰',note:'کارت خودرو، پلاک‌ها، خرابی‌ها، تجهیزات همراه، کیلومتر و سوابق تعمیرات در همین بخش ساخته خواهد شد.'},
+    maintenance:{title:'دفتر سرویس <span style="color:var(--tone-5)">و تعمیرات</span>',subtitle:'سوابق سرویس، تعمیر، کیلومتر و هزینهٔ هر خودرو به‌صورت زونکن‌بندی‌شده',kicker:'مدیریت عملیات / دفتر سرویس',icon:'⚙',note:'هر خودرو یک زونکن دارد؛ سرویس‌ها با تاریخ، کیلومتر و هزینه ثبت و قابل خروجی‌اند.'},
+    faults:{title:'اشکالات <span style="color:var(--tone-7)">و رفع اشکال</span>',subtitle:'ثبت اشکال خودرو، گازسنج و تجهیزات با روند رفع، درصد پیشرفت و اعلان تا بسته‌شدن',kicker:'مدیریت عملیات / اشکالات',icon:'⚠',note:'هر اشکال تا رفع کامل در اعلان‌ها می‌ماند و روند اقدامش ثبت می‌شود.'},
     gasmeters:{title:'مدیریت <span style="color:var(--tone-7)">گازسنج‌ها</span>',subtitle:'وضعیت تجهیزات، گازهای قابل‌اندازه‌گیری و سررسید کالیبراسیون',kicker:'مدیریت عملیات / تجهیزات',icon:'◉',note:'ثبت کد و سریال، نوع گاز، محل استقرار، وضعیت دستگاه و محاسبه سررسید کالیبراسیون در این بخش پیاده‌سازی خواهد شد.'},
+    gaslogs:{title:'سوابق <span style="color:var(--tone-4)">گازسنج</span>',subtitle:'قرائت‌ها، کالیبراسیون و اتفاقات ثبت‌شده برای هر دستگاه',kicker:'مدیریت عملیات / سوابق گازسنج',icon:'⌁',note:'هر سابقه به یک گازسنج وصل است و همراه پروندهٔ همان دستگاه نگه‌داری می‌شود.'},
     programs:{title:'برنامه‌ها و <span style="color:var(--tone-6)">اهداف</span>',subtitle:'اهداف، برنامه‌های فعالیت، مانور، روتین و دوره‌های آموزشی با مراحل و درصد پیشرفت',kicker:'مدیریت عملیات / برنامه‌ها',icon:'◎',note:'هر برنامه از چند مرحله تشکیل می‌شود و درصد پیشرفت از نسبت مراحل انجام‌شده به کل مراحل محاسبه می‌شود.'},
     notes:{title:'یادداشت‌ها و <span style="color:var(--tone-3)">پیگیری‌ها</span>',subtitle:'یادداشت‌های کاری و نکات پیگیری عملیات',kicker:'مدیریت عملیات / یادداشت‌ها',icon:'▤',note:'یادداشت‌های قابل ویرایش و حذف، تاریخ و ارجاع مرتبط در این بخش ساخته خواهد شد.'},
     reports:{title:'گزارش‌ها و <span style="color:var(--tone-2)">آمار</span>',subtitle:'گزارش‌های روزانه و دوره‌ای بر اساس تاریخ، شهر و نوع فعالیت',kicker:'مدیریت عملیات / گزارشات',icon:'▥',note:'فیلتر تاریخ شمسی، شمارش مأموریت‌ها و گزارش‌های قابل چاپ و خروجی در این بخش پیاده‌سازی خواهد شد.'},
@@ -386,7 +389,7 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
   }
   function phonebookNormalize(value){
     const x=value&&typeof value==='object'?value:{};
-    const phoneNumbers=Array.isArray(x.phoneNumbers)?x.phoneNumbers.map(p=>({kind:p&&p.kind==='office'?'office':'mobile',label:String(p&&p.label||'تلفن اصلی'),value:String(p&&(p.value||p.number)||'')})).filter(p=>p.value):[];
+    const phoneNumbers=Array.isArray(x.phoneNumbers)?x.phoneNumbers.map(p=>({kind:p&&p.kind==='office'?'office':'mobile',label:String(p&&p.label||'تلفن اصلی'),prefix:String(p&&p.prefix||''),value:String(p&&(p.value||p.number)||''),secretary:String(p&&p.secretary||'')})).filter(p=>p.value):[];
     if(!phoneNumbers.length){
       const oldMobile=String(x.mobile||x.mobileNumber||'').trim();
       if(oldMobile)phoneNumbers.push({kind:'mobile',label:'تلفن اصلی',value:oldMobile});
@@ -427,22 +430,48 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
         '<div class="atlas-pb-combo">'+input+'<button type="button" class="atlas-pb-add-option" data-pb-add-option="'+key+'" title="افزودن مقدار تایپ‌شده به فهرست" aria-label="افزودن '+label+' به فهرست">+</button></div><datalist id="atlasPbList_'+key+'"></datalist>':
         input)+'</div>';
     }
-    section.innerHTML='<div class="module-root"><header class="module-page-head"><div><h2>دفترچه تلفن سازمانی</h2><p>حوزه ← شهر ← مجتمع ← مرکز انتقال نفت ← ایستگاه ← ساختمان ← واحد ← سمت ← شخص</p></div></header><section class="module-list-panel"><div class="module-list-head"><div><h3>جست‌وجو و فیلتر</h3><p>فهرست‌ها از تنظیمات دفترچه تلفن مدیریت می‌شوند.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="primary-btn" id="atlasPbNew">+ ثبت شخص</button></div></div><div class="atlas-pb-toolbar"><input id="atlasPbSearch" type="search" placeholder="جست‌وجوی نام، شماره یا مشخصات"><select id="atlasPbCityFilter"><option value="">همه شهرها</option></select><select id="atlasPbSiteFilter"><option value="">همه مجتمع‌ها</option></select><select id="atlasPbStationFilter"><option value="">همه ایستگاه‌ها</option></select><select id="atlasPbSortBy" aria-label="مرتب‌سازی بر اساس"><option value="normal">حالت عادی — بدون گروه‌بندی</option><option value="name">نام و نام خانوادگی</option><option value="officePhone">شماره تلفن‌های ثابت</option><option value="extension">شماره داخلی چهاررقمی</option><option value="mobilePhone">موبایل</option><option value="position">سمت سازمانی</option><option value="supervision">سرپرستی</option><option value="unit">واحد</option><option value="area">حوزه</option><option value="city">شهر</option><option value="complex">مجتمع</option><option value="transferCenter">مرکز انتقال نفت</option><option value="station">ایستگاه</option><option value="building">ساختمان</option></select><select id="atlasPbSortDirection" aria-label="جهت مرتب‌سازی"><option value="asc">صعودی: الف تا ی / کم به زیاد</option><option value="desc">نزولی: ی تا الف / زیاد به کم</option></select></div><form class="atlas-pb-form" id="atlasPbForm">'+fields.map(fieldMarkup).join('')+'<div class="atlas-pb-phone-editor"><div class="atlas-pb-phone-head"><strong>شماره‌های تماس</strong><button type="button" class="secondary-btn" id="atlasPbAddPhone">+ افزودن شماره</button></div><div id="atlasPbPhoneRows"></div></div><div class="atlas-pb-actions"><button class="primary-btn" type="submit">ذخیره اطلاعات</button><button class="secondary-btn" type="button" id="atlasPbCancel">انصراف</button></div></form><div class="atlas-pb-results" id="atlasPbResults"></div></section></div>';
+    section.innerHTML='<div class="module-root"><header class="module-page-head"><div><h2>دفترچه تلفن سازمانی</h2><p>حوزه ← شهر ← مجتمع ← مرکز انتقال نفت ← ایستگاه ← ساختمان ← واحد ← سمت ← شخص</p></div></header><section class="module-list-panel"><div class="module-list-head"><div><h3>جست‌وجو و فیلتر</h3><p>فهرست‌ها از تنظیمات دفترچه تلفن مدیریت می‌شوند.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="primary-btn" id="atlasPbNew">+ ثبت شخص</button></div></div><div class="atlas-pb-toolbar"><input id="atlasPbSearch" type="search" placeholder="جست‌وجوی نام، شماره یا مشخصات"><select id="atlasPbCityFilter"><option value="">همه شهرها</option></select><select id="atlasPbSiteFilter"><option value="">همه مجتمع‌ها</option></select><select id="atlasPbStationFilter"><option value="">همه ایستگاه‌ها</option></select><select id="atlasPbSortBy" aria-label="مرتب‌سازی بر اساس"><option value="normal">حالت عادی — بدون گروه‌بندی</option><option value="name">نام و نام خانوادگی</option><option value="officePhone">شماره تلفن‌های ثابت</option><option value="extension">شماره داخلی چهاررقمی</option><option value="mobilePhone">موبایل</option><option value="position">سمت سازمانی</option><option value="supervision">سرپرستی</option><option value="unit">واحد</option><option value="area">حوزه</option><option value="city">شهر</option><option value="complex">مجتمع</option><option value="transferCenter">مرکز انتقال نفت</option><option value="station">ایستگاه</option><option value="building">ساختمان</option></select><select id="atlasPbSortDirection" aria-label="جهت مرتب‌سازی"><option value="asc">صعودی: الف تا ی / کم به زیاد</option><option value="desc">نزولی: ی تا الف / زیاد به کم</option></select></div><form class="atlas-pb-form" id="atlasPbForm">'+fields.map(fieldMarkup).join('')+'<div class="atlas-pb-phone-editor"><div class="atlas-pb-phone-head"><strong>شماره‌های تماس</strong><button type="button" class="secondary-btn" id="atlasPbAddPhone">+ افزودن شماره</button></div><div id="atlasPbPhoneRows"></div></div><p class="atlas-pb-form-error" id="atlasPbFormError" role="alert" hidden></p><div class="atlas-pb-actions"><button class="primary-btn" type="submit">ذخیره اطلاعات</button><button class="secondary-btn" type="button" id="atlasPbCancel">انصراف</button></div></form><div class="atlas-pb-results" id="atlasPbResults"></div></section></div>';
     const form=section.querySelector('#atlasPbForm'),search=section.querySelector('#atlasPbSearch');
     const cityFilter=section.querySelector('#atlasPbCityFilter'),siteFilter=section.querySelector('#atlasPbSiteFilter'),stationFilter=section.querySelector('#atlasPbStationFilter'),sortBy=section.querySelector('#atlasPbSortBy'),sortDirection=section.querySelector('#atlasPbSortDirection');
     fields.filter(f=>f[4]).forEach(([key])=>{const input=section.querySelector('#atlasPb_'+key);input.setAttribute('list','atlasPbList_'+key);});
     const phoneRows=section.querySelector('#atlasPbPhoneRows');
+    const formError=section.querySelector('#atlasPbFormError');
+    const showFormError=message=>{if(!formError)return false;formError.textContent=String(message||'');formError.hidden=!message;return !!message;};
+    const clearFormError=()=>showFormError('');
     function renderPhoneRows(items=[]){
       phoneRows.innerHTML='';
-      const rows=items.length?items:[{kind:'mobile',label:(options.phoneLabel||PHONEBOOK_DEFAULT_OPTIONS.phoneLabel)[0]||'تلفن اصلی',value:''}];
+      const rows=items.length?items:[{kind:'mobile',label:(options.phoneLabel||PHONEBOOK_DEFAULT_OPTIONS.phoneLabel)[0]||'تلفن اصلی',prefix:'',value:'',secretary:''}];
+      const labelOptions=[...new Set([...(options.phoneLabel||PHONEBOOK_DEFAULT_OPTIONS.phoneLabel),'تلفن منشی'].filter(Boolean))];
       rows.forEach((item,index)=>{
         const row=document.createElement('div');row.className='atlas-pb-phone-row';
         const kind=document.createElement('select');kind.setAttribute('aria-label','نوع شماره تماس');
         [['mobile','موبایل'],['office','تلفن دفتر']].forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;kind.appendChild(o)});kind.value=item.kind==='office'?'office':'mobile';
         const label=document.createElement('select');label.setAttribute('aria-label','عنوان شماره تماس');
-        const labels=[...new Set([...(options.phoneLabel||PHONEBOOK_DEFAULT_OPTIONS.phoneLabel),String(item.label||'')].filter(Boolean))];
+        const labels=[...new Set([...labelOptions,String(item.label||'')].filter(Boolean))];
         labels.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;label.appendChild(o)});label.value=item.label&&labels.includes(item.label)?item.label:labels[0];
-        const value=document.createElement('input');value.type='tel';value.autocomplete='tel';value.placeholder='شماره تماس';value.value=item.value||'';value.setAttribute('aria-label','شماره تماس');
+
+        const prefix=document.createElement('input');
+        prefix.type='tel';prefix.className='atlas-pb-prefix';prefix.autocomplete='off';prefix.dir='ltr';
+        prefix.placeholder='پیش‌شماره';prefix.value=item.prefix||'';prefix.setAttribute('aria-label','پیش‌شمارهٔ تلفن');
+
+        const value=document.createElement('input');
+        value.type='tel';value.autocomplete='tel';value.placeholder='شماره تماس';value.value=item.value||'';value.setAttribute('aria-label','شماره تماس');
+
+        const secretary=document.createElement('input');
+        secretary.type='text';secretary.className='atlas-pb-secretary';secretary.autocomplete='off';
+        secretary.placeholder='نام منشی';secretary.value=item.secretary||'';secretary.setAttribute('aria-label','نام منشی');
+
+        const numbers=document.createElement('div');numbers.className='atlas-pb-phone-inputs';
+        numbers.append(prefix,value,secretary);
+
+        const applyVisibility=()=>{
+          const isOffice=kind.value==='office';
+          prefix.hidden=!isOffice;
+          secretary.hidden=!(isOffice&&/منشی/.test(label.value||''));
+        };
+        kind.addEventListener('change',applyVisibility);
+        label.addEventListener('change',applyVisibility);
+
         const remove=document.createElement('button');remove.type='button';remove.className='secondary-btn';remove.textContent='حذف';remove.setAttribute('aria-label','حذف شماره تماس '+(index+1));
         remove.addEventListener('click',()=>{
           if(row.querySelector('.atlas-pb-delete-question'))return;
@@ -453,10 +482,22 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
           cancelDelete.addEventListener('click',()=>{question.remove();confirmDelete.remove();cancelDelete.remove();remove.hidden=false;});
           remove.hidden=true;row.append(question,confirmDelete,cancelDelete);
         });
-        row.append(kind,label,value,remove);phoneRows.appendChild(row);
+        row.append(kind,label,numbers,remove);phoneRows.appendChild(row);
+        applyVisibility();
       });
     }
-    function readPhoneRows(){return [...phoneRows.querySelectorAll('.atlas-pb-phone-row')].map(row=>({kind:row.children[0].value==='office'?'office':'mobile',label:row.children[1].value||'سایر',value:row.children[2].value.trim()})).filter(p=>p.value);}
+    function readPhoneRows(){
+      return [...phoneRows.querySelectorAll('.atlas-pb-phone-row')].map(row=>{
+        const inputs=row.querySelectorAll('.atlas-pb-phone-inputs input');
+        return {
+          kind:row.children[0].value==='office'?'office':'mobile',
+          label:row.children[1].value||'سایر',
+          prefix:row.children[0].value==='office'?String(inputs[0]&&inputs[0].value||'').trim():'',
+          value:String(inputs[1]&&inputs[1].value||'').trim(),
+          secretary:row.children[0].value==='office'?String(inputs[2]&&inputs[2].value||'').trim():''
+        };
+      }).filter(p=>p.value);
+    }
     section.querySelector('#atlasPbAddPhone').addEventListener('click',()=>{const current=readPhoneRows();current.push({kind:'mobile',label:(options.phoneLabel||PHONEBOOK_DEFAULT_OPTIONS.phoneLabel)[0]||'تلفن اصلی',value:''});renderPhoneRows(current);phoneRows.lastElementChild?.querySelector('input')?.focus();});
     function normalizePhoneForCheck(value){
       let v=String(value||'').trim().replace(/[\s().\-\/]+/g,'');
@@ -473,20 +514,21 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
         if(ci===skipIndex)continue;
         const c=contacts[ci];
         for(const p of (c.phoneNumbers||[])){
-          if(normalizePhoneForCheck(p.value)===candidate)return {contact:c,phone:p,index:ci};
+          if(normalizePhoneForCheck(phoneFull(p))===candidate)return {contact:c,phone:p,index:ci};
         }
         if(normalizePhoneForCheck(c.extension)===candidate)return {contact:c,phone:{value:c.extension,label:'شماره داخلی چهاررقمی'},index:ci};
       }
       return null;
     }
+    function phoneFull(p){return String((p&&p.prefix?p.prefix:'')+''+(p&&p.value?p.value:''));}
     function duplicatePhoneInForm(){
       const rows=readPhoneRows(),seen=new Set();
       for(const p of rows){
-        const key=normalizePhoneForCheck(p.value);if(!key)continue;
+        const key=normalizePhoneForCheck(phoneFull(p));if(!key)continue;
         if(seen.has(key))return {value:p.value,insideForm:true};
         seen.add(key);
-        const existing=duplicatePhoneInContacts(p.value,editIndex);
-        if(existing)return {value:p.value,contact:existing.contact,insideForm:false};
+        const existing=duplicatePhoneInContacts(phoneFull(p),editIndex);
+        if(existing)return {value:phoneFull(p),contact:existing.contact,insideForm:false};
       }
       const ext=normalizePhoneForCheck(form.elements.extension.value);
       if(ext){
@@ -496,7 +538,7 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
       }
       return null;
     }
-    function persist(){try{localStorage.setItem(PHONEBOOK_KEY,JSON.stringify(contacts));return true;}catch(_){alert('ذخیره‌سازی انجام نشد؛ فضای ذخیره‌سازی مرورگر را بررسی کن. اطلاعات فرم پاک نمی‌شود.');return false;}}
+    function persist(){try{localStorage.setItem(PHONEBOOK_KEY,JSON.stringify(contacts));return true;}catch(_){showFormError('ذخیره‌سازی انجام نشد؛ فضای ذخیره‌سازی مرورگر را بررسی کن. اطلاعات فرم پاک نمی‌شود.');return false;}}
     function fillDatalists(){
       fields.filter(f=>f[4]).forEach(([key])=>{
         const list=section.querySelector('#atlasPbList_'+key);if(!list)return;
@@ -513,7 +555,7 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
     function draw(){
       const q=search.value.trim().toLocaleLowerCase();
       const found=contacts.map((c,i)=>({c,i})).filter(({c})=>{
-        const hay=[c.name,c.extension,c.position,c.supervision,c.area,c.city,c.complex,c.transferCenter,c.station,c.building,c.unit,...c.phoneNumbers.map(p=>[p.kind==='office'?'تلفن دفتر':'موبایل',p.label,p.value].join(' '))].join(' ').toLocaleLowerCase();
+        const hay=[c.name,c.extension,c.position,c.supervision,c.area,c.city,c.complex,c.transferCenter,c.station,c.building,c.unit,...c.phoneNumbers.map(p=>[p.kind==='office'?'تلفن دفتر':'موبایل',p.label,p.prefix||'',p.value,p.secretary||''].join(' '))].join(' ').toLocaleLowerCase();
         return(!q||hay.includes(q))&&(!cityFilter.value||c.city===cityFilter.value)&&(!siteFilter.value||c.complex===siteFilter.value)&&(!stationFilter.value||c.station===stationFilter.value);
       });
       const sortKey=sortBy.value||'normal',direction=sortDirection.value==='desc'?-1:1;
@@ -521,8 +563,19 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
       if(sortKey!=='normal')found.sort((a,b)=>direction*sortValue(a.c).localeCompare(sortValue(b.c),'fa',{numeric:true,sensitivity:'base'})||a.c.name.localeCompare(b.c.name,'fa',{sensitivity:'base'}));
       const renderCard=({c,i})=>{
         const path=[['سرپرستی',c.supervision],['سمت سازمانی',c.position],['واحد',c.unit],['حوزه',c.area],['شهر',c.city],['مجتمع',c.complex],['مرکز انتقال نفت',c.transferCenter],['ایستگاه',c.station],['ساختمان',c.building]].filter(p=>p[1]).map(p=>'&nbsp;'.repeat(5)+'<strong>'+escPb(p[0])+':</strong> '+escPb(p[1])).join('&nbsp;&nbsp;&nbsp;');
-        const office=c.phoneNumbers.filter(p=>p.kind==='office').map(p=>'&nbsp;'.repeat(5)+'<strong>'+escPb(p.label)+':</strong> <span class="atlas-pb-number-value">'+escPb(p.value)+'</span>');
-        const mobile=c.phoneNumbers.filter(p=>p.kind!=='office').map(p=>'&nbsp;'.repeat(5)+'<strong>'+escPb(p.label)+':</strong> <span class="atlas-pb-number-value">'+escPb(p.value)+'</span>');
+        const office=c.phoneNumbers.filter(p=>p.kind==='office').map(p=>{
+          const dial=String((p.prefix||'')+(p.value||'')).replace(/[^\d+]/g,'');
+          return '&nbsp;'.repeat(5)+'<strong>'+escPb(p.label)+':</strong> '+
+          (p.prefix?'<span class="atlas-pb-prefix">'+escPb(p.prefix)+'</span>':'')+
+          '<span class="atlas-pb-number-value">'+escPb(p.value)+'</span>'+
+          (dial?' <a class="atlas-pb-contact" href="tel:'+escPb(dial)+'" title="تماس">📞 تماس</a>':'')+
+          (p.secretary?' <small class="atlas-pb-secretary-note">منشی: '+escPb(p.secretary)+'</small>':'');
+        });
+        const mobile=c.phoneNumbers.filter(p=>p.kind!=='office').map(p=>{
+          const dial=String(p.value||'').replace(/[^\d+]/g,'');
+          const actions=dial?'<a class="atlas-pb-contact" href="tel:'+escPb(dial)+'" title="تماس">📞 تماس</a><a class="atlas-pb-contact" href="sms:'+escPb(dial)+'?&body='+encodeURIComponent('درود، ')+'" title="پیامک">💬 پیامک</a>':'';
+          return '&nbsp;'.repeat(5)+'<strong>'+escPb(p.label)+':</strong> <span class="atlas-pb-number-value">'+escPb(p.value)+'</span> '+actions;
+        });
         const nums=[...office,c.extension?'&nbsp;'.repeat(5)+'<strong>شماره داخلی چهاررقمی:</strong> <span class="atlas-pb-number-value">'+escPb(c.extension)+'</span>':'',...mobile].filter(Boolean).join('&nbsp;&nbsp;&nbsp;')||'شماره‌ای ثبت نشده';
         return '<article class="atlas-pb-card"><h3>'+escPb(c.name||'بدون نام')+'</h3><div class="atlas-pb-numbers">'+nums+'</div><div class="atlas-pb-path">'+path+'</div><div class="atlas-pb-card-actions"><button type="button" class="secondary-btn" data-pb-edit="'+i+'">ویرایش</button><button type="button" class="secondary-btn" data-pb-delete="'+i+'">حذف</button></div></article>';
       };
@@ -531,7 +584,7 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
       const groups=[];found.forEach(item=>{const label=sortValue(item.c).trim()||'بدون مقدار';let group=groups[groups.length-1];if(!group||group.label!==label){group={label,items:[]};groups.push(group);}group.items.push(item);});
       section.querySelector('#atlasPbResults').innerHTML=groups.map(group=>'<section class="atlas-pb-group"><header class="atlas-pb-group-head"><span>'+escPb(sortBy.options[sortBy.selectedIndex]?.textContent||'گروه‌بندی')+'</span><strong>'+escPb(group.label)+'</strong><small>'+group.items.length+' مخاطب</small></header><div class="atlas-pb-group-items">'+group.items.map(renderCard).join('')+'</div></section>').join('');
     }
-    function reset(){form.reset();editIndex=-1;form.classList.remove('open');form.querySelector('[type=submit]').textContent='ذخیره اطلاعات';}
+    function reset(){form.reset();editIndex=-1;form.classList.remove('open');clearFormError();form.querySelector('[type=submit]').textContent='ذخیره اطلاعات';}
     section.querySelector('#atlasPbNew').onclick=()=>{reset();renderPhoneRows([]);form.classList.add('open');form.elements.name.focus();};
     section.querySelector('#atlasPbCancel').onclick=reset;
     section.querySelectorAll('[data-pb-add-option]').forEach(button=>button.addEventListener('click',()=>{
@@ -542,17 +595,18 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
     }));
     form.onsubmit=event=>{
       event.preventDefault();const fd=new FormData(form);
+      clearFormError();
       const record={};
       fields.forEach(([key])=>record[key]=String(fd.get(key)||'').trim());
       record.phoneNumbers=readPhoneRows();
       record.numbers=[];
-      if(record.extension&&!/^[0-9۰-۹٠-٩]{4}$/.test(record.extension)){alert('شماره داخلی باید دقیقاً چهار رقم باشد.');form.elements.extension.focus();return;}
+      if(record.extension&&!/^[0-9۰-۹٠-٩]{4}$/.test(record.extension)){showFormError('شماره داخلی باید دقیقاً چهار رقم باشد.');form.elements.extension.focus();return;}
       const duplicate=duplicatePhoneInForm();
       if(duplicate){
         const message=duplicate.insideForm
           ? 'این شماره در همین فرم بیش از یک بار وارد شده است: '+duplicate.value
-          : 'این شماره قبلاً برای مخاطب «'+duplicate.contact.name+'» ثبت شده است: '+duplicate.value+'\nشماره تکراری قابل ذخیره نیست.';
-        alert(message);
+          : 'این شماره قبلاً برای مخاطب «'+duplicate.contact.name+'» ثبت شده است: '+duplicate.value+' — شماره تکراری قابل ذخیره نیست.';
+        showFormError(message);
         const target=[...phoneRows.querySelectorAll('input[type="tel"]')].find(input=>normalizePhoneForCheck(input.value)===normalizePhoneForCheck(duplicate.value));
         (target||form.elements.extension).focus();
         return;
@@ -588,7 +642,7 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
     try{view=requestedView||new URLSearchParams(window.location.search).get('view')||'dashboard'}catch(e){}
     if(!Object.prototype.hasOwnProperty.call(viewInfo,view))view='dashboard';
     const info=viewInfo[view], isDashboard=view==='dashboard';
-    const hideSelectors=['.dashboard-controls','.widget-dock','.layout-hint','#dashboard','.footnote'];
+    const hideSelectors=['.dashboard-controls','#dashboardQuickAdd','.widget-dock','.layout-hint','#dashboard','.footnote'];
     hideSelectors.forEach(sel=>{const el=$(sel);if(el)el.classList.toggle('route-hidden',!isDashboard)});
     const section=$('#sectionView');
     section.hidden=isDashboard;

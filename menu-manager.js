@@ -8,7 +8,10 @@
     { id: 'missions', title: 'مأموریت‌ها', icon: '↗', href: './index.html?view=missions' },
     { id: 'leaves', title: 'مرخصی‌ها', icon: '◷', href: './index.html?view=leaves' },
     { id: 'vehicles', title: 'خودروها', icon: '▰', href: './index.html?view=vehicles' },
+    { id: 'maintenance', title: 'دفتر سرویس', icon: '⚙', href: './index.html?view=maintenance' },
+    { id: 'faults', title: 'اشکالات', icon: '⚠', href: './index.html?view=faults' },
     { id: 'gasmeters', title: 'گازسنج‌ها', icon: '◉', href: './index.html?view=gasmeters' },
+    { id: 'gaslogs', title: 'سوابق گازسنج', icon: '⌁', href: './index.html?view=gaslogs' },
     { id: 'notes', title: 'یادداشت‌ها', icon: '▤', href: './index.html?view=notes' },
     { id: 'programs', title: 'برنامه‌ها و پرونده‌ها', icon: '✓', href: './index.html?view=programs' },
     { id: 'phonebook', title: 'دفترچه تلفن', icon: '☎', href: './index.html?view=phonebook' },
@@ -19,6 +22,8 @@
     dashboard: './index.html', employees: './index.html?view=employees',
     missions: './index.html?view=missions', leaves: './index.html?view=leaves',
     vehicles: './index.html?view=vehicles', gasmeters: './index.html?view=gasmeters',
+    maintenance: './index.html?view=maintenance', faults: './index.html?view=faults',
+    gaslogs: './index.html?view=gaslogs',
     notes: './index.html?view=notes', programs: './index.html?view=programs',
     phonebook: './index.html?view=phonebook', reports: './index.html?view=reports'
   };

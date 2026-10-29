@@ -32,6 +32,9 @@
     <a class="app-menu-item" href="./index.html?view=missions" title="مأموریت‌ها"><svg viewBox="0 0 24 24"><path d="M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1Z"/><path d="M8 6H6a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-2"/><path d="M9 12h6M9 16h4"/></svg>مأموریت</a>
     <a class="app-menu-item" href="./index.html?view=leaves" title="مرخصی‌ها"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/><path d="M12 14v3h2"/></svg>مرخصی</a>
     <a class="app-menu-item" href="./index.html?view=vehicles" title="خودروها"><svg viewBox="0 0 24 24"><path d="M4 13l1.8-5.2A2 2 0 0 1 7.7 6.5h8.6a2 2 0 0 1 1.9 1.3L20 13"/><path d="M3 13h18v5a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H6v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5Z"/><circle cx="7.5" cy="15.5" r="1"/><circle cx="16.5" cy="15.5" r="1"/></svg>خودرو</a>
+    <a class="app-menu-item" href="./index.html?view=maintenance" title="دفتر سرویس و تعمیرات"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0 5 5L21 21H3l1.3-9.7a4 4 0 0 0 5-5Z"/><path d="M9 13h6"/></svg>سرویس</a>
+    <a class="app-menu-item" href="./index.html?view=faults" title="اشکالات و رفع اشکال"><svg viewBox="0 0 24 24"><path d="M12 3 2.8 20h18.4L12 3Z"/><path d="M12 9v4M12 17h.01"/></svg>اشکالات</a>
+    <a class="app-menu-item" href="./index.html?view=gaslogs" title="سوابق گازسنج"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v5l-4 7a4 4 0 0 0 3.5 6h5A4 4 0 0 0 18 15l-4-7V3"/><path d="M7 15h10"/></svg>سوابق گاز</a>
     <a class="app-menu-item" href="./index.html?view=gasmeters" title="گازسنج‌ها"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 12l4-3"/><path d="M12 3v2M21 12h-2M12 21v-2M3 12h2"/></svg>گازسنج</a>
     <a class="app-menu-item" href="./index.html?view=notes" title="یادداشت‌ها"><svg viewBox="0 0 24 24"><path d="M5 4h11l4 4v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z"/><path d="M15 4v5h5"/><path d="M8 13h8M8 17h5"/></svg>یادداشت</a>
     <a class="app-menu-item" href="./index.html?view=programs" title="برنامه‌ها و پرونده‌ها"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m8 12 2.5 2.5L16 9"/></svg>برنامه‌ها</a>
@@ -98,6 +101,18 @@
     </div>
   </section>
 
+  <section class="quick-add" id="dashboardQuickAdd" aria-label="ثبت سریع">
+    <div class="quick-add-head"><span class="quick-add-title">ثبت سریع</span><small>هر مورد را همان‌جا ثبت کن؛ فرم روی همین صفحه باز می‌شود.</small></div>
+    <div class="quick-add-grid">
+    <button type="button" class="quick-add-btn" data-quick-add="employees" data-tone="info"><span class="quick-add-icon"><svg viewBox="0 0 24 24"><path d="M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/></svg></span><span>کارمند</span></button>
+    <button type="button" class="quick-add-btn" data-quick-add="leaves" data-tone="ok"><span class="quick-add-icon"><svg viewBox="0 0 24 24"><path d="M12 3v18M5 8h14"/></svg></span><span>مرخصی</span></button>
+    <button type="button" class="quick-add-btn" data-quick-add="missions" data-tone="special"><span class="quick-add-icon"><svg viewBox="0 0 24 24"><path d="M3 7h18M6 3h12v18H6zM9 11h6"/></svg></span><span>مأموریت</span></button>
+    <button type="button" class="quick-add-btn" data-quick-add="notes" data-tone="warn"><span class="quick-add-icon"><svg viewBox="0 0 24 24"><path d="M5 3h9l5 5v13H5zM14 3v5h5"/></svg></span><span>یادداشت</span></button>
+    <button type="button" class="quick-add-btn" data-quick-add="programs" data-tone="accent"><span class="quick-add-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h10M4 19h7"/></svg></span><span>برنامه</span></button>
+    <button type="button" class="quick-add-btn" data-quick-add="faults" data-tone="danger" data-preset='{"assetType":"خودرو"}'><span class="quick-add-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2.8 20h18.4L12 3ZM12 9v4M12 17h.01"/></svg></span><span>اشکال خودرو</span></button>
+    <button type="button" class="quick-add-btn" data-quick-add="gaslogs" data-tone="highlight" data-preset='{"logType":"ثبت قرائت"}'><span class="quick-add-icon"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v5l-4 7a4 4 0 0 0 3.5 6h5A4 4 0 0 0 18 15l-4-7V3"/></svg></span><span>سابقهٔ گازسنج</span></button>
+    </div>
+  </section>
   <nav class="widget-dock" aria-label="۹ پنجرهٔ شناور داشبورد">
     <button class="widget-dock-item active" type="button" data-target-widget="roster"><span class="widget-dock-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2M16 3.2a4 4 0 0 1 0 7.6M18 15h1a3 3 0 0 1 3 3v3"/></svg></span><span>نیروی انسانی</span></button>
     <button class="widget-dock-item" type="button" data-target-widget="shift-coverage"><span class="widget-dock-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span>پوشش شیفت</span></button>
