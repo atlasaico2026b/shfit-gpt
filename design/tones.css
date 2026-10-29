@@ -1,0 +1,158 @@
+/* ============================================================================
+   ATLAS SHIFT · TONES & STATUS COLOURS
+   ----------------------------------------------------------------------------
+   این فایل فقط «رنگ را به معنا وصل می‌کند». هیچ مقدار رنگی اینجا نوشته نشده؛
+   همه از design/tokens.css می‌آیند.
+
+   هر عنصر با یک کلاس یا data-tone رنگ می‌گیرد:
+       <span class="module-tag" data-tone="warn">در انتظار بررسی</span>
+       <span class="widget-icon" data-tone="purple">…</span>
+
+   کد اجرایی فقط «معنا» را انتخاب می‌کند (warn / ok / danger …) و این فایل
+   تصمیم می‌گیرد آن معنا چه رنگی باشد.
+   ========================================================================== */
+
+/* 1 · TONE REGISTRY ─────────────────────────────────────────────────────── */
+.tone-white,  [data-tone="white"]  { --tone: var(--c-white);    --tone-rgb: var(--c-white-rgb); }
+.tone-blue,   [data-tone="blue"]   { --tone: var(--c-blue);     --tone-rgb: var(--c-blue-rgb); }
+.tone-green,  [data-tone="green"]  { --tone: var(--c-green);    --tone-rgb: var(--c-green-rgb); }
+.tone-yellow, [data-tone="yellow"] { --tone: var(--c-yellow);   --tone-rgb: var(--c-yellow-rgb); }
+.tone-red,    [data-tone="red"]    { --tone: var(--c-red);      --tone-rgb: var(--c-red-rgb); }
+.tone-orange, [data-tone="orange"] { --tone: var(--c-orange);   --tone-rgb: var(--c-orange-rgb); }
+.tone-purple, [data-tone="purple"] { --tone: var(--c-purple);   --tone-rgb: var(--c-purple-rgb); }
+.tone-pink,   [data-tone="pink"]   { --tone: var(--c-pink);     --tone-rgb: var(--c-pink-rgb); }
+.tone-cyan,   [data-tone="cyan"]   { --tone: var(--c-cyan);     --tone-rgb: var(--c-cyan-rgb); }
+
+/* نقش‌های معنایی؛ در کد اجرایی به‌جای نام رنگ از این‌ها استفاده می‌شود */
+[data-tone="ok"]        { --tone: var(--ok);        --tone-rgb: var(--ok-rgb); }
+[data-tone="accent"]    { --tone: var(--accent);    --tone-rgb: var(--accent-rgb); }
+[data-tone="accent2"]   { --tone: var(--accent2);   --tone-rgb: var(--accent2-rgb); }
+[data-tone="warn"]      { --tone: var(--warn);      --tone-rgb: var(--warn-rgb); }
+[data-tone="danger"]    { --tone: var(--danger);    --tone-rgb: var(--danger-rgb); }
+[data-tone="info"]      { --tone: var(--info);      --tone-rgb: var(--info-rgb); }
+[data-tone="attention"] { --tone: var(--attention); --tone-rgb: var(--attention-rgb); }
+[data-tone="special"]   { --tone: var(--special);   --tone-rgb: var(--special-rgb); }
+[data-tone="highlight"] { --tone: var(--highlight); --tone-rgb: var(--highlight-rgb); }
+[data-tone="muted"]     { --tone: var(--muted);     --tone-rgb: 156, 168, 201; }
+
+/* 2 · GENERIC TONE SURFACES ─────────────────────────────────────────────── */
+.tone-surface {
+  color: var(--tone);
+  background: rgba(var(--tone-rgb), .11);
+  border: 1px solid rgba(var(--tone-rgb), .22);
+}
+.tone-surface-soft {
+  background: rgba(var(--tone-rgb), .07);
+  border: 1px solid rgba(var(--tone-rgb), .16);
+}
+.tone-text { color: var(--tone); }
+.tone-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--tone);
+  box-shadow: 0 0 8px rgba(var(--tone-rgb), .7);
+  flex: none;
+}
+.tone-bar {
+  background: linear-gradient(90deg, var(--tone), rgba(var(--tone-rgb), .55));
+  box-shadow: 0 0 10px rgba(var(--tone-rgb), .35);
+}
+.tone-ring {
+  box-shadow: 0 0 0 5px rgba(var(--tone-rgb), .1), 0 0 13px rgba(var(--tone-rgb), .55);
+}
+
+/* 3 · STATUS CHIPS (module-tag) ─────────────────────────────────────────── */
+.module-tag[data-tone],
+.module-tag.tone-ok,
+.module-tag.tone-warn,
+.module-tag.tone-danger,
+.module-tag.tone-info,
+.module-tag.tone-attention,
+.module-tag.tone-special,
+.module-tag.tone-highlight,
+.module-tag.tone-muted {
+  color: var(--tone);
+  border-color: rgba(var(--tone-rgb), .26);
+  background: rgba(var(--tone-rgb), .08);
+}
+
+/* 4 · STATUS PILL ───────────────────────────────────────────────────────── */
+.status-pill[data-tone] {
+  color: var(--tone);
+  border-color: rgba(var(--tone-rgb), .2);
+  background: rgba(var(--tone-rgb), .08);
+}
+
+/* 5 · WIDGET / CARD ICONS ───────────────────────────────────────────────── */
+.widget-icon[data-tone],
+.program-kpi[data-tone] {
+  color: var(--tone);
+  background: rgba(var(--tone-rgb), .12);
+  border-color: rgba(var(--tone-rgb), .2);
+}
+
+/* 6 · KPI / MINI STATS ──────────────────────────────────────────────────── */
+.mini-stat[data-tone] .value { color: var(--tone); }
+.mini-stat[data-tone] .tiny-dot { background: var(--tone); box-shadow: 0 0 8px rgba(var(--tone-rgb), .6); }
+.mini-stat[data-tone] .label,
+.program-kpi[data-tone] .program-meta { color: rgba(var(--tone-rgb), .82); }
+
+/* 6b · MODULE SUMMARY CARDS ────────────────────────────────────────────── */
+.module-summary > div[data-tone],
+.module-metric-grid > div[data-tone] {
+  border-color: rgba(var(--tone-rgb), .24);
+  background: linear-gradient(150deg, rgba(var(--tone-rgb), .12), rgba(var(--tone-rgb), .03));
+}
+.module-summary > div[data-tone] span,
+.module-metric-grid > div[data-tone] span { color: rgba(var(--tone-rgb), .8); }
+.module-summary > div[data-tone] strong,
+.module-metric-grid > div[data-tone] strong { color: var(--tone); }
+
+/* 7 · PROGRESS BARS ────────────────────────────────────────────────────── */
+.progress-bar[data-tone],
+.capacity-bar[data-tone] {
+  background: linear-gradient(90deg, var(--tone), rgba(var(--tone-rgb), .5));
+  box-shadow: 0 0 9px rgba(var(--tone-rgb), .3);
+}
+
+/* 8 · PROGRAM CATEGORY CHIPS ───────────────────────────────────────────── */
+.program-chip[data-tone] {
+  color: var(--tone);
+  border-color: rgba(var(--tone-rgb), .26);
+  background: rgba(var(--tone-rgb), .07);
+}
+.program-chip[data-tone].is-active {
+  background: rgba(var(--tone-rgb), .2);
+  border-color: rgba(var(--tone-rgb), .45);
+  box-shadow: 0 6px 18px rgba(var(--tone-rgb), .18);
+}
+.program-card[data-tone] { border-color: rgba(var(--tone-rgb), .18); }
+.program-card[data-tone] .program-card-head strong { color: var(--tone); }
+.program-card[data-tone] .program-stage.is-done .program-stage-box {
+  background: var(--tone);
+  border-color: var(--tone);
+}
+
+/* 9 · MAP NODES ────────────────────────────────────────────────────────── */
+.station-node .node[data-tone] { background: var(--tone); }
+
+/* 10 · FORM CONTROLS (was inline in markup) ────────────────────────────── */
+.atlas-input {
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(var(--accent-rgb), .2);
+  background: rgba(var(--c-black-rgb), .16);
+  color: inherit;
+  font: inherit;
+}
+.atlas-input--block { margin: 6px 0 10px; }
+.atlas-divider {
+  border-top: 1px solid rgba(var(--accent-rgb), .18);
+  padding-top: 12px;
+  margin-top: 12px;
+}

@@ -28,10 +28,10 @@ jobs:
         run: |
           mkdir site
           cp index.html \
-             styles.css pdf-theme.css module-table-fix.css theme-two.css theme-two-colorful.css \
              app.js modules.js theme-two.js settings-tabs.js menu-manager.js visual-engine.js \
              manifest.json sw.js icon.svg \
              site/
+          cp -r design site/design
           touch site/.nojekyll
 
       - name: Configure GitHub Pages

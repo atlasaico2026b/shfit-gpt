@@ -51,21 +51,9 @@
   $('#onlyUnread').addEventListener('click',()=>{showUnreadOnly=!showUnreadOnly;$('#onlyUnread').textContent=showUnreadOnly?'نمایش همه اعلان‌ها':'فقط خوانده‌نشده‌ها';$$('.notice-card').forEach(n=>n.style.display=(!showUnreadOnly||n.classList.contains('unread'))?'flex':'none');const any=$$('.notice-card').some(n=>n.style.display!=='none');let empty=$('.empty-notices');if(!any&&!empty){empty=document.createElement('div');empty.className='empty-notices';empty.textContent='اعلان خوانده‌نشده‌ای باقی نمانده است.';$('#noticeList').appendChild(empty)}else if(any&&empty)empty.remove()});
   $$('.notice-card').forEach(n=>n.addEventListener('click',()=>{n.classList.remove('unread');$('.notice-unread',n)?.remove();updateNotificationBadge()}));
   updateNotificationBadge();
-  // Theme 1 is the glass-cloud reference; theme 2 remains reserved until the user supplies its design.
-  const appThemes={'cloud-glass':{accent:'#22d3ee',rgb:'34,211,238',accent2:'#f97316'}};
+  // طراحی و پوسته در design/ نگهداری می‌شود؛ این فایل فقط انتخاب کاربر را می‌فرستد.
   function applyTheme(name,persist=true){
-    const selected=Object.prototype.hasOwnProperty.call(appThemes,name)?name:'cloud-glass';
-    const theme=appThemes[selected];
-    document.documentElement.dataset.atlasTheme='atlas-flat';
-    document.documentElement.style.setProperty('--accent',theme.accent);
-    document.documentElement.style.setProperty('--accent-rgb',theme.rgb);
-    document.documentElement.style.setProperty('--accent2',theme.accent2);
-    $$('[data-app-theme]').forEach(option=>{
-      const active=option.dataset.appTheme===selected;
-      option.classList.toggle('active',active);
-      option.setAttribute('aria-pressed',String(active));
-    });
-    if(persist)safeWrite('atlasShiftAppTheme',selected);
+    if(window.AtlasDesign)window.AtlasDesign.apply(name,persist);
   }
   $$('[data-app-theme]:not([disabled])').forEach(option=>option.addEventListener('click',()=>{
     applyTheme(option.dataset.appTheme);
@@ -74,20 +62,28 @@
   applyTheme(safeRead('atlasShiftAppTheme')||'cloud-glass',false);
 
   // Custom, locally saved cloud-gradient colors; no remote images or services.
-  const defaultCloudBackground={colors:['#8bdcff','#ffb8df','#b7b9ff'],strength:32};
+  function defaultCloudBackground(){
+    if(window.AtlasDesign)return window.AtlasDesign.cloudDefaults();
+    const read=(name,fallback)=>{const value=getComputedStyle(document.documentElement).getPropertyValue(name).trim();return value||fallback;};
+    return {
+      colors:[read('--cloud-default-1',''),read('--cloud-default-2',''),read('--cloud-default-3','')],
+      strength:Number(read('--cloud-default-strength','32'))||32
+    };
+  }
   function cloudHexToRgb(hex){
     const match=/^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(String(hex||''));
     return match?match.slice(1).map(part=>parseInt(part,16)).join(','):'124,140,255';
   }
   function applyCloudBackground(settings,persist=true){
+    const defaults=defaultCloudBackground();
     const source=settings&&typeof settings==='object'?settings:{};
     const sourceColors=Array.isArray(source.colors)?source.colors:[];
-    const colors=defaultCloudBackground.colors.map((fallback,index)=>{
+    const colors=defaults.colors.map((fallback,index)=>{
       const candidate=String(sourceColors[index]||fallback);
       return /^#[\da-f]{6}$/i.test(candidate)?candidate:fallback;
     });
     const requestedStrength=Number(source.strength);
-    const strength=Number.isFinite(requestedStrength)?Math.max(8,Math.min(38,requestedStrength)):defaultCloudBackground.strength;
+    const strength=Number.isFinite(requestedStrength)?Math.max(8,Math.min(38,requestedStrength)):defaults.strength;
     colors.forEach((color,index)=>{
       document.documentElement.style.setProperty('--cloud-'+(index+1)+'-rgb',cloudHexToRgb(color));
       const input=$('#cloudColor'+(index+1));
@@ -104,12 +100,12 @@
   }
   let savedCloudBackground=null;
   try{savedCloudBackground=JSON.parse(safeRead('atlasShiftCloudBackground')||'null')}catch(e){}
-  applyCloudBackground(savedCloudBackground||defaultCloudBackground,false);
+  applyCloudBackground(savedCloudBackground||defaultCloudBackground(),false);
   window.addEventListener('atlas-shift-ui-settings-restored',()=>{
     applyTheme(safeRead('atlasShiftAppTheme')||'cloud-glass',false);
     let restoredBackground=null;
     try{restoredBackground=JSON.parse(safeRead('atlasShiftCloudBackground')||'null')}catch(e){}
-    applyCloudBackground(restoredBackground||defaultCloudBackground,false);
+    applyCloudBackground(restoredBackground||defaultCloudBackground(),false);
     applySavedLayout();
   });
   const syncCloudBackground=()=>applyCloudBackground({
@@ -118,7 +114,7 @@
   });
   $$('.cloud-color-input').forEach(input=>input.addEventListener('input',syncCloudBackground));
   $('#cloudStrength').addEventListener('input',syncCloudBackground);
-  $('#resetCloudBackground').addEventListener('click',()=>{applyCloudBackground(defaultCloudBackground);toast('پس‌زمینه به رنگ‌های پیش‌فرض برگشت.')});
+  $('#resetCloudBackground').addEventListener('click',()=>{applyCloudBackground(defaultCloudBackground());toast('پس‌زمینه به رنگ‌های پیش‌فرض برگشت.')});
   const settingsPanel=$('#settingsPanel'),settingsButton=$('#settingsButton');
   const voiceDefaults={enabled:false,input:true,reply:false,confirm:true};
   let voiceSettings=voiceDefaults;
@@ -414,11 +410,6 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
     return [];
   }
   function renderPhonebook(section){
-    if(!document.getElementById('atlas-phonebook-style')){
-      const style=document.createElement('style');style.id='atlas-phonebook-style';
-      style.textContent='.atlas-pb-group{margin:16px 0 22px;padding:14px;border:1px solid rgba(122,190,255,.24);border-radius:24px;background:linear-gradient(135deg,rgba(71,155,255,.10),rgba(190,100,255,.08) 42%,rgba(65,235,202,.08));box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 12px 32px rgba(0,0,0,.12);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}.atlas-pb-group-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:11px 14px;border-radius:17px;background:linear-gradient(110deg,rgba(65,180,255,.22),rgba(190,110,255,.20),rgba(255,130,190,.16),rgba(90,235,205,.16));border:1px solid rgba(255,255,255,.17)}.atlas-pb-group-head span{font-size:12px;opacity:.8}.atlas-pb-group-head strong{font-size:15px}.atlas-pb-group-head small{margin-inline-start:auto;padding:4px 9px;border-radius:99px;background:rgba(255,255,255,.12)}.atlas-pb-group-items{display:grid;gap:10px}.atlas-pb-card{border-radius:22px!important;background:linear-gradient(125deg,rgba(80,160,255,.13),rgba(180,100,255,.10) 40%,rgba(70,220,200,.08))!important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 10px 25px rgba(0,0,0,.10)}.atlas-pb-phone-editor{grid-column:1/-1;display:grid;gap:8px;padding:12px;border:1px solid rgba(140,210,255,.16);border-radius:12px}.atlas-pb-phone-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.atlas-pb-phone-row{display:grid;grid-template-columns:minmax(100px,.8fr) minmax(110px,1fr) minmax(130px,1.4fr) auto;gap:7px;margin-top:7px}.atlas-pb-phone-row input,.atlas-pb-phone-row select{box-sizing:border-box;min-width:0;width:100%;padding:10px;border:1px solid rgba(140,210,255,.2);border-radius:10px;background:rgba(0,0,0,.16);color:inherit;font:inherit}.atlas-pb-phone-row .atlas-pb-delete-confirm{background:#16834a!important;color:#fff!important;border:1px solid #35c477!important}.atlas-pb-phone-row .atlas-pb-delete-cancel{background:#b42332!important;color:#fff!important;border:1px solid #e5484d!important}.atlas-pb-phone-row .atlas-pb-delete-question{grid-column:1/-1;font-size:12px;color:var(--muted);padding:4px 2px}.atlas-pb-toolbar{display:grid;grid-template-columns:minmax(180px,2fr) repeat(3,minmax(120px,1fr)) repeat(2,minmax(180px,1.2fr));gap:9px;margin:12px 0}.atlas-pb-toolbar input,.atlas-pb-toolbar select,.atlas-pb-form input,.atlas-pb-form select,.atlas-pb-form textarea,.atlas-pb-combo input{box-sizing:border-box;width:100%;min-width:0;padding:11px 12px;border:1px solid rgba(140,210,255,.2);border-radius:12px;background:rgba(0,0,0,.16);color:inherit;font:inherit}.atlas-pb-form{display:none;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0;padding:14px;border:1px solid rgba(99,217,255,.22);border-radius:16px;background:rgba(99,217,255,.045)}.atlas-pb-form.open{display:grid}.atlas-pb-field{min-width:0;display:grid;gap:6px}.atlas-pb-field>label{font-size:12px;color:var(--muted)}.atlas-pb-combo{display:grid;grid-template-columns:minmax(0,1fr) 42px;gap:6px;min-width:0}.atlas-pb-add-option{border:1px solid rgba(99,217,255,.3);border-radius:12px;background:rgba(99,217,255,.12);color:inherit;font-size:22px;cursor:pointer}.atlas-pb-form .atlas-pb-actions{grid-column:1/-1}.atlas-pb-actions,.atlas-pb-card-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.atlas-pb-results{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}.atlas-pb-card{padding:14px;border:1px solid rgba(140,210,255,.16);border-radius:16px;background:rgba(255,255,255,.035);min-width:0}.atlas-pb-card h3{margin:0 0 5px;font-family:"B Roya","B Roya Bold",Tahoma,sans-serif;font-weight:700;font-size:2.4em;line-height:1.2}.atlas-pb-path{color:var(--muted);font-size:12px;line-height:1.9;overflow-wrap:anywhere}.atlas-pb-numbers{color:var(--muted);font-size:19.2px;line-height:2;overflow-wrap:anywhere}.atlas-pb-number-value{color:#006b2d!important;font-weight:700}.atlas-pb-path strong,.atlas-pb-numbers strong{font-weight:800}.atlas-pb-card-actions{margin-top:10px}.atlas-pb-empty{padding:20px;border:1px dashed rgba(140,210,255,.2);border-radius:14px;color:var(--muted);text-align:center}.atlas-pb-settings-list{display:grid;gap:7px;margin-top:10px}.atlas-pb-option-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border:1px solid rgba(140,210,255,.16);border-radius:10px}.atlas-pb-option-row span{overflow-wrap:anywhere}.atlas-pb-option-row button{padding:5px 9px}.atlas-pb-settings-editor{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:10px}.atlas-pb-settings-editor input,.atlas-pb-settings-editor select{min-width:0;padding:9px;border-radius:10px;border:1px solid rgba(140,210,255,.2);background:rgba(0,0,0,.16);color:inherit;font:inherit}@media(max-width:760px){.atlas-pb-toolbar,.atlas-pb-form,.atlas-pb-results{grid-template-columns:1fr}.atlas-pb-toolbar input,.atlas-pb-form .atlas-pb-actions,.atlas-pb-phone-editor{grid-column:auto}.atlas-pb-phone-row{grid-template-columns:1fr 1fr}.atlas-pb-phone-row input{grid-column:1/-1}}';
-      document.head.appendChild(style);
-    }
     let contacts=phonebookLoad(),editIndex=-1,options=phonebookOptionsLoad();
     const escPb=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const fields=[

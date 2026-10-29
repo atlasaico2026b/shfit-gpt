@@ -607,8 +607,29 @@
       relatedVehicleHistory + '</section>';
   }
 
+  // معناى وضعیت‌ها؛ رنگ هر معنا در design/tones.css تعیین می‌شود.
+  const STATUS_TONES = {
+    'تکمیل‌شده': 'ok', 'تأییدشده': 'ok', 'آماده': 'ok', 'سالم': 'ok',
+    'آماده استفاده': 'ok', 'انجام‌شده': 'ok', 'فعال': 'ok', 'آماده‌کار': 'ok',
+    'در جریان': 'info', 'در حال کار': 'info', 'شیفت': 'info', 'مأموریت': 'info',
+    'در حال انجام': 'info', 'برنامه‌ریزی‌شده': 'info', 'استفاده‌شده': 'info', 'در انتظار پاسخ': 'warn',
+    'در انتظار بررسی': 'warn', 'نیازمند بررسی': 'warn', 'در کالیبراسیون': 'warn', 'در سرویس': 'warn',
+    'استراحت': 'warn',
+    'ردشده': 'danger', 'لغوشده': 'danger', 'خارج از سرویس': 'danger', 'دارای نقص': 'danger',
+    'عقب‌افتاده': 'danger', 'غیرفعال': 'danger',
+    'متوقف': 'attention', 'در تعمیر': 'attention', 'ارجاع‌شده': 'attention', 'اضافه‌کار': 'attention',
+    'شروع‌نشده': 'muted'
+  };
+  function statusTone(text) {
+    return STATUS_TONES[String(text == null ? '' : text).trim()] || 'muted';
+  }
+  function statusTag(text, extra) {
+    return '<span class="module-tag' + (extra ? ' ' + extra : '') + '" data-tone="' + statusTone(text) + '">' + esc(text) + '</span>';
+  }
+
   function displayValue(moduleKey, fieldKey, value, data) {
     if (value == null || value === '') return '—';
+    if (fieldKey === 'status') return statusTag(value);
     const field = fieldsFor(moduleKey).find(function (item) { return item.key === fieldKey; });
     if (field && (field.type === 'jalali' || field.type === 'date')) return formatJalali(value, false);
     if (field && field.type === 'jalali-datetime') return formatJalali(value, true);
@@ -699,10 +720,10 @@
             }
             const value = fieldsFor(moduleKey).find(function (field) { return field.key === key && field.custom; }) && record.customFields
               ? record.customFields[key] : record[key];
-            if (moduleKey === 'employees' && key === 'status') return '<td>' + esc(effectiveEmployeeStatus(record)) + '</td>';
+            if (moduleKey === 'employees' && key === 'status') return '<td>' + statusTag(effectiveEmployeeStatus(record)) + '</td>';
             if (moduleKey === 'notes' && key === 'status') {
               const overdue = record.dueDate && dueInDays(record.dueDate) < 0 && !['تکمیل‌شده','لغوشده'].includes(record.status);
-              return '<td><span class="module-tag' + (overdue ? ' module-tag-danger' : '') + '">' + esc(overdue ? 'عقب‌افتاده' : (record.status || 'ثبت نشده')) + '</span></td>';
+              return '<td>' + statusTag(overdue ? 'عقب‌افتاده' : (record.status || 'ثبت نشده')) + '</td>';
             }
             return '<td>' + displayValue(moduleKey, key, value, data) + '</td>';
           }).join('') +
@@ -801,8 +822,8 @@
       '<button class="primary-btn" type="button" data-module-action="new" data-view="' + esc(moduleKey) + '">＋ ثبت مورد جدید</button>';
     section.innerHTML = rootWrap(
       pageHead(specs[moduleKey].title, specs[moduleKey].subtitle, actions) +
-      '<div class="module-summary" style="width:100%"><div><span>تعداد کل</span><strong>' + faDigits(existing) + '</strong></div>' +
-      '<div><span>ذخیره‌سازی</span><strong>محلی و آفلاین</strong></div><div><span>آخرین به‌روزرسانی</span><strong>' + (data.updatedAt ? displayDateTime(data.updatedAt) : '—') + '</strong></div></div>' +
+      '<div class="module-summary" style="width:100%"><div data-tone="info"><span>تعداد کل</span><strong>' + faDigits(existing) + '</strong></div>' +
+      '<div data-tone="ok"><span>ذخیره‌سازی</span><strong>محلی و آفلاین</strong></div><div data-tone="special"><span>آخرین به‌روزرسانی</span><strong>' + (data.updatedAt ? displayDateTime(data.updatedAt) : '—') + '</strong></div></div>' +
       renderForm(moduleKey, data) +
       '<section class="module-list-panel" style="width:100%;min-width:0"><div class="module-list-head"><div><h3>فهرست ' + esc(specs[moduleKey].title) + '</h3><p>جست‌وجو، فیلتر، انتخاب چند ردیف و ویرایش از همین بخش انجام می‌شود.</p></div>' +
       '<div class="module-list-tools"><input type="search" data-module-search data-view="' + esc(moduleKey) + '" value="' + esc(searchState[moduleKey] || '') + '" placeholder="جست‌وجو در فهرست" aria-label="جست‌وجو">' + renderStatusFilter(moduleKey) + '</div></div>' +
@@ -1135,7 +1156,7 @@
   function renderReferenceList(){
     const key=document.getElementById('referenceListKey'),host=document.getElementById('referenceListItems');
     if(!key||!host)return;
-    host.innerHTML=(appData.references[key.value]||[]).map(function(value,i){return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0;padding:7px;border-bottom:1px solid rgba(140,210,255,.12)"><span>'+esc(value)+'</span><span style="display:flex;gap:5px;flex-wrap:wrap"><button type="button" class="secondary-btn" data-module-action="reference-up" data-index="'+i+'" aria-label="انتقال به بالا" '+(i===0?'disabled':'')+'>↑</button><button type="button" class="secondary-btn" data-module-action="reference-down" data-index="'+i+'" aria-label="انتقال به پایین" '+(i===(appData.references[key.value]||[]).length-1?'disabled':'')+'>↓</button><button type="button" class="secondary-btn" data-module-action="reference-edit" data-index="'+i+'">ویرایش</button><button type="button" class="secondary-btn" data-module-action="reference-delete" data-index="'+i+'">حذف</button></span></div>';}).join('')||'این فهرست هنوز گزینه‌ای ندارد.';
+    host.innerHTML=(appData.references[key.value]||[]).map(function(value,i){return '<div class="module-reference-row"><span>'+esc(value)+'</span><span style="display:flex;gap:5px;flex-wrap:wrap"><button type="button" class="secondary-btn" data-module-action="reference-up" data-index="'+i+'" aria-label="انتقال به بالا" '+(i===0?'disabled':'')+'>↑</button><button type="button" class="secondary-btn" data-module-action="reference-down" data-index="'+i+'" aria-label="انتقال به پایین" '+(i===(appData.references[key.value]||[]).length-1?'disabled':'')+'>↓</button><button type="button" class="secondary-btn" data-module-action="reference-edit" data-index="'+i+'">ویرایش</button><button type="button" class="secondary-btn" data-module-action="reference-delete" data-index="'+i+'">حذف</button></span></div>';}).join('')||'این فهرست هنوز گزینه‌ای ندارد.';
   }
 
   function refreshCurrentView() {
@@ -1174,6 +1195,22 @@
     return 0;
   }
 
+  // رنگ هر دسته از ترتیب زیر می‌آید؛ مقدار رنگ در design/tones.css است.
+  const PROGRAM_TONES = ['info', 'special', 'highlight', 'accent', 'ok', 'warn', 'attention', 'danger'];
+  function programTone(name) {
+    const text = String(name == null ? '' : name);
+    if (!text || text === 'all') return 'accent';
+    let hash = 0;
+    for (let index = 0; index < text.length; index += 1) hash = (hash * 31 + text.charCodeAt(index)) % 997;
+    return PROGRAM_TONES[hash % PROGRAM_TONES.length];
+  }
+  function programProgressTone(pct) {
+    if (pct >= 100) return 'ok';
+    if (pct >= 60) return 'accent';
+    if (pct >= 25) return 'warn';
+    return 'attention';
+  }
+
   function programOwnerName(record) {
     if (!record.responsibleId) return '';
     const person = (appData.employees || []).find(function (item) { return String(item.id) === String(record.responsibleId); });
@@ -1198,11 +1235,11 @@
     }).join('');
     return '<article class="program-card">' +
       '<div class="program-head"><div class="program-title-wrap"><div class="program-title">' + esc(record.title || 'بدون عنوان') + '</div>' +
-      '<div class="program-chips"><span class="program-chip">' + esc(programCategoryOf(record)) + '</span>' +
+      '<div class="program-chips"><span class="program-chip" data-tone="' + programTone(programCategoryOf(record)) + '">' + esc(programCategoryOf(record)) + '</span>' +
       (record.programType ? '<span class="program-chip">' + esc(record.programType) + '</span>' : '') + '</div></div>' +
       '<div class="program-score"><div class="program-pct">' + faDigits(pct) + '٪</div>' +
       '<div class="program-meta">' + (stages.length ? faDigits(doneStages) + ' از ' + faDigits(stages.length) + ' مرحله' : 'بدون مرحله') + '</div></div></div>' +
-      '<div class="progress-track"><div class="progress-bar" style="width:' + pct + '%"></div></div>' +
+      '<div class="progress-track"><div class="progress-bar" data-tone="' + programProgressTone(pct) + '" style="width:' + pct + '%"></div></div>' +
       (meta.length ? '<div class="program-meta">' + esc(meta.join(' · ')) + '</div>' : '') +
       (record.status ? '<div class="program-meta">وضعیت: ' + esc(record.status) + '</div>' : '') +
       (stageRows ? '<div class="program-stages">' + stageRows + '</div>' : '') +
@@ -1221,11 +1258,11 @@
     const visible = programFilter === 'all' ? records : records.filter(function (record) { return programCategoryOf(record) === programFilter; });
     const actions = '<button class="secondary-btn" type="button" data-module-action="export" data-view="programs">خروجی CSV</button>' +
       '<button class="primary-btn" type="button" data-module-action="new" data-view="programs">＋ برنامهٔ جدید</button>';
-    const kpis = [['کل برنامه‌ها', faDigits(total)], ['در جریان', faDigits(running)], ['تکمیل‌شده', faDigits(complete)], ['میانگین پیشرفت', faDigits(average) + '٪']]
-      .map(function (pair) { return '<div class="mini-stat"><div class="program-meta">' + pair[0] + '</div><strong class="program-pct">' + pair[1] + '</strong></div>'; })
+    const kpis = [['کل برنامه‌ها', faDigits(total), 'info'], ['در جریان', faDigits(running), 'warn'], ['تکمیل‌شده', faDigits(complete), 'ok'], ['میانگین پیشرفت', faDigits(average) + '٪', 'special']]
+      .map(function (pair) { return '<div class="program-kpi mini-stat" data-tone="' + pair[2] + '"><div class="program-meta">' + pair[0] + '</div><strong class="program-pct">' + pair[1] + '</strong></div>'; })
       .join('');
     const chips = ['all'].concat(categories).map(function (category) {
-      return '<button type="button" data-program-action="filter" data-category="' + esc(category) + '" class="' + (programFilter === category ? 'active' : '') + '">' + esc(category === 'all' ? 'همه' : category) + '</button>';
+      return '<button type="button" data-program-action="filter" data-category="' + esc(category) + '" data-tone="' + programTone(category) + '" class="program-chip ' + (programFilter === category ? 'active' : '') + '">' + esc(category === 'all' ? 'همه' : category) + '</button>';
     }).join('');
     const body = visible.length
       ? '<div class="program-grid">' + visible.map(renderProgramCard).join('') + '</div>'

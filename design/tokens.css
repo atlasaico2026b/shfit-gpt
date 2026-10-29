@@ -1,0 +1,178 @@
+/* ============================================================================
+   ATLAS SHIFT · DESIGN TOKENS
+   ----------------------------------------------------------------------------
+   تنها فایلی که مقدار رنگ در آن تعریف می‌شود. برای عوض کردن ترکیب رنگ‌ها فقط
+   همین فایل را ویرایش کن؛ هیچ رنگ ثابتی در styles.css، پوسته‌ها یا کدهای
+   اجرایی (app.js / modules.js) وجود ندارد.
+
+   This is the ONLY file that defines colour values. Change the palette here and
+   the whole app follows. No other file hardcodes a colour.
+
+   لایه‌ها / Layers
+     1. palette    → رنگ‌های خالص: سفید، آبی، سبز، زرد، قرمز، نارنجی، بنفش، صورتی، فیروزه‌ای
+     2. surfaces   → پس‌زمینه، پنل، خطوط، متن
+     3. semantic   → نقش‌ها: ok / warn / danger / info / attention / highlight / special
+     4. alpha      → آلفاهای سفید و مشکی برای شیشه، حاشیه و سایه
+     5. geometry   → شعاع، سایه، ارتفاع نوار بالا
+     6. presets    → پوسته‌های انتخابی کاربر (فقط accent را جابه‌جا می‌کنند)
+   ========================================================================== */
+
+:root {
+  /* 1 · PALETTE ─────────────────────────────────────────────────────────── */
+  --c-white: #ffffff;
+  --c-blue: #3b82f6;
+  --c-green: #34d399;
+  --c-yellow: #fbbf24;
+  --c-red: #f87171;
+  --c-orange: #f97316;
+  --c-purple: #a78bfa;
+  --c-pink: #f472b6;
+  --c-cyan: #22d3ee;
+
+  --c-white-rgb: 255, 255, 255;
+  --c-black-rgb: 0, 0, 0;
+  --c-blue-rgb: 59, 130, 246;
+  --c-green-rgb: 52, 211, 153;
+  --c-yellow-rgb: 251, 191, 36;
+  --c-red-rgb: 248, 113, 113;
+  --c-orange-rgb: 249, 115, 22;
+  --c-purple-rgb: 167, 139, 250;
+  --c-pink-rgb: 244, 114, 182;
+  --c-cyan-rgb: 34, 211, 238;
+
+  /* سایه‌های تیره/روشن برای دکمه‌های تأیید و حذف */
+  --c-green-deep: #1f8a52;
+  --c-red-deep: #c0303f;
+  --c-blue-deep: #1d4ed8;
+
+  /* 2 · SURFACES ────────────────────────────────────────────────────────── */
+  --bg: #0a0c11;
+  --bg2: #0f1218;
+  --bg-deep: #0a0c11;
+  --bg-mid: #0d1015;
+  --panel: #12151b;
+  --panel-2: #161a21;
+  --panel-3: #1b202a;
+  --rail-bg: #0d1015;
+  --navy-rgb: 10, 12, 17;
+
+  --glass: #12151b;
+  --glass-strong: #171b23;
+
+  --line: rgba(var(--c-white-rgb), .075);
+  --line-hi: rgba(var(--c-white-rgb), .14);
+
+  --text: #f4f5f7;
+  --text-bright: #eafcff;
+  --muted: #8b93a1;
+
+  /* 3 · SEMANTIC ROLES ──────────────────────────────────────────────────── */
+  --accent: var(--c-cyan);
+  --accent-rgb: var(--c-cyan-rgb);
+  --accent2: var(--c-orange);
+  --accent2-rgb: var(--c-orange-rgb);
+
+  --ok: var(--c-green);
+  --ok-rgb: var(--c-green-rgb);
+  --warn: var(--c-yellow);
+  --warn-rgb: var(--c-yellow-rgb);
+  --danger: var(--c-red);
+  --danger-rgb: var(--c-red-rgb);
+  --info: var(--c-blue);
+  --info-rgb: var(--c-blue-rgb);
+  --attention: var(--c-orange);
+  --attention-rgb: var(--c-orange-rgb);
+  --highlight: var(--c-pink);
+  --highlight-rgb: var(--c-pink-rgb);
+  --special: var(--c-purple);
+  --special-rgb: var(--c-purple-rgb);
+
+  /* ابرهای پس‌زمینه */
+  --cloud-1-rgb: var(--c-cyan-rgb);
+  --cloud-2-rgb: var(--c-orange-rgb);
+  --cloud-3-rgb: var(--c-purple-rgb);
+  --cloud-opacity: .22;
+  --cloud-opacity-soft: .15;
+  --cloud-opacity-subtle: .18;
+
+  /* 4 · ALPHA SCALE ─────────────────────────────────────────────────────── */
+  --white-a02: rgba(var(--c-white-rgb), .02);
+  --white-a03: rgba(var(--c-white-rgb), .03);
+  --white-a04: rgba(var(--c-white-rgb), .04);
+  --white-a05: rgba(var(--c-white-rgb), .05);
+  --white-a06: rgba(var(--c-white-rgb), .06);
+  --white-a07: rgba(var(--c-white-rgb), .07);
+  --white-a08: rgba(var(--c-white-rgb), .08);
+  --white-a12: rgba(var(--c-white-rgb), .12);
+  --white-a16: rgba(var(--c-white-rgb), .16);
+  --white-a50: rgba(var(--c-white-rgb), .5);
+  --white-a70: rgba(var(--c-white-rgb), .7);
+  --white-a85: rgba(var(--c-white-rgb), .85);
+  --white-a92: rgba(var(--c-white-rgb), .92);
+  --black-a10: rgba(var(--c-black-rgb), .1);
+  --black-a20: rgba(var(--c-black-rgb), .2);
+  --black-a30: rgba(var(--c-black-rgb), .3);
+
+  /* 5 · GEOMETRY & ELEVATION ────────────────────────────────────────────── */
+  --shadow: none;
+  --shadow-soft: 0 12px 32px rgba(var(--c-black-rgb), .18);
+  --radius: 18px;
+  --radius-sm: 12px;
+  --radius-pill: 999px;
+  --topbar-h: 64px;
+  --rail-w: 82px;
+  --atlas-heading-font: "Vazirmatn", "B Titr", "B Titr Bold", Tahoma, sans-serif;
+
+  /* 6 · THEME PRESETS — رنگ پیش‌فرض ابر پس‌زمینه (JS از همین‌جا می‌خواند) */
+  --cloud-default-1: #22d3ee;
+  --cloud-default-2: #f97316;
+  --cloud-default-3: #a78bfa;
+  --cloud-default-strength: 32;
+}
+
+/* پوستهٔ پیش‌فرض: فیروزه‌ای + نارنجی */
+html[data-app-theme="cloud-glass"] {
+  --accent: var(--c-cyan);
+  --accent-rgb: var(--c-cyan-rgb);
+  --accent2: var(--c-orange);
+  --accent2-rgb: var(--c-orange-rgb);
+}
+
+/* پوستهٔ دوم: بنفش + فیروزه‌ای */
+html[data-app-theme="theme-two"] {
+  --accent: var(--c-purple);
+  --accent-rgb: var(--c-purple-rgb);
+  --accent2: var(--c-cyan);
+  --accent2-rgb: var(--c-cyan-rgb);
+}
+
+/* آلفای نقش‌ها: هر نقش سه سطح دارد (line / soft / strong) */
+:root {
+  --ok-line: rgba(var(--ok-rgb), .24);
+  --ok-soft: rgba(var(--ok-rgb), .09);
+  --ok-strong: var(--ok);
+  --warn-line: rgba(var(--warn-rgb), .26);
+  --warn-soft: rgba(var(--warn-rgb), .1);
+  --warn-strong: var(--warn);
+  --danger-line: rgba(var(--danger-rgb), .26);
+  --danger-soft: rgba(var(--danger-rgb), .1);
+  --danger-strong: var(--danger);
+  --info-line: rgba(var(--info-rgb), .26);
+  --info-soft: rgba(var(--info-rgb), .1);
+  --info-strong: var(--info);
+  --attention-line: rgba(var(--attention-rgb), .26);
+  --attention-soft: rgba(var(--attention-rgb), .1);
+  --attention-strong: var(--attention);
+  --special-line: rgba(var(--special-rgb), .26);
+  --special-soft: rgba(var(--special-rgb), .1);
+  --special-strong: var(--special);
+  --highlight-line: rgba(var(--highlight-rgb), .26);
+  --highlight-soft: rgba(var(--highlight-rgb), .1);
+  --highlight-strong: var(--highlight);
+  --accent-line: rgba(var(--accent-rgb), .26);
+  --accent-soft: rgba(var(--accent-rgb), .1);
+  --accent-strong: var(--accent);
+  --accent2-line: rgba(var(--accent2-rgb), .26);
+  --accent2-soft: rgba(var(--accent2-rgb), .1);
+  --accent2-strong: var(--accent2);
+}
