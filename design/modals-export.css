@@ -9,7 +9,7 @@
   align-items: center;
   justify-content: center;
   padding: 18px;
-  background: rgba(var(--c-black-rgb), .58);
+  background: var(--scrim);
   overflow-y: auto;
 }
 

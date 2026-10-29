@@ -1,5 +1,5 @@
 /* ATLAS SHIFT service worker — canonical app shell and offline fallback */
-const CACHE_NAME = 'atlas-shift-v79-forms-export';
+const CACHE_NAME = 'atlas-shift-v80-colorful';
 const APP_FILES = [
   './', './index.html',
   './design/tokens.css', './design/styles.css', './design/skins/flat.css', './design/tones.css',

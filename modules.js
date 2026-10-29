@@ -565,7 +565,7 @@
           const selected = Array.isArray(value) ? value.map(String).includes(String(option.value)) : String(value) === String(option.value);
           return '<option value="' + esc(option.value) + '"' + (selected ? ' selected' : '') + '>' + esc(option.label) + '</option>';
         }).join('') + '</select>' +
-        (field.listKey && !field.multiple ? '<button type="button" class="module-select-add" data-add-list-option="' + esc(field.listKey) + '" data-view="' + esc(moduleKey) + '" aria-label="افزودن گزینه به ' + esc(field.label) + '" title="افزودن گزینه جدید">＋</button>' : '') +
+        (field.listKey && !field.multiple ? '<button type="button" class="module-select-add" data-add-list-option="' + esc(field.listKey) + '" data-view="' + esc(moduleKey) + '" aria-label="افزودن گزینه به ' + esc(field.label) + '" title="افزودن گزینه جدید">+</button>' : '') +
         (field.multiple ? '<small class="module-field-hint">برای انتخاب چند نفر، کلید Ctrl را نگه‌دار؛ در موبایل انتخاب چندتایی را از فهرست انجام بده.</small>' : '');
     } else if (field.type === 'textarea') {
       control = '<textarea id="' + esc(id) + '" name="' + esc(field.key) + '" rows="3"' + required + ' placeholder="' + esc(field.placeholder || '') + '">' + esc(value) + '</textarea>';
@@ -886,7 +886,7 @@
       '<p>ثبت و پیگیری برنامهٔ ۱۲ ساعتهٔ روز/شب و جایگزینی روزکار، در کنار پروندهٔ کارکنان.</p></div><div class="module-page-actions">' +
       '<button type="button" class="secondary-btn" data-shift-action="print">چاپ شیفت‌ها</button> ' +
       '<button type="button" class="secondary-btn" data-shift-action="export">خروجی CSV شیفت‌ها</button> ' +
-      '<button type="button" class="primary-btn" data-shift-action="new">＋ ثبت شیفت</button></div></div>' +
+      '<button type="button" class="primary-btn" data-shift-action="new">+ ثبت شیفت</button></div></div>' +
       renderShiftForm(data) + '<div class="module-table-wrap" style="width:100%;max-width:100%;min-width:0"><table class="module-table"><thead><tr>' +
       '<th>شروع</th><th>پایان</th><th>نوع</th><th>کارکنان</th><th>محل خدمت</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>' +
       rows + '</tbody></table></div><div class="module-list-foot">تعداد برنامه‌ها: ' + faDigits(shifts.length) +
@@ -898,7 +898,7 @@
     const records = data[moduleKey] || [];
     const existing = records.length;
     const actions = exportMenu(moduleKey) +
-      '<button class="primary-btn" type="button" data-module-action="new" data-view="' + esc(moduleKey) + '">＋ ثبت مورد جدید</button>';
+      '<button class="primary-btn" type="button" data-module-action="new" data-view="' + esc(moduleKey) + '">+ ثبت مورد جدید</button>';
     section.innerHTML = rootWrap(
       pageHead(specs[moduleKey].title, specs[moduleKey].subtitle, actions) +
       '<div class="module-summary" style="width:100%"><div data-tone="info"><span>تعداد کل</span><strong>' + faDigits(existing) + '</strong></div>' +
@@ -1136,7 +1136,7 @@
       summary.textContent='مأموریت‌های ثبت‌شده در بازهٔ '+faDigits(dashboardMissions.length)+' مورد است.';
     }
     const foot=document.querySelector('.footnote');
-    if(foot){const parts=foot.querySelectorAll('span');if(parts[1])parts[1].textContent='اطلاعات ثبت‌شده در همین دستگاه';if(parts[3])parts[3].textContent='داده‌های نمونه برای بازبینی جریان کار';}
+    if(foot){const parts=foot.querySelectorAll('span');if(parts[1])parts[1].textContent='مرکز مدیریت عملیات ATLAS SHIFT';if(parts[3])parts[3].textContent='داده‌های نمونه برای بازبینی جریان کار';}
   }
 
   function reportDateFor(moduleKey, record) {
@@ -1235,10 +1235,10 @@
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>پشتیبان‌گیری و بازیابی</h3><p>نسخهٔ پشتیبان تمام پرونده‌ها، تاریخچه، تنظیمات و پیوست‌های محلی را دربر می‌گیرد.</p></div></div>'+
       '<div class="module-backup-grid"><div class="module-backup-card"><strong>ساخت نسخهٔ پشتیبان</strong><p>یک فایل JSON از تمام داده‌های موجود در این دستگاه دریافت می‌کنی.</p><button type="button" class="primary-btn" data-module-action="backup">دریافت فایل پشتیبان</button></div>'+
       '<div class="module-backup-card"><strong>بازیابی نسخهٔ پشتیبان</strong><p>بازیابی، داده‌های فعلی را جایگزین اطلاعات درون فایل انتخاب‌شده می‌کند.</p><button type="button" class="secondary-btn" data-module-action="restore-select">انتخاب فایل پشتیبان</button><input type="file" id="atlasRestoreFile" accept=".json,application/json" hidden></div></div></section>'+
-      '<section class="module-list-panel"><div class="module-list-head"><div><h3>مدیریت منوها و فهرست‌ها</h3><p>تمام گزینه‌های کشویی قابل تنظیم در یک محل؛ افزودن فوری نیز از کنار فیلدهای مرتبط انجام می‌شود.</p></div></div><div class="module-list-tools"><select id="referenceListKey">'+Object.keys(appData.references).map(function(k){return '<option value="'+esc(k)+'">'+esc(referenceListTitle(k))+'</option>';}).join('')+'</select><input id="referenceListValue" type="text" placeholder="عنوان گزینه جدید"><button type="button" class="primary-btn" data-module-action="reference-add">＋ افزودن</button></div><div id="referenceListItems" class="module-local-note" style="margin-top:12px"></div></section>' +
+      '<section class="module-list-panel"><div class="module-list-head"><div><h3>مدیریت منوها و فهرست‌ها</h3><p>تمام گزینه‌های کشویی قابل تنظیم در یک محل؛ افزودن فوری نیز از کنار فیلدهای مرتبط انجام می‌شود.</p></div></div><div class="module-list-tools"><select id="referenceListKey">'+Object.keys(appData.references).map(function(k){return '<option value="'+esc(k)+'">'+esc(referenceListTitle(k))+'</option>';}).join('')+'</select><input id="referenceListValue" type="text" placeholder="عنوان گزینه جدید"><button type="button" class="primary-btn" data-module-action="reference-add">+ افزودن</button></div><div id="referenceListItems" class="module-local-note" style="margin-top:12px"></div></section>' +
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>فیلدهای سفارشی کارکنان</h3><p>برای هر فیلد یک عنوان و یک نوع انتخاب کن؛ نوع همان کادری را می‌سازد که هنگام ثبت پرونده می‌بینی: عدد، تاریخ شمسی، تاریخ و ساعت، متن بلند و …</p></div></div>'+
       '<form data-custom-fields-form class="module-form"><div class="module-custom-fields" data-custom-field-rows>'+(appData.settings.employeeCustomFields||'').split(/\r?\n/).map(function(l){return l.trim();}).filter(Boolean).map(customFieldRowHtml).join('')+'</div>'+
-      '<div class="module-form-actions"><span class="module-required-help">حداکثر ۲۰ فیلد سفارشی.</span><div><button type="button" class="secondary-btn" data-module-action="custom-field-add">＋ افزودن فیلد</button> <button type="submit" class="primary-btn">ذخیرهٔ فیلدها</button></div></div></form></section>'
+      '<div class="module-form-actions"><span class="module-required-help">حداکثر ۲۰ فیلد سفارشی.</span><div><button type="button" class="secondary-btn" data-module-action="custom-field-add">+ افزودن فیلد</button> <button type="submit" class="primary-btn">ذخیرهٔ فیلدها</button></div></div></form></section>'
     );
     renderReferenceList();  }
 
@@ -1351,7 +1351,7 @@
     const categories = PROGRAM_CATEGORIES;
     const visible = programFilter === 'all' ? records : records.filter(function (record) { return programCategoryOf(record) === programFilter; });
     const actions = exportMenu('programs') +
-      '<button class="primary-btn" type="button" data-module-action="new" data-view="programs">＋ برنامهٔ جدید</button>';
+      '<button class="primary-btn" type="button" data-module-action="new" data-view="programs">+ برنامهٔ جدید</button>';
     const kpis = [['کل برنامه‌ها', faDigits(total), 'info'], ['در جریان', faDigits(running), 'warn'], ['تکمیل‌شده', faDigits(complete), 'ok'], ['میانگین پیشرفت', faDigits(average) + '٪', 'special']]
       .map(function (pair) { return '<div class="program-kpi mini-stat" data-tone="' + pair[2] + '"><div class="program-meta">' + pair[0] + '</div><strong class="program-pct">' + pair[1] + '</strong></div>'; })
       .join('');

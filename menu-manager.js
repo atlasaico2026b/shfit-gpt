@@ -62,7 +62,7 @@
       custom: false
     }));
     config.custom.forEach(item => items.push({
-      id: item.id, title: item.title, icon: '＋', href: TARGETS[item.target],
+      id: item.id, title: item.title, icon: '+', href: TARGETS[item.target],
       hidden: false, custom: true, target: item.target
     }));
     const rank = new Map(config.order.map((id, index) => [id, index]));

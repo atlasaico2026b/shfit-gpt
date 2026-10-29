@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- رنگ نوار مرورگر: متا تگ مقدار var() را نمی‌فهمد، پس ناچار همان مقدار --bg است -->
-  <meta name="theme-color" content="#0a0c11">
+  <meta name="theme-color" content="#171a4d">
   <meta name="description" content="ATLAS SHIFT؛ سامانه محلی مدیریت نیروی انسانی، شیفت‌ها و مأموریت‌ها">
   <title>ATLAS SHIFT | مرکز عملیات</title>
   <link rel="manifest" href="./manifest.json">
@@ -109,7 +109,7 @@
     <button class="widget-dock-item" type="button" data-target-widget="stations"><span class="widget-dock-icon"><svg viewBox="0 0 24 24"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg></span><span>ایستگاه‌ها</span></button>
   </nav>
 
-  <div class="layout-hint">حالت چیدمان فعال است: دستگیرهٔ ⠿ هر پنجره را بکش و در محل جدید رها کن. برای تغییر اندازه از گزینه‌های روی پنجره استفاده کن. برای پایان، از تنظیمات «پایان تنظیم» را بزن؛ تغییرات در همین مرورگر ذخیره می‌شوند.</div>
+  <div class="layout-hint">حالت چیدمان فعال است: دستگیرهٔ ⠿ هر پنجره را بکش و در محل جدید رها کن. برای تغییر اندازه از گزینه‌های روی پنجره استفاده کن. برای پایان، از تنظیمات «پایان تنظیم» را بزن.</div>
 
   <section class="dashboard" id="dashboard" aria-label="پنجره‌های وضعیت">
     <article class="widget" data-widget="roster" data-size="medium">
@@ -212,7 +212,7 @@
       </button>
     </div>
   </div>
-<div class="settings-section cloud-settings"><h4>پس‌زمینهٔ ابروبادی</h4><p>سه رنگ دلخواه را انتخاب کن؛ تغییرات فوراً اعمال می‌شوند و در همین مرورگر می‌مانند.</p>
+<div class="settings-section cloud-settings"><h4>پس‌زمینهٔ ابروبادی</h4><p>سه رنگ دلخواه را انتخاب کن؛ تغییرات فوراً اعمال می‌شوند.</p>
     <div class="cloud-color-grid">
       <label class="cloud-color-field" for="cloudColor1"><span>رنگ اول</span><input class="cloud-color-input" id="cloudColor1" type="color" value="var(--c-cyan)" aria-label="رنگ اول پس‌زمینه"></label>
       <label class="cloud-color-field" for="cloudColor2"><span>رنگ دوم</span><input class="cloud-color-input" id="cloudColor2" type="color" value="var(--c-pink)" aria-label="رنگ دوم پس‌زمینه"></label>
@@ -224,15 +224,15 @@
     <div class="ui-scale-setting" class="atlas-divider">
       <label for="uiScale" style="display:flex;justify-content:space-between;gap:12px;align-items:center"><span>اندازه کلی رابط برنامه</span><output id="uiScaleValue">۱۰۰٪</output></label>
       <input id="uiScale" type="range" min="90" max="115" step="5" value="100" style="width:100%;margin-top:8px">
-      <p style="font-size:11px;margin:4px 0 0">اندازه را بین ۹۰ تا ۱۱۵ درصد تنظیم کنید؛ انتخاب شما روی همین دستگاه ذخیره می‌شود.</p>
+      <p style="font-size:11px;margin:4px 0 0">اندازه را بین ۹۰ تا ۱۱۵ درصد تنظیم کنید.</p>
     </div>
   </div>
-<div class="settings-section"><h4>دستیار صوتی</h4><p>ترجیحات دستیار روی همین دستگاه ذخیره می‌شوند.</p><div class="atlas-voice-settings" style="display:grid;gap:10px;margin:12px 0"><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">فعال بودن دستیار صوتی<input id="voiceEnabled" type="checkbox"></label><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">دریافت فرمان صوتی فارسی<input id="voiceInput" type="checkbox"></label><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">پاسخ صوتی<input id="voiceReply" type="checkbox"></label><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">تأیید عملیات حساس<input id="voiceConfirm" type="checkbox"></label></div><button class="secondary-btn" id="saveVoiceSettings" type="button">ذخیره تنظیمات دستیار</button></div>
+<div class="settings-section"><h4>دستیار صوتی</h4><p>ترجیحات دستیار صوتی را اینجا تنظیم کن.</p><div class="atlas-voice-settings" style="display:grid;gap:10px;margin:12px 0"><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">فعال بودن دستیار صوتی<input id="voiceEnabled" type="checkbox"></label><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">دریافت فرمان صوتی فارسی<input id="voiceInput" type="checkbox"></label><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">پاسخ صوتی<input id="voiceReply" type="checkbox"></label><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">تأیید عملیات حساس<input id="voiceConfirm" type="checkbox"></label></div><button class="secondary-btn" id="saveVoiceSettings" type="button">ذخیره تنظیمات دستیار</button></div>
   </div>
   <div class="settings-tab-pane" id="settings-pane-lists" role="tabpanel" aria-labelledby="settings-tab-lists" hidden>
     <div class="settings-section" id="mainMenuManager">
       <h4>مدیریت منوهای اصلی</h4>
-      <p>منوهای موجود را نمایش یا پنهان کن، ترتیبشان را تغییر بده یا میان‌بر تازه‌ای به یکی از بخش‌های برنامه اضافه کن. این تغییرات فقط روی همین دستگاه ذخیره می‌شوند.</p>
+      <p>منوهای موجود را نمایش یا پنهان کن، ترتیبشان را تغییر بده یا میان‌بر تازه‌ای به یکی از بخش‌های برنامه اضافه کن.</p>
       <div id="mainMenuList" style="display:grid;gap:8px;margin:12px 0"></div>
       <div class="atlas-divider">
         <h4 style="margin-top:0">افزودن منو</h4>
@@ -242,7 +242,7 @@
         <select id="newMenuTarget" class="atlas-input atlas-input--block">
           <option value="dashboard">داشبورد</option><option value="employees">کارکنان</option><option value="missions">مأموریت‌ها</option><option value="leaves">مرخصی‌ها</option><option value="vehicles">خودروها</option><option value="gasmeters">گازسنج‌ها</option><option value="notes">یادداشت‌ها و پیگیری‌ها</option><option value="programs">برنامه‌ها و پرونده‌ها</option><option value="phonebook">دفترچه تلفن</option><option value="reports">گزارشات</option>
         </select>
-        <button class="primary-btn" id="addMainMenu" type="button">＋ افزودن منو</button>
+        <button class="primary-btn" id="addMainMenu" type="button">+ افزودن منو</button>
       </div>
       <p id="mainMenuStatus" role="status" aria-live="polite" style="font-size:12px;margin-top:8px"></p>
     </div>
@@ -251,7 +251,7 @@
   <div class="settings-tab-pane" id="settings-pane-phonebook" role="tabpanel" aria-labelledby="settings-tab-phonebook" hidden>
 <div class="settings-section" id="phonebookSettingsGroup"><h4>تنظیمات دفترچه تلفن</h4><p>تنظیم ساختار مکانی و مدیریت فهرست‌های قابل انتخاب در دفترچه تلفن.</p><div class="phonebook-settings-subsection" id="phonebookTreeSettings">
   <h4>مدیریت ساختارها</h4>
-  <p>هر مورد را به والد درست وصل کنید؛ تغییرات در همین دستگاه ذخیره می‌شود.</p>
+  <p>هر مورد را به والد درست وصل کنید.</p>
   <details class="pb-structure-accordion">
     <summary>📍 ساختار مکان‌ها <span>حوزه ← شهر ← مجتمع/مرکز انتقال نفت/ایستگاه ← ساختمان</span></summary>
     <div class="pb-structure-content"><div id="pbLocationTreeView" class="atlas-pb-settings-list"></div></div>
@@ -261,7 +261,7 @@
     <div class="pb-structure-content"><div id="pbOrgTreeView" class="atlas-pb-settings-list"></div></div>
   </details>
   <details class="pb-structure-accordion">
-    <summary>＋ افزودن یا اصلاح مورد</summary>
+    <summary>+ افزودن یا اصلاح مورد</summary>
     <div class="pb-structure-content">
       <label for="pbTreeType">نوع مورد</label>
       <select id="pbTreeType" class="atlas-input">
@@ -276,11 +276,11 @@
       <select id="pbTreeParent" class="atlas-input"><option value="">بدون والد (ریشه)</option></select>
       <label for="pbTreeName" style="display:block;margin-top:8px">نام مورد</label>
       <input id="pbTreeName" type="text" placeholder="نام جدید یا نام اصلاح‌شده" class="atlas-input" style="margin-top:6px">
-      <div style="display:flex;gap:8px;margin-top:8px"><button class="secondary-btn" id="pbTreeAdd" type="button" style="flex:1;min-width:0">＋ افزودن</button><button class="secondary-btn" id="pbTreeCancelEdit" type="button" style="display:none;flex:1;min-width:0">لغو اصلاح</button></div>
+      <div style="display:flex;gap:8px;margin-top:8px"><button class="secondary-btn" id="pbTreeAdd" type="button" style="flex:1;min-width:0">+ افزودن</button><button class="secondary-btn" id="pbTreeCancelEdit" type="button" style="display:none;flex:1;min-width:0">لغو اصلاح</button></div>
     </div>
   </details>
 </div>
-<div class="phonebook-settings-subsection" id="phonebookSettings" class="atlas-divider"><h4>فهرست‌های قابل انتخاب</h4><p>مقادیر منوهای کشویی دفترچه تلفن را اضافه، ویرایش یا حذف کن.</p><label for="phonebookOptionCategory">فیلد موردنظر</label><select id="phonebookOptionCategory" class="atlas-input" style="margin-top:8px"><option value="phoneLabel">عنوان شماره تماس</option></select><div class="atlas-pb-settings-editor"><input id="phonebookOptionValue" type="text" placeholder="مقدار جدید یا مقدار اصلاح‌شده"><button class="secondary-btn" id="phonebookOptionAdd" type="button">＋ افزودن</button></div><div id="phonebookOptionList" class="atlas-pb-settings-list"></div></div></div>
+<div class="phonebook-settings-subsection" id="phonebookSettings" class="atlas-divider"><h4>فهرست‌های قابل انتخاب</h4><p>مقادیر منوهای کشویی دفترچه تلفن را اضافه، ویرایش یا حذف کن.</p><label for="phonebookOptionCategory">فیلد موردنظر</label><select id="phonebookOptionCategory" class="atlas-input" style="margin-top:8px"><option value="phoneLabel">عنوان شماره تماس</option></select><div class="atlas-pb-settings-editor"><input id="phonebookOptionValue" type="text" placeholder="مقدار جدید یا مقدار اصلاح‌شده"><button class="secondary-btn" id="phonebookOptionAdd" type="button">+ افزودن</button></div><div id="phonebookOptionList" class="atlas-pb-settings-list"></div></div></div>
   </div>
 </section>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>

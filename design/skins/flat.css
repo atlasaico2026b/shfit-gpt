@@ -11,9 +11,12 @@ body{
   grid-template-rows:auto 1fr;gap:0;padding:0;align-items:start;
   direction:rtl;
   background:
-    radial-gradient(680px 320px at 92% -8%,rgba(var(--accent2-rgb),.13),transparent 70%),
-    radial-gradient(620px 340px at 4% 104%,rgba(var(--accent-rgb),.07),transparent 72%),
-    var(--bg);
+    radial-gradient(820px 460px at 88% -12%, var(--wash-accent), transparent 68%),
+    radial-gradient(720px 420px at 4% 108%, var(--wash-special), transparent 70%),
+    radial-gradient(620px 400px at 44% 46%, var(--wash-highlight), transparent 74%),
+    radial-gradient(560px 340px at 10% 6%, var(--wash-info), transparent 70%),
+    radial-gradient(520px 320px at 68% 92%, var(--wash-attention), transparent 72%),
+    linear-gradient(150deg, var(--bg) 0%, var(--bg2) 46%, var(--bg-deep) 100%);
   background-attachment:fixed;
   color:var(--text);
   font-family:"Vazirmatn","IRANSans",Tahoma,"Segoe UI",sans-serif;
