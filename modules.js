@@ -580,6 +580,15 @@
     return fields;
   }
 
+  // در ثبت اشکال از مسیر خودرو، «نوع دارایی» و «گازسنج» در فرم نمی‌آیند.
+  const FAULT_VEHICLE_HIDDEN_FIELDS = ['assetType', 'gasmeterId'];
+
+  function formFields(moduleKey, vehicleScope) {
+    const fields = fieldsFor(moduleKey);
+    if (moduleKey !== 'faults' || !vehicleScope) return fields;
+    return fields.filter(function (field) { return FAULT_VEHICLE_HIDDEN_FIELDS.indexOf(field.key) < 0; });
+  }
+
   // نوع هر فیلد سفارشی، شکل کادر ورودی را تعیین می‌کند.
   const CUSTOM_FIELD_TYPES = {
     text: 'متن',
@@ -720,7 +729,8 @@
     if (!state || !state.open) return '';
     const existing = state.id ? (data[moduleKey] || []).find(function (item) { return String(item.id) === String(state.id); }) : null;
     const draft = existing || (state.preset || null);
-    const fields = fieldsFor(moduleKey);
+    const vehicleScope = moduleKey === 'faults' && faultFormScope === 'vehicle';
+    const fields = formFields(moduleKey, vehicleScope);
     const fileNotice = '<p class="module-field-hint">فایل پیوست همراه همین پرونده نگه‌داری می‌شود؛ اندازهٔ هر فایل بهتر است کمتر از ۱۰ مگابایت باشد.</p>';
     let relatedVehicleHistory = '';
     if (moduleKey === 'vehicles' && existing) {
@@ -745,7 +755,7 @@
       '<div class="atlas-modal-head"><div><h3 id="atlasModalTitle">' +
       (existing ? 'ویرایش ' : 'ثبت ') + esc(specs[moduleKey].singular) + '</h3><p>پس از ذخیره، اطلاعات به فهرست، داشبورد و گزارش‌های مرتبط منتقل می‌شود.</p></div>' +
       '<button type="button" class="atlas-modal-close" data-module-action="cancel" data-view="' + esc(moduleKey) + '" aria-label="بستن پنجره">×</button></div>' +
-      '<div class="atlas-modal-body"><form class="module-form" data-module-form data-view="' + esc(moduleKey) + '" data-id="' + esc(existing ? existing.id : '') + '">' +
+      '<div class="atlas-modal-body"><form class="module-form" data-module-form data-view="' + esc(moduleKey) + '" data-id="' + esc(existing ? existing.id : '') + '"' + (vehicleScope ? ' data-fault-scope="vehicle"' : '') + '>' +
       '<div class="module-fields">' + fields.map(function (field) { return renderField(moduleKey, field, draft, data); }).join('') + '</div>' +
       fileNotice +
       '<div class="module-form-actions"><span class="module-required-help">موارد دارای * ضروری هستند.</span><div>' +
@@ -1509,6 +1519,8 @@
   let vehicleTab = 'registry';
   let faultVehicleId = '';
   let faultVehicleSort = 'open';
+  // در مسیر خودرو، «نوع دارایی» و «گازسنج» پرسیده نمی‌شود؛ دفتر کلی همان فرم کامل را دارد.
+  let faultFormScope = 'general';
 
   function setVehicleTab(tab) {
     vehicleTab = tab === 'history' || tab === 'board' ? tab : 'registry';
@@ -1603,6 +1615,7 @@
       ? '<div class="fault-grid">' + visible.map(renderFaultCard).join('') + '</div>'
       : '<div class="module-empty">هنوز اشکالی ثبت نشده. با «ثبت اشکال» اولین مورد را ثبت کن تا روند رفع و اعلان‌ها فعال شود.</div>';
     const actions = exportMenu('faults') + '<button class="primary-btn" type="button" data-module-action="new" data-view="faults">+ ثبت اشکال</button>';
+    faultFormScope = 'general';
     section.innerHTML = rootWrap(
       pageHead('اشکالات و رفع اشکال', 'هر اشکال با تاریخ، وضعیت، درصد پیشرفت و روند رفع؛ تا بسته‌شدن در اعلان‌ها می‌ماند', actions) +
       vehicleTabBar() +
@@ -1750,6 +1763,7 @@
         '<span class="faultv-foot"><span>' + faDigits(orphans.length) + ' اشکال ثبت‌شده</span><span class="faultv-open-hint">مشاهدهٔ سوابق ›</span></span>' +
         '</button>'
       : '';
+    faultFormScope = 'vehicle';
     section.innerHTML = rootWrap(
       pageHead('سوابق <span style="color:var(--tone-7)">اشکالات خودروها</span>', 'روی هر خودرو بزن تا سوابق اشکالات همان خودرو باز شود؛ فهرست و هر سابقه گزارش‌گیری جدا دارد', customExportMenu('faults-vehicles')) +
       vehicleTabBar() +
@@ -1782,6 +1796,7 @@
     const cards = list.length
       ? '<div class="fault-grid">' + list.map(renderFaultCard).join('') + '</div>'
       : '<div class="module-empty">برای این خودرو هنوز اشکالی ثبت نشده است.</div>';
+    faultFormScope = 'vehicle';
     section.innerHTML = rootWrap(
       pageHead('سوابق اشکالات <span style="color:var(--tone-7)">' + esc(title) + '</span>', 'هر اشکال با تاریخ، اولویت، وضعیت، درصد پیشرفت و روند رفع خودش', customExportMenu('faults-vehicle', vehicle ? vehicle.id : '__none__', 'vehicle')) +
       vehicleTabBar() +
@@ -2100,7 +2115,7 @@
     if (!view) return;
     let preset = null;
     try { preset = quick.dataset.preset ? JSON.parse(quick.dataset.preset) : null; } catch (error) { preset = null; }
-    if (view === 'faults') preset = Object.assign({ reportedAt: todayIso() }, preset || {});
+    if (view === 'faults') { preset = Object.assign({ reportedAt: todayIso() }, preset || {}); faultFormScope = 'vehicle'; }
     if (view === 'gaslogs' || view === 'maintenance') preset = Object.assign({ date: todayIso() }, preset || {});
     formState[view] = { open:true, id:null, preset:preset };
     const url = new URL(window.location.href);
@@ -2160,6 +2175,7 @@
     const faultNew = event.target.closest('[data-fault-new]');
     if (faultNew) {
       const vehicleId = String(faultNew.dataset.vehicle || '');
+      faultFormScope = 'vehicle';
       formState.faults = { open:true, id:null, preset:{ assetType:'خودرو', vehicleId:vehicleId, reportedAt:todayIso() } };
       document.body.insertAdjacentHTML('beforeend', renderForm('faults', appData));
       enhanceJalaliInputs(document.body);
@@ -2310,7 +2326,7 @@
   }
 
   async function formValues(form, moduleKey, oldRecord) {
-    const fields=fieldsFor(moduleKey), data={};
+    const fields=formFields(moduleKey, form.dataset.faultScope==='vehicle'), data={};
     const fd=new FormData(form);
     for(let i=0;i<fields.length;i+=1){
       const field=fields[i];
@@ -3348,6 +3364,7 @@
       const old= id ? appData[moduleKey].find(function(item){return String(item.id)===String(id);}) : null;
       try{
         const values=await formValues(form,moduleKey,old);
+        if(moduleKey==='faults'&&form.dataset.faultScope==='vehicle'&&!old)values.assetType='خودرو';
         if(moduleKey==='leaves'&&values.startDate&&values.endDate&&values.endDate<values.startDate)throw new Error('تاریخ پایان مرخصی نباید قبل از تاریخ شروع باشد.');
         if(moduleKey==='missions'&&values.startAt&&values.endAt&&values.endAt<values.startAt)throw new Error('زمان پایان مأموریت نباید قبل از زمان شروع باشد.');
         if(moduleKey==='programs'&&values.finalReportSent&&values.finalReportDue&&values.finalReportSent<values.finalReportDue&&values.status!=='تکمیل‌شده')throw new Error('تاریخ ارسال گزارش نهایی قبل از مهلت ثبت شده؛ وضعیت پرونده را بررسی کن.');
