@@ -241,6 +241,10 @@
         {key:'logType',label:'نوع سابقه',type:'select',required:true,listKey:'gasLogTypes',options:['ثبت قرائت','کالیبراسیون','تعمیر','جابه‌جایی','تست عملکرد','سایر']},
         {key:'value',label:'مقدار قرائت یا نتیجه'},
         {key:'location',label:'محل استقرار در این تاریخ',type:'select',listKey:'deploymentLocations',options:['پارکینگ مرکزی','تعمیرگاه مرکزی','انبار مرکزی','محور جاده','دفتر مرکزی','سایر']},
+        {key:'locationSince',label:'تاریخ استقرار',type:'jalali'},
+        {key:'healthStatus',label:'وضعیت سلامت در این تاریخ',type:'select',listKey:'healthStatuses',options:['سالم','نیازمند بررسی','دارای نقص','در حال تعمیر']},
+        {key:'calibrationStart',label:'شروع کالیبراسیون',type:'jalali'},
+        {key:'calibrationEnd',label:'پایان کالیبراسیون',type:'jalali'},
         {key:'description',label:'شرح و توضیحات',type:'textarea',wide:true},
         {key:'operatorId',label:'ثبت‌کننده',type:'select',source:'employees'},
         {key:'attachments',label:'پیوست‌ها',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx'}
@@ -1588,6 +1592,23 @@
   // ── دفتر گازسنج‌ها: وضعیت سلامت، محل، کالیبراسیون و مانده روز ──
   let gasFilter = { location: 'all', status: 'all', calibration: 'all', sort: 'calibration' };
 
+  // «سوابق گازسنج» زیرتب همین بخش است، نه یک صفحهٔ جدا.
+  let gasTab = 'registry';
+  let gasLogMeterId = '';
+  let gasLogSort = 'calibration';
+
+  function setGasTab(tab) {
+    gasTab = tab === 'logs' ? 'logs' : 'registry';
+    if (gasTab === 'registry') gasLogMeterId = '';
+  }
+
+  function gasTabBar() {
+    return '<div class="module-subtabs" role="tablist" aria-label="بخش‌های گازسنج">' +
+      '<button type="button" role="tab" aria-selected="' + (gasTab === 'registry') + '" class="module-subtab' + (gasTab === 'registry' ? ' active' : '') + '" data-gas-tab="registry">گازسنج‌ها</button>' +
+      '<button type="button" role="tab" aria-selected="' + (gasTab === 'logs') + '" class="module-subtab' + (gasTab === 'logs' ? ' active' : '') + '" data-gas-tab="logs">سوابق گازسنج‌ها</button>' +
+      '</div>';
+  }
+
   function gasCalibrationState(record) {
     const left = dueInDays(record.calibrationEnd);
     if (!isFinite(left)) return { key: 'unknown', label: 'بدون تاریخ', tone: 'muted', left: null };
@@ -1597,6 +1618,7 @@
   }
 
   function renderGasRegistry(section) {
+    if (gasTab === 'logs') { renderGasLogs(section); return; }
     const records = (appData.gasmeters || []).slice();
     const stateOf = function (record) { return gasCalibrationState(record); };
     const locations = ['all'].concat(appData.references.deploymentLocations || []);
@@ -1642,6 +1664,7 @@
     const actions = exportMenu('gasmeters') + '<button class="primary-btn" type="button" data-module-action="new" data-view="gasmeters">+ ثبت گازسنج</button>';
     section.innerHTML = rootWrap(
       pageHead('مدیریت گازسنج‌ها', 'وضعیت سلامت، محل استقرار، کالیبراسیون و مانده روز تا پایان اعتبار هر دستگاه', actions) +
+      gasTabBar() +
       '<div class="stat-row">' + kpis + '</div>' +
       renderForm('gasmeters', appData) +
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>فهرست گازسنج‌ها</h3><p>بر اساس محل، وضعیت یا کالیبراسیون مرتب و فیلتر کن.</p></div>' +
@@ -1653,6 +1676,177 @@
       '<select data-gas-filter="sort"><option value="calibration"' + (gasFilter.sort === 'calibration' ? ' selected' : '') + '>مرتب‌سازی: مانده کالیبراسیون</option><option value="location"' + (gasFilter.sort === 'location' ? ' selected' : '') + '>محل استقرار</option><option value="code"' + (gasFilter.sort === 'code' ? ' selected' : '') + '>کد دستگاه</option><option value="health"' + (gasFilter.sort === 'health' ? ' selected' : '') + '>وضعیت سلامت</option></select>' +
       '</div></div>' + table + '</section>' +
       '<div class="module-local-note"><strong>هشدار کالیبراسیون:</strong> دستگاه‌هایی که کمتر از ۳۰ روز تا پایان اعتبارشان مانده یا منقضی شده‌اند، در زنگ اعلان داشبورد هم نمایش داده می‌شوند.</div>'
+    );
+  }
+
+  // ── سوابق گازسنج: فهرست همهٔ دستگاه‌ها، مرتب‌سازی و سابقهٔ هر دستگاه ──
+  const GAS_LOG_SORTS = {
+    calibration: { label: 'مانده کالیبراسیون', numeric: true, value: function (r) { const s = gasCalibrationState(r); return s.left == null ? 99999 : s.left; } },
+    code: { label: 'شمارهٔ دستگاه', numeric: false, value: function (r) { return String(r.code || ''); } },
+    name: { label: 'نام / مدل', numeric: false, value: function (r) { return String(r.model || ''); } },
+    location: { label: 'محل استقرار', numeric: false, value: function (r) { return String(r.location || r.locationPoint || ''); } },
+    health: { label: 'وضعیت سلامت', numeric: false, value: function (r) { return String(r.healthStatus || ''); } }
+  };
+
+  const EXPORT_FORMATS = [['csv', 'CSV (صفحه‌گسترده)'], ['xlsx', 'Excel (.xlsx)'], ['docx', 'Word (.docx)'], ['pptx', 'PowerPoint (.pptx)'], ['png', 'تصویر PNG'], ['print', 'چاپ کم‌مصرف']];
+
+  function sortedGasMeters() {
+    const spec = GAS_LOG_SORTS[gasLogSort] || GAS_LOG_SORTS.calibration;
+    return (appData.gasmeters || []).slice().sort(function (a, b) {
+      if (spec.numeric) return spec.value(a) - spec.value(b);
+      return String(spec.value(a)).localeCompare(String(spec.value(b)), 'fa', { numeric: true });
+    });
+  }
+
+  function gasLogsOf(meterId) {
+    return (appData.gaslogs || []).filter(function (log) { return String(log.gasmeterId) === String(meterId); })
+      .sort(function (a, b) { return String(b.date || '').localeCompare(String(a.date || '')); });
+  }
+
+  function gasRemainingText(value) {
+    const left = dueInDays(value);
+    if (!isFinite(left)) return '—';
+    return left < 0 ? faDigits(Math.abs(left)) + ' روز گذشته' : faDigits(left) + ' روز مانده';
+  }
+
+  function gasMeterName(meter) {
+    return [meter.code, meter.model].filter(Boolean).join(' · ') || 'گازسنج بدون کد';
+  }
+
+  function gasFact(label, value) {
+    return '<div class="gaslog-fact"><dt>' + esc(label) + '</dt><dd>' + esc(value || '—') + '</dd></div>';
+  }
+
+  function gasRegistryExportRows() {
+    const rows = [['شمارهٔ دستگاه', 'نام / مدل', 'محل استقرار', 'تاریخ استقرار', 'وضعیت سلامت', 'شروع کالیبراسیون', 'پایان کالیبراسیون', 'مانده کالیبراسیون', 'وضعیت کالیبراسیون', 'تعداد سوابق']];
+    sortedGasMeters().forEach(function (meter) {
+      const state = gasCalibrationState(meter);
+      rows.push([
+        meter.code || '', meter.model || '',
+        meter.location || meter.locationPoint || '',
+        meter.locationSince ? formatJalali(meter.locationSince, false) : '',
+        meter.healthStatus || '',
+        meter.calibrationStart ? formatJalali(meter.calibrationStart, false) : '',
+        meter.calibrationEnd ? formatJalali(meter.calibrationEnd, false) : '',
+        gasRemainingText(meter.calibrationEnd), state.label,
+        faDigits(gasLogsOf(meter.id).length)
+      ]);
+    });
+    return rows;
+  }
+
+  function gasMeterExportRows(meter) {
+    const rows = [['تاریخ', 'نوع سابقه', 'محل استقرار', 'تاریخ استقرار', 'وضعیت سلامت', 'شروع کالیبراسیون', 'پایان کالیبراسیون', 'مانده کالیبراسیون', 'مقدار / نتیجه', 'شرح', 'ثبت‌کننده']];
+    gasLogsOf(meter.id).forEach(function (entry) {
+      const operator = (appData.employees || []).find(function (item) { return String(item.id) === String(entry.operatorId); });
+      rows.push([
+        entry.date ? formatJalali(entry.date, false) : '',
+        entry.logType || '',
+        entry.location || meter.location || '',
+        entry.locationSince ? formatJalali(entry.locationSince, false) : '',
+        entry.healthStatus || '',
+        entry.calibrationStart ? formatJalali(entry.calibrationStart, false) : '',
+        entry.calibrationEnd ? formatJalali(entry.calibrationEnd, false) : '',
+        gasRemainingText(entry.calibrationEnd || meter.calibrationEnd),
+        entry.value || '', entry.description || '',
+        operator ? employeeName(operator) : ''
+      ]);
+    });
+    return rows;
+  }
+
+  function customExportMenu(kind, gasId) {
+    return '<div class="module-export" data-export-menu>' +
+      '<button type="button" class="secondary-btn module-export-toggle" data-module-action="export-toggle" aria-haspopup="true" aria-expanded="false">⬇ خروجی و چاپ</button>' +
+      '<div class="module-export-list" hidden>' +
+      EXPORT_FORMATS.map(function (pair) {
+        return '<button type="button" data-export-custom="' + esc(kind) + '" data-gas="' + esc(gasId || '') + '" data-format="' + pair[0] + '">' + pair[1] + '</button>';
+      }).join('') +
+      '</div></div>';
+  }
+
+  function renderGasLogs(section) {
+    if (gasLogMeterId) {
+      const meter = (appData.gasmeters || []).find(function (item) { return String(item.id) === String(gasLogMeterId); });
+      if (meter) { renderGasMeterLogs(section, meter); return; }
+      gasLogMeterId = '';
+    }
+    const meters = sortedGasMeters();
+    const totalLogs = (appData.gaslogs || []).length;
+    const withLogs = meters.filter(function (meter) { return gasLogsOf(meter.id).length > 0; }).length;
+    const atRisk = meters.filter(function (meter) { const state = gasCalibrationState(meter); return state.key === 'soon' || state.key === 'expired'; }).length;
+    const kpis = [['کل گازسنج‌ها', faDigits(meters.length), 'info'], ['دارای سابقه', faDigits(withLogs), 'ok'], ['کالیبراسیون نزدیک یا منقضی', faDigits(atRisk), 'warn'], ['کل سوابق', faDigits(totalLogs), 'special']]
+      .map(function (pair) { return '<div class="mini-stat" data-tone="' + pair[2] + '"><div class="value">' + pair[1] + '</div><div class="label"><i class="tiny-dot"></i>' + pair[0] + '</div></div>'; }).join('');
+    const sortOptions = Object.keys(GAS_LOG_SORTS).map(function (key) {
+      return '<option value="' + key + '"' + (gasLogSort === key ? ' selected' : '') + '>مرتب‌سازی: ' + GAS_LOG_SORTS[key].label + '</option>';
+    }).join('');
+    const cards = meters.length ? meters.map(function (meter) {
+      const state = gasCalibrationState(meter);
+      return '<button type="button" class="gaslog-meter" data-gaslog-open="' + esc(meter.id) + '">' +
+        '<span class="gaslog-meter-top"><strong>' + esc(gasMeterName(meter)) + '</strong>' + statusTag(state.label) + '</span>' +
+        '<span class="gaslog-meter-facts">' +
+        '<span><b>محل استقرار</b>' + esc(meter.location || meter.locationPoint || '—') + '</span>' +
+        '<span><b>تاریخ استقرار</b>' + (meter.locationSince ? formatJalali(meter.locationSince, false) : '—') + '</span>' +
+        '<span><b>وضعیت سلامت</b>' + esc(meter.healthStatus || '—') + '</span>' +
+        '<span><b>مانده کالیبراسیون</b>' + gasRemainingText(meter.calibrationEnd) + '</span>' +
+        '<span><b>شروع کالیبراسیون</b>' + (meter.calibrationStart ? formatJalali(meter.calibrationStart, false) : '—') + '</span>' +
+        '<span><b>پایان کالیبراسیون</b>' + (meter.calibrationEnd ? formatJalali(meter.calibrationEnd, false) : '—') + '</span>' +
+        '</span>' +
+        '<span class="gaslog-meter-foot"><span>' + faDigits(gasLogsOf(meter.id).length) + ' سابقه</span><span class="gaslog-open-hint">مشاهدهٔ سوابق ›</span></span>' +
+        '</button>';
+    }).join('') : '<div class="module-empty">اول یک گازسنج ثبت کن؛ بعد سوابق هر دستگاه اینجا باز می‌شود.</div>';
+    section.innerHTML = rootWrap(
+      pageHead('مدیریت گازسنج‌ها', 'سوابق هر دستگاه: محل استقرار، تاریخ استقرار، سلامت و کالیبراسیون', customExportMenu('gaslogs-registry')) +
+      gasTabBar() +
+      '<div class="stat-row">' + kpis + '</div>' +
+      renderForm('gaslogs', appData) +
+      '<section class="module-list-panel"><div class="module-list-head"><div><h3>سوابق گازسنج‌ها</h3><p>روی هر دستگاه بزن تا سوابق همان گازسنج باز شود.</p></div>' +
+      '<div class="module-list-tools"><select data-gaslog-sort aria-label="مرتب‌سازی فهرست گازسنج‌ها">' + sortOptions + '</select></div></div>' +
+      '<div class="gaslog-meter-list">' + cards + '</div></section>'
+    );
+  }
+
+  function renderGasMeterLogs(section, meter) {
+    const state = gasCalibrationState(meter);
+    const entries = gasLogsOf(meter.id);
+    const snapshot =
+      '<section class="module-list-panel gaslog-snapshot"><div class="module-list-head"><div><h3>وضعیت فعلی ' + esc(gasMeterName(meter)) + '</h3>' +
+      '<p>هر سابقهٔ پایین، وضعیت ثبت‌شده در تاریخ خودش را نگه می‌دارد.</p></div>' + statusTag(state.label) + '</div>' +
+      '<dl class="gaslog-facts gaslog-facts-wide">' +
+      gasFact('محل استقرار فعلی', meter.location || meter.locationPoint || '') +
+      gasFact('تاریخ استقرار', meter.locationSince ? formatJalali(meter.locationSince, false) : '') +
+      gasFact('وضعیت سلامت', meter.healthStatus || '') +
+      gasFact('مانده کالیبراسیون', gasRemainingText(meter.calibrationEnd)) +
+      gasFact('شروع کالیبراسیون', meter.calibrationStart ? formatJalali(meter.calibrationStart, false) : '') +
+      gasFact('پایان کالیبراسیون', meter.calibrationEnd ? formatJalali(meter.calibrationEnd, false) : '') +
+      '</dl></section>';
+    const cards = entries.length ? entries.map(function (entry) {
+      return '<article class="gaslog-entry">' +
+        '<div class="gaslog-entry-head"><strong>' + (entry.date ? formatJalali(entry.date, false) : 'بدون تاریخ') + '</strong>' + statusTag(entry.logType || '—') + '</div>' +
+        '<dl class="gaslog-facts">' +
+        gasFact('محل استقرار فعلی', entry.location || meter.location || '') +
+        gasFact('تاریخ استقرار', entry.locationSince ? formatJalali(entry.locationSince, false) : '') +
+        gasFact('وضعیت سلامت', entry.healthStatus || '') +
+        gasFact('مانده کالیبراسیون', gasRemainingText(entry.calibrationEnd || meter.calibrationEnd)) +
+        gasFact('شروع کالیبراسیون', entry.calibrationStart ? formatJalali(entry.calibrationStart, false) : '') +
+        gasFact('پایان کالیبراسیون', entry.calibrationEnd ? formatJalali(entry.calibrationEnd, false) : '') +
+        '</dl>' +
+        (entry.value ? '<p class="gaslog-line"><span>مقدار / نتیجه</span>' + esc(entry.value) + '</p>' : '') +
+        (entry.description ? '<p class="gaslog-line"><span>شرح</span>' + esc(entry.description) + '</p>' : '') +
+        '<div class="gaslog-entry-actions">' +
+        '<button type="button" class="secondary-btn" data-module-action="edit" data-view="gaslogs" data-id="' + esc(entry.id) + '">ویرایش</button>' +
+        '<button type="button" class="module-delete-btn" data-module-action="delete" data-view="gaslogs" data-id="' + esc(entry.id) + '">حذف</button>' +
+        '</div></article>';
+    }).join('') : '<div class="module-empty">برای این دستگاه هنوز سابقه‌ای ثبت نشده است.</div>';
+    section.innerHTML = rootWrap(
+      pageHead('سوابق ' + esc(gasMeterName(meter)), 'تاریخ، محل استقرار، سلامت و کالیبراسیون در هر ثبت', customExportMenu('gaslogs-meter', meter.id)) +
+      gasTabBar() +
+      '<div class="gaslog-detail-bar"><button type="button" class="secondary-btn" data-gaslog-back>‹ بازگشت به فهرست گازسنج‌ها</button>' +
+      '<button type="button" class="primary-btn" data-gas-action="log" data-gas="' + esc(meter.id) + '">+ ثبت سابقه برای این دستگاه</button></div>' +
+      renderForm('gaslogs', appData) +
+      snapshot +
+      '<section class="module-list-panel"><div class="module-list-head"><div><h3>سوابق ثبت‌شده</h3><p>هر ردیف یک سابقه با تاریخ خودش.</p></div><span class="module-tag">' + faDigits(entries.length) + ' مورد</span></div>' +
+      '<div class="gaslog-entry-list">' + cards + '</div></section>'
     );
   }
 
@@ -1780,6 +1974,52 @@
     }
   });
 
+  // زیرتب‌ها، باز کردن سابقهٔ یک دستگاه و خروجی‌های اختصاصی همین بخش.
+  document.addEventListener('click', function (event) {
+    const section = document.getElementById('sectionView');
+    const tab = event.target.closest('[data-gas-tab]');
+    if (tab) {
+      setGasTab(tab.dataset.gasTab);
+      renderGasRegistry(section);
+      return;
+    }
+    const open = event.target.closest('[data-gaslog-open]');
+    if (open) {
+      gasTab = 'logs';
+      gasLogMeterId = open.dataset.gaslogOpen || '';
+      renderGasRegistry(section);
+      if (section) section.scrollIntoView({ block: 'start' });
+      return;
+    }
+    if (event.target.closest('[data-gaslog-back]')) {
+      gasLogMeterId = '';
+      renderGasRegistry(section);
+      return;
+    }
+    const custom = event.target.closest('[data-export-custom]');
+    if (custom) {
+      const menu = custom.closest('[data-export-menu]');
+      const list = menu && menu.querySelector('.module-export-list');
+      if (list) list.hidden = true;
+      const format = custom.dataset.format || 'csv';
+      const kind = custom.dataset.exportCustom;
+      if (kind === 'gaslogs-registry') {
+        runExport(gasRegistryExportRows(), 'سوابق گازسنج‌ها · ATLAS SHIFT', 'ATLAS-SHIFT-gaslogs-registry-' + todayIso(), format);
+      } else if (kind === 'gaslogs-meter') {
+        const meter = (appData.gasmeters || []).find(function (item) { return String(item.id) === String(custom.dataset.gas); });
+        if (!meter) return;
+        runExport(gasMeterExportRows(meter), 'سوابق ' + gasMeterName(meter) + ' · ATLAS SHIFT', 'ATLAS-SHIFT-gaslogs-' + (meter.code || meter.id) + '-' + todayIso(), format);
+      }
+    }
+  });
+
+  document.addEventListener('change', function (event) {
+    const sort = event.target.closest('[data-gaslog-sort]');
+    if (!sort) return;
+    gasLogSort = sort.value;
+    renderGasRegistry(document.getElementById('sectionView'));
+  });
+
   document.addEventListener('change', function (event) {
     const filter = event.target.closest('[data-gas-filter]');
     if (!filter) return;
@@ -1797,6 +2037,7 @@
     if(view==='programs')renderPrograms(section);
     else if(view==='faults')renderFaults(section);
     else if(view==='gasmeters')renderGasRegistry(section);
+    else if(view==='gaslogs'){gasTab='logs';renderGasRegistry(section);}
     else if(view==='maintenance')renderServiceBook(section);
     else if(specs[view])renderCrud(view,section);
     else if(view==='reports')renderReports(section);
@@ -2295,17 +2536,18 @@
     setTimeout(cleanup, 1500);
   }
 
-  function exportModule(moduleKey, format) {
-    if (!specs[moduleKey]) return;
-    const title = specs[moduleKey].title + ' · ATLAS SHIFT';
-    const rows = moduleExportRows(moduleKey);
-    const base = 'ATLAS-SHIFT-' + moduleKey + '-' + todayIso();
-    if (format === 'xlsx') exportRowsXlsx(rows, base + '.xlsx', specs[moduleKey].title);
+  function runExport(rows, title, base, format) {
+    if (format === 'xlsx') exportRowsXlsx(rows, base + '.xlsx', title);
     else if (format === 'docx') exportRowsDocx(rows, title, base + '.docx');
     else if (format === 'pptx') exportRowsPptx(rows, title, base + '.pptx');
     else if (format === 'png') exportRowsPng(rows, title, base + '.png');
     else if (format === 'print') printRows(rows, title);
-    else exportCsv(moduleKey);
+    else downloadFile(base + '.csv', '\uFEFF' + rows.map(function (row) { return row.map(csvEscape).join(','); }).join('\r\n'), 'text/csv;charset=utf-8;');
+  }
+
+  function exportModule(moduleKey, format) {
+    if (!specs[moduleKey]) return;
+    runExport(moduleExportRows(moduleKey), specs[moduleKey].title + ' · ATLAS SHIFT', 'ATLAS-SHIFT-' + moduleKey + '-' + todayIso(), format);
   }
 
   function exportMenu(moduleKey) {
@@ -3243,7 +3485,8 @@
     formatJalali: formatJalali,
     confirm: askConfirm,
     prompt: askPrompt,
-    showText: askText
+    showText: askText,
+    setGasTab: setGasTab
   };
 
   document.addEventListener('DOMContentLoaded', function(){refreshDashboard();});

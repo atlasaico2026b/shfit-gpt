@@ -11,7 +11,6 @@
     { id: 'maintenance', title: 'دفتر سرویس', icon: '⚙', href: './index.html?view=maintenance' },
     { id: 'faults', title: 'اشکالات', icon: '⚠', href: './index.html?view=faults' },
     { id: 'gasmeters', title: 'گازسنج‌ها', icon: '◉', href: './index.html?view=gasmeters' },
-    { id: 'gaslogs', title: 'سوابق گازسنج', icon: '⌁', href: './index.html?view=gaslogs' },
     { id: 'notes', title: 'یادداشت‌ها', icon: '▤', href: './index.html?view=notes' },
     { id: 'programs', title: 'برنامه‌ها و پرونده‌ها', icon: '✓', href: './index.html?view=programs' },
     { id: 'phonebook', title: 'دفترچه تلفن', icon: '☎', href: './index.html?view=phonebook' },

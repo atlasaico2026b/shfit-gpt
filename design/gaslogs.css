@@ -1,0 +1,245 @@
+/* ATLAS SHIFT — زیرتب‌های گازسنج و سوابق هر دستگاه */
+
+/* 1 · SUB TABS ─────────────────────────────────────────────────────────── */
+.module-subtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(var(--navy-rgb), .24);
+}
+
+.module-subtab {
+  flex: 1 1 160px;
+  min-width: 0;
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: .88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .18s, color .18s, border-color .18s;
+}
+
+.module-subtab:hover {
+  color: var(--text);
+  border-color: var(--line-hi);
+}
+
+.module-subtab.active {
+  color: var(--text);
+  border-color: var(--line-hi);
+  background: rgba(var(--accent-rgb), .18);
+}
+
+.module-subtab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* 2 · METER LIST ───────────────────────────────────────────────────────── */
+.gaslog-meter-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.gaslog-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  padding: 14px 15px;
+  text-align: start;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--glass);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color .18s, transform .18s, background .18s;
+}
+
+.gaslog-meter:hover {
+  border-color: var(--line-hi);
+  background: var(--glass-strong);
+  transform: translateY(-1px);
+}
+
+.gaslog-meter:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.gaslog-meter-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.gaslog-meter-top strong {
+  font-size: .98rem;
+}
+
+.gaslog-meter-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.gaslog-meter-facts > span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  font-size: .8rem;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.gaslog-meter-facts b {
+  font-size: .7rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.gaslog-meter-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-size: .78rem;
+  color: var(--muted);
+}
+
+.gaslog-open-hint {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* 3 · METER DETAIL ─────────────────────────────────────────────────────── */
+.gaslog-detail-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.gaslog-snapshot {
+  margin-bottom: 16px;
+}
+
+.gaslog-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.gaslog-fact {
+  min-width: 0;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(var(--navy-rgb), .22);
+}
+
+.gaslog-fact dt {
+  font-size: .7rem;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+
+.gaslog-fact dd {
+  margin: 0;
+  font-size: .86rem;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.gaslog-entry-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.gaslog-entry {
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--glass);
+}
+
+.gaslog-entry-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.gaslog-entry-head strong {
+  font-size: .92rem;
+}
+
+.gaslog-entry .gaslog-facts {
+  margin-bottom: 10px;
+}
+
+.gaslog-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: .84rem;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.gaslog-line span {
+  flex: 0 0 auto;
+  font-size: .72rem;
+  color: var(--muted);
+}
+
+.gaslog-entry-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+@media (max-width: 640px) {
+  .gaslog-meter-list {
+    grid-template-columns: 1fr;
+  }
+
+  .module-subtab {
+    flex: 1 1 100%;
+  }
+
+  .gaslog-facts {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .gaslog-facts {
+    grid-template-columns: 1fr;
+  }
+}

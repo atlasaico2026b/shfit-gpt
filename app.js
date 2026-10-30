@@ -354,7 +354,6 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
     maintenance:{title:'دفتر سرویس <span style="color:var(--tone-5)">و تعمیرات</span>',subtitle:'سوابق سرویس، تعمیر، کیلومتر و هزینهٔ هر خودرو به‌صورت زونکن‌بندی‌شده',kicker:'مدیریت عملیات / دفتر سرویس',icon:'⚙',note:'هر خودرو یک زونکن دارد؛ سرویس‌ها با تاریخ، کیلومتر و هزینه ثبت و قابل خروجی‌اند.'},
     faults:{title:'اشکالات <span style="color:var(--tone-7)">و رفع اشکال</span>',subtitle:'ثبت اشکال خودرو، گازسنج و تجهیزات با روند رفع، درصد پیشرفت و اعلان تا بسته‌شدن',kicker:'مدیریت عملیات / اشکالات',icon:'⚠',note:'هر اشکال تا رفع کامل در اعلان‌ها می‌ماند و روند اقدامش ثبت می‌شود.'},
     gasmeters:{title:'مدیریت <span style="color:var(--tone-7)">گازسنج‌ها</span>',subtitle:'وضعیت تجهیزات، گازهای قابل‌اندازه‌گیری و سررسید کالیبراسیون',kicker:'مدیریت عملیات / تجهیزات',icon:'◉',note:'ثبت کد و سریال، نوع گاز، محل استقرار، وضعیت دستگاه و محاسبه سررسید کالیبراسیون در این بخش پیاده‌سازی خواهد شد.'},
-    gaslogs:{title:'سوابق <span style="color:var(--tone-4)">گازسنج</span>',subtitle:'قرائت‌ها، کالیبراسیون و اتفاقات ثبت‌شده برای هر دستگاه',kicker:'مدیریت عملیات / سوابق گازسنج',icon:'⌁',note:'هر سابقه به یک گازسنج وصل است و همراه پروندهٔ همان دستگاه نگه‌داری می‌شود.'},
     programs:{title:'برنامه‌ها و <span style="color:var(--tone-6)">اهداف</span>',subtitle:'اهداف، برنامه‌های فعالیت، مانور، روتین و دوره‌های آموزشی با مراحل و درصد پیشرفت',kicker:'مدیریت عملیات / برنامه‌ها',icon:'◎',note:'هر برنامه از چند مرحله تشکیل می‌شود و درصد پیشرفت از نسبت مراحل انجام‌شده به کل مراحل محاسبه می‌شود.'},
     notes:{title:'یادداشت‌ها و <span style="color:var(--tone-3)">پیگیری‌ها</span>',subtitle:'یادداشت‌های کاری و نکات پیگیری عملیات',kicker:'مدیریت عملیات / یادداشت‌ها',icon:'▤',note:'یادداشت‌های قابل ویرایش و حذف، تاریخ و ارجاع مرتبط در این بخش ساخته خواهد شد.'},
     reports:{title:'گزارش‌ها و <span style="color:var(--tone-2)">آمار</span>',subtitle:'گزارش‌های روزانه و دوره‌ای بر اساس تاریخ، شهر و نوع فعالیت',kicker:'مدیریت عملیات / گزارشات',icon:'▥',note:'فیلتر تاریخ شمسی، شمارش مأموریت‌ها و گزارش‌های قابل چاپ و خروجی در این بخش پیاده‌سازی خواهد شد.'},
@@ -641,7 +640,11 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
   function renderRoute(requestedView){
     let view='dashboard';
     try{view=requestedView||new URLSearchParams(window.location.search).get('view')||'dashboard'}catch(e){}
+    // «سوابق گازسنج» حالا زیرتب گازسنج‌ها است؛ آدرس قدیمی همان‌جا باز می‌شود.
+    const gasLogsAlias=view==='gaslogs';
+    if(gasLogsAlias)view='gasmeters';
     if(!Object.prototype.hasOwnProperty.call(viewInfo,view))view='dashboard';
+    if(gasLogsAlias&&window.ATLAS_MODULES&&typeof window.ATLAS_MODULES.setGasTab==='function')window.ATLAS_MODULES.setGasTab('logs');
     const info=viewInfo[view], isDashboard=view==='dashboard';
     const hideSelectors=['.dashboard-controls','#dashboardQuickAdd','.widget-dock','.layout-hint','#dashboard','.footnote'];
     hideSelectors.forEach(sel=>{const el=$(sel);if(el)el.classList.toggle('route-hidden',!isDashboard)});
