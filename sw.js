@@ -1,5 +1,5 @@
 /* ATLAS SHIFT service worker — canonical app shell and offline fallback */
-const CACHE_NAME = 'atlas-shift-v83-phonebook-forms';
+const CACHE_NAME = 'atlas-shift-v84-inline-dialogs';
 const APP_FILES = [
   './', './index.html',
   './design/tokens.css', './design/styles.css', './design/skins/flat.css', './design/tones.css',

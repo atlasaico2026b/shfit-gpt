@@ -202,16 +202,16 @@
     pbTreeNodes.push({id:'pbt-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),type,name,parentId});
     pbTreeSave();pbTreeSyncOptions();pbTreeName.value='';pbTreeRefresh();toast('مورد به ساختار مرتبط افزوده شد.');
   });
-  [pbLocationTreeView,pbOrgTreeView].forEach(treeView=>treeView.addEventListener('click',event=>{
+  [pbLocationTreeView,pbOrgTreeView].forEach(treeView=>treeView.addEventListener('click',async event=>{
     const edit=event.target.closest('[data-pbt-edit]'),del=event.target.closest('[data-pbt-delete]');
     if(edit){pbTreeStartEdit(edit.dataset.pbtEdit);return;}
     if(!del)return;const id=del.dataset.pbtDelete;if(pbTreeNodes.some(n=>n.parentId===id)){toast('ابتدا زیرمجموعه‌های این مورد را حذف یا جابه‌جا کن.');return;}
-    if(!confirm('این مورد از ساختار مرتبط حذف شود؟'))return;pbTreeNodes=pbTreeNodes.filter(n=>n.id!==id);pbTreeSave();pbTreeSyncOptions();pbTreeRefresh();
+    if(!(await window.ATLAS_MODULES.confirm({title:'حذف از ساختار مرتبط',message:'این مورد از ساختار مرتبط حذف شود؟',confirmLabel:'حذف',danger:true})))return;pbTreeNodes=pbTreeNodes.filter(n=>n.id!==id);pbTreeSave();pbTreeSyncOptions();pbTreeRefresh();
   }));
   function renderPhonebookOptionList(){const key=phonebookCategory.value,values=Array.isArray(phonebookOptionData[key])?phonebookOptionData[key]:[];phonebookList.innerHTML=values.length?values.map((value,i)=>'<div class="atlas-pb-option-row"><span>'+escTree(value)+'</span><div style="display:flex;gap:6px"><button class="secondary-btn" type="button" data-pbo-edit="'+i+'">اصلاح</button><button class="secondary-btn" type="button" data-pbo-delete="'+i+'">حذف</button></div></div>').join(''):'<div class="atlas-pb-empty">هنوز مقداری ثبت نشده است.</div>';}
   phonebookCategory.addEventListener('change',()=>{phonebookValue.value='';renderPhonebookOptionList();});
   $('#phonebookOptionAdd').addEventListener('click',()=>{const key=phonebookCategory.value,value=phonebookValue.value.trim();if(!value){phonebookValue.focus();return;}if(!Array.isArray(phonebookOptionData[key]))phonebookOptionData[key]=[];if(!phonebookOptionData[key].includes(value))phonebookOptionData[key].push(value);phonebookOptionData[key]=[...new Set(phonebookOptionData[key])].sort((a,b)=>a.localeCompare(b,'fa'));phonebookValue.value='';savePhonebookOptionData();});
-  phonebookList.addEventListener('click',event=>{const edit=event.target.closest('[data-pbo-edit]'),del=event.target.closest('[data-pbo-delete]'),key=phonebookCategory.value,values=phonebookOptionData[key]||[];if(edit){const i=Number(edit.dataset.pboEdit);if(values[i]===undefined)return;const next=prompt('مقدار جدید:',values[i]);if(next===null)return;const value=next.trim();if(!value)return;values[i]=value;phonebookOptionData[key]=[...new Set(values)].sort((a,b)=>a.localeCompare(b,'fa'));savePhonebookOptionData();}else if(del){const i=Number(del.dataset.pboDelete);if(values[i]===undefined)return;if(!confirm('این مقدار حذف شود؟'))return;values.splice(i,1);savePhonebookOptionData();}});
+  phonebookList.addEventListener('click',async event=>{const edit=event.target.closest('[data-pbo-edit]'),del=event.target.closest('[data-pbo-delete]'),key=phonebookCategory.value,values=phonebookOptionData[key]||[];if(edit){const i=Number(edit.dataset.pboEdit);if(values[i]===undefined)return;const next=await window.ATLAS_MODULES.prompt({title:'ویرایش مقدار',label:'مقدار جدید',value:values[i],confirmLabel:'ذخیره'});if(next===null)return;values[i]=next;phonebookOptionData[key]=[...new Set(values)].sort((a,b)=>a.localeCompare(b,'fa'));savePhonebookOptionData();}else if(del){const i=Number(del.dataset.pboDelete);if(values[i]===undefined)return;if(!(await window.ATLAS_MODULES.confirm({title:'حذف مقدار',message:'این مقدار حذف شود؟',confirmLabel:'حذف',danger:true})))return;values.splice(i,1);savePhonebookOptionData();}});
   pbTreeRefresh();renderPhonebookOptionList();
   settingsButton.addEventListener('click',e=>{e.stopPropagation();const opening=!settingsPanel.classList.contains('open');settingsPanel.classList.toggle('open',opening);settingsPanel.setAttribute('aria-hidden',String(!opening));settingsButton.setAttribute('aria-expanded',String(opening));closeDrawer()});
   document.addEventListener('click',e=>{if(!e.target.closest('#settingsPanel')&&!e.target.closest('#settingsButton')){settingsPanel.classList.remove('open');settingsPanel.setAttribute('aria-hidden','true');settingsButton.setAttribute('aria-expanded','false')}});
@@ -619,7 +619,7 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
       }
       refillFilters();draw();reset();
     };
-    section.querySelector('#atlasPbResults').onclick=event=>{
+    section.querySelector('#atlasPbResults').onclick=async event=>{
       const edit=event.target.closest('[data-pb-edit]'),del=event.target.closest('[data-pb-delete]');
       if(edit){
         editIndex=Number(edit.dataset.pbEdit);const c=contacts[editIndex];if(!c)return;
@@ -627,7 +627,8 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
         renderPhoneRows(c.phoneNumbers||[]);
         form.classList.add('open');form.querySelector('[type=submit]').textContent='ذخیره تغییرات';form.elements.name.focus();
       }else if(del){
-        const i=Number(del.dataset.pbDelete);if(!Number.isInteger(i)||!contacts[i]||!confirm('این مخاطب حذف شود؟'))return;
+        const i=Number(del.dataset.pbDelete);if(!Number.isInteger(i)||!contacts[i])return;
+        if(!(await window.ATLAS_MODULES.confirm({title:'حذف مخاطب',message:'«'+(contacts[i].name||'این مخاطب')+'» حذف شود؟',confirmLabel:'حذف',danger:true})))return;
         const removed=contacts.splice(i,1)[0];
         if(!persist()){contacts.splice(i,0,removed);return;}
         refillFilters();draw();reset();

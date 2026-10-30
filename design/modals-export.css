@@ -218,3 +218,72 @@
   flex: 1 1 auto;
   min-width: 0;
 }
+
+/* 6 · ASK DIALOGS ─────────────────────────────────────────────────────── */
+/* پنجره‌های تأیید و ویرایش مقدار که جای confirm()/prompt() مرورگر را گرفته‌اند. */
+.atlas-dialog {
+  width: min(460px, 100%);
+}
+
+.atlas-dialog .atlas-modal-body {
+  gap: 0;
+}
+
+.atlas-dialog-danger {
+  background: var(--danger-soft);
+  border-color: var(--danger-line);
+  color: var(--danger-strong);
+}
+
+.atlas-dialog-danger:hover {
+  background: var(--danger-line);
+}
+
+.atlas-dialog-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.atlas-dialog-field label {
+  font-size: .85rem;
+  color: var(--muted);
+}
+
+.atlas-dialog-input {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(var(--navy-rgb), .22);
+  color: var(--text);
+  font: inherit;
+}
+
+.atlas-dialog-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.atlas-dialog-error {
+  margin: 0;
+  font-size: .8rem;
+  color: var(--danger-strong);
+}
+
+.atlas-dialog-text {
+  margin: 0;
+  padding: 12px;
+  max-height: min(52vh, 420px);
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  font-size: .85rem;
+  line-height: 1.9;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(var(--navy-rgb), .22);
+  color: var(--text);
+}

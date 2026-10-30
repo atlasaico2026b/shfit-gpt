@@ -194,7 +194,7 @@
           if (save()) { renderNav(allItems()); status('عنوان منو ذخیره شد.'); }
         }
       });
-      list.addEventListener('click', event => {
+      list.addEventListener('click', async event => {
         const b = event.target.closest('[data-menu-action]');
         if (!b || b.disabled) return;
         const [action, id] = b.dataset.menuAction.split(':');
@@ -203,7 +203,14 @@
         if (index < 0) return;
         if (action === 'delete') {
           const item = config.custom.find(entry => entry.id === id);
-          if (!item || !confirm('این میان‌بر منو حذف شود؟ اطلاعات صفحهٔ مقصد حذف نمی‌شود.')) return;
+          if (!item) return;
+          const ok = await window.ATLAS_MODULES.confirm({
+            title: 'حذف میان‌بر منو',
+            message: 'این میان‌بر منو حذف شود؟ اطلاعات صفحهٔ مقصد حذف نمی‌شود.',
+            confirmLabel: 'حذف میان‌بر',
+            danger: true
+          });
+          if (!ok) return;
           config.custom = config.custom.filter(entry => entry.id !== id);
           config.order = config.order.filter(value => value !== id);
           if (save()) { render(); status('میان‌بر حذف شد؛ اطلاعات بخش مقصد دست‌نخورده باقی ماند.'); }

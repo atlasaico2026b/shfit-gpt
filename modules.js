@@ -311,8 +311,15 @@
   }
 
   function toast(message) {
-    const el = document.getElementById('toast');
-    if (!el) { window.alert(message); return; }
+    let el = document.getElementById('toast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'toast';
+      el.className = 'toast';
+      el.setAttribute('role', 'status');
+      el.setAttribute('aria-live', 'polite');
+      document.body.appendChild(el);
+    }
     el.textContent = message;
     el.classList.add('show');
     window.clearTimeout(toast.timer);
@@ -1723,7 +1730,7 @@
         return;
       }
       if (action === 'resolve') {
-        if (!window.confirm('این اشکال «رفع شد» علامت بخورد؟')) return;
+        if (!(await askConfirm({ title: 'رفع کامل اشکال', message: 'این اشکال «رفع شد» علامت بخورد؟ وضعیت روی «رفع شد» و پیشرفت روی ۱۰۰٪ تنظیم می‌شود.', confirmLabel: 'رفع شد' }))) return;
         const entry = formatJalali(new Date().toISOString(), false) + ' | رفع کامل و بستن مورد';
         record.status = 'رفع شد';
         record.progress = 100;
@@ -2382,7 +2389,7 @@
       const parsed=JSON.parse(raw);
       const candidate=parsed&&parsed.data?parsed.data:parsed;
       if(!candidate||!MODULES.every(function(key){return Array.isArray(candidate[key]);}))throw new Error('فایل پشتیبان معتبر نیست.');
-      if(!window.confirm('با بازیابی، اطلاعات فعلی و تنظیمات ذخیره‌شدهٔ این دستگاه با اطلاعات فایل جایگزین می‌شود. ادامه می‌دهی؟'))return;
+      if(!(await askConfirm({title:'بازیابی نسخهٔ پشتیبان',message:'با بازیابی، اطلاعات فعلی و تنظیمات ذخیره‌شدهٔ این دستگاه با اطلاعات فایل جایگزین می‌شود. ادامه می‌دهی؟',confirmLabel:'بازیابی'})))return;
       appData=normalizeState(candidate);
       const ok=await saveState();
       if(!ok)return;
@@ -2412,7 +2419,11 @@
       const changes=(item.changes||[]).map(function(change){return change.field+': «'+change.before+'» ← «'+change.after+'»';}).join('\n');
       return displayDateTime(item.at)+' | '+item.action+(changes?'\n'+changes:'');
     });
-    window.alert((record?recordLabel(moduleKey,record):'سوابق')+'\n\n'+(textRows.join('\n\n')||'سابقه‌ای ثبت نشده است.'));
+    return askText({
+      title: 'سابقهٔ تغییرات',
+      message: record ? recordLabel(moduleKey, record) : 'سوابق',
+      text: textRows.join('\n\n') || 'سابقه‌ای ثبت نشده است.'
+    });
   }
 
   document.addEventListener('click', async function(event) {
@@ -2429,7 +2440,8 @@
       shiftFormState={open:false,id:null};render('employees',section);
     }else if(action==='delete'){
       const record=(appData.shifts||[]).find(function(item){return String(item.id)===String(button.dataset.id);});
-      if(!record||!window.confirm('برنامهٔ شیفت این مورد حذف شود؟'))return;
+      if(!record)return;
+      if(!(await askConfirm({title:'حذف برنامهٔ شیفت',message:'برنامهٔ شیفت این مورد حذف شود؟',confirmLabel:'حذف',danger:true})))return;
       appData.shifts=appData.shifts.filter(function(item){return String(item.id)!==String(record.id);});
       addShiftHistory(record,'حذف',[]);
       if(await saveState()){render('employees',section);refreshDashboard();toast('برنامهٔ شیفت حذف شد.');}
@@ -2499,7 +2511,7 @@
       if(!listKey||!Array.isArray(appData.references[listKey]))return;
       const list=appData.references[listKey];
       if(action==='reference-add'){const value=String(input&&input.value||'').trim();if(!value){toast('عنوان گزینه را وارد کن.');return;}if(list.includes(value)){toast('این گزینه از قبل وجود دارد.');return;}list.push(value);if(input)input.value='';}
-      else{const i=Number(button.dataset.index);if(i<0||i>=list.length)return;if(action==='reference-edit'){const value=window.prompt('عنوان جدید گزینه:',list[i]);if(value===null||!value.trim())return;const next=value.trim();if(list.includes(next)&&next!==list[i]){toast('این گزینه از قبل وجود دارد.');return;}const previous=list[i];list[i]=next;MODULES.forEach(function(m){(specs[m].fields||[]).forEach(function(field){if(field.listKey!==listKey)return;(appData[m]||[]).forEach(function(record){if(record[field.key]===previous)record[field.key]=next;else if(Array.isArray(record[field.key]))record[field.key]=record[field.key].map(function(v){return v===previous?next:v;});});});});}else if(action==='reference-delete'){if(!window.confirm('گزینه از فهرست حذف شود؟ سوابق قبلی حفظ می‌شوند و مقدارهای ثبت‌شده پاک نخواهند شد.'))return;list.splice(i,1);}else{const nextIndex=action==='reference-up'?i-1:i+1;if(nextIndex<0||nextIndex>=list.length)return;const swap=list[nextIndex];list[nextIndex]=list[i];list[i]=swap;}}
+      else{const i=Number(button.dataset.index);if(i<0||i>=list.length)return;if(action==='reference-edit'){const value=await askPrompt({title:'ویرایش گزینهٔ فهرست',label:'عنوان جدید گزینه',value:list[i],confirmLabel:'ذخیره'});if(value===null)return;const next=value;if(list.includes(next)&&next!==list[i]){toast('این گزینه از قبل وجود دارد.');return;}const previous=list[i];list[i]=next;MODULES.forEach(function(m){(specs[m].fields||[]).forEach(function(field){if(field.listKey!==listKey)return;(appData[m]||[]).forEach(function(record){if(record[field.key]===previous)record[field.key]=next;else if(Array.isArray(record[field.key]))record[field.key]=record[field.key].map(function(v){return v===previous?next:v;});});});});}else if(action==='reference-delete'){if(!(await askConfirm({title:'حذف گزینه از فهرست',message:'گزینه از فهرست حذف شود؟ سوابق قبلی حفظ می‌شوند و مقدارهای ثبت‌شده پاک نخواهند شد.',confirmLabel:'حذف',danger:true})))return;list.splice(i,1);}else{const nextIndex=action==='reference-up'?i-1:i+1;if(nextIndex<0||nextIndex>=list.length)return;const swap=list[nextIndex];list[nextIndex]=list[i];list[i]=swap;}}
       if(await saveState()){renderReferenceList();if(action==='reference-edit'){const current=document.getElementById('sectionView');const view=new URLSearchParams(window.location.search).get('view')||'dashboard';if(specs[view])render(view,current);}toast('فهرست ذخیره شد.');}return;
     }
     if(action==='custom-field-add'||action==='custom-field-remove'){
@@ -2527,7 +2539,8 @@
     }else if(action==='delete'){
       if(!specs[moduleKey])return;
       const record=appData[moduleKey].find(function(item){return String(item.id)===String(button.dataset.id);});
-      if(!record||!window.confirm('«'+recordLabel(moduleKey,record)+'» حذف شود؟'))return;
+      if(!record)return;
+      if(!(await askConfirm({title:'حذف مورد',message:'«'+recordLabel(moduleKey,record)+'» حذف شود؟',confirmLabel:'حذف',danger:true})))return;
       appData[moduleKey]=appData[moduleKey].filter(function(item){return String(item.id)!==String(button.dataset.id);});
       addHistory(moduleKey,record,'حذف',[]);
       if(await saveState()){render(moduleKey,section);refreshDashboard();toast('مورد حذف شد.')}
@@ -2535,7 +2548,7 @@
       if(!specs[moduleKey])return;
       const selected=Array.from(section.querySelectorAll('[data-record-select]:checked')).map(function(box){return box.value;});
       if(!selected.length){toast('ابتدا یک یا چند ردیف را انتخاب کن.');return;}
-      if(!window.confirm('تعداد '+faDigits(selected.length)+' مورد انتخاب‌شده حذف شود؟'))return;
+      if(!(await askConfirm({title:'حذف گروهی',message:'تعداد '+faDigits(selected.length)+' مورد انتخاب‌شده حذف شود؟',confirmLabel:'حذف '+faDigits(selected.length)+' مورد',danger:true})))return;
       const removed=appData[moduleKey].filter(function(item){return selected.includes(String(item.id));});
       appData[moduleKey]=appData[moduleKey].filter(function(item){return !selected.includes(String(item.id));});
       removed.forEach(function(record){addHistory(moduleKey,record,'حذف گروهی',[]);});
@@ -2606,6 +2619,126 @@
     }
   });
 
+  // ---- پنجره‌های پرسش داخلی ----
+  // در حالت نصب‌شدهٔ PWA روی iOS، prompt() اجرا نمی‌شود و null برمی‌گرداند؛ پس هر پرسش
+  // (تأیید، ویرایش مقدار، نمایش سابقه) داخل خود برنامه و با ظاهر یکسان انجام می‌شود.
+  let dialogCounter = 0;
+
+  function dialogShell(options) {
+    const opts = options || {};
+    dialogCounter += 1;
+    const titleId = 'atlasDialogTitle' + dialogCounter;
+    const backdrop = document.createElement('div');
+    backdrop.className = 'atlas-modal-backdrop atlas-dialog-backdrop';
+    backdrop.setAttribute('data-modal-backdrop', '');
+    backdrop.setAttribute('data-modal-kind', 'dialog');
+    backdrop.innerHTML =
+      '<div class="atlas-modal atlas-dialog" role="dialog" aria-modal="true" aria-labelledby="' + titleId + '">' +
+      '<div class="atlas-modal-head"><div><h3 id="' + titleId + '">' + esc(opts.title || 'تأیید') + '</h3>' +
+      (opts.message ? '<p>' + esc(opts.message) + '</p>' : '') + '</div>' +
+      '<button type="button" class="atlas-modal-close" data-dialog-cancel aria-label="بستن پنجره">×</button></div>' +
+      '<div class="atlas-modal-body">' + (opts.body || '') +
+      '<div class="module-form-actions"><span class="module-required-help">' + esc(opts.hint || '') + '</span><div>' +
+      (opts.cancelLabel === null ? '' :
+        '<button type="button" class="secondary-btn" data-dialog-cancel>' + esc(opts.cancelLabel || 'انصراف') + '</button> ') +
+      '<button type="button" class="primary-btn' + (opts.danger ? ' atlas-dialog-danger' : '') + '" data-dialog-ok>' +
+      esc(opts.confirmLabel || 'تأیید') + '</button>' +
+      '</div></div></div></div>';
+    document.body.appendChild(backdrop);
+    return backdrop;
+  }
+
+  function askConfirm(options) {
+    return new Promise(function (resolve) {
+      const backdrop = dialogShell(options);
+      let settled = false;
+      function finish(value) {
+        if (settled) return;
+        settled = true;
+        backdrop.remove();
+        resolve(value);
+      }
+      backdrop.querySelectorAll('[data-dialog-cancel]').forEach(function (btn) {
+        btn.addEventListener('click', function () { finish(false); });
+      });
+      backdrop.querySelector('[data-dialog-ok]').addEventListener('click', function () { finish(true); });
+      backdrop.addEventListener('click', function (event) { if (event.target === backdrop) finish(false); });
+      const ok = backdrop.querySelector('[data-dialog-ok]');
+      if (ok) ok.focus();
+    });
+  }
+
+  function askPrompt(options) {
+    return new Promise(function (resolve) {
+      const opts = options || {};
+      dialogCounter += 1;
+      const inputId = 'atlasDialogInput' + dialogCounter;
+      const value = opts.value == null ? '' : String(opts.value);
+      const field =
+        '<div class="atlas-dialog-field">' +
+        (opts.label ? '<label for="' + inputId + '">' + esc(opts.label) + '</label>' : '') +
+        (opts.multiline
+          ? '<textarea id="' + inputId + '" class="atlas-dialog-input" rows="3">' + esc(value) + '</textarea>'
+          : '<input id="' + inputId + '" class="atlas-dialog-input" type="text" value="' + esc(value) + '"' +
+            (opts.placeholder ? ' placeholder="' + esc(opts.placeholder) + '"' : '') + '>') +
+        '<p class="atlas-dialog-error" data-dialog-error hidden></p></div>';
+      const backdrop = dialogShell(Object.assign({}, opts, { body: field }));
+      const input = backdrop.querySelector('#' + inputId);
+      const error = backdrop.querySelector('[data-dialog-error]');
+      let settled = false;
+      function finish(result) {
+        if (settled) return;
+        settled = true;
+        backdrop.remove();
+        resolve(result);
+      }
+      function submit() {
+        const next = String(input.value || '').trim();
+        if (!next && opts.required !== false) {
+          error.textContent = 'این مقدار نمی‌تواند خالی باشد.';
+          error.hidden = false;
+          input.focus();
+          return;
+        }
+        finish(next);
+      }
+      backdrop.querySelectorAll('[data-dialog-cancel]').forEach(function (btn) {
+        btn.addEventListener('click', function () { finish(null); });
+      });
+      backdrop.querySelector('[data-dialog-ok]').addEventListener('click', submit);
+      backdrop.addEventListener('click', function (event) { if (event.target === backdrop) finish(null); });
+      backdrop.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' && !opts.multiline) { event.preventDefault(); submit(); }
+      });
+      input.focus();
+      input.select();
+    });
+  }
+
+  function askText(options) {
+    const opts = options || {};
+    return new Promise(function (resolve) {
+      const backdrop = dialogShell({
+        title: opts.title,
+        message: opts.message,
+        body: '<pre class="atlas-dialog-text">' + esc(opts.text || '') + '</pre>',
+        confirmLabel: opts.confirmLabel || 'بستن',
+        cancelLabel: null
+      });
+      let settled = false;
+      function finish() {
+        if (settled) return;
+        settled = true;
+        backdrop.remove();
+        resolve();
+      }
+      backdrop.querySelectorAll('[data-dialog-cancel], [data-dialog-ok]').forEach(function (btn) {
+        btn.addEventListener('click', finish);
+      });
+      backdrop.addEventListener('click', function (event) { if (event.target === backdrop) finish(); });
+    });
+  }
+
   // پنجره‌هایی که مستقیم به body اضافه می‌شوند (مثل «+ سابقه» یا انتخاب ستون‌های گزارش)
   // با رندر دوبارهٔ بخش حذف نمی‌شوند و باید صریح بسته شوند.
   function clearDetachedModals() {
@@ -2613,7 +2746,14 @@
   }
 
   function closeModal(view) {
-    const backdrop = document.querySelector('[data-modal-backdrop]');
+    const backdrops = document.querySelectorAll('[data-modal-backdrop]');
+    const backdrop = backdrops.length ? backdrops[backdrops.length - 1] : null;
+    if (backdrop && backdrop.dataset.modalKind === 'dialog') {
+      const cancel = backdrop.querySelector('[data-dialog-cancel]');
+      if (cancel) cancel.click();
+      else backdrop.remove();
+      return true;
+    }
     if (backdrop && backdrop.dataset.modalKind === 'shift') {
       shiftFormState = { open: false, id: null };
       const host = document.getElementById('sectionView');
@@ -2823,7 +2963,7 @@
     refreshDashboard();
   });
 
-  document.addEventListener('click', function (event) {
+  document.addEventListener('click', async function (event) {
     const button = event.target.closest('[data-program-action]');
     if (!button) return;
     const action = button.dataset.programAction;
@@ -2859,7 +2999,7 @@
       return;
     }
     if (action === 'delete') {
-      if (!window.confirm('«' + (record.title || 'برنامه') + '» حذف شود؟')) return;
+      if (!(await askConfirm({ title: 'حذف برنامه', message: '«' + (record.title || 'برنامه') + '» حذف شود؟', confirmLabel: 'حذف', danger: true }))) return;
       appData.programs = appData.programs.filter(function (item) { return String(item.id) !== String(record.id); });
       addHistory('programs', record, 'حذف', []);
       saveState();
@@ -3100,7 +3240,10 @@
     getData: function () { return appData; },
     isReady: function () { return ready; },
     parseJalali: parseJalali,
-    formatJalali: formatJalali
+    formatJalali: formatJalali,
+    confirm: askConfirm,
+    prompt: askPrompt,
+    showText: askText
   };
 
   document.addEventListener('DOMContentLoaded', function(){refreshDashboard();});
