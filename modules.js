@@ -215,22 +215,19 @@
     },
     maintenance: {
       title: 'سوابق سرویس و تعمیر', singular: 'سابقهٔ سرویس',
-      subtitle: 'دفتر سرویس هر خودرو: تاریخ، کیلومتر، نوع اقدام، هزینه و سرویس بعدی',
+      subtitle: 'دفتر سرویس هر خودرو: تاریخ، کیلومتر، نوع اقدام و سرویس بعدی',
       fields: [
         {key:'vehicleId',label:'خودرو',type:'select',source:'vehicles',required:true},
         {key:'date',label:'تاریخ سرویس شمسی',type:'jalali',required:true},
         {key:'km',label:'کیلومتر در زمان سرویس',type:'number',min:0},
         {key:'type',label:'نوع اقدام',type:'select',required:true,listKey:'maintenanceTypes',options:['سرویس دوره‌ای','تعویض روغن','تعویض فیلتر','تعمیر مکانیکی','تعمیر برقی','معاینه فنی','تعویض لاستیک','سایر']},
         {key:'description',label:'شرح اقدام و قطعات',type:'textarea',wide:true,required:true},
-        {key:'cost',label:'هزینه (ریال)',type:'number',min:0},
-        {key:'workshop',label:'تعمیرگاه یا پیمانکار'},
-        {key:'technicianId',label:'مجری / تکنسین',type:'select',source:'employees'},
         {key:'nextServiceKm',label:'کیلومتر سرویس بعدی',type:'number',min:0},
         {key:'nextServiceDate',label:'تاریخ سرویس بعدی شمسی',type:'jalali'},
         {key:'status',label:'وضعیت',type:'select',required:true,listKey:'maintenanceStatuses',options:['انجام‌شده','در انتظار قطعه','در حال انجام','لغوشده']},
         {key:'attachments',label:'پیوست‌ها (فاکتور، رسید)',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx'}
       ],
-      columns: ['vehicleId','date','type','km','cost','workshop','nextServiceDate','status']
+      columns: ['vehicleId','date','type','km','nextServiceDate','status']
     },
     gaslogs: {
       title: 'سوابق گازسنج', singular: 'سابقهٔ گازسنج',
@@ -1519,22 +1516,27 @@
   let vehicleTab = 'registry';
   let faultVehicleId = '';
   let faultVehicleSort = 'open';
+  let serviceVehicleId = '';
+  let serviceVehicleSort = 'last';
+  let serviceLogSort = 'date-desc';
   // در مسیر خودرو، «نوع دارایی» و «گازسنج» پرسیده نمی‌شود؛ دفتر کلی همان فرم کامل را دارد.
   let faultFormScope = 'general';
 
   function setVehicleTab(tab) {
-    vehicleTab = tab === 'history' || tab === 'board' ? tab : 'registry';
+    vehicleTab = ['service', 'history', 'board'].indexOf(tab) >= 0 ? tab : 'registry';
     if (vehicleTab !== 'history') faultVehicleId = '';
+    if (vehicleTab !== 'service') serviceVehicleId = '';
   }
 
   function vehicleTabBar() {
-    const tabs = [['registry', 'خودروها'], ['history', 'سوابق اشکالات'], ['board', 'دفتر اشکالات']];
+    const tabs = [['registry', 'خودروها'], ['service', 'دفتر سرویس'], ['history', 'سوابق اشکالات'], ['board', 'دفتر اشکالات']];
     return '<div class="module-subtabs" role="tablist" aria-label="بخش‌های خودرو">' + tabs.map(function (pair) {
       return '<button type="button" role="tab" aria-selected="' + (vehicleTab === pair[0]) + '" class="module-subtab' + (vehicleTab === pair[0] ? ' active' : '') + '" data-vehicle-tab="' + pair[0] + '">' + pair[1] + '</button>';
     }).join('') + '</div>';
   }
 
   function renderVehicles(section) {
+    if (vehicleTab === 'service') { renderServiceBook(section); return; }
     if (vehicleTab === 'history') { renderFaultHistory(section); return; }
     if (vehicleTab === 'board') { renderFaults(section); return; }
     renderCrud('vehicles', section);
@@ -1680,8 +1682,8 @@
     });
   }
 
-  function faultvFact(label, value) {
-    return '<div class="faultv-fact"><dt>' + esc(label) + '</dt><dd>' + esc(value || '—') + '</dd></div>';
+  function vtabFact(label, value) {
+    return '<div class="vtab-fact"><dt>' + esc(label) + '</dt><dd>' + esc(value || '—') + '</dd></div>';
   }
 
   function faultVehicleExportRows(counts) {
@@ -1740,9 +1742,9 @@
     const cards = vehicles.length ? vehicles.map(function (vehicle) {
       const count = counts[vehicle.id] || { total: 0, open: 0, critical: 0, last: '' };
       const lastFault = faultsOfVehicle(vehicle.id)[0];
-      return '<button type="button" class="faultv-card" data-faultv-open="' + esc(vehicle.id) + '">' +
-        '<span class="faultv-top"><strong>' + esc(vehicle.name || 'خودرو بدون نام') + '</strong>' + statusTag(vehicle.status || '—') + '</span>' +
-        '<span class="faultv-facts">' +
+      return '<button type="button" class="vtab-card" data-vtab-open="' + esc(vehicle.id) + '">' +
+        '<span class="vtab-top"><strong>' + esc(vehicle.name || 'خودرو بدون نام') + '</strong>' + statusTag(vehicle.status || '—') + '</span>' +
+        '<span class="vtab-facts">' +
         '<span><b>پلاک سازمانی</b>' + esc(vehicle.companyPlate || vehicle.policePlate || '—') + '</span>' +
         '<span><b>وضعیت سلامت</b>' + esc(vehicle.healthStatus || '—') + '</span>' +
         '<span><b>کیلومتر فعلی</b>' + (vehicle.currentKm ? faDigits(vehicle.currentKm) : '—') + '</span>' +
@@ -1750,17 +1752,17 @@
         '<span><b>کل اشکال</b>' + faDigits(count.total) + '</span>' +
         '<span><b>آخرین اشکال</b>' + (count.last ? formatJalali(count.last, false) : '—') + '</span>' +
         '</span>' +
-        (lastFault ? '<span class="faultv-last">' + esc(lastFault.title || '') + '</span>' : '') +
-        '<span class="faultv-foot"><span>' + faDigits(count.total) + ' اشکال ثبت‌شده</span><span class="faultv-open-hint">مشاهدهٔ سوابق ›</span></span>' +
+        (lastFault ? '<span class="vtab-last">' + esc(lastFault.title || '') + '</span>' : '') +
+        '<span class="vtab-foot"><span>' + faDigits(count.total) + ' اشکال ثبت‌شده</span><span class="vtab-open-hint">مشاهدهٔ سوابق ›</span></span>' +
         '</button>';
     }).join('') : '<div class="module-empty">اول خودروها را ثبت کن؛ بعد سوابق اشکالات هر خودرو اینجا باز می‌شود.</div>';
     const orphans = orphanFaults();
     const orphanCard = orphans.length
-      ? '<button type="button" class="faultv-card" data-faultv-open="__none__">' +
-        '<span class="faultv-top"><strong>اشکالات ثبت‌شده بدون خودرو</strong>' + statusTag('بدون خودرو') + '</span>' +
-        '<span class="faultv-facts"><span><b>کل اشکال</b>' + faDigits(orphans.length) + '</span>' +
+      ? '<button type="button" class="vtab-card" data-vtab-open="__none__">' +
+        '<span class="vtab-top"><strong>اشکالات ثبت‌شده بدون خودرو</strong>' + statusTag('بدون خودرو') + '</span>' +
+        '<span class="vtab-facts"><span><b>کل اشکال</b>' + faDigits(orphans.length) + '</span>' +
         '<span><b>اشکال باز</b>' + faDigits(orphans.filter(isFaultOpen).length) + '</span></span>' +
-        '<span class="faultv-foot"><span>' + faDigits(orphans.length) + ' اشکال ثبت‌شده</span><span class="faultv-open-hint">مشاهدهٔ سوابق ›</span></span>' +
+        '<span class="vtab-foot"><span>' + faDigits(orphans.length) + ' اشکال ثبت‌شده</span><span class="vtab-open-hint">مشاهدهٔ سوابق ›</span></span>' +
         '</button>'
       : '';
     faultFormScope = 'vehicle';
@@ -1770,8 +1772,8 @@
       '<div class="stat-row fault-kpis">' + kpis + '</div>' +
       renderForm('faults', appData) +
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>خودروهای ناوگان</h3><p>بر اساس تعداد اشکال، نام، پلاک یا وضعیت مرتب کن و روی هر خودرو بزن.</p></div>' +
-      '<div class="module-list-tools"><select data-faultv-sort aria-label="مرتب‌سازی فهرست خودروها">' + sortOptions + '</select></div></div>' +
-      '<div class="faultv-list">' + cards + orphanCard + '</div></section>'
+      '<div class="module-list-tools"><select data-vtab-sort aria-label="مرتب‌سازی فهرست خودروها">' + sortOptions + '</select></div></div>' +
+      '<div class="vtab-list">' + cards + orphanCard + '</div></section>'
     );
   }
 
@@ -1782,15 +1784,15 @@
     const kpis = [['کل اشکال', faDigits(list.length), 'info'], ['باز', faDigits(openList.length), 'warn'], ['بحرانی باز', faDigits(critical), 'danger'], ['رفع‌شده', faDigits(list.length - openList.length), 'ok']]
       .map(function (pair) { return '<div class="mini-stat" data-tone="' + pair[2] + '"><div class="value">' + pair[1] + '</div><div class="label"><i class="tiny-dot"></i>' + pair[0] + '</div></div>'; }).join('');
     const snapshot = vehicle
-      ? '<section class="module-list-panel faultv-snapshot"><div class="module-list-head"><div><h3>وضعیت فعلی ' + esc(vehicle.name || 'خودرو') + '</h3>' +
+      ? '<section class="module-list-panel vtab-snapshot"><div class="module-list-head"><div><h3>وضعیت فعلی ' + esc(vehicle.name || 'خودرو') + '</h3>' +
         '<p>هر سابقهٔ پایین، وضعیت ثبت‌شده در تاریخ خودش را نگه می‌دارد.</p></div>' + statusTag(vehicle.status || '—') + '</div>' +
-        '<dl class="faultv-facts faultv-facts-wide">' +
-        faultvFact('پلاک سازمانی', vehicle.companyPlate || '') +
-        faultvFact('پلاک انتظامی', vehicle.policePlate || '') +
-        faultvFact('نوع خودرو', vehicle.vehicleType || '') +
-        faultvFact('وضعیت سلامت', vehicle.healthStatus || '') +
-        faultvFact('شهر و محل استقرار', [vehicle.currentCity, vehicle.currentPlace].filter(Boolean).join(' · ')) +
-        faultvFact('کیلومتر فعلی', vehicle.currentKm ? faDigits(vehicle.currentKm) : '') +
+        '<dl class="vtab-facts vtab-facts-wide">' +
+        vtabFact('پلاک سازمانی', vehicle.companyPlate || '') +
+        vtabFact('پلاک انتظامی', vehicle.policePlate || '') +
+        vtabFact('نوع خودرو', vehicle.vehicleType || '') +
+        vtabFact('وضعیت سلامت', vehicle.healthStatus || '') +
+        vtabFact('شهر و محل استقرار', [vehicle.currentCity, vehicle.currentPlace].filter(Boolean).join(' · ')) +
+        vtabFact('کیلومتر فعلی', vehicle.currentKm ? faDigits(vehicle.currentKm) : '') +
         '</dl></section>'
       : '';
     const cards = list.length
@@ -1800,7 +1802,7 @@
     section.innerHTML = rootWrap(
       pageHead('سوابق اشکالات <span style="color:var(--tone-7)">' + esc(title) + '</span>', 'هر اشکال با تاریخ، اولویت، وضعیت، درصد پیشرفت و روند رفع خودش', customExportMenu('faults-vehicle', vehicle ? vehicle.id : '__none__', 'vehicle')) +
       vehicleTabBar() +
-      '<div class="faultv-bar"><button type="button" class="secondary-btn" data-faultv-back>‹ بازگشت به فهرست خودروها</button>' +
+      '<div class="vtab-bar"><button type="button" class="secondary-btn" data-vtab-back>‹ بازگشت به فهرست خودروها</button>' +
       (vehicle ? '<button type="button" class="primary-btn" data-fault-new data-vehicle="' + esc(vehicle.id) + '">+ ثبت اشکال برای این خودرو</button>' : '') + '</div>' +
       renderForm('faults', appData) +
       '<div class="stat-row fault-kpis">' + kpis + '</div>' +
@@ -2072,38 +2074,184 @@
     );
   }
 
-  // ── دفتر سرویس خودروها: سوابق زونکن‌بندی‌شده برای هر خودرو ──
+  // ── دفتر سرویس: فهرست خودروها، سوابق هر خودرو، مرتب‌سازی و گزارش ──
+  function serviceLogsOfVehicle(vehicleId) {
+    return (appData.maintenance || []).filter(function (item) { return String(item.vehicleId || '') === String(vehicleId); });
+  }
+
+  const SERVICE_LOG_SORTS = {
+    'date-desc': { label: 'تاریخ سرویس (جدیدترین)', numeric: false, desc: true, value: function (item) { return String(item.date || ''); } },
+    'date-asc': { label: 'تاریخ سرویس (قدیمی‌ترین)', numeric: false, value: function (item) { return String(item.date || ''); } },
+    'km-desc': { label: 'کیلومتر (بیشترین)', numeric: true, desc: true, value: function (item) { const n = Number(item.km); return Number.isFinite(n) && item.km !== '' ? n : -1; } },
+    'km-asc': { label: 'کیلومتر (کمترین)', numeric: true, value: function (item) { const n = Number(item.km); return Number.isFinite(n) && item.km !== '' ? n : Number.MAX_SAFE_INTEGER; } },
+    type: { label: 'نوع اقدام', numeric: false, value: function (item) { return String(item.type || ''); } },
+    status: { label: 'وضعیت', numeric: false, value: function (item) { return String(item.status || ''); } },
+    'next-asc': { label: 'سرویس بعدی (نزدیک‌ترین)', numeric: false, value: function (item) { return String(item.nextServiceDate || '9999'); } }
+  };
+
+  function sortedServiceLogs(list) {
+    const spec = SERVICE_LOG_SORTS[serviceLogSort] || SERVICE_LOG_SORTS['date-desc'];
+    return list.slice().sort(function (a, b) {
+      const va = spec.value(a), vb = spec.value(b);
+      if (spec.numeric) return spec.desc ? vb - va : va - vb;
+      const cmp = String(va).localeCompare(String(vb), 'fa', { numeric: true });
+      return spec.desc ? -cmp : cmp;
+    });
+  }
+
+  function serviceStatsByVehicle() {
+    const map = {};
+    const today = todayIso();
+    (appData.maintenance || []).forEach(function (item) {
+      const key = String(item.vehicleId || '');
+      if (!key) return;
+      if (!map[key]) map[key] = { total: 0, last: '', lastType: '', nextDate: '', nextKm: '' };
+      map[key].total += 1;
+      const date = String(item.date || '');
+      if (date > map[key].last) { map[key].last = date; map[key].lastType = item.type || ''; }
+      const nextDate = String(item.nextServiceDate || '');
+      if (nextDate && nextDate >= today && (!map[key].nextDate || nextDate < map[key].nextDate)) {
+        map[key].nextDate = nextDate;
+        map[key].nextKm = item.nextServiceKm || '';
+      }
+    });
+    return map;
+  }
+
+  const SERVICE_VEHICLE_SORTS = {
+    last: { label: 'آخرین سرویس', numeric: false, desc: true, value: function (v, c) { return String((c[v.id] || {}).last || ''); } },
+    count: { label: 'بیشترین تعداد سرویس', numeric: true, desc: true, value: function (v, c) { return (c[v.id] || {}).total || 0; } },
+    next: { label: 'نزدیک‌ترین سرویس بعدی', numeric: false, value: function (v, c) { return String((c[v.id] || {}).nextDate || '9999'); } },
+    name: { label: 'نام خودرو', numeric: false, value: function (v) { return String(v.name || ''); } },
+    plate: { label: 'پلاک سازمانی', numeric: false, value: function (v) { return String(v.companyPlate || v.policePlate || ''); } },
+    status: { label: 'وضعیت عملیاتی', numeric: false, value: function (v) { return String(v.status || ''); } },
+    km: { label: 'کیلومتر فعلی', numeric: true, desc: true, value: function (v) { const n = Number(v.currentKm); return Number.isFinite(n) ? n : -1; } }
+  };
+
+  function sortedServiceVehicles(stats) {
+    const spec = SERVICE_VEHICLE_SORTS[serviceVehicleSort] || SERVICE_VEHICLE_SORTS.last;
+    return (appData.vehicles || []).slice().sort(function (a, b) {
+      const va = spec.value(a, stats), vb = spec.value(b, stats);
+      if (spec.numeric) return spec.desc ? vb - va : va - vb;
+      const cmp = String(va).localeCompare(String(vb), 'fa', { numeric: true });
+      return spec.desc ? -cmp : cmp;
+    });
+  }
+
+  function serviceVehicleExportRows(stats) {
+    const rows = [['نام خودرو', 'نوع خودرو', 'پلاک سازمانی', 'پلاک انتظامی', 'وضعیت عملیاتی', 'کیلومتر فعلی', 'تعداد سرویس', 'آخرین سرویس', 'نوع آخرین سرویس', 'تاریخ سرویس بعدی', 'کیلومتر سرویس بعدی']];
+    sortedServiceVehicles(stats).forEach(function (vehicle) {
+      const stat = stats[vehicle.id] || {};
+      rows.push([
+        vehicle.name || '', vehicle.vehicleType || '', vehicle.companyPlate || '', vehicle.policePlate || '',
+        vehicle.status || '', vehicle.currentKm ? faDigits(vehicle.currentKm) : '',
+        faDigits(stat.total || 0),
+        stat.last ? formatJalali(stat.last, false) : '', stat.lastType || '',
+        stat.nextDate ? formatJalali(stat.nextDate, false) : '', stat.nextKm ? faDigits(stat.nextKm) : ''
+      ]);
+    });
+    return rows;
+  }
+
+  function serviceLogExportRows(list) {
+    const rows = [['تاریخ سرویس', 'کیلومتر', 'نوع اقدام', 'شرح اقدام و قطعات', 'وضعیت', 'تاریخ سرویس بعدی', 'کیلومتر سرویس بعدی']];
+    sortedServiceLogs(list).forEach(function (item) {
+      rows.push([
+        item.date ? formatJalali(item.date, false) : '',
+        item.km ? faDigits(item.km) : '',
+        item.type || '', item.description || '', item.status || '',
+        item.nextServiceDate ? formatJalali(item.nextServiceDate, false) : '',
+        item.nextServiceKm ? faDigits(item.nextServiceKm) : ''
+      ]);
+    });
+    return rows;
+  }
+
+  function serviceRow(item) {
+    return '<div class="service-row"><div class="service-date">' + (item.date ? formatJalali(item.date, false) : '—') + '</div>' +
+      '<div class="service-main"><strong>' + esc(item.type || 'سرویس') + '</strong><span>' + esc(item.description || '') + '</span></div>' +
+      '<div class="service-meta">' + (item.km ? faDigits(item.km) + ' کیلومتر' : '') +
+      (item.nextServiceDate ? (item.km ? ' · ' : '') + 'بعدی: ' + formatJalali(item.nextServiceDate, false) : '') + '</div>' +
+      '<div class="service-actions">' + statusTag(item.status || '—') +
+      '<button type="button" class="secondary-btn" data-module-action="edit" data-view="maintenance" data-id="' + esc(item.id) + '">ویرایش</button>' +
+      '<button type="button" class="module-delete-btn" data-module-action="delete" data-view="maintenance" data-id="' + esc(item.id) + '">حذف</button></div></div>';
+  }
+
   function renderServiceBook(section) {
-    const vehicles = (appData.vehicles || []).slice();
-    const logs = (appData.maintenance || []).slice().sort(function (a, b) { return String(b.date || '').localeCompare(String(a.date || '')); });
-    const totalCost = logs.reduce(function (sum, item) { return sum + (Number(item.cost) || 0); }, 0);
-    const folders = vehicles.map(function (vehicle) {
-      const entries = logs.filter(function (item) { return String(item.vehicleId) === String(vehicle.id); });
-      const last = entries[0];
-      const cost = entries.reduce(function (sum, item) { return sum + (Number(item.cost) || 0); }, 0);
-      const rows = entries.length ? entries.map(function (item) {
-        return '<div class="service-row"><div class="service-date">' + (item.date ? formatJalali(item.date, false) : '—') + '</div>' +
-          '<div class="service-main"><strong>' + esc(item.type || 'سرویس') + '</strong><span>' + esc(item.description || '') + '</span></div>' +
-          '<div class="service-meta">' + (item.km ? faDigits(item.km) + ' کیلومتر' : '') + (item.cost ? ' · ' + faDigits(item.cost) + ' ریال' : '') + '</div>' +
-          '<div class="service-actions"><button type="button" class="secondary-btn" data-module-action="edit" data-view="maintenance" data-id="' + esc(item.id) + '">ویرایش</button>' +
-          '<button type="button" class="module-delete-btn" data-module-action="delete" data-view="maintenance" data-id="' + esc(item.id) + '">حذف</button></div></div>';
-      }).join('') : '<div class="service-empty">برای این خودرو سرویسی ثبت نشده است.</div>';
-      return '<details class="service-folder"' + (entries.length ? '' : ' data-empty="1"') + '><summary><div><strong>' + esc(vehicle.name || 'خودرو') + '</strong>' +
-        '<span>' + esc([vehicle.vehicleType, vehicle.companyPlate, vehicle.status].filter(Boolean).join(' · ') || 'بدون مشخصات') + '</span></div>' +
-        '<div class="service-folder-meta"><span>' + faDigits(entries.length) + ' سرویس</span>' + (cost ? '<span>' + faDigits(cost) + ' ریال</span>' : '') +
-        (last && last.date ? '<span>آخرین: ' + formatJalali(last.date, false) + '</span>' : '') + '</div></summary>' +
-        '<div class="service-body">' + rows +
-        '<div class="service-folder-actions"><button type="button" class="primary-btn" data-service-action="add" data-vehicle="' + esc(vehicle.id) + '">+ ثبت سرویس برای این خودرو</button>' +
-        '<button type="button" class="secondary-btn" data-service-action="export" data-vehicle="' + esc(vehicle.id) + '">خروجی اکسل این خودرو</button></div></div></details>';
-    }).join('');
-    const kpis = [['کل سوابق', faDigits(logs.length), 'info'], ['خودروهای دارای سابقه', faDigits(vehicles.filter(function (v) { return logs.some(function (l) { return String(l.vehicleId) === String(v.id); }); }).length), 'ok'], ['مجموع هزینه', faDigits(totalCost), 'special']]
+    if (serviceVehicleId) {
+      const vehicle = (appData.vehicles || []).find(function (item) { return String(item.id) === String(serviceVehicleId); });
+      if (vehicle) { renderServiceVehicle(section, vehicle, serviceLogsOfVehicle(vehicle.id)); return; }
+      serviceVehicleId = '';
+    }
+    const stats = serviceStatsByVehicle();
+    const logs = appData.maintenance || [];
+    const vehicles = sortedServiceVehicles(stats);
+    const withLogs = vehicles.filter(function (vehicle) { return (stats[vehicle.id] || {}).total; }).length;
+    const waiting = logs.filter(function (item) { return item.status === 'در انتظار قطعه' || item.status === 'در حال انجام'; }).length;
+    const done = logs.filter(function (item) { return item.status === 'انجام‌شده'; }).length;
+    const kpis = [['کل سوابق', faDigits(logs.length), 'info'], ['خودروهای دارای سابقه', faDigits(withLogs), 'ok'], ['در جریان یا منتظر قطعه', faDigits(waiting), 'warn'], ['انجام‌شده', faDigits(done), 'special']]
       .map(function (pair) { return '<div class="mini-stat" data-tone="' + pair[2] + '"><div class="value">' + pair[1] + '</div><div class="label"><i class="tiny-dot"></i>' + pair[0] + '</div></div>'; }).join('');
-    const actions = exportMenu('maintenance') + '<button class="primary-btn" type="button" data-module-action="new" data-view="maintenance">+ ثبت سرویس</button>';
+    const sortOptions = Object.keys(SERVICE_VEHICLE_SORTS).map(function (key) {
+      return '<option value="' + key + '"' + (serviceVehicleSort === key ? ' selected' : '') + '>مرتب‌سازی: ' + SERVICE_VEHICLE_SORTS[key].label + '</option>';
+    }).join('');
+    const cards = vehicles.length ? vehicles.map(function (vehicle) {
+      const stat = stats[vehicle.id] || { total: 0, last: '', lastType: '', nextDate: '', nextKm: '' };
+      const lastLog = sortedServiceLogs(serviceLogsOfVehicle(vehicle.id))[0];
+      return '<button type="button" class="vtab-card" data-vtab-open="' + esc(vehicle.id) + '">' +
+        '<span class="vtab-top"><strong>' + esc(vehicle.name || 'خودرو بدون نام') + '</strong>' + statusTag(vehicle.status || '—') + '</span>' +
+        '<span class="vtab-facts">' +
+        '<span><b>پلاک سازمانی</b>' + esc(vehicle.companyPlate || vehicle.policePlate || '—') + '</span>' +
+        '<span><b>کیلومتر فعلی</b>' + (vehicle.currentKm ? faDigits(vehicle.currentKm) : '—') + '</span>' +
+        '<span><b>تعداد سرویس</b>' + faDigits(stat.total || 0) + '</span>' +
+        '<span><b>آخرین سرویس</b>' + (stat.last ? formatJalali(stat.last, false) : '—') + '</span>' +
+        '<span><b>سرویس بعدی</b>' + (stat.nextDate ? formatJalali(stat.nextDate, false) + (stat.nextKm ? ' · ' + faDigits(stat.nextKm) + ' کیلومتر' : '') : '—') + '</span>' +
+        '<span><b>نوع آخرین سرویس</b>' + esc(stat.lastType || '—') + '</span>' +
+        '</span>' +
+        (lastLog ? '<span class="vtab-last">' + esc(lastLog.description || lastLog.type || '') + '</span>' : '') +
+        '<span class="vtab-foot"><span>' + faDigits(stat.total || 0) + ' سرویس ثبت‌شده</span><span class="vtab-open-hint">مشاهدهٔ سوابق ›</span></span>' +
+        '</button>';
+    }).join('') : '<div class="module-empty">اول خودروها را ثبت کن؛ بعد سوابق سرویس هر خودرو اینجا باز می‌شود.</div>';
     section.innerHTML = rootWrap(
-      pageHead('دفتر سرویس و تعمیرات خودرو', 'هر خودرو یک زونکن: تاریخ، کیلومتر، نوع اقدام، هزینه و سرویس بعدی؛ قابل خروجی و تاریخچه', actions) +
-      '<div class="stat-row">' + kpis + '</div>' +
+      pageHead('دفتر سرویس <span style="color:var(--tone-7)">خودروها</span>', 'روی هر خودرو بزن تا سوابق سرویس همان خودرو باز شود؛ فهرست و هر سابقه گزارش‌گیری جدا دارد', customExportMenu('service-vehicles') + '<button class="primary-btn" type="button" data-module-action="new" data-view="maintenance">+ ثبت سرویس</button>') +
+      vehicleTabBar() +
+      '<div class="stat-row fault-kpis">' + kpis + '</div>' +
       renderForm('maintenance', appData) +
-      (vehicles.length ? '<div class="service-book">' + folders + '</div>' : '<div class="module-empty">اول خودروها را ثبت کن؛ بعد برای هر خودرو سابقهٔ سرویس اینجا زونکن می‌شود.</div>')
+      '<section class="module-list-panel"><div class="module-list-head"><div><h3>خودروهای ناوگان</h3><p>بر اساس آخرین سرویس، تعداد، سرویس بعدی، نام، پلاک یا وضعیت مرتب کن.</p></div>' +
+      '<div class="module-list-tools"><select data-service-sort aria-label="مرتب‌سازی فهرست خودروها">' + sortOptions + '</select></div></div>' +
+      '<div class="vtab-list">' + cards + '</div></section>'
+    );
+  }
+
+  function renderServiceVehicle(section, vehicle, list) {
+    const stats = serviceStatsByVehicle()[vehicle.id] || {};
+    const done = list.filter(function (item) { return item.status === 'انجام‌شده'; }).length;
+    const waiting = list.filter(function (item) { return item.status === 'در انتظار قطعه' || item.status === 'در حال انجام'; }).length;
+    const kpis = [['کل سوابق', faDigits(list.length), 'info'], ['انجام‌شده', faDigits(done), 'ok'], ['در جریان یا منتظر قطعه', faDigits(waiting), 'warn'], ['آخرین سرویس', stats.last ? formatJalali(stats.last, false) : '—', 'special']]
+      .map(function (pair) { return '<div class="mini-stat" data-tone="' + pair[2] + '"><div class="value">' + pair[1] + '</div><div class="label"><i class="tiny-dot"></i>' + pair[0] + '</div></div>'; }).join('');
+    const sortOptions = Object.keys(SERVICE_LOG_SORTS).map(function (key) {
+      return '<option value="' + key + '"' + (serviceLogSort === key ? ' selected' : '') + '>مرتب‌سازی: ' + SERVICE_LOG_SORTS[key].label + '</option>';
+    }).join('');
+    const rows = list.length ? sortedServiceLogs(list).map(serviceRow).join('') : '<div class="service-empty">برای این خودرو سرویسی ثبت نشده است.</div>';
+    section.innerHTML = rootWrap(
+      pageHead('سوابق سرویس <span style="color:var(--tone-7)">' + esc([vehicle.name, vehicle.companyPlate].filter(Boolean).join(' · ')) + '</span>', 'هر سابقه با تاریخ، کیلومتر، نوع اقدام و سرویس بعدی خودش', customExportMenu('service-vehicle', vehicle.id, 'vehicle')) +
+      vehicleTabBar() +
+      '<div class="vtab-bar"><button type="button" class="secondary-btn" data-vtab-back>‹ بازگشت به فهرست خودروها</button>' +
+      '<button type="button" class="primary-btn" data-service-action="add" data-vehicle="' + esc(vehicle.id) + '">+ ثبت سرویس برای این خودرو</button></div>' +
+      renderForm('maintenance', appData) +
+      '<div class="stat-row fault-kpis">' + kpis + '</div>' +
+      '<section class="module-list-panel vtab-snapshot"><div class="module-list-head"><div><h3>وضعیت فعلی ' + esc(vehicle.name || 'خودرو') + '</h3>' +
+      '<p>سرویس بعدی از تاریخ‌های آیندهٔ همین سوابق خوانده می‌شود.</p></div>' + statusTag(vehicle.status || '—') + '</div>' +
+      '<dl class="vtab-facts vtab-facts-wide">' +
+      vtabFact('پلاک سازمانی', vehicle.companyPlate || '') +
+      vtabFact('پلاک انتظامی', vehicle.policePlate || '') +
+      vtabFact('نوع خودرو', vehicle.vehicleType || '') +
+      vtabFact('کیلومتر فعلی', vehicle.currentKm ? faDigits(vehicle.currentKm) : '') +
+      vtabFact('سرویس بعدی', stats.nextDate ? formatJalali(stats.nextDate, false) + (stats.nextKm ? ' · ' + faDigits(stats.nextKm) + ' کیلومتر' : '') : '') +
+      vtabFact('آخرین سرویس', stats.last ? formatJalali(stats.last, false) + (stats.lastType ? ' · ' + stats.lastType : '') : '') +
+      '</dl></section>' +
+      '<section class="module-list-panel"><div class="module-list-head"><div><h3>سوابق ثبت‌شده</h3><p>هر ردیف یک سرویس با تاریخ و کیلومتر خودش.</p></div>' +
+      '<div class="module-list-tools"><select data-service-log-sort aria-label="مرتب‌سازی سوابق سرویس">' + sortOptions + '</select></div></div>' +
+      '<div class="service-book">' + rows + '</div></section>'
     );
   }
 
@@ -2194,17 +2342,6 @@
         enhanceJalaliInputs(document.body);
         return;
       }
-      if (serviceBtn.dataset.serviceAction === 'export') {
-        const fields = fieldsFor('maintenance');
-        const rows = [fields.map(function (field) { return field.label; })];
-        (appData.maintenance || []).filter(function (item) { return String(item.vehicleId) === String(vehicleId); })
-          .sort(function (a, b) { return String(a.date || '').localeCompare(String(b.date || '')); })
-          .forEach(function (item) { rows.push(fields.map(function (field) { return exportValue('maintenance', field, item, appData); })); });
-        const vehicle = (appData.vehicles || []).find(function (item) { return String(item.id) === String(vehicleId); });
-        exportRowsXlsx(rows, 'ATLAS-SHIFT-servicebook-' + (vehicle ? vehicle.name : vehicleId) + '-' + todayIso() + '.xlsx', 'سوابق سرویس');
-        toast('خروجی سوابق این خودرو آماده شد.');
-        return;
-      }
     }
   });
 
@@ -2217,16 +2354,17 @@
       renderVehicles(section);
       return;
     }
-    const faultvOpen = event.target.closest('[data-faultv-open]');
-    if (faultvOpen) {
-      vehicleTab = 'history';
-      faultVehicleId = faultvOpen.dataset.faultvOpen || '';
+    const entityOpen = event.target.closest('[data-vtab-open]');
+    if (entityOpen) {
+      if (vehicleTab === 'service') serviceVehicleId = entityOpen.dataset.vtabOpen || '';
+      else { vehicleTab = 'history'; faultVehicleId = entityOpen.dataset.vtabOpen || ''; }
       renderVehicles(section);
       if (section) section.scrollIntoView({ block: 'start' });
       return;
     }
-    if (event.target.closest('[data-faultv-back]')) {
+    if (event.target.closest('[data-vtab-back]')) {
       faultVehicleId = '';
+      serviceVehicleId = '';
       renderVehicles(section);
       return;
     }
@@ -2262,6 +2400,13 @@
         const meter = (appData.gasmeters || []).find(function (item) { return String(item.id) === String(custom.dataset.gas); });
         if (!meter) return;
         runExport(gasMeterExportRows(meter), 'سوابق ' + gasMeterName(meter) + ' · ATLAS SHIFT', 'ATLAS-SHIFT-gaslogs-' + exportSlug(meter.code, meter.id) + '-' + todayIso(), format);
+      } else if (kind === 'service-vehicles') {
+        runExport(serviceVehicleExportRows(serviceStatsByVehicle()), 'دفتر سرویس خودروها · ATLAS SHIFT', 'ATLAS-SHIFT-servicebook-vehicles-' + todayIso(), format);
+      } else if (kind === 'service-vehicle') {
+        const vehicleId = String(custom.dataset.vehicle || '');
+        const vehicle = (appData.vehicles || []).find(function (item) { return String(item.id) === vehicleId; });
+        if (!vehicle) return;
+        runExport(serviceLogExportRows(serviceLogsOfVehicle(vehicle.id)), 'سوابق سرویس ' + [vehicle.name, vehicle.companyPlate].filter(Boolean).join(' · ') + ' · ATLAS SHIFT', 'ATLAS-SHIFT-servicebook-' + exportSlug(vehicle.companyPlate || vehicle.name, vehicle.id) + '-' + todayIso(), format);
       } else if (kind === 'faults-vehicles') {
         runExport(faultVehicleExportRows(faultCountsByVehicle()), 'سوابق اشکالات خودروها · ATLAS SHIFT', 'ATLAS-SHIFT-faults-vehicles-' + todayIso(), format);
       } else if (kind === 'faults-vehicle') {
@@ -2275,10 +2420,18 @@
   });
 
   document.addEventListener('change', function (event) {
-    const faultSort = event.target.closest('[data-faultv-sort]');
+    const faultSort = event.target.closest('[data-vtab-sort]');
     if (!faultSort) return;
     faultVehicleSort = faultSort.value;
     renderVehicles(document.getElementById('sectionView'));
+  });
+
+  document.addEventListener('change', function (event) {
+    const section = document.getElementById('sectionView');
+    const vehicleSort = event.target.closest('[data-service-sort]');
+    if (vehicleSort) { serviceVehicleSort = vehicleSort.value; renderVehicles(section); return; }
+    const logSort = event.target.closest('[data-service-log-sort]');
+    if (logSort) { serviceLogSort = logSort.value; renderVehicles(section); }
   });
 
   document.addEventListener('change', function (event) {
@@ -2307,7 +2460,7 @@
     else if(view==='faults'){if(vehicleTab==='registry')setVehicleTab('history');renderVehicles(section);}
     else if(view==='gasmeters')renderGasRegistry(section);
     else if(view==='gaslogs'){gasTab='logs';renderGasRegistry(section);}
-    else if(view==='maintenance')renderServiceBook(section);
+    else if(view==='maintenance'){if(vehicleTab!=='service')setVehicleTab('service');renderVehicles(section);}
     else if(specs[view])renderCrud(view,section);
     else if(view==='reports')renderReports(section);
     else if(view==='settings')renderSettings(section);

@@ -1,13 +1,13 @@
-/* ATLAS SHIFT — سوابق اشکالات هر خودرو (زیرتب خودروها) */
+/* ATLAS SHIFT — کارت‌های زیرتب‌های خودرو (سوابق سرویس و سوابق اشکالات) */
 
-/* 1 · VEHICLE LIST ─────────────────────────────────────────────────────── */
-.faultv-list {
+/* 1 · ENTITY CARD (vehicle in a sub-tab list) ─────────────────────────────────────────────────────── */
+.vtab-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 12px;
 }
 
-.faultv-card {
+.vtab-card {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -24,18 +24,18 @@
   transition: border-color .18s, transform .18s, background .18s;
 }
 
-.faultv-card:hover {
+.vtab-card:hover {
   border-color: var(--line-hi);
   background: var(--glass-strong);
   transform: translateY(-1px);
 }
 
-.faultv-card:focus-visible {
+.vtab-card:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-.faultv-top {
+.vtab-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -43,18 +43,18 @@
   flex-wrap: wrap;
 }
 
-.faultv-top strong {
+.vtab-top strong {
   font-size: .98rem;
 }
 
-.faultv-facts {
+.vtab-facts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 8px;
   margin: 0;
 }
 
-.faultv-facts > span {
+.vtab-facts > span {
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -64,13 +64,13 @@
   word-break: break-word;
 }
 
-.faultv-facts b {
+.vtab-facts b {
   font-size: .7rem;
   font-weight: 600;
   color: var(--muted);
 }
 
-.faultv-last {
+.vtab-last {
   display: block;
   padding: 7px 10px;
   border-radius: 10px;
@@ -80,7 +80,7 @@
   word-break: break-word;
 }
 
-.faultv-foot {
+.vtab-foot {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -91,13 +91,13 @@
   color: var(--muted);
 }
 
-.faultv-open-hint {
+.vtab-open-hint {
   color: var(--accent);
   font-weight: 700;
 }
 
-/* 2 · VEHICLE DETAIL ───────────────────────────────────────────────────── */
-.faultv-bar {
+/* 2 · ENTITY DETAIL ───────────────────────────────────────────────────── */
+.vtab-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -106,16 +106,16 @@
   margin-bottom: 16px;
 }
 
-.faultv-snapshot {
+.vtab-snapshot {
   margin-bottom: 16px;
 }
 
-.faultv-facts-wide {
+.vtab-facts-wide {
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px;
 }
 
-.faultv-fact {
+.vtab-fact {
   min-width: 0;
   padding: 9px 11px;
   border: 1px solid var(--line);
@@ -123,13 +123,13 @@
   background: rgba(var(--navy-rgb), .22);
 }
 
-.faultv-fact dt {
+.vtab-fact dt {
   font-size: .7rem;
   color: var(--muted);
   margin-bottom: 3px;
 }
 
-.faultv-fact dd {
+.vtab-fact dd {
   margin: 0;
   font-size: .86rem;
   color: var(--text);
@@ -137,17 +137,17 @@
 }
 
 @media (max-width: 640px) {
-  .faultv-list {
+  .vtab-list {
     grid-template-columns: 1fr;
   }
 
-  .faultv-facts-wide {
+  .vtab-facts-wide {
     grid-template-columns: 1fr 1fr;
   }
 }
 
 @media (max-width: 420px) {
-  .faultv-facts-wide {
+  .vtab-facts-wide {
     grid-template-columns: 1fr;
   }
 }

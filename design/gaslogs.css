@@ -229,8 +229,11 @@
     grid-template-columns: 1fr;
   }
 
+  /* چهار تب خودرو روی موبایل دو در دو می‌نشینند، نه چهار ردیف تمام‌عرض. */
   .module-subtab {
-    flex: 1 1 100%;
+    flex: 1 1 calc(50% - 4px);
+    padding: 9px 8px;
+    font-size: .82rem;
   }
 
   .gaslog-facts {

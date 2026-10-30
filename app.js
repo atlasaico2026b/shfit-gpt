@@ -351,7 +351,7 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
     missions:{title:'مدیریت <span style="color:var(--tone-6)">مأموریت‌ها</span>',subtitle:'مأموریت‌های شهری و بین‌شهری، مسیر، کیلومتر و فعالیت میدانی',kicker:'مدیریت عملیات / مأموریت‌ها',icon:'↗',note:'فرم‌های ثبت مأموریت، مبدأ و مقصد، تاریخ، خودرو، نفرات و گزارش‌های دوره‌ای در همین بخش پیاده‌سازی خواهند شد.'},
     leaves:{title:'مدیریت <span style="color:var(--tone-2)">مرخصی‌ها</span>',subtitle:'برنامه‌ریزی مرخصی و مشاهده وضعیت نیروها',kicker:'مدیریت عملیات / مرخصی‌ها',icon:'◷',note:'ثبت بازه مرخصی، پیوند آن با برنامه شیفت و گزارش مرخصی‌ها در این بخش پیاده‌سازی خواهد شد.'},
     vehicles:{title:'مدیریت <span style="color:var(--tone-5)">خودروها</span>',subtitle:'وضعیت ناوگان، محل استقرار، سرنشینان و سرویس دوره‌ای',kicker:'مدیریت عملیات / خودروها',icon:'▰',note:'کارت خودرو، پلاک‌ها، خرابی‌ها، تجهیزات همراه، کیلومتر و سوابق تعمیرات در همین بخش ساخته خواهد شد.'},
-    maintenance:{title:'دفتر سرویس <span style="color:var(--tone-5)">و تعمیرات</span>',subtitle:'سوابق سرویس، تعمیر، کیلومتر و هزینهٔ هر خودرو به‌صورت زونکن‌بندی‌شده',kicker:'مدیریت عملیات / دفتر سرویس',icon:'⚙',note:'هر خودرو یک زونکن دارد؛ سرویس‌ها با تاریخ، کیلومتر و هزینه ثبت و قابل خروجی‌اند.'},
+    maintenance:{title:'دفتر سرویس <span style="color:var(--tone-5)">خودروها</span>',subtitle:'سوابق سرویس و تعمیر هر خودرو با تاریخ، کیلومتر و سرویس بعدی',kicker:'مدیریت عملیات / دفتر سرویس',icon:'⚙',note:'هر خودرو سوابق سرویس خودش را دارد؛ سرویس‌ها با تاریخ و کیلومتر ثبت و قابل خروجی‌اند.'},
     faults:{title:'اشکالات <span style="color:var(--tone-7)">و رفع اشکال</span>',subtitle:'ثبت اشکال خودرو، گازسنج و تجهیزات با روند رفع، درصد پیشرفت و اعلان تا بسته‌شدن',kicker:'مدیریت عملیات / اشکالات',icon:'⚠',note:'هر اشکال تا رفع کامل در اعلان‌ها می‌ماند و روند اقدامش ثبت می‌شود.'},
     gasmeters:{title:'مدیریت <span style="color:var(--tone-7)">گازسنج‌ها</span>',subtitle:'وضعیت تجهیزات، گازهای قابل‌اندازه‌گیری و سررسید کالیبراسیون',kicker:'مدیریت عملیات / تجهیزات',icon:'◉',note:'ثبت کد و سریال، نوع گاز، محل استقرار، وضعیت دستگاه و محاسبه سررسید کالیبراسیون در این بخش پیاده‌سازی خواهد شد.'},
     programs:{title:'برنامه‌ها و <span style="color:var(--tone-6)">اهداف</span>',subtitle:'اهداف، برنامه‌های فعالیت، مانور، روتین و دوره‌های آموزشی با مراحل و درصد پیشرفت',kicker:'مدیریت عملیات / برنامه‌ها',icon:'◎',note:'هر برنامه از چند مرحله تشکیل می‌شود و درصد پیشرفت از نسبت مراحل انجام‌شده به کل مراحل محاسبه می‌شود.'},
@@ -646,9 +646,13 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
     // «اشکالات» حالا زیرتب خودروها است؛ آدرس قدیمی روی تب سوابق اشکالات باز می‌شود.
     const faultsAlias=view==='faults';
     if(faultsAlias)view='vehicles';
+    // «دفتر سرویس» هم زیرتب خودروها است؛ آدرس قدیمی روی همان تب باز می‌شود.
+    const serviceAlias=view==='maintenance';
+    if(serviceAlias)view='vehicles';
     if(!Object.prototype.hasOwnProperty.call(viewInfo,view))view='dashboard';
     if(gasLogsAlias&&window.ATLAS_MODULES&&typeof window.ATLAS_MODULES.setGasTab==='function')window.ATLAS_MODULES.setGasTab('logs');
     if(faultsAlias&&window.ATLAS_MODULES&&typeof window.ATLAS_MODULES.setVehicleTab==='function')window.ATLAS_MODULES.setVehicleTab('history');
+    if(serviceAlias&&window.ATLAS_MODULES&&typeof window.ATLAS_MODULES.setVehicleTab==='function')window.ATLAS_MODULES.setVehicleTab('service');
     const info=viewInfo[view], isDashboard=view==='dashboard';
     const hideSelectors=['.dashboard-controls','#dashboardQuickAdd','.widget-dock','.layout-hint','#dashboard','.footnote'];
     hideSelectors.forEach(sel=>{const el=$(sel);if(el)el.classList.toggle('route-hidden',!isDashboard)});
