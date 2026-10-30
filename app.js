@@ -643,8 +643,12 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
     // «سوابق گازسنج» حالا زیرتب گازسنج‌ها است؛ آدرس قدیمی همان‌جا باز می‌شود.
     const gasLogsAlias=view==='gaslogs';
     if(gasLogsAlias)view='gasmeters';
+    // «اشکالات» حالا زیرتب خودروها است؛ آدرس قدیمی روی تب سوابق اشکالات باز می‌شود.
+    const faultsAlias=view==='faults';
+    if(faultsAlias)view='vehicles';
     if(!Object.prototype.hasOwnProperty.call(viewInfo,view))view='dashboard';
     if(gasLogsAlias&&window.ATLAS_MODULES&&typeof window.ATLAS_MODULES.setGasTab==='function')window.ATLAS_MODULES.setGasTab('logs');
+    if(faultsAlias&&window.ATLAS_MODULES&&typeof window.ATLAS_MODULES.setVehicleTab==='function')window.ATLAS_MODULES.setVehicleTab('history');
     const info=viewInfo[view], isDashboard=view==='dashboard';
     const hideSelectors=['.dashboard-controls','#dashboardQuickAdd','.widget-dock','.layout-hint','#dashboard','.footnote'];
     hideSelectors.forEach(sel=>{const el=$(sel);if(el)el.classList.toggle('route-hidden',!isDashboard)});

@@ -9,7 +9,6 @@
     { id: 'leaves', title: 'مرخصی‌ها', icon: '◷', href: './index.html?view=leaves' },
     { id: 'vehicles', title: 'خودروها', icon: '▰', href: './index.html?view=vehicles' },
     { id: 'maintenance', title: 'دفتر سرویس', icon: '⚙', href: './index.html?view=maintenance' },
-    { id: 'faults', title: 'اشکالات', icon: '⚠', href: './index.html?view=faults' },
     { id: 'gasmeters', title: 'گازسنج‌ها', icon: '◉', href: './index.html?view=gasmeters' },
     { id: 'notes', title: 'یادداشت‌ها', icon: '▤', href: './index.html?view=notes' },
     { id: 'programs', title: 'برنامه‌ها و پرونده‌ها', icon: '✓', href: './index.html?view=programs' },

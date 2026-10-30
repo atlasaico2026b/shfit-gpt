@@ -1,0 +1,153 @@
+/* ATLAS SHIFT — سوابق اشکالات هر خودرو (زیرتب خودروها) */
+
+/* 1 · VEHICLE LIST ─────────────────────────────────────────────────────── */
+.faultv-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.faultv-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  padding: 14px 15px;
+  text-align: start;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--glass);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color .18s, transform .18s, background .18s;
+}
+
+.faultv-card:hover {
+  border-color: var(--line-hi);
+  background: var(--glass-strong);
+  transform: translateY(-1px);
+}
+
+.faultv-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.faultv-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.faultv-top strong {
+  font-size: .98rem;
+}
+
+.faultv-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.faultv-facts > span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  font-size: .8rem;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.faultv-facts b {
+  font-size: .7rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.faultv-last {
+  display: block;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: rgba(var(--navy-rgb), .28);
+  font-size: .78rem;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.faultv-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-size: .78rem;
+  color: var(--muted);
+}
+
+.faultv-open-hint {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* 2 · VEHICLE DETAIL ───────────────────────────────────────────────────── */
+.faultv-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.faultv-snapshot {
+  margin-bottom: 16px;
+}
+
+.faultv-facts-wide {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.faultv-fact {
+  min-width: 0;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(var(--navy-rgb), .22);
+}
+
+.faultv-fact dt {
+  font-size: .7rem;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+
+.faultv-fact dd {
+  margin: 0;
+  font-size: .86rem;
+  color: var(--text);
+  word-break: break-word;
+}
+
+@media (max-width: 640px) {
+  .faultv-list {
+    grid-template-columns: 1fr;
+  }
+
+  .faultv-facts-wide {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .faultv-facts-wide {
+    grid-template-columns: 1fr;
+  }
+}
