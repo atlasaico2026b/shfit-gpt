@@ -2167,8 +2167,6 @@
       ? '<div class="module-table-wrap"><table class="module-table"><thead><tr><th>کد / سریال</th><th>مدل</th><th>وضعیت</th><th>سلامت</th><th>محل استقرار</th><th>مسئول</th><th>پایان کالیبراسیون</th><th>مانده کالیبراسیون</th><th>سوابق</th><th>عملیات</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
       : '<div class="module-empty">موردی با این فیلترها پیدا نشد.</div>';
     const actions = exportMenu('gasmeters') +
-      '<button class="secondary-btn" type="button" data-gas-group="send">ارسال گروهی برای کالیبراسیون</button>' +
-      '<button class="secondary-btn" type="button" data-gas-group="receive">دریافت گروهی از کالیبراسیون</button>' +
       '<button class="primary-btn" type="button" data-module-action="new" data-view="gasmeters">+ ثبت گازسنج</button>';
     section.innerHTML = rootWrap(
       pageHead('مدیریت گازسنج‌ها', 'وضعیت سلامت، محل استقرار، کالیبراسیون و مانده روز تا پایان اعتبار هر دستگاه', actions) +
@@ -2504,7 +2502,10 @@
         '</button>';
     }).join('') : '<div class="module-empty">اول یک گازسنج ثبت کن؛ بعد سوابق هر دستگاه اینجا باز می‌شود.</div>';
     section.innerHTML = rootWrap(
-      pageHead('مدیریت گازسنج‌ها', 'سوابق هر دستگاه: محل استقرار، تاریخ استقرار، سلامت و کالیبراسیون', customExportMenu('gaslogs-registry')) +
+      pageHead('مدیریت گازسنج‌ها', 'سوابق هر دستگاه: محل استقرار، تاریخ استقرار، سلامت و کالیبراسیون',
+        '<button class="secondary-btn" type="button" data-gas-group="send">ارسال گروهی برای کالیبراسیون</button>' +
+        '<button class="secondary-btn" type="button" data-gas-group="receive">دریافت گروهی از کالیبراسیون</button>' +
+        customExportMenu('gaslogs-registry')) +
       gasTabBar() +
       '<div class="stat-row">' + kpis + '</div>' +
       renderForm('gaslogs', appData) +
