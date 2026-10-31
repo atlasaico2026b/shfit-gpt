@@ -393,15 +393,15 @@
     const localCopy = await readLegacyLocalStorage();
     try {
       await openDb();
-      const storedRecord = await loadFromDb(db);
+      const storedValue = await loadFromDb(db);
       let saved = null;
       let needsReseal = false;
-      if (storedRecord) {
-        if (!window.ATLAS_SECURE.isSealed(storedRecord)) {
+      if (storedValue) {
+        if (!window.ATLAS_SECURE.isSealed(storedValue)) {
           // نسخهٔ قدیمی و رمزنگاری‌نشده: خوانده و در اولین ذخیره رمزنگاری می‌شود.
           needsReseal = true;
         }
-        try { saved = await openStoredValue(storedRecord); }
+        try { saved = await openStoredValue(storedValue); }
         catch (error) {
           storageLocked = true;
           loadError = 'داده‌های ذخیره‌شده با کلید این دستگاه باز نشد؛ برای جلوگیری از پاک‌شدن، ذخیره‌سازی متوقف است. اطلاعات را از «بازیابی پشتیبان» برگردانید.';
@@ -416,7 +416,7 @@
           try { await writeToDb(db, appData); }
           catch (writeError) { db = null; loadError = 'ذخیره‌سازی جایگزین مرورگر فعال شد.'; }
         }
-      } else if (!storedRecord) {
+      } else if (!storedValue) {
         appData = localCopy || createEmptyState();
         if (appData.updatedAt || MODULES.some(function (key) { return appData[key].length; })) {
           try { await writeToDb(db, appData); }
@@ -1418,13 +1418,45 @@
       '<div class="module-backup-grid"><div class="module-backup-card"><strong>ساخت نسخهٔ پشتیبان</strong><p>یک فایل JSON از تمام داده‌های موجود در این دستگاه دریافت می‌کنی.</p><button type="button" class="primary-btn" data-module-action="backup">دریافت فایل پشتیبان</button></div>'+
       '<div class="module-backup-card"><strong>بازیابی نسخهٔ پشتیبان</strong><p>بازیابی، داده‌های فعلی را جایگزین اطلاعات درون فایل انتخاب‌شده می‌کند.</p><button type="button" class="secondary-btn" data-module-action="restore-select">انتخاب فایل پشتیبان</button><input type="file" id="atlasRestoreFile" accept=".json,application/json" hidden></div></div></section>'+
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>ذخیره‌سازی</h3><p>هر تغییر بی‌درنگ در همین دستگاه ذخیره و رمزنگاری می‌شود.</p></div></div>' +
-      '<div class="module-local-note" data-storage-status>' + storageSummary() + '</div></section>' +
+      '<div class="module-local-note" data-storage-status>' + storageSummary() + '</div>' +
+      '<div class="module-local-note" data-storage-size style="margin-top:8px">حجم ذخیره‌شده: در حال محاسبه…</div></section>' +
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>مدیریت منوها و فهرست‌ها</h3><p>تمام گزینه‌های کشویی قابل تنظیم در یک محل؛ افزودن فوری نیز از کنار فیلدهای مرتبط انجام می‌شود.</p></div></div><div class="module-list-tools"><select id="referenceListKey">'+referenceKeys().map(function(k){return '<option value="'+esc(k)+'">'+esc(referenceListTitle(k))+'</option>';}).join('')+'</select><input id="referenceListValue" type="text" placeholder="عنوان گزینه جدید"><button type="button" class="primary-btn" data-module-action="reference-add">+ افزودن</button></div><div id="referenceListItems" class="module-local-note" style="margin-top:12px"></div></section>' +
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>فیلدهای سفارشی کارکنان</h3><p>برای هر فیلد یک عنوان و یک نوع انتخاب کن؛ نوع همان کادری را می‌سازد که هنگام ثبت پرونده می‌بینی: عدد، تاریخ شمسی، تاریخ و ساعت، متن بلند و …</p></div></div>'+
       '<form data-custom-fields-form class="module-form"><div class="module-custom-fields" data-custom-field-rows>'+(appData.settings.employeeCustomFields||'').split(/\r?\n/).map(function(l){return l.trim();}).filter(Boolean).map(customFieldRowHtml).join('')+'</div>'+
       '<div class="module-form-actions"><span class="module-required-help">حداکثر ۲۰ فیلد سفارشی.</span><div><button type="button" class="secondary-btn" data-module-action="custom-field-add">+ افزودن فیلد</button> <button type="submit" class="primary-btn">ذخیرهٔ فیلدها</button></div></div></form></section>'
     );
-    renderReferenceList();  }
+    renderReferenceList();
+    fillStorageSize();
+  }
+
+  // حجم واقعی داده روی دستگاه در برابر حجم متن ساده — تا «کم‌حجم بودن» قابل دیدن باشد.
+  function bytesLabel(n) {
+    if (!n) return '۰';
+    if (n < 1024) return faDigits(n) + ' بایت';
+    if (n < 1024 * 1024) return faDigits((n / 1024).toFixed(1)) + ' کیلوبایت';
+    return faDigits((n / 1024 / 1024).toFixed(2)) + ' مگابایت';
+  }
+
+  async function storageFootprint() {
+    const plain = new TextEncoder().encode(snapshotJson()).length;
+    let stored = 0;
+    try {
+      const value = await loadFromDb(db || await openDb());
+      stored = window.ATLAS_SECURE.isSealed(value) ? value.ct.byteLength : new TextEncoder().encode(JSON.stringify(value || '')).length;
+    } catch (error) { stored = 0; }
+    return { plain: plain, stored: stored };
+  }
+
+  async function fillStorageSize() {
+    const box = document.querySelector('[data-storage-size]');
+    if (!box) return;
+    const size = await storageFootprint();
+    const live = document.querySelector('[data-storage-size]');
+    if (!live) return;
+    live.innerHTML = 'حجم ذخیره‌شده: <strong>' + bytesLabel(size.stored) + '</strong>' +
+      (size.plain ? ' · متن سادهٔ معادل: ' + bytesLabel(size.plain) +
+        ' · نسبت: <strong>' + faDigits(Math.max(1, Math.round((size.stored / size.plain) * 100))) + '٪</strong>' : '');
+  }
 
   function storageSummary() {
     const secure = !!(window.ATLAS_SECURE && window.ATLAS_SECURE.available());
@@ -3996,6 +4028,7 @@
     setGasTab: setGasTab,
     setVehicleTab: setVehicleTab,
     saveNow: saveState,
+    footprint: function () { return storageFootprint(); },
     storageStatus: function () { return { ready: ready, locked: storageLocked, encrypted: !!(window.ATLAS_SECURE && !storageLocked), error: loadError }; }
   };
 

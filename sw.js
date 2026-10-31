@@ -1,5 +1,5 @@
 /* ATLAS SHIFT service worker — canonical app shell and offline fallback */
-const CACHE_NAME = 'atlas-shift-v88-encrypted-store';
+const CACHE_NAME = 'atlas-shift-v89-storage-size';
 const APP_FILES = [
   './', './index.html',
   './design/tokens.css', './design/styles.css', './design/skins/flat.css', './design/tones.css',
