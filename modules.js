@@ -6,6 +6,8 @@
   const STORE_NAME = 'records';
   const STORE_KEY = 'main';
   const LEGACY_KEY = 'atlasShiftOperationalDataV1';
+  // آستانهٔ هشدار کالیبراسیون گازسنج‌ها: ۲۰ روز مانده به پایان اعتبار
+  const GAS_CALIBRATION_WARN_DAYS = 20;
   const MODULES = ['employees', 'missions', 'leaves', 'vehicles', 'stations', 'gasmeters', 'notes', 'programs', 'faults', 'maintenance', 'gaslogs'];
   const formState = Object.create(null);
   const searchState = Object.create(null);
@@ -159,7 +161,7 @@
         {key:'serial',label:'شمارهٔ سریال',required:true},
         {key:'gases',label:'گازهای قابل‌اندازه‌گیری',type:'checks',options:['CO','O₂','LEL','H₂S']},
         {key:'sensorCount',label:'تعداد سنسورها (محاسبه خودکار)',type:'number',min:0},
-        {key:'status',label:'وضعیت دستگاه',type:'select',required:true,listKey:'gasStatuses',options:['آماده استفاده','در کالیبراسیون','خارج از سرویس','در تعمیر']},
+        {key:'status',label:'وضعیت دستگاه',type:'select',required:true,listKey:'gasStatuses',options:['آماده استفاده','در کالیبراسیون','استندبای منطقه','خارج از سرویس','در تعمیر']},
         {key:'healthStatus',label:'وضعیت سلامت',type:'select',listKey:'healthStatuses',options:['سالم','نیازمند بررسی','دارای نقص','در حال تعمیر']},
         {key:'location',label:'محل استقرار',type:'select',listKey:'deploymentLocations',options:['پارکینگ مرکزی','تعمیرگاه مرکزی','انبار مرکزی','محور جاده','دفتر مرکزی','سایر']},
         {key:'locationPoint',label:'محل استقرار (فهرست نقاط)',type:'select',listKey:'gasSensorLocations',options:['پارکینگ مرکزی','تعمیرگاه مرکزی','انبار مرکزی','محور جاده','دفتر مرکزی','سایر']},
@@ -281,7 +283,7 @@
         {key:'healthStatus',label:'وضعیت سلامت در این تاریخ',type:'select',listKey:'healthStatuses',options:['سالم','نیازمند بررسی','دارای نقص','در حال تعمیر']},
         {key:'calibrationStart',label:'شروع کالیبراسیون',type:'jalali'},
         {key:'calibrationEnd',label:'پایان کالیبراسیون',type:'jalali'},
-        {key:'carrierId',label:'برنده‌نده / ارسال‌کننده به کالیبراسیون',type:'select',source:'employees'},
+        {key:'carrierId',label:'راننده / ارسال‌کننده به کالیبراسیون',type:'select',source:'employees'},
         {key:'receiverId',label:'برگرداننده / تحویل‌گیرنده از کالیبراسیون',type:'select',source:'employees'},
         {key:'description',label:'شرح و توضیحات',type:'textarea',wide:true},
         {key:'operatorId',label:'ثبت‌کننده',type:'select',source:'employees'},
@@ -1251,14 +1253,26 @@
 
   function alertsForData() {
     const alerts = [];
-    appData.gasmeters.forEach(function (meter) {
+    (appData.gasmeters || []).forEach(function (meter) {
+      const name = meter.code || meter.serial || 'دستگاه';
+      if (gasMeterInCalibration(meter)) {
+        alerts.push({
+          key:'meter-cal-' + meter.id, critical:true,
+          title:'گازسنج در کالیبراسیون',
+          detail:name + ' · ارسال ' + (meter.calibrationDispatch ? formatJalali(meter.calibrationDispatch, false) : 'ثبت‌شده') + ' · در انتظار دریافت',
+          at:meter.calibrationDispatch || meter.updatedAt
+        });
+        return;
+      }
       const left = dueInDays(meter.calibrationEnd);
-      if (left <= 30) alerts.push({
-        key:'meter-' + meter.id, critical:left <= 7,
-        title:'موعد کالیبراسیون گازسنج',
-        detail:(meter.code || meter.serial || 'دستگاه') + ' · ' + (left < 0 ? 'مهلت گذشته' : 'تا ' + faDigits(left) + ' روز دیگر'),
-        at:meter.calibrationEnd
-      });
+      if (Number.isFinite(left) && left <= GAS_CALIBRATION_WARN_DAYS) {
+        alerts.push({
+          key:'meter-' + meter.id, critical:left <= 7,
+          title:'موعد کالیبراسیون گازسنج',
+          detail:name + ' · ' + (left < 0 ? 'مهلت گذشته' : 'تا ' + faDigits(left) + ' روز دیگر'),
+          at:meter.calibrationEnd
+        });
+      }
     });
     appData.vehicles.forEach(function (vehicle) {
       if (['در تعمیر','خارج از سرویس'].includes(vehicle.status) || vehicle.healthStatus === 'دارای نقص') {
@@ -1395,10 +1409,10 @@
       const heading=equipment.querySelector('.widget-header');
       const markup=meters.length?meters.slice(0,8).map(function(m){
         const left=dueInDays(m.calibrationEnd);
-        const label=left<0?'منقضی':left<=30?'نزدیک موعد':(m.status||'معتبر');
+        const label=gasMeterInCalibration(m)?'در کالیبراسیون':left<0?'منقضی':left<=GAS_CALIBRATION_WARN_DAYS?'نزدیک موعد':(m.status||'معتبر');
         const percent=left===Infinity?0:Math.max(5,Math.min(100,Math.round(left/90*100)));
         const gases=Array.isArray(m.gases)?m.gases.join(', '):String(m.gases||'گاز ثبت نشده');
-        return '<div class="equip-row"><div class="equip-label"><div class="gas-chip">'+esc(gases.slice(0,6)||'GAS')+'</div><div><b>'+esc(m.code||m.serial||'گازسنج')+'</b><span>'+esc(m.serial||'')+' · '+esc(m.location||'محل ثبت نشده')+'<div class="progress-track"><div class="progress-bar" style="width:'+percent+'%"></div></div></span></div></div><span class="equip-status'+(left<=30?' warn':'')+'">'+esc(label)+'</span></div>';
+        return '<div class="equip-row"><div class="equip-label"><div class="gas-chip">'+esc(gases.slice(0,6)||'GAS')+'</div><div><b>'+esc(m.code||m.serial||'گازسنج')+'</b><span>'+esc(m.serial||'')+' · '+esc(m.location||'محل ثبت نشده')+'<div class="progress-track"><div class="progress-bar" style="width:'+percent+'%"></div></div></span></div></div><span class="equip-status'+((gasMeterInCalibration(m)||left<=GAS_CALIBRATION_WARN_DAYS)?' warn':'')+'">'+esc(label)+'</span></div>';
       }).join(''):'<div class="module-empty module-equip-empty">هنوز گازسنجی ثبت نشده است.</div>';
       if(heading)heading.insertAdjacentHTML('afterend',markup);
     }
@@ -2118,7 +2132,7 @@
     const left = dueInDays(record.calibrationEnd);
     if (!isFinite(left)) return { key: 'unknown', label: 'بدون تاریخ', tone: 'muted', left: null };
     if (left < 0) return { key: 'expired', label: 'منقضی', tone: 'danger', left: left };
-    if (left <= 30) return { key: 'soon', label: 'نزدیک انقضا', tone: 'attention', left: left };
+    if (left <= GAS_CALIBRATION_WARN_DAYS) return { key: 'soon', label: 'نزدیک انقضا', tone: 'attention', left: left };
     return { key: 'valid', label: 'معتبر', tone: 'ok', left: left };
   }
 
@@ -2181,7 +2195,7 @@
       [['valid', 'معتبر'], ['soon', 'نزدیک انقضا'], ['expired', 'منقضی'], ['unknown', 'بدون تاریخ']].map(function (pair) { return '<option value="' + pair[0] + '"' + (gasFilter.calibration === pair[0] ? ' selected' : '') + '>' + pair[1] + '</option>'; }).join('') + '</select>' +
       '<select data-gas-filter="sort"><option value="calibration"' + (gasFilter.sort === 'calibration' ? ' selected' : '') + '>مرتب‌سازی: مانده کالیبراسیون</option><option value="location"' + (gasFilter.sort === 'location' ? ' selected' : '') + '>محل استقرار</option><option value="code"' + (gasFilter.sort === 'code' ? ' selected' : '') + '>کد دستگاه</option><option value="health"' + (gasFilter.sort === 'health' ? ' selected' : '') + '>وضعیت سلامت</option></select>' +
       '</div></div>' + table + '</section>' +
-      '<div class="module-local-note"><strong>هشدار کالیبراسیون:</strong> دستگاه‌هایی که کمتر از ۳۰ روز تا پایان اعتبارشان مانده یا منقضی شده‌اند، در زنگ اعلان داشبورد هم نمایش داده می‌شوند.</div>'
+      '<div class="module-local-note"><strong>هشدار کالیبراسیون:</strong> دستگاه‌هایی که در کالیبراسیون هستند، کمتر از ۳۰ روز تا پایان اعتبارشان مانده یا منقضی شده‌اند، در زنگ اعلان داشبورد هم نمایش داده می‌شوند.</div>'
     );
   }
 
@@ -2278,16 +2292,22 @@
   }
 
   // ── ارسال و دریافت گروهی برای کالیبراسیون ──
+  function gasMeterInCalibration(meter) {
+    return String(meter.status || '') === 'در کالیبراسیون' ||
+      (!!meter.calibrationDispatch && !meter.calibrationReturn);
+  }
+
   function gasGroupCandidates(mode) {
     const meters = (appData.gasmeters || []).slice().sort(function (a, b) {
       return String(a.code || '').localeCompare(String(b.code || ''), 'fa', { numeric: true });
     });
     if (mode === 'receive') {
+      // فقط دستگاه‌هایی که برای کالیبراسیون ارسال شده‌اند و هنوز دریافت نشده‌اند
       return meters.filter(function (meter) {
-        return String(meter.status || '') === 'در کالیبراسیون' || (meter.calibrationDispatch && !meter.calibrationReturn);
+        return !!meter.calibrationDispatch && !meter.calibrationReturn;
       });
     }
-    return meters.filter(function (meter) { return String(meter.status || '') !== 'در کالیبراسیون'; });
+    return meters.filter(function (meter) { return !gasMeterInCalibration(meter); });
   }
 
   function gasEmployeeOptions() {
@@ -2296,50 +2316,87 @@
     });
   }
 
-  function openGasGroupDialog(mode) {
-    const isReceive = mode === 'receive';
-    const candidates = gasGroupCandidates(mode);
-    if (!candidates.length) {
-      toast(isReceive ? 'دستگاهی در وضعیت «در کالیبراسیون» نیست.' : 'دستگاهی برای ارسال باقی نمانده است.');
-      return;
-    }
-    const title = isReceive ? 'دریافت گروهی از کالیبراسیون' : 'ارسال گروهی برای کالیبراسیون';
-    const personLabel = isReceive ? 'برگرداننده / تحویل‌گیرنده' : 'برنده‌نده / ارسال‌کننده';
-    const employeeOptions = gasEmployeeOptions().map(function (person) {
-      return '<option value="' + esc(person.id) + '">' + esc(employeeName(person) || 'بدون نام') + '</option>';
-    }).join('');
-    const stationOptions = (appData.stations || []).slice().sort(function (a, b) {
+  function gasGroupStationOptions() {
+    return (appData.stations || []).slice().sort(function (a, b) {
       return stationTitle(a).localeCompare(stationTitle(b), 'fa');
     }).map(function (station) {
       return '<option value="' + esc(station.id) + '">' + esc(stationLabel(station)) + '</option>';
     }).join('');
-    const rows = candidates.map(function (meter) {
-      const position = gasPositionText(meter);
-      return '<label class="gas-group-row"><input type="checkbox" data-gas-group-pick value="' + esc(meter.id) + '" checked>' +
-        '<span class="gas-group-copy"><strong>' + esc(gasMeterName(meter)) + '</strong>' +
-        '<small>' + esc([meter.serial, position].filter(Boolean).join(' · ') || 'بدون موقعیت ثبت‌شده') + '</small></span>' +
-        '<span class="gas-group-meta">' + esc(meter.status || '—') + '</span></label>';
+  }
+
+  function gasGroupRow(meter, mode) {
+    const position = gasPositionText(meter);
+    const meta = mode === 'receive'
+      ? (meter.calibrationDispatch ? 'ارسال: ' + formatJalali(meter.calibrationDispatch, false) : 'ارسال‌شده')
+      : (gasCalibrationState(meter).label || meter.status || '—');
+    return '<label class="gas-group-row"><input type="checkbox" data-gas-group-pick value="' + esc(meter.id) + '" checked>' +
+      '<span class="gas-group-copy"><strong>' + esc(gasMeterName(meter)) + '</strong>' +
+      '<small>' + esc([meter.serial, position].filter(Boolean).join(' · ') || 'بدون موقعیت ثبت‌شده') + '</small></span>' +
+      '<span class="gas-group-meta">' + esc(meta) + '</span></label>';
+  }
+
+  function gasGroupListMarkup(mode, stationId) {
+    if (mode === 'receive') {
+      const list = gasGroupCandidates('receive');
+      if (!list.length) {
+        return '<div class="module-empty">دستگاهی که برای کالیبراسیون ارسال شده و منتظر دریافت باشد وجود ندارد.</div>';
+      }
+      return list.map(function (meter) { return gasGroupRow(meter, 'receive'); }).join('');
+    }
+    if (!stationId) {
+      return '<div class="module-empty">ابتدا مرکز / ایستگاهی که دستگاه‌ها در آن مستقرند را انتخاب کن؛ فهرست دستگاه‌های همان مرکز اینجا می‌آید.</div>';
+    }
+    const station = (appData.stations || []).find(function (item) { return String(item.id) === String(stationId); });
+    const atStation = gasMetersAtStation(station).filter(function (meter) { return !gasMeterInCalibration(meter); });
+    if (!atStation.length) {
+      return '<div class="module-empty">در این مرکز دستگاهی برای ارسال باقی نمانده است.</div>';
+    }
+    return atStation.map(function (meter) { return gasGroupRow(meter, 'send'); }).join('');
+  }
+
+  // فیلد تاریخ از انتخابگر سالنامهٔ خود برنامه استفاده می‌کند (enhanceJalaliInputs).
+  function jalaliFieldMarkup(label, name, value, placeholder) {
+    return '<label class="module-field"><span>' + esc(label) + '</span>' +
+      '<input type="text" data-gas-group-field="' + esc(name) + '" data-jalali-input="jalali" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || '۱۴۰۵/۰۸/۰۹') + '" autocomplete="off"></label>';
+  }
+
+  function openGasGroupDialog(mode) {
+    const isReceive = mode === 'receive';
+    const candidates = gasGroupCandidates(mode);
+    if (!candidates.length) {
+      toast(isReceive
+        ? 'دستگاهی که برای کالیبراسیون ارسال شده و منتظر دریافت باشد وجود ندارد.'
+        : 'دستگاهی برای ارسال باقی نمانده است.');
+      return;
+    }
+    const title = isReceive ? 'دریافت گروهی از کالیبراسیون' : 'ارسال گروهی برای کالیبراسیون';
+    const employeeOptions = gasEmployeeOptions().map(function (person) {
+      return '<option value="' + esc(person.id) + '">' + esc(employeeName(person) || 'بدون نام') + '</option>';
     }).join('');
+    const fields = isReceive
+      ? jalaliFieldMarkup('تاریخ دریافت (شمسی)', 'date', jalaliInputValue('')) +
+        '<label><span>تحویل‌گیرنده</span><select data-gas-group-field="person"><option value="">انتخاب از کارمندان</option>' + employeeOptions + '</select></label>' +
+        jalaliFieldMarkup('پایان اعتبار جدید کالیبراسیون (شمسی)', 'calibrationEnd', '', '۱۴۰۶/۰۸/۰۹') +
+        '<label><span>وضعیت دستگاه پس از دریافت</span><input type="text" class="readonly-field" value="استندبای منطقه" readonly></label>'
+      : '<label><span>مرکز / ایستگاه ارسال‌کننده</span><select data-gas-group-field="stationId"><option value="">انتخاب مرکز / ایستگاه</option>' + gasGroupStationOptions() + '</select></label>' +
+        jalaliFieldMarkup('تاریخ ارسال (شمسی)', 'date', jalaliInputValue('')) +
+        '<label><span>راننده</span><select data-gas-group-field="person"><option value="">انتخاب راننده از کارمندان</option>' + employeeOptions + '</select></label>' +
+        '<label><span>وضعیت دستگاه پس از ارسال</span><input type="text" class="readonly-field" value="در کالیبراسیون" readonly></label>';
     const markup = '<div class="atlas-modal-backdrop gas-group-backdrop" data-gas-group-dialog>' +
       '<div class="atlas-modal gas-group-modal" role="dialog" aria-modal="true" aria-labelledby="gasGroupTitle">' +
       '<div class="atlas-modal-head"><div><h3 id="gasGroupTitle">' + esc(title) + '</h3>' +
-      '<p>' + faDigits(candidates.length) + ' دستگاه قابل انتخاب · برای هر دستگاه یک سابقهٔ جداگانه ساخته می‌شود.</p></div>' +
+      '<p>' + (isReceive
+        ? 'فقط دستگاه‌هایی که برای کالیبراسیون ارسال شده‌اند در فهرست برگشت می‌آیند.'
+        : 'همهٔ دستگاه‌های مستقر در مرکز انتخاب‌شده، مستقیم از همان مرکز برای کالیبراسیون ارسال می‌شوند.') + '</p></div>' +
       '<button type="button" class="atlas-modal-close" data-gas-group-close aria-label="بستن">×</button></div>' +
       '<div class="atlas-modal-body">' +
-      '<div class="gas-group-fields">' +
-      '<label><span>تاریخ (شمسی)</span><input type="text" data-gas-group-field="date" value="' + esc(jalaliInputValue('')) + '" placeholder="۱۴۰۵/۰۸/۰۹"></label>' +
-      '<label><span>' + esc(personLabel) + '</span><select data-gas-group-field="person"><option value="">انتخاب از کارمندان</option>' + employeeOptions + '</select></label>' +
-      '<label><span>مرکز / ایستگاه محل استقرار</span><select data-gas-group-field="stationId"><option value="">بدون تغییر</option>' + stationOptions + '</select></label>' +
-      (isReceive
-        ? '<label><span>پایان اعتبار جدید کالیبراسیون</span><input type="text" data-gas-group-field="calibrationEnd" placeholder="۱۴۰۶/۰۸/۰۹"></label>' +
-          '<label><span>وضعیت دستگاه پس از دریافت</span><select data-gas-group-field="status"><option value="آماده استفاده">آماده استفاده</option><option value="در تعمیر">در تعمیر</option><option value="خارج از سرویس">خارج از سرویس</option></select></label>'
-        : '<label><span>وضعیت دستگاه پس از ارسال</span><select data-gas-group-field="status"><option value="در کالیبراسیون">در کالیبراسیون</option><option value="خارج از سرویس">خارج از سرویس</option></select></label>') +
+      '<div class="gas-group-fields">' + fields +
       '<label class="gas-group-note"><span>توضیحات (اختیاری)</span><input type="text" data-gas-group-field="description" placeholder="مثلاً ارسال با پیک به آزمایشگاه"></label>' +
       '</div>' +
       '<div class="gas-group-list-head"><strong>دستگاه‌ها</strong>' +
       '<span><button type="button" class="link-btn" data-gas-group-pickall="1">انتخاب همه</button> · ' +
       '<button type="button" class="link-btn" data-gas-group-picknone="1">هیچ‌کدام</button></span></div>' +
-      '<div class="gas-group-list">' + rows + '</div>' +
+      '<div class="gas-group-list" data-gas-group-list>' + gasGroupListMarkup(mode, '') + '</div>' +
       '<div class="gas-group-actions">' +
       '<button type="button" class="primary-btn" data-gas-group-submit="' + esc(mode) + '">' + esc(title) + '</button>' +
       '<button type="button" class="secondary-btn" data-gas-group-close>بستن</button></div>' +
@@ -2347,7 +2404,17 @@
     closeGasGroupDialog();
     const holder = document.createElement('div');
     holder.innerHTML = markup;
-    if (holder.firstElementChild) document.body.appendChild(holder.firstElementChild);
+    const dialog = holder.firstElementChild;
+    if (!dialog) return;
+    document.body.appendChild(dialog);
+    enhanceJalaliInputs(dialog);
+    const stationSelect = dialog.querySelector('[data-gas-group-field="stationId"]');
+    const listNode = dialog.querySelector('[data-gas-group-list]');
+    if (stationSelect && listNode) {
+      stationSelect.addEventListener('change', function () {
+        listNode.innerHTML = gasGroupListMarkup('send', stationSelect.value);
+      });
+    }
   }
 
   function closeGasGroupDialog() {
@@ -2361,20 +2428,24 @@
       const node = dialog.querySelector('[data-gas-group-field="' + name + '"]');
       return node ? String(node.value || '').trim() : '';
     };
+    const isReceive = mode === 'receive';
     const picks = Array.prototype.map.call(dialog.querySelectorAll('[data-gas-group-pick]:checked'), function (node) { return node.value; });
     if (!picks.length) { toast('حداقل یک دستگاه را انتخاب کن.'); return; }
     const personId = field('person');
-    if (!personId) { toast('انتخاب ' + (mode === 'receive' ? 'برگرداننده' : 'برنده‌نده') + ' الزامی است.'); return; }
+    if (!personId) { toast(isReceive ? 'انتخاب تحویل‌گیرنده الزامی است.' : 'انتخاب راننده الزامی است.'); return; }
     const date = parseJalali(field('date'), false);
-    if (!date) { toast('تاریخ شمسی معتبر نیست؛ نمونه: ۱۴۰۵/۰۸/۰۹'); return; }
-    const calibrationEnd = field('calibrationEnd') ? parseJalali(field('calibrationEnd'), false) : '';
-    if (field('calibrationEnd') && !calibrationEnd) { toast('پایان اعتبار کالیبراسیون معتبر نیست.'); return; }
+    if (!date) { toast('تاریخ را از تقویم شمسی انتخاب کن.'); return; }
     const stationId = field('stationId');
-    const status = field('status') || (mode === 'receive' ? 'آماده استفاده' : 'در کالیبراسیون');
+    if (!isReceive && !stationId) { toast('انتخاب مرکز / ایستگاه ارسال‌کننده الزامی است.'); return; }
+    const calibrationEnd = field('calibrationEnd') ? parseJalali(field('calibrationEnd'), false) : '';
+    if (field('calibrationEnd') && !calibrationEnd) { toast('پایان اعتبار کالیبراسیون معتبر نیست؛ از تقویم انتخاب کن.'); return; }
+    if (isReceive && !calibrationEnd) { toast('پایان اعتبار جدید کالیبراسیون را از تقویم انتخاب کن.'); return; }
     const description = field('description');
-    const isReceive = mode === 'receive';
     const label = isReceive ? 'دریافت گروهی از کالیبراسیون' : 'ارسال گروهی برای کالیبراسیون';
-    const station = stationId ? (appData.stations || []).find(function (item) { return String(item.id) === stationId; }) : null;
+    const status = isReceive ? 'استندبای منطقه' : 'در کالیبراسیون';
+    const station = stationId
+      ? (appData.stations || []).find(function (item) { return String(item.id) === stationId; })
+      : null;
     let index = 0;
     picks.forEach(function (meterId) {
       const meter = (appData.gasmeters || []).find(function (item) { return String(item.id) === String(meterId); });
@@ -2385,7 +2456,7 @@
         gasmeterId: meter.id,
         date: date,
         logType: label,
-        stationId: stationId || position.stationId || '',
+        stationId: station ? String(station.id) : (position.stationId || ''),
         positionKind: meter.positionKind || position.positionKind || '',
         positionDetail: meter.positionDetail || position.positionDetail || '',
         description: description,
@@ -2396,14 +2467,16 @@
       if (isReceive) {
         log.receiverId = personId;
         log.calibrationReturn = date;
-        if (calibrationEnd) log.calibrationEnd = calibrationEnd;
+        log.calibrationEnd = calibrationEnd;
         meter.calibrationReturn = date;
-        if (calibrationEnd) meter.calibrationEnd = calibrationEnd;
-        if (calibrationEnd) meter.calibrationStart = date;
+        meter.calibrationEnd = calibrationEnd;
+        meter.calibrationStart = date;
       } else {
         log.carrierId = personId;
+        log.carrierRole = 'راننده';
         log.calibrationDispatch = date;
         meter.calibrationDispatch = date;
+        meter.calibrationStart = date;
       }
       if (station && station.name) log.stationName = station.name;
       meter.status = status;
@@ -2414,7 +2487,8 @@
     if (await saveState()) {
       closeGasGroupDialog();
       toast(label + ' برای ' + faDigits(picks.length) + ' دستگاه ثبت شد.');
-      renderGasRegistry(document.getElementById('sectionView'));
+      const section = document.getElementById('sectionView');
+      if (gasTab === 'logs') renderGasLogs(section); else renderGasRegistry(section);
     }
   }
 
