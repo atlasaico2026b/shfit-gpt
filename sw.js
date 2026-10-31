@@ -1,5 +1,5 @@
 /* ATLAS SHIFT service worker — canonical app shell and offline fallback */
-const CACHE_NAME = 'atlas-shift-v87-service-subtab';
+const CACHE_NAME = 'atlas-shift-v88-encrypted-store';
 const APP_FILES = [
   './', './index.html',
   './design/tokens.css', './design/styles.css', './design/skins/flat.css', './design/tones.css',
@@ -7,7 +7,7 @@ const APP_FILES = [
   './design/modals-export.css', './design/print.css', './design/spectrum.css', './design/gaslogs.css',
   './design/vehicle-tabs.css',
   './design/theme-switch.js',
-  './app.js', './modules.js', './theme-two.js', './settings-tabs.js', './menu-manager.js',
+  './app.js', './design/secure-store.js', './modules.js', './theme-two.js', './settings-tabs.js', './menu-manager.js',
   './visual-engine.js', './manifest.json', './icon.svg'
 ];
 

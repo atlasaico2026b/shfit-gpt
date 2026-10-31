@@ -15,6 +15,9 @@
   let db = null;
   let ready = false;
   let loadError = '';
+  let storageLocked = false;
+  let lastSealed = '';
+  let autosaveTimer = 0;
   let reportPeriod = 'month';
   let dashboardRange = { name:'today', start:todayIso(), end:todayIso() };
   let reportFrom = '';
@@ -345,15 +348,26 @@
     });
   }
 
-  function readLegacyLocalStorage() {
+  async function readLegacyLocalStorage() {
     try {
       const raw = localStorage.getItem(LEGACY_KEY);
       if (!raw) return null;
-      const saved = JSON.parse(raw);
-      return normalizeState(saved);
+      return normalizeState(await window.ATLAS_SECURE.openText(raw));
     } catch (error) {
       return null;
     }
+  }
+
+  // دادهٔ ذخیره‌شده یا رمزنگاری‌شده است یا نسخهٔ قدیمی و متنی؛ هر دو خوانده می‌شوند.
+  async function openStoredValue(stored) {
+    if (!stored) return null;
+    if (window.ATLAS_SECURE.isSealed(stored)) return await window.ATLAS_SECURE.open(stored);
+    return stored;
+  }
+
+  function storageCryptoNote() {
+    if (window.ATLAS_SECURE && window.ATLAS_SECURE.available()) return '';
+    return 'رمزنگاری داده در این محیط (اتصال ناامن) پشتیبانی نمی‌شود؛ داده بدون رمز ذخیره می‌شود.';
   }
 
   function loadFromDb(database) {
@@ -364,10 +378,11 @@
     });
   }
 
-  function writeToDb(database, value) {
+  async function writeToDb(database, value) {
+    const sealed = window.ATLAS_SECURE.available() ? await window.ATLAS_SECURE.seal(value) : value;
     return new Promise(function (resolve, reject) {
       const tx = database.transaction(STORE_NAME, 'readwrite');
-      tx.objectStore(STORE_NAME).put({ id: STORE_KEY, value: value });
+      tx.objectStore(STORE_NAME).put({ id: STORE_KEY, value: sealed });
       tx.oncomplete = function () { resolve(true); };
       tx.onerror = function () { reject(tx.error || new Error('Write failed')); };
       tx.onabort = function () { reject(tx.error || new Error('Write aborted')); };
@@ -375,42 +390,63 @@
   }
 
   async function initializeStorage() {
-    const localCopy = readLegacyLocalStorage();
+    const localCopy = await readLegacyLocalStorage();
     try {
       await openDb();
-      const saved = await loadFromDb(db);
+      const storedRecord = await loadFromDb(db);
+      let saved = null;
+      let needsReseal = false;
+      if (storedRecord) {
+        if (!window.ATLAS_SECURE.isSealed(storedRecord)) {
+          // نسخهٔ قدیمی و رمزنگاری‌نشده: خوانده و در اولین ذخیره رمزنگاری می‌شود.
+          needsReseal = true;
+        }
+        try { saved = await openStoredValue(storedRecord); }
+        catch (error) {
+          storageLocked = true;
+          loadError = 'داده‌های ذخیره‌شده با کلید این دستگاه باز نشد؛ برای جلوگیری از پاک‌شدن، ذخیره‌سازی متوقف است. اطلاعات را از «بازیابی پشتیبان» برگردانید.';
+        }
+      }
       if (saved) {
         const databaseCopy = normalizeState(saved);
         const localIsNewer = !!(localCopy && localCopy.updatedAt &&
           (!databaseCopy.updatedAt || localCopy.updatedAt > databaseCopy.updatedAt));
         appData = localIsNewer ? localCopy : databaseCopy;
-        if (localIsNewer) {
+        if (localIsNewer || needsReseal) {
           try { await writeToDb(db, appData); }
           catch (writeError) { db = null; loadError = 'ذخیره‌سازی جایگزین مرورگر فعال شد.'; }
         }
-      } else {
+      } else if (!storedRecord) {
         appData = localCopy || createEmptyState();
         if (appData.updatedAt || MODULES.some(function (key) { return appData[key].length; })) {
           try { await writeToDb(db, appData); }
           catch (writeError) { db = null; loadError = 'ذخیره‌سازی جایگزین مرورگر فعال شد.'; }
         }
+      } else {
+        // داده هست ولی باز نشد: هیچ چیزی روی آن نوشته نمی‌شود تا اطلاعات از دست نرود.
+        appData = createEmptyState();
       }
     } catch (error) {
       loadError = 'فضای ذخیره‌سازی پیشرفته در دسترس نیست؛ ذخیره‌سازی جایگزین مرورگر استفاده می‌شود.';
       appData = localCopy || createEmptyState();
       db = null;
     }
+    const cryptoNote = storageCryptoNote();
+    if (cryptoNote && !loadError) loadError = cryptoNote;
     ready = true;
     refreshCurrentView();
     refreshDashboard();
   }
 
   function saveState() {
+    if (storageLocked) return Promise.resolve(false);
     appData.updatedAt = new Date().toISOString();
     saveQueue = saveQueue.then(async function () {
+      const snapshot = snapshotJson();
       if (db) {
         try {
           await writeToDb(db, appData);
+          lastSealed = snapshot;
           return true;
         } catch (error) {
           db = null;
@@ -418,7 +454,8 @@
         }
       }
       try {
-        localStorage.setItem(LEGACY_KEY, JSON.stringify(appData));
+        localStorage.setItem(LEGACY_KEY, window.ATLAS_SECURE.available() ? await window.ATLAS_SECURE.sealText(appData) : JSON.stringify(appData));
+        lastSealed = snapshot;
         return true;
       } catch (error) {
         toast('ذخیره انجام نشد؛ فضای ذخیره‌سازی این مرورگر کافی نیست.');
@@ -426,6 +463,26 @@
       }
     });
     return saveQueue;
+  }
+
+  // ── شبکهٔ ایمنی ذخیره: اگر تغییری در داده‌ها مانده باشد، خودکار ذخیره می‌شود ──
+  function snapshotJson() {
+    try { return JSON.stringify(appData); } catch (error) { return ''; }
+  }
+
+  function scheduleAutoFlush(delay) {
+    if (!ready || storageLocked) return;
+    window.clearTimeout(autosaveTimer);
+    autosaveTimer = window.setTimeout(function () {
+      const current = snapshotJson();
+      if (current && current !== lastSealed) saveState();
+    }, delay || 400);
+  }
+
+  function flushNow() {
+    if (!ready || storageLocked) return;
+    window.clearTimeout(autosaveTimer);
+    if (snapshotJson() !== lastSealed) saveState();
   }
 
   function addHistory(moduleKey, record, action, changes) {
@@ -701,7 +758,14 @@
   }
 
   function rootWrap(content) {
-    return '<div class="module-wrap" style="display:flex;flex-direction:column;gap:16px;width:100%;max-width:none;min-width:0">' + content + '</div>';
+    return '<div class="module-wrap" style="display:flex;flex-direction:column;gap:16px;width:100%;max-width:none;min-width:0">' + storageBanner() + content + '</div>';
+  }
+
+  // اگر ذخیره‌سازی رمزنگاری‌شده مشکل داشته باشد، کاربر باید بی‌درنگ ببیند.
+  function storageBanner() {
+    const note = storageLocked ? loadError : storageCryptoNote();
+    if (!note) return '';
+    return '<div class="storage-alert" role="alert" data-tone="danger"><strong>هشدار ذخیره‌سازی</strong><span>' + esc(note) + '</span></div>';
   }
 
   function prepareSection(section) {
@@ -1353,12 +1417,23 @@
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>پشتیبان‌گیری و بازیابی</h3><p>نسخهٔ پشتیبان تمام پرونده‌ها، تاریخچه، تنظیمات و پیوست‌های محلی را دربر می‌گیرد.</p></div></div>'+
       '<div class="module-backup-grid"><div class="module-backup-card"><strong>ساخت نسخهٔ پشتیبان</strong><p>یک فایل JSON از تمام داده‌های موجود در این دستگاه دریافت می‌کنی.</p><button type="button" class="primary-btn" data-module-action="backup">دریافت فایل پشتیبان</button></div>'+
       '<div class="module-backup-card"><strong>بازیابی نسخهٔ پشتیبان</strong><p>بازیابی، داده‌های فعلی را جایگزین اطلاعات درون فایل انتخاب‌شده می‌کند.</p><button type="button" class="secondary-btn" data-module-action="restore-select">انتخاب فایل پشتیبان</button><input type="file" id="atlasRestoreFile" accept=".json,application/json" hidden></div></div></section>'+
+      '<section class="module-list-panel"><div class="module-list-head"><div><h3>ذخیره‌سازی</h3><p>هر تغییر بی‌درنگ در همین دستگاه ذخیره و رمزنگاری می‌شود.</p></div></div>' +
+      '<div class="module-local-note" data-storage-status>' + storageSummary() + '</div></section>' +
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>مدیریت منوها و فهرست‌ها</h3><p>تمام گزینه‌های کشویی قابل تنظیم در یک محل؛ افزودن فوری نیز از کنار فیلدهای مرتبط انجام می‌شود.</p></div></div><div class="module-list-tools"><select id="referenceListKey">'+referenceKeys().map(function(k){return '<option value="'+esc(k)+'">'+esc(referenceListTitle(k))+'</option>';}).join('')+'</select><input id="referenceListValue" type="text" placeholder="عنوان گزینه جدید"><button type="button" class="primary-btn" data-module-action="reference-add">+ افزودن</button></div><div id="referenceListItems" class="module-local-note" style="margin-top:12px"></div></section>' +
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>فیلدهای سفارشی کارکنان</h3><p>برای هر فیلد یک عنوان و یک نوع انتخاب کن؛ نوع همان کادری را می‌سازد که هنگام ثبت پرونده می‌بینی: عدد، تاریخ شمسی، تاریخ و ساعت، متن بلند و …</p></div></div>'+
       '<form data-custom-fields-form class="module-form"><div class="module-custom-fields" data-custom-field-rows>'+(appData.settings.employeeCustomFields||'').split(/\r?\n/).map(function(l){return l.trim();}).filter(Boolean).map(customFieldRowHtml).join('')+'</div>'+
       '<div class="module-form-actions"><span class="module-required-help">حداکثر ۲۰ فیلد سفارشی.</span><div><button type="button" class="secondary-btn" data-module-action="custom-field-add">+ افزودن فیلد</button> <button type="submit" class="primary-btn">ذخیرهٔ فیلدها</button></div></div></form></section>'
     );
     renderReferenceList();  }
+
+  function storageSummary() {
+    const secure = !!(window.ATLAS_SECURE && window.ATLAS_SECURE.available());
+    const state = storageLocked ? 'قفل‌شده برای جلوگیری از پاک‌شدن' : (ready ? 'فعال' : 'در حال آماده‌سازی');
+    return 'وضعیت ذخیره‌سازی: <strong>' + esc(state) + '</strong> · رمزنگاری: <strong>' +
+      (secure ? 'AES-GCM ۲۵۶ + فشرده‌سازی gzip (کلید غیرقابل‌استخراج روی همین دستگاه)' : 'در دسترس نیست (اتصال ناامن)') +
+      '</strong> · حالت: <strong>' + (db ? 'IndexedDB رمزنگاری‌شده' : 'حافظهٔ جایگزین مرورگر') + '</strong>' +
+      (loadError ? ' · <span data-tone="danger">' + esc(loadError) + '</span>' : '');
+  }
 
   function referenceListTitle(key){
     const titles={workplaces:'شهرها و محل‌ها',leaveTypes:'انواع مرخصی',missionTypes:'انواع مأموریت',pipelineSizes:'قطر خطوط',products:'نوع فرآورده',vehicleTypes:'انواع خودرو',vehicleStatuses:'وضعیت خودرو',gasStatuses:'وضعیت گازسنج',actionTypes:'انواع یادداشت و اقدام',programTypes:'انواع برنامه',workTypes:'نوع کار',jobTitles:'عنوان‌های شغلی',employmentTypes:'نوع استخدام',shiftPatterns:'الگوی شیفت',employeeStatuses:'وضعیت کارکنان',missionStatuses:'وضعیت مأموریت',leaveStatuses:'وضعیت مرخصی',healthStatuses:'وضعیت سلامت',noteStatuses:'وضعیت یادداشت و پیگیری',reportStatuses:'وضعیت گزارش اولیه',programStatuses:'وضعیت پرونده',operationalPoints:'نقاط عملیاتی',gasSensorTypes:'نوع سنسور گازسنج',gasSensorLocations:'محل‌های استقرار',operationalRanges:'محدوده‌های عملیاتی',vehicleServiceTypes:'انواع سرویس خودرو',missionTitles:'عنوان‌های مأموریت',vehicleNames:'نام خودروها',gasModels:'مدل گازسنج‌ها',deploymentLocations:'محل‌های استقرار',maneuverLocations:'محل‌های اجرای مانور',faultAssetTypes:'نوع دارایی اشکال',faultCategories:'دسته‌های اشکال',faultPriorities:'اولویت اشکال',faultStatuses:'وضعیت رفع اشکال',maintenanceTypes:'نوع سرویس و تعمیر',maintenanceStatuses:'وضعیت سرویس',gasLogTypes:'نوع سابقهٔ گازسنج',programCategories:'دسته‌های برنامه'};
@@ -3919,8 +3994,17 @@
     prompt: askPrompt,
     showText: askText,
     setGasTab: setGasTab,
-    setVehicleTab: setVehicleTab
+    setVehicleTab: setVehicleTab,
+    saveNow: saveState,
+    storageStatus: function () { return { ready: ready, locked: storageLocked, encrypted: !!(window.ATLAS_SECURE && !storageLocked), error: loadError }; }
   };
+
+  // تور ایمنی: هر تعاملی که داده را عوض کند، بی‌درنگ (و بدون نیاز به صدا زدن saveState) ذخیره می‌شود.
+  ['click', 'change', 'submit', 'drop', 'input'].forEach(function (name) {
+    document.addEventListener(name, function () { scheduleAutoFlush(400); }, true);
+  });
+  document.addEventListener('visibilitychange', function () { if (document.hidden) flushNow(); });
+  window.addEventListener('pagehide', function () { flushNow(); });
 
   document.addEventListener('DOMContentLoaded', function(){refreshDashboard();});
   initializeStorage();

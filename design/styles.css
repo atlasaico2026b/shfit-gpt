@@ -464,3 +464,8 @@ body > .drawer-backdrop,body > .drawer,body > .settings-popover,body > .toast{po
 @media (max-width:640px){
   .module-wrap .stat-row,.module-root .stat-row{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
 }
+
+/* هشدار ذخیره‌سازی: اگر دادهٔ رمزنگاری‌شده خوانده نشود یا رمزنگاری در دسترس نباشد. */
+.storage-alert{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;padding:11px 14px;border:1px solid var(--danger-line);border-radius:14px;background:var(--danger-soft);font-size:12.5px;line-height:1.9}
+.storage-alert strong{color:var(--danger);font-size:12.5px}
+.storage-alert span{color:var(--text);min-width:0}
