@@ -126,3 +126,49 @@
   .station-place-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .module-row{grid-template-columns:repeat(auto-fit,minmax(130px,1fr));align-items:end}
 }
+
+/* 9 · سلسله‌مراتب اندازه‌ها در کارت اطلاعات و فهرست گازسنج‌های مرکز ──────── */
+.station-info-modal{max-width:780px;width:min(780px,calc(100vw - 22px))}
+.station-info-modal .atlas-modal-head h3{font-size:17px;line-height:1.5}
+.station-info-modal .atlas-modal-head p{font-size:11.5px}
+.station-info-body{gap:8px}
+.station-info-block h4{font-size:12.5px;letter-spacing:.2px}
+.station-info-row{font-size:12px;line-height:1.9}
+.station-info-row span{min-width:96px;color:var(--muted)}
+.station-info-row b{font-size:13px;font-weight:600}
+.station-info-line{font-size:12px;line-height:1.9}
+.station-info-line b{font-size:12.5px}
+.station-info-line small{font-size:10.5px}
+.station-info-chip{font-size:11.5px;padding:5px 11px;line-height:1.7}
+.station-info-text{font-size:12px}
+.station-info-phone{font-size:11px;padding:3px 8px}
+.station-info-phone b{font-size:11.5px}
+
+.station-info-gas{display:grid;grid-template-columns:minmax(0,1fr);gap:2px 10px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:rgba(var(--c-white-rgb),.02)}
+.station-info-gas-id{display:flex;flex-direction:column;gap:1px;min-width:0}
+.station-info-gas-id b{font-size:13px;color:var(--text);font-weight:700;letter-spacing:.4px}
+.station-info-gas-id small{font-size:10px;color:var(--muted)}
+.station-info-gas-where{font-size:11.5px;color:var(--text)}
+.station-info-gas-status{font-size:10.5px;color:var(--muted)}
+@media (min-width:640px){
+  .station-info-gas{grid-template-columns:minmax(0,1.1fr) minmax(0,1.4fr) auto;align-items:center}
+  .station-info-gas-status{text-align:left}
+}
+
+/* 10 · پنجرهٔ ارسال/دریافت گروهی کالیبراسیون ─────────────────────────────── */
+.gas-group-modal{max-width:640px;width:min(640px,calc(100vw - 20px))}
+.gas-group-fields{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:12px}
+.gas-group-fields label{display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--muted);min-width:0}
+.gas-group-fields input,.gas-group-fields select{width:100%;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:rgba(var(--c-white-rgb),.04);color:var(--text);font:inherit;font-size:12px}
+.gas-group-list-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 0;font-size:11.5px;color:var(--muted)}
+.gas-group-list-head strong{font-size:12px;color:var(--text)}
+.gas-group-list{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow:auto;padding-inline-end:2px}
+.gas-group-row{display:flex;align-items:center;gap:9px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:11.5px;cursor:pointer}
+.gas-group-row:hover{border-color:var(--accent2)}
+.gas-group-copy{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.gas-group-copy strong{font-size:12px;color:var(--text);font-weight:600}
+.gas-group-copy small{font-size:10.5px;color:var(--muted)}
+.gas-group-meta{font-size:10.5px;color:var(--muted);white-space:nowrap}
+.gas-group-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:14px}
+.link-btn{border:0;background:none;color:var(--accent2);font:inherit;font-size:11px;cursor:pointer;padding:0}
+@media (min-width:640px){.gas-group-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.gas-group-note{grid-column:1/-1}}

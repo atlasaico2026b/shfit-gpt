@@ -127,7 +127,7 @@
         {key:'placeType',label:'نوع محل',type:'select',required:true,listKey:'placeTypes',stationTypeTrigger:true,options:['مرکز انتقال نفت','ایستگاه مخابراتی','ایستگاه برق','ایستگاه تقویت فشار','ایستگاه پمپاژ','ایستگاه اندازه‌گیری','ایستگاه آتش‌نشانی','ایستگاه گازسنجی','ایستگاه توزیع','سایر']},
         {key:'place',label:'محل مکان',type:'place',required:true,dependsOn:'placeType'},
         {key:'status',label:'وضعیت عملیاتی',type:'select',listKey:'stationStatuses',options:['در سرویس','نیمه‌فعال','خارج از سرویس','در تعمیر','غیرفعال']},
-        {key:'personInCharge',label:'نام رئیس / مسئول'},
+        {key:'personInCharge',label:'نام رئیس / مسئول',type:'people',placeholder:'جستجو در مخاطبان دفترچه تلفن یا نام جدید'},
         {key:'city',label:'شهر محل استقرار',type:'select',listKey:'workplaces',options:['اهواز','آبادان','اندیمشک','ماهشهر','بندر امام','آغاجاری','سایر']},
         {key:'address',label:'آدرس محل',type:'textarea',wide:true},
         {key:'coordinates',label:'موقعیت جغرافیایی',placeholder:'عرض و طول؛ مثلاً ۳۱٫۳۲۰۵، ۴۸٫۶۶۹۰'},
@@ -163,6 +163,9 @@
         {key:'healthStatus',label:'وضعیت سلامت',type:'select',listKey:'healthStatuses',options:['سالم','نیازمند بررسی','دارای نقص','در حال تعمیر']},
         {key:'location',label:'محل استقرار',type:'select',listKey:'deploymentLocations',options:['پارکینگ مرکزی','تعمیرگاه مرکزی','انبار مرکزی','محور جاده','دفتر مرکزی','سایر']},
         {key:'locationPoint',label:'محل استقرار (فهرست نقاط)',type:'select',listKey:'gasSensorLocations',options:['پارکینگ مرکزی','تعمیرگاه مرکزی','انبار مرکزی','محور جاده','دفتر مرکزی','سایر']},
+        {key:'stationId',label:'مرکز / ایستگاه استقرار',type:'select',source:'stations',hint:'اگر خالی بماند، آخرین موقعیت ثبت‌شده در سوابق همین دستگاه مبنای استقرار است.'},
+        {key:'positionKind',label:'نوع موقعیت استقرار',type:'select',options:['ساختمان','خودرو','محوطه','سایر']},
+        {key:'positionDetail',label:'ساختمان / خودرو (جزئیات)',placeholder:'مثلاً اتاق فرمان عملیات یا خودرو پلاک ۱۲'},
         {key:'locationSince',label:'تاریخ استقرار فعلی',type:'jalali'},
         {key:'locationHistory',label:'سوابق تغییر محل استقرار (هر مورد در یک خط)',type:'textarea',wide:true,placeholder:'تاریخ | محل قبلی | محل جدید | توضیح'},
         {key:'responsibleId',label:'مسئول دستگاه',type:'select',source:'employees'},
@@ -175,7 +178,7 @@
         {key:'repairHistory',label:'تعمیرات و سوابق دستگاه',type:'textarea',wide:true},
         {key:'notes',label:'توضیحات',type:'textarea',wide:true}
       ],
-      columns: ['code','model','sensorType','serial','gases','status','location','calibrationEnd','responsibleId']
+      columns: ['code','model','sensorType','serial','stationId','status','location','calibrationEnd','responsibleId']
     },
     notes: {
       title: 'یادداشت‌ها و پیگیری‌ها', singular: 'اقدام / پیگیری',
@@ -268,18 +271,23 @@
       fields: [
         {key:'gasmeterId',label:'گازسنج',type:'select',source:'gasmeters',required:true},
         {key:'date',label:'تاریخ شمسی',type:'jalali',required:true},
-        {key:'logType',label:'نوع سابقه',type:'select',required:true,listKey:'gasLogTypes',options:['ثبت قرائت','کالیبراسیون','تعمیر','جابه‌جایی','تست عملکرد','سایر']},
+        {key:'logType',label:'نوع سابقه',type:'select',required:true,listKey:'gasLogTypes',options:['ثبت قرائت','کالیبراسیون','تعمیر','جابه‌جایی','تست عملکرد','ارسال برای کالیبراسیون','دریافت از کالیبراسیون','ارسال گروهی برای کالیبراسیون','دریافت گروهی از کالیبراسیون','سایر']},
         {key:'value',label:'مقدار قرائت یا نتیجه'},
         {key:'location',label:'محل استقرار در این تاریخ',type:'select',listKey:'deploymentLocations',options:['پارکینگ مرکزی','تعمیرگاه مرکزی','انبار مرکزی','محور جاده','دفتر مرکزی','سایر']},
+        {key:'stationId',label:'مرکز / ایستگاه در این تاریخ',type:'select',source:'stations'},
+        {key:'positionKind',label:'نوع موقعیت',type:'select',options:['ساختمان','خودرو','محوطه','سایر']},
+        {key:'positionDetail',label:'ساختمان / خودرو (جزئیات)'},
         {key:'locationSince',label:'تاریخ استقرار',type:'jalali'},
         {key:'healthStatus',label:'وضعیت سلامت در این تاریخ',type:'select',listKey:'healthStatuses',options:['سالم','نیازمند بررسی','دارای نقص','در حال تعمیر']},
         {key:'calibrationStart',label:'شروع کالیبراسیون',type:'jalali'},
         {key:'calibrationEnd',label:'پایان کالیبراسیون',type:'jalali'},
+        {key:'carrierId',label:'برنده‌نده / ارسال‌کننده به کالیبراسیون',type:'select',source:'employees'},
+        {key:'receiverId',label:'برگرداننده / تحویل‌گیرنده از کالیبراسیون',type:'select',source:'employees'},
         {key:'description',label:'شرح و توضیحات',type:'textarea',wide:true},
         {key:'operatorId',label:'ثبت‌کننده',type:'select',source:'employees'},
         {key:'attachments',label:'پیوست‌ها',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx'}
       ],
-      columns: ['gasmeterId','date','logType','value','location','operatorId']
+      columns: ['gasmeterId','date','logType','stationId','carrierId','receiverId','operatorId']
     }
   };
 
@@ -722,6 +730,13 @@
         return {value:item.id,label:(item.name || 'خودرو') + (item.companyPlate ? ' · ' + item.companyPlate : '')};
       });
     }
+    if (field.source === 'stations') {
+      return (data.stations || []).slice().sort(function (a, b) {
+        return String(a.name || '').localeCompare(String(b.name || ''), 'fa');
+      }).map(function (item) {
+        return {value:item.id,label:[item.name, item.placeType].filter(Boolean).join(' · ')};
+      });
+    }
     if (field.source === 'gasmeters') {
       return (data.gasmeters || []).slice().sort(function (a, b) {
         return String(a.code || '').localeCompare(String(b.code || ''), 'fa');
@@ -841,6 +856,14 @@
         '<small class="module-field-hint">' + (type ? 'مکان‌های ثبت‌شده برای «' + esc(type) + '»؛ با + می‌توانی مکان تازه اضافه کنی.' : 'فهرست مکان‌ها بر اساس نوع محل انتخاب‌شده نمایش داده می‌شود.') + '</small>';
     } else if (field.type === 'rows') {
       control = rowEditorMarkup(field, value, data);
+    } else if (field.type === 'people') {
+      const names = stationChiefSuggestions(data);
+      control = '<input id="' + esc(id) + '" name="' + esc(field.key) + '" list="' + esc(id) + '-people" value="' + esc(value) +
+        '" placeholder="' + esc(field.placeholder || 'جستجو در مخاطبان یا نام جدید') + '" autocomplete="off"' + required + '>' +
+        '<datalist id="' + esc(id) + '-people">' + names.map(function (name) {
+          return '<option value="' + esc(name) + '"></option>';
+        }).join('') + '</datalist>' +
+        '<small class="module-field-hint">نام را از مخاطبان دفترچه تلفن جستجو کن یا نام تازه را همین‌جا بنویس.</small>';
     } else if (field.type === 'textarea') {
       control = '<textarea id="' + esc(id) + '" name="' + esc(field.key) + '" rows="3"' + required + ' placeholder="' + esc(field.placeholder || '') + '">' + esc(value) + '</textarea>';
     } else if (field.type === 'checks') {
@@ -984,6 +1007,10 @@
     if (field && field.source === 'gasmeters') {
       const item = (data.gasmeters || []).find(function (meter) { return String(meter.id) === String(value); });
       return esc(item ? (item.code || 'گازسنج') + (item.serial ? ' · ' + item.serial : '') : value);
+    }
+    if (field && field.source === 'stations') {
+      const item = (data.stations || []).find(function (station) { return String(station.id) === String(value); });
+      return esc(item ? stationLabel(item) : value);
     }
     if (field && (field.type === 'file' || field.type === 'file-multiple')) {
       const count = Array.isArray(value) ? value.length : (value ? 1 : 0);
@@ -2127,7 +2154,7 @@
         '<td>' + esc(record.model || '—') + '</td>' +
         '<td>' + statusTag(record.status || '—') + '</td>' +
         '<td>' + statusTag(record.healthStatus || '—') + '</td>' +
-        '<td>' + esc(record.location || record.locationPoint || '—') + '</td>' +
+        '<td>' + gasPositionCell(record) + '</td>' +
         '<td>' + esc(responsible ? employeeName(responsible) : '—') + '</td>' +
         '<td>' + (record.calibrationEnd ? formatJalali(record.calibrationEnd, false) : '—') + '</td>' +
         '<td>' + statusTag(state.label) + '<div class="cell-sub">' + (state.left == null ? '—' : (state.left < 0 ? faDigits(Math.abs(state.left)) + ' روز گذشته' : faDigits(state.left) + ' روز مانده')) + '</div></td>' +
@@ -2139,7 +2166,10 @@
     const table = visible.length
       ? '<div class="module-table-wrap"><table class="module-table"><thead><tr><th>کد / سریال</th><th>مدل</th><th>وضعیت</th><th>سلامت</th><th>محل استقرار</th><th>مسئول</th><th>پایان کالیبراسیون</th><th>مانده کالیبراسیون</th><th>سوابق</th><th>عملیات</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
       : '<div class="module-empty">موردی با این فیلترها پیدا نشد.</div>';
-    const actions = exportMenu('gasmeters') + '<button class="primary-btn" type="button" data-module-action="new" data-view="gasmeters">+ ثبت گازسنج</button>';
+    const actions = exportMenu('gasmeters') +
+      '<button class="secondary-btn" type="button" data-gas-group="send">ارسال گروهی برای کالیبراسیون</button>' +
+      '<button class="secondary-btn" type="button" data-gas-group="receive">دریافت گروهی از کالیبراسیون</button>' +
+      '<button class="primary-btn" type="button" data-module-action="new" data-view="gasmeters">+ ثبت گازسنج</button>';
     section.innerHTML = rootWrap(
       pageHead('مدیریت گازسنج‌ها', 'وضعیت سلامت، محل استقرار، کالیبراسیون و مانده روز تا پایان اعتبار هر دستگاه', actions) +
       gasTabBar() +
@@ -2189,6 +2219,205 @@
 
   function gasMeterName(meter) {
     return [meter.code, meter.model].filter(Boolean).join(' · ') || 'گازسنج بدون کد';
+  }
+
+  // مبنای محل استقرار هر گازسنج، آخرین موقعیتی است که در سوابق همان دستگاه ثبت شده است.
+  function gasLatestPositionLog(meter) {
+    const logs = gasLogsOf(meter.id);
+    for (let i = 0; i < logs.length; i += 1) {
+      const log = logs[i];
+      if (log && (log.stationId || log.positionKind || log.positionDetail || log.location)) return log;
+    }
+    return null;
+  }
+
+  function gasMeterPosition(meter, data) {
+    const source = data || appData;
+    const log = gasLatestPositionLog(meter);
+    const stationId = String((log && log.stationId) || meter.stationId || '');
+    const station = stationId ? (source.stations || []).find(function (item) { return String(item.id) === stationId; }) : null;
+    return {
+      stationId: stationId,
+      stationName: station ? String(station.name || '') : '',
+      positionKind: String((log && log.positionKind) || meter.positionKind || '').trim(),
+      positionDetail: String((log && log.positionDetail) || meter.positionDetail || '').trim(),
+      legacyLocation: String((log && log.location) || meter.location || meter.locationPoint || '').trim(),
+      date: String((log && log.date) || meter.locationSince || ''),
+      fromLog: !!log
+    };
+  }
+
+  function gasPositionText(meter, data) {
+    const position = gasMeterPosition(meter, data);
+    const parts = [];
+    if (position.stationName) parts.push(position.stationName);
+    if (position.positionKind || position.positionDetail) parts.push([position.positionKind, position.positionDetail].filter(Boolean).join(': '));
+    if (!parts.length && position.legacyLocation) parts.push(position.legacyLocation);
+    return parts.join(' · ');
+  }
+
+  function gasPositionCell(meter) {
+    const position = gasMeterPosition(meter);
+    const text = gasPositionText(meter);
+    if (!text) return '—';
+    return esc(text) + (position.fromLog && position.date
+      ? '<div class="cell-sub">آخرین سابقه: ' + formatJalali(position.date, false) + '</div>' : '');
+  }
+
+  function gasMetersAtStation(station, data) {
+    const source = data || appData;
+    if (!station) return [];
+    const stationId = String(station.id || '');
+    const name = String(station.name || '').trim();
+    const place = String(station.place || '').trim();
+    return (source.gasmeters || []).filter(function (meter) {
+      const position = gasMeterPosition(meter, source);
+      if (position.stationId) return String(position.stationId) === stationId;
+      const text = gasPositionText(meter, source);
+      if (!text) return false;
+      return (!!name && text.indexOf(name) >= 0) || (!!place && text.indexOf(place) >= 0);
+    });
+  }
+
+  // ── ارسال و دریافت گروهی برای کالیبراسیون ──
+  function gasGroupCandidates(mode) {
+    const meters = (appData.gasmeters || []).slice().sort(function (a, b) {
+      return String(a.code || '').localeCompare(String(b.code || ''), 'fa', { numeric: true });
+    });
+    if (mode === 'receive') {
+      return meters.filter(function (meter) {
+        return String(meter.status || '') === 'در کالیبراسیون' || (meter.calibrationDispatch && !meter.calibrationReturn);
+      });
+    }
+    return meters.filter(function (meter) { return String(meter.status || '') !== 'در کالیبراسیون'; });
+  }
+
+  function gasEmployeeOptions() {
+    return (appData.employees || []).slice().sort(function (a, b) {
+      return employeeName(a).localeCompare(employeeName(b), 'fa');
+    });
+  }
+
+  function openGasGroupDialog(mode) {
+    const isReceive = mode === 'receive';
+    const candidates = gasGroupCandidates(mode);
+    if (!candidates.length) {
+      toast(isReceive ? 'دستگاهی در وضعیت «در کالیبراسیون» نیست.' : 'دستگاهی برای ارسال باقی نمانده است.');
+      return;
+    }
+    const title = isReceive ? 'دریافت گروهی از کالیبراسیون' : 'ارسال گروهی برای کالیبراسیون';
+    const personLabel = isReceive ? 'برگرداننده / تحویل‌گیرنده' : 'برنده‌نده / ارسال‌کننده';
+    const employeeOptions = gasEmployeeOptions().map(function (person) {
+      return '<option value="' + esc(person.id) + '">' + esc(employeeName(person) || 'بدون نام') + '</option>';
+    }).join('');
+    const stationOptions = (appData.stations || []).slice().sort(function (a, b) {
+      return stationTitle(a).localeCompare(stationTitle(b), 'fa');
+    }).map(function (station) {
+      return '<option value="' + esc(station.id) + '">' + esc(stationLabel(station)) + '</option>';
+    }).join('');
+    const rows = candidates.map(function (meter) {
+      const position = gasPositionText(meter);
+      return '<label class="gas-group-row"><input type="checkbox" data-gas-group-pick value="' + esc(meter.id) + '" checked>' +
+        '<span class="gas-group-copy"><strong>' + esc(gasMeterName(meter)) + '</strong>' +
+        '<small>' + esc([meter.serial, position].filter(Boolean).join(' · ') || 'بدون موقعیت ثبت‌شده') + '</small></span>' +
+        '<span class="gas-group-meta">' + esc(meter.status || '—') + '</span></label>';
+    }).join('');
+    const markup = '<div class="atlas-modal-backdrop gas-group-backdrop" data-gas-group-dialog>' +
+      '<div class="atlas-modal gas-group-modal" role="dialog" aria-modal="true" aria-labelledby="gasGroupTitle">' +
+      '<div class="atlas-modal-head"><div><h3 id="gasGroupTitle">' + esc(title) + '</h3>' +
+      '<p>' + faDigits(candidates.length) + ' دستگاه قابل انتخاب · برای هر دستگاه یک سابقهٔ جداگانه ساخته می‌شود.</p></div>' +
+      '<button type="button" class="atlas-modal-close" data-gas-group-close aria-label="بستن">×</button></div>' +
+      '<div class="atlas-modal-body">' +
+      '<div class="gas-group-fields">' +
+      '<label><span>تاریخ (شمسی)</span><input type="text" data-gas-group-field="date" value="' + esc(jalaliInputValue('')) + '" placeholder="۱۴۰۵/۰۸/۰۹"></label>' +
+      '<label><span>' + esc(personLabel) + '</span><select data-gas-group-field="person"><option value="">انتخاب از کارمندان</option>' + employeeOptions + '</select></label>' +
+      '<label><span>مرکز / ایستگاه محل استقرار</span><select data-gas-group-field="stationId"><option value="">بدون تغییر</option>' + stationOptions + '</select></label>' +
+      (isReceive
+        ? '<label><span>پایان اعتبار جدید کالیبراسیون</span><input type="text" data-gas-group-field="calibrationEnd" placeholder="۱۴۰۶/۰۸/۰۹"></label>' +
+          '<label><span>وضعیت دستگاه پس از دریافت</span><select data-gas-group-field="status"><option value="آماده استفاده">آماده استفاده</option><option value="در تعمیر">در تعمیر</option><option value="خارج از سرویس">خارج از سرویس</option></select></label>'
+        : '<label><span>وضعیت دستگاه پس از ارسال</span><select data-gas-group-field="status"><option value="در کالیبراسیون">در کالیبراسیون</option><option value="خارج از سرویس">خارج از سرویس</option></select></label>') +
+      '<label class="gas-group-note"><span>توضیحات (اختیاری)</span><input type="text" data-gas-group-field="description" placeholder="مثلاً ارسال با پیک به آزمایشگاه"></label>' +
+      '</div>' +
+      '<div class="gas-group-list-head"><strong>دستگاه‌ها</strong>' +
+      '<span><button type="button" class="link-btn" data-gas-group-pickall="1">انتخاب همه</button> · ' +
+      '<button type="button" class="link-btn" data-gas-group-picknone="1">هیچ‌کدام</button></span></div>' +
+      '<div class="gas-group-list">' + rows + '</div>' +
+      '<div class="gas-group-actions">' +
+      '<button type="button" class="primary-btn" data-gas-group-submit="' + esc(mode) + '">' + esc(title) + '</button>' +
+      '<button type="button" class="secondary-btn" data-gas-group-close>بستن</button></div>' +
+      '</div></div></div>';
+    closeGasGroupDialog();
+    const holder = document.createElement('div');
+    holder.innerHTML = markup;
+    if (holder.firstElementChild) document.body.appendChild(holder.firstElementChild);
+  }
+
+  function closeGasGroupDialog() {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-gas-group-dialog]'), function (node) { node.remove(); });
+  }
+
+  async function submitGasGroupDialog(mode) {
+    const dialog = document.querySelector('[data-gas-group-dialog]');
+    if (!dialog) return;
+    const field = function (name) {
+      const node = dialog.querySelector('[data-gas-group-field="' + name + '"]');
+      return node ? String(node.value || '').trim() : '';
+    };
+    const picks = Array.prototype.map.call(dialog.querySelectorAll('[data-gas-group-pick]:checked'), function (node) { return node.value; });
+    if (!picks.length) { toast('حداقل یک دستگاه را انتخاب کن.'); return; }
+    const personId = field('person');
+    if (!personId) { toast('انتخاب ' + (mode === 'receive' ? 'برگرداننده' : 'برنده‌نده') + ' الزامی است.'); return; }
+    const date = parseJalali(field('date'), false);
+    if (!date) { toast('تاریخ شمسی معتبر نیست؛ نمونه: ۱۴۰۵/۰۸/۰۹'); return; }
+    const calibrationEnd = field('calibrationEnd') ? parseJalali(field('calibrationEnd'), false) : '';
+    if (field('calibrationEnd') && !calibrationEnd) { toast('پایان اعتبار کالیبراسیون معتبر نیست.'); return; }
+    const stationId = field('stationId');
+    const status = field('status') || (mode === 'receive' ? 'آماده استفاده' : 'در کالیبراسیون');
+    const description = field('description');
+    const isReceive = mode === 'receive';
+    const label = isReceive ? 'دریافت گروهی از کالیبراسیون' : 'ارسال گروهی برای کالیبراسیون';
+    const station = stationId ? (appData.stations || []).find(function (item) { return String(item.id) === stationId; }) : null;
+    let index = 0;
+    picks.forEach(function (meterId) {
+      const meter = (appData.gasmeters || []).find(function (item) { return String(item.id) === String(meterId); });
+      if (!meter) return;
+      const position = gasMeterPosition(meter);
+      const log = {
+        id: 'gaslog-' + Date.now().toString(36) + '-' + (index += 1),
+        gasmeterId: meter.id,
+        date: date,
+        logType: label,
+        stationId: stationId || position.stationId || '',
+        positionKind: meter.positionKind || position.positionKind || '',
+        positionDetail: meter.positionDetail || position.positionDetail || '',
+        description: description,
+        operatorId: personId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      if (isReceive) {
+        log.receiverId = personId;
+        log.calibrationReturn = date;
+        if (calibrationEnd) log.calibrationEnd = calibrationEnd;
+        meter.calibrationReturn = date;
+        if (calibrationEnd) meter.calibrationEnd = calibrationEnd;
+        if (calibrationEnd) meter.calibrationStart = date;
+      } else {
+        log.carrierId = personId;
+        log.calibrationDispatch = date;
+        meter.calibrationDispatch = date;
+      }
+      if (station && station.name) log.stationName = station.name;
+      meter.status = status;
+      meter.updatedAt = new Date().toISOString();
+      appData.gaslogs = appData.gaslogs || [];
+      appData.gaslogs.push(log);
+    });
+    if (await saveState()) {
+      closeGasGroupDialog();
+      toast(label + ' برای ' + faDigits(picks.length) + ' دستگاه ثبت شد.');
+      renderGasRegistry(document.getElementById('sectionView'));
+    }
   }
 
   function gasFact(label, value) {
@@ -2566,6 +2795,30 @@
     }
   });
 
+  // ── ارسال/دریافت گروهی کالیبراسیون ──
+  document.addEventListener('click', async function (event) {
+    const openButton = event.target.closest('[data-gas-group]');
+    if (openButton) {
+      event.preventDefault();
+      openGasGroupDialog(openButton.dataset.gasGroup === 'receive' ? 'receive' : 'send');
+      return;
+    }
+    if (event.target.closest('[data-gas-group-close]')) { event.preventDefault(); closeGasGroupDialog(); return; }
+    const submit = event.target.closest('[data-gas-group-submit]');
+    if (submit) { event.preventDefault(); await submitGasGroupDialog(submit.dataset.gasGroupSubmit === 'receive' ? 'receive' : 'send'); return; }
+    if (event.target.closest('[data-gas-group-pickall]')) {
+      event.preventDefault();
+      Array.prototype.forEach.call(document.querySelectorAll('[data-gas-group-pick]'), function (node) { node.checked = true; });
+      return;
+    }
+    if (event.target.closest('[data-gas-group-picknone]')) {
+      event.preventDefault();
+      Array.prototype.forEach.call(document.querySelectorAll('[data-gas-group-pick]'), function (node) { node.checked = false; });
+      return;
+    }
+    if (event.target.closest('[data-gas-group-dialog]') && !event.target.closest('.atlas-modal')) closeGasGroupDialog();
+  });
+
   // ── ویرایشگر ردیفی، افزودن مکان از داخل فرم و رنگ خطوط ──
   document.addEventListener('click', async function (event) {
     const addRow = event.target.closest('[data-rows-add]');
@@ -2863,6 +3116,10 @@
 
   function stationTitle(record) { return String((record && (record.name || record.place)) || 'ایستگاه / مرکز'); }
 
+  function stationLabel(record) {
+    return [record && record.name, record && record.placeType].filter(Boolean).join(' · ') || 'ایستگاه / مرکز';
+  }
+
   function stationCoord(value) {
     const text = String(value == null ? '' : value).trim();
     if (!text) return NaN;
@@ -3048,6 +3305,20 @@
       '</div></section>';
   }
 
+  // پیشنهاد نام رئیس: مخاطبان دفترچه تلفن، کارمندان و نام‌های ثبت‌شده در ایستگاه‌ها.
+  function stationChiefSuggestions(data) {
+    const source = data && data.stations ? data : appData;
+    const names = [];
+    const push = function (value) {
+      const name = String(value == null ? '' : value).trim();
+      if (name && names.indexOf(name) < 0) names.push(name);
+    };
+    stationPhonebookContacts().forEach(function (contact) { push(contact && contact.name); });
+    (source.employees || []).forEach(function (person) { push(employeeName(person)); });
+    (source.stations || []).forEach(function (station) { push(station && station.personInCharge); });
+    return names.sort(function (a, b) { return a.localeCompare(b, 'fa'); });
+  }
+
   function stationPhonebookContacts() {
     const keys = ['atlasShiftPhonebookV2', 'atlas-shift-phonebook', 'atlasShiftPhonebookV1'];
     for (let i = 0; i < keys.length; i += 1) {
@@ -3199,6 +3470,7 @@
     }).join('');
 
     const byPlace = {};
+
     contacts.forEach(function (contact) {
       const key = [contact.building, contact.unit].filter(Boolean).join(' / ') || 'بدون دسته‌بندی';
       (byPlace[key] = byPlace[key] || []).push(contact);
@@ -3220,6 +3492,18 @@
       return '<div class="station-info-line"><b>' + esc(key) + '</b><span class="station-info-phones">' + people + '</span></div>';
     }).filter(Boolean).join('');
 
+    const meters = gasMetersAtStation(record);
+    const metersText = meters.length ? meters.map(function (meter) {
+      const position = gasMeterPosition(meter);
+      const where = [position.positionKind, position.positionDetail].filter(Boolean).join(': ') || position.legacyLocation || 'موقعیت ثبت نشده';
+      return '<div class="station-info-gas">' +
+        '<span class="station-info-gas-id"><b dir="ltr">' + esc(meter.serial || meter.code || '—') + '</b>' +
+        '<small>' + esc([meter.code ? 'کد ' + meter.code : '', meter.model].filter(Boolean).join(' · ') || 'گازسنج') + '</small></span>' +
+        '<span class="station-info-gas-where">' + esc(where) + '</span>' +
+        (meter.status ? '<span class="station-info-gas-status">' + esc(meter.status) + '</span>' : '') +
+        '</div>';
+    }).join('') : '';
+
     const blocks = [
       stationInfoBlock('رئیس / سرپرست', stationInfoRow('نام رئیس', chief)),
       stationInfoBlock('نوع و محل', [
@@ -3237,6 +3521,7 @@
       stationInfoBlock('مخازن ذخیره', tanksText),
       stationInfoBlock('تجهیزات دوار', rotatingText),
       stationInfoBlock('دیزل ژنراتورها', generatorsText),
+      stationInfoBlock('گازسنج‌های مستقر در این مرکز', metersText),
       stationInfoBlock('شماره‌های تماس این محل (دفترچه تلفن)', phonesText),
       stationInfoBlock('توضیحات', record.description ? '<p class="station-info-text">' + esc(record.description) + '</p>' : '')
     ].filter(Boolean).join('');
@@ -4519,6 +4804,11 @@
         if(moduleKey==='programs'&&values.finalReportSent&&values.finalReportDue&&values.finalReportSent<values.finalReportDue&&values.status!=='تکمیل‌شده')throw new Error('تاریخ ارسال گزارش نهایی قبل از مهلت ثبت شده؛ وضعیت پرونده را بررسی کن.');
         if(moduleKey==='gasmeters'&&values.calibrationStart&&values.calibrationEnd&&values.calibrationEnd<values.calibrationStart)throw new Error('پایان اعتبار کالیبراسیون نباید قبل از شروع باشد.');
         if(moduleKey==='stations'){
+          const normalizedName=String(values.name||'').replace(/\s+/g,' ').trim();
+          const duplicate=(appData.stations||[]).filter(function(item){
+            return String(item.id)!==String(oldRecord&&oldRecord.id||'') && String(item.name||'').replace(/\s+/g,' ').trim()===normalizedName;
+          })[0];
+          if(duplicate)throw new Error('این نام قبلاً برای «'+duplicate.name+'»'+(duplicate.placeType?' ('+duplicate.placeType+')':'')+' ثبت شده است؛ نام دیگری انتخاب کن.');
           (Array.isArray(values.branches)?values.branches:[]).forEach(function(row){
             const order=String(row&&row.order||'').trim();
             if(order&&(!/^\d+$/.test(order)||Number(order)<1))throw new Error('ترتیب قرارگیری در هر شاخه باید یک عدد طبیعی باشد (۱، ۲، ۳ …)؛ حرف یا صفر مجاز نیست.');
@@ -4924,6 +5214,11 @@
     setGasTab: setGasTab,
     setVehicleTab: setVehicleTab,
     saveNow: saveState,
+    updateSettings: async function (patch) {
+      if (!patch || typeof patch !== 'object') return false;
+      appData.settings = Object.assign(appData.settings || {}, patch);
+      return saveState();
+    },
     footprint: function () { return storageFootprint(); },
     storageStatus: function () { return { ready: ready, locked: storageLocked, encrypted: !!(window.ATLAS_SECURE && !storageLocked), error: loadError }; }
   };

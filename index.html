@@ -220,6 +220,11 @@
   </div>
   <div class="settings-tab-pane" id="settings-pane-dashboard" role="tabpanel" aria-labelledby="settings-tab-dashboard">
 <div class="settings-section"><h4>چیدمان پنجره‌ها</h4><p>حالت تنظیم را فعال کن و با کشیدن دستگیرهٔ پنجره‌ها، جای آن‌ها را در داشبورد تغییر بده.</p><div class="settings-layout-actions"><button class="primary-btn" id="layoutButton" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="m14 6 4-4 4 4-4 4"/><path d="M18 2v12a4 4 0 0 1-4 4H3"/><path d="m7 14-4 4 4 4"/></svg><span id="layoutButtonText">تنظیم چیدمان</span></button><button class="secondary-btn" id="resetLayout"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>بازنشانی چیدمان</button></div></div>
+<div class="settings-section"><h4>عنوان اتاق فرمان</h4><p>عنوان بالای داشبورد («اتاق فرمان عملیات») و توضیح زیر آن را اینجا شخصی‌سازی کن.</p>
+  <label class="settings-line" for="dashboardTitleInput"><span>عنوان</span><input id="dashboardTitleInput" type="text" placeholder="اتاق فرمان عملیات"></label>
+  <label class="settings-line" for="dashboardSubtitleInput"><span>توضیح زیر عنوان</span><input id="dashboardSubtitleInput" type="text" placeholder="نمایی یکپارچه از نیروی انسانی، مأموریت‌ها، ناوگان و وضعیت تجهیزات ایمنی"></label>
+  <div class="settings-layout-actions"><button class="primary-btn" type="button" id="saveDashboardHeading">ذخیره عنوان</button><button class="secondary-btn" type="button" id="resetDashboardHeading">بازگردانی پیش‌فرض</button></div>
+</div>
   </div>
   <div class="settings-tab-pane" id="settings-pane-appearance" role="tabpanel" aria-labelledby="settings-tab-appearance" hidden>
 <div class="settings-section">

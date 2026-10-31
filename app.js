@@ -128,6 +128,24 @@
     try{localStorage.setItem('atlasShiftVoiceV2',JSON.stringify(value));}catch(_){}
     const toast=$('#toast');if(toast){toast.textContent='تنظیمات دستیار ذخیره شد.';toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),1800);}
   });
+  // شخصی‌سازی عنوان اتاق فرمان و توضیح زیر آن.
+  const dashboardTitleInput=$('#dashboardTitleInput'),dashboardSubtitleInput=$('#dashboardSubtitleInput');
+  function syncDashboardHeading(){
+    const data=window.ATLAS_MODULES&&typeof window.ATLAS_MODULES.getData==='function'?window.ATLAS_MODULES.getData():null;
+    const settings=(data&&data.settings)||{};
+    if(dashboardTitleInput)dashboardTitleInput.value=settings.dashboardTitle||'';
+    if(dashboardSubtitleInput)dashboardSubtitleInput.value=settings.dashboardSubtitle||'';
+  }
+  async function saveDashboardHeading(patch){
+    if(!window.ATLAS_MODULES||typeof window.ATLAS_MODULES.updateSettings!=='function')return;
+    await window.ATLAS_MODULES.updateSettings(patch);
+    syncDashboardHeading();
+    renderRoute(window.location.search.includes('view=')?new URLSearchParams(window.location.search).get('view')||'dashboard':'dashboard');
+    const toast=$('#toast');if(toast){toast.textContent='عنوان اتاق فرمان ذخیره شد.';toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),1800);}
+  }
+  if($('#saveDashboardHeading'))$('#saveDashboardHeading').addEventListener('click',()=>saveDashboardHeading({dashboardTitle:(dashboardTitleInput.value||'').trim(),dashboardSubtitle:(dashboardSubtitleInput.value||'').trim()}));
+  if($('#resetDashboardHeading'))$('#resetDashboardHeading').addEventListener('click',()=>saveDashboardHeading({dashboardTitle:'',dashboardSubtitle:''}));
+  syncDashboardHeading();
   const phonebookCategory=$('#phonebookOptionCategory'),phonebookValue=$('#phonebookOptionValue'),phonebookList=$('#phonebookOptionList');
   const phonebookOptionLabels={phoneLabel:'عنوان شماره تماس'};
   let phonebookOptionData={};try{phonebookOptionData=JSON.parse(localStorage.getItem('atlasShiftPhonebookOptionsV1')||'{}');}catch(_){}
@@ -666,8 +684,9 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
       if(target===view)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');
     });
     const h=$('.hero h1'),p=$('.hero p'),k=$('.hero .kicker');
-    if(h)h.innerHTML=info.title;
-    if(p)p.textContent=info.subtitle;
+    const customHeading=(isDashboard&&window.ATLAS_MODULES&&typeof window.ATLAS_MODULES.getData==='function')?window.ATLAS_MODULES.getData().settings||{}:{};
+    if(h){ if(isDashboard&&customHeading.dashboardTitle)h.textContent=customHeading.dashboardTitle; else h.innerHTML=info.title; }
+    if(p)p.textContent=(isDashboard&&customHeading.dashboardSubtitle)?customHeading.dashboardSubtitle:info.subtitle;
     if(k)k.textContent=info.kicker;
     if(view==='phonebook'){
       renderPhonebook(section);
