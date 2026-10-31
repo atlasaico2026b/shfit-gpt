@@ -22,7 +22,7 @@
   touch-action:none;
 }
 .station-map-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.station-line{fill:none;stroke:var(--tone);stroke-width:.7;stroke-opacity:.75;vector-effect:non-scaling-stroke;stroke-linecap:round}
+.station-line{fill:none;stroke:var(--tone);stroke-width:4;stroke-opacity:.95;vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round}
 .station-map-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted);padding:16px;text-align:center}
 
 /* 2 · گرهٔ ایستگاه ───────────────────────────────────────────────────────── */
@@ -66,4 +66,63 @@
   .station-map-tools .primary-btn,.station-map-tools .secondary-btn{flex:1 1 auto}
   .station-node-text{max-width:78px;font-size:10px}
   [data-widget="stations"] .station-map{height:150px}
+}
+
+/* 6 · ترتیب روی شاخه، رنگ خطوط و مدیریت مکان ─────────────────────────────── */
+.station-node-order{font-size:9px;line-height:1.4;color:var(--muted);white-space:nowrap}
+.station-line-color{
+  width:22px;height:22px;padding:0;border:1px solid var(--line);border-radius:6px;
+  background:none;cursor:pointer;
+}
+.station-line-color::-webkit-color-swatch-wrapper{padding:2px}
+.station-line-color::-webkit-color-swatch{border:0;border-radius:4px}
+.station-legend-hint{font-size:10px;line-height:1.9;color:var(--muted)}
+
+.station-places-panel{display:flex;flex-direction:column;gap:12px;padding:16px;border:1px solid var(--line);border-radius:var(--radius);background:var(--glass);min-width:0}
+.station-place-grid{display:grid;grid-template-columns:1fr;gap:10px}
+.station-place-group{border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:0}
+.station-place-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:space-between}
+.station-place-head strong{font-size:12px;color:var(--text)}
+.station-place-head span{font-size:10.5px;color:var(--muted)}
+.station-place-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.station-place-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:999px;border:1px solid var(--line);font-size:10.5px;color:var(--text);background:rgba(var(--c-white-rgb),.03)}
+.station-place-chip button{border:0;background:none;color:var(--muted);cursor:pointer;font:inherit;line-height:1;padding:2px}
+.station-place-chip button:hover{color:var(--accent2)}
+.station-place-empty{font-size:10.5px;color:var(--muted)}
+
+/* 7 · کارت اطلاعات فقط‌خواندنی ────────────────────────────────────────────── */
+.station-info-backdrop{z-index:120}
+.station-info-modal{max-width:720px;width:min(720px,calc(100vw - 24px))}
+.station-info-block{border-top:1px solid var(--line);padding:10px 0}
+.station-info-block:first-child{border-top:0;padding-top:0}
+.station-info-block h4{margin:0 0 6px;font-size:12px;color:var(--accent2);font-weight:600}
+.station-info-body{display:flex;flex-direction:column;gap:6px}
+.station-info-row{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11.5px;color:var(--muted)}
+.station-info-row span{min-width:88px}
+.station-info-row b{color:var(--text);font-weight:500}
+.station-info-line{font-size:11.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline}
+.station-info-line b{color:var(--text);font-weight:600}
+.station-info-line small{font-size:10px;color:var(--muted)}
+.station-info-chip{display:inline-flex;padding:4px 9px;border-radius:999px;border:1px solid var(--line);font-size:11px;color:var(--text);margin:2px 4px 2px 0}
+.station-info-text{margin:0;font-size:11.5px;line-height:1.9;color:var(--muted)}
+.station-info-phones{display:flex;flex-direction:column;gap:6px;width:100%}
+.station-info-contact{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;font-size:11px;color:var(--text)}
+.station-info-phone{display:inline-flex;gap:6px;align-items:baseline;font-size:10.5px;color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:2px 7px}
+.station-info-phone b{color:var(--accent2);font-weight:600}
+.station-info-phone:hover{border-color:var(--accent2)}
+.station-info-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:14px}
+
+/* 8 · ویرایشگر ردیفی فرم ─────────────────────────────────────────────────── */
+.module-rows{display:flex;flex-direction:column;gap:8px}
+.module-row{display:grid;grid-template-columns:1fr;gap:8px;padding:10px;border:1px solid var(--line);border-radius:12px;position:relative}
+.module-row-cell{display:flex;flex-direction:column;gap:4px;font-size:10.5px;color:var(--muted);min-width:0}
+.module-row-cell span{font-size:10px;color:var(--muted)}
+.module-row-cell input,.module-row-cell select{width:100%;min-width:0}
+.module-row-remove{position:absolute;top:4px;left:4px;border:0;background:none;color:var(--muted);font-size:14px;line-height:1;cursor:pointer;padding:4px}
+.module-row-remove:hover{color:var(--danger,var(--tone-6))}
+.module-rows-add{align-self:flex-start;margin-top:4px}
+
+@media (min-width:720px){
+  .station-place-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .module-row{grid-template-columns:repeat(auto-fit,minmax(130px,1fr));align-items:end}
 }

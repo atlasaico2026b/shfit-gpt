@@ -120,23 +120,34 @@
       columns: ['name','vehicleType','companyPlate','policePlate','status','currentCity','currentPlace','currentKm','nextOilKm','relatedMissions']
     },
     stations: {
-      title: 'ایستگاه‌ها', singular: 'ایستگاه',
-      subtitle: 'ثبت ایستگاه‌ها، جایگاه روی نقشهٔ شماتیک خط، فرآورده و وضعیت عملیاتی',
+      title: 'ایستگاه‌ها و مراکز', singular: 'ایستگاه / مرکز',
+      subtitle: 'نوع محل، محل مکان، جایگاه روی خطوط انتقال، مخازن، تجهیزات دوار و وضعیت عملیاتی',
       fields: [
-        {key:'name',label:'نام ایستگاه',required:true},
-        {key:'code',label:'کد ایستگاه'},
-        {key:'stationType',label:'نوع ایستگاه',type:'select',listKey:'stationTypes',options:['ایستگاه تقویت فشار','ایستگاه پمپاژ','ایستگاه اندازه‌گیری','مرکز انتقال نفت','ایستگاه مخابراتی','ایستگاه آتش‌نشانی','ایستگاه گازسنجی','سایر']},
-        {key:'line',label:'خط / شاخه',type:'select',listKey:'pipelineLines',options:['خط اصلی','شاخهٔ شمالی','شاخهٔ جنوبی','خط فرعی','خط صادراتی']},
-        {key:'order',label:'ترتیب روی خط',type:'number',min:0,placeholder:'۱، ۲، ۳ …'},
-        {key:'product',label:'فرآورده',type:'select',listKey:'products',options:['نفت خام','نفت گاز','بنزین','نفت سفید','گاز مایع','آب آلوده','سایر']},
-        {key:'capacity',label:'ظرفیت (هزار بشکه در روز)',type:'number',min:0},
+        {key:'name',label:'نام ایستگاه و مرکز',required:true},
+        {key:'placeType',label:'نوع محل',type:'select',required:true,listKey:'placeTypes',stationTypeTrigger:true,options:['مرکز انتقال نفت','ایستگاه مخابراتی','ایستگاه برق','ایستگاه تقویت فشار','ایستگاه پمپاژ','ایستگاه اندازه‌گیری','ایستگاه آتش‌نشانی','ایستگاه گازسنجی','ایستگاه توزیع','سایر']},
+        {key:'place',label:'محل مکان',type:'place',required:true,dependsOn:'placeType'},
         {key:'status',label:'وضعیت عملیاتی',type:'select',listKey:'stationStatuses',options:['در سرویس','نیمه‌فعال','خارج از سرویس','در تعمیر','غیرفعال']},
-        {key:'personInCharge',label:'مسئول ایستگاه'},
-        {key:'mapX',label:'موقعیت افقی روی نقشه (۰ تا ۱۰۰)',type:'number',min:0,max:100,placeholder:'خالی = چیدمان خودکار'},
-        {key:'mapY',label:'موقعیت عمودی روی نقشه (۰ تا ۱۰۰)',type:'number',min:0,max:100},
-        {key:'description',label:'توضیحات',type:'textarea',wide:true}
+        {key:'personInCharge',label:'نام رئیس / مسئول'},
+        {key:'city',label:'شهر محل استقرار',type:'select',listKey:'workplaces',options:['اهواز','آبادان','اندیمشک','ماهشهر','بندر امام','آغاجاری','سایر']},
+        {key:'address',label:'آدرس محل',type:'textarea',wide:true},
+        {key:'coordinates',label:'موقعیت جغرافیایی',placeholder:'عرض و طول؛ مثلاً ۳۱٫۳۲۰۵، ۴۸٫۶۶۹۰'},
+        {key:'description',label:'توضیحات',type:'textarea',wide:true},
+        {key:'distances',label:'فاصله تا شهرها',type:'rows',wide:true,addLabel:'+ افزودن شهر',
+          columns:[{key:'city',label:'شهر',listKey:'workplaces'},{key:'km',label:'فاصله (کیلومتر)',type:'number',min:0}]},
+        {key:'branches',label:'خطوط و شاخه‌های عبوری',type:'rows',wide:true,addLabel:'+ افزودن شاخه',
+          hint:'برای هر خط یا شاخه، ترتیب قرارگیری روی همان شاخه و موقعیت مکانی جداگانه تعیین می‌شود.',
+          columns:[{key:'line',label:'خط / شاخه',listKey:'pipelineLines',options:['خط اصلی','شاخهٔ شمالی','شاخهٔ جنوبی','خط فرعی','خط صادراتی']},{key:'order',label:'ترتیب (عدد طبیعی)',type:'number',min:1,step:1},{key:'x',label:'موقعیت افقی (۰ تا ۱۰۰)',type:'number',min:0,max:100},{key:'y',label:'موقعیت عمودی (۰ تا ۱۰۰)',type:'number',min:0,max:100}]},
+        {key:'products',label:'فرآورده‌ها و خطوط انتقال',type:'rows',wide:true,addLabel:'+ افزودن فرآورده',hideFor:['ایستگاه مخابراتی'],
+          hint:'هر ایستگاه یا مرکز می‌تواند چند فرآورده با خطوط و سایزهای مختلف داشته باشد.',
+          columns:[{key:'product',label:'فرآورده',listKey:'products'},{key:'size',label:'سایز خط (اینچ)',listKey:'pipelineSizes'},{key:'line',label:'خط / شاخه',listKey:'pipelineLines'}]},
+        {key:'tanks',label:'مخازن ذخیره',type:'rows',wide:true,addLabel:'+ افزودن مخزن',onlyFor:['مرکز انتقال نفت'],
+          columns:[{key:'product',label:'نوع فرآورده ذخیره‌ای',listKey:'products'},{key:'count',label:'تعداد',type:'number',min:1,step:1},{key:'volume',label:'حجم هر مخزن',type:'number',min:0},{key:'diameter',label:'قطر (متر)',type:'number',min:0},{key:'height',label:'ارتفاع (متر)',type:'number',min:0}]},
+        {key:'rotating',label:'تجهیزات دوار (توربین و الکتروموتور)',type:'rows',wide:true,addLabel:'+ افزودن تجهیز',onlyFor:['مرکز انتقال نفت'],
+          columns:[{key:'kind',label:'نوع تجهیز',options:['توربین','الکتروموتور','کمپرسور']},{key:'model',label:'مدل / سازنده'},{key:'count',label:'تعداد',type:'number',min:1,step:1},{key:'power',label:'توان (کیلووات)',type:'number',min:0}]},
+        {key:'generators',label:'دیزل ژنراتورها',type:'rows',wide:true,addLabel:'+ افزودن دیزل ژنراتور',onlyFor:['مرکز انتقال نفت'],
+          columns:[{key:'model',label:'مدل / سازنده'},{key:'count',label:'تعداد',type:'number',min:1,step:1},{key:'power',label:'توان (کیلووات)',type:'number',min:0}]}
       ],
-      columns: ['name', 'code', 'stationType', 'line', 'order', 'status', 'personInCharge']
+      columns: ['name', 'placeType', 'place', 'city', 'status', 'personInCharge']
     },
     gasmeters: {
       title: 'گازسنج‌ها', singular: 'گازسنج',
@@ -276,7 +287,7 @@
     const state = {
       schemaVersion: 2,
       settings: { employeeCustomFields: '' },
-      references: {"workplaces":["اهواز","آبادان","اندیمشک","ماهشهر","بندر امام","آغاجاری","سایر"],"leaveTypes":["استحقاقی","استعلاجی","بدون حقوق","ساعتی","سایر"],"missionTypes":["نظارت بر جوشکاری","بررسی انشعاب یا نشتی","بررسی آلودگی خاک یا آب","بازدید ایستگاه","سرویس تجهیزات","بازدید ایمنی","سایر"],"pipelineSizes":["۴","۶","۸","۱۰","۱۲","۱۴","۱۶","۲۰","۲۴","۳۰","۳۶"],"products":["نفت خام","نفت گاز","بنزین","نفت سفید","گاز مایع","آب آلوده","سایر"],"vehicleTypes":["خودروی آتش‌نشانی","خودروی پشتیبانی","وانت","سواری","مینی‌بوس","سایر"],"vehicleStatuses":["آماده","در سرویس","خارج از سرویس","در تعمیر"],"gasStatuses":["آماده استفاده","در کالیبراسیون","خارج از سرویس","در تعمیر"],"actionTypes":["نامه اداری","درخواست خرید","استعلام","برآورد هزینه","برآورد قیمت","برنامه‌ریزی مانور","تعمیر خودرو","ارسال کالیبراسیون","پاسخ نامه","پیگیری قطعه","ارسال تجهیزات","بازدید","بازرسی","ممیزی","اقدام اصلاحی","یادداشت عمومی","سایر"],"programCategories":["هدف","برنامه فعالیت","مانور","روتین","دوره آموزشی","سایر"],"programTypes":["مانور","تعمیر تجهیز","تعمیر خودرو","کالیبراسیون","بازرسی","اقدام اصلاحی","درخواست خرید","پروژه عملیاتی","سایر"],"workTypes":["شیفتی","روزکار"],"jobTitles":["اپراتور","تکنسین","سرپرست شیفت","کارشناس ایمنی","کارشناس HSE","راننده","نگهبان","انباردار","سایر"],"employmentTypes":["رسمی","پیمانی","قراردادی","شرکتی","سایر"],"shiftPatterns":["۱۲ ساعته روز/شب","۲۴/۴۸","ثابت روزکار","سایر"],"employeeStatuses":["آماده‌کار","در حال کار","شیفت","مأموریت","مرخصی","استراحت","اضافه‌کار","غیرفعال"],"missionStatuses":["برنامه‌ریزی‌شده","در جریان","انجام‌شده","لغو‌شده"],"leaveStatuses":["در انتظار بررسی","تأییدشده","ردشده","استفاده‌شده"],"healthStatuses":["سالم","نیازمند بررسی","دارای نقص","در حال تعمیر"],"noteStatuses":["شروع‌نشده","در حال انجام","در انتظار پاسخ","ارجاع‌شده","تکمیل‌شده","لغوشده","عقب‌افتاده"],"reportStatuses":["تهیه نشده","در حال تهیه","ارسال شده","نیازمند اصلاح"],"programStatuses":["برنامه‌ریزی‌شده","در حال اقدام","در انتظار پاسخ","متوقف","تکمیل‌شده","لغوشده"],"operationalPoints":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","محور جاده"],"gasSensorTypes":["گازسنج چهارکاره","گازسنج تک‌کاره","آشکارساز H₂S","آشکارساز LEL","آشکارساز O₂","سایر"],"gasSensorLocations":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","محور جاده","دفتر مرکزی","سایر"],"operationalRanges":["روستای سویسه","روستای الهایی","کیلومتر ۹۶ تا ۱۰۲","کیلومتر ۱۲۰ تا ۱۳۵","محور اهواز – آبادان"],"vehicleServiceTypes":["تعویض روغن","سرویس دوره‌ای","سوخت‌گیری","تعویض فیلتر","معاینه فنی","تعمیر اضطراری"],"missionTitles":["بازدید دوره‌ای خط","رفع نشتی","نظارت بر جوشکاری","بررسی انشعاب","پایش ایمنی","سرویس تجهیزات","مأموریت اضطراری","سایر"],"vehicleNames":["خودروی آتش‌نشانی ۱","خودروی پشتیبانی ۱","وانت عملیاتی ۱","سواری اداری ۱","مینی‌بوس ایاب و ذهاب"],"gasModels":["MX4","MX6","Tetra","Altair 4X","Altair 5X","Ventis Pro","GasAlert MicroClip","سایر"],"deploymentLocations":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","محور جاده","دفتر مرکزی","سایر"],"maneuverLocations":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","دفتر مرکزی","ایستگاه شماره ۱","محور جاده","سایر"],"faultAssetTypes":["خودرو","گازسنج","تجهیزات ایمنی","تأسیسات","سایر"],"faultCategories":["مکانیکی","برقی","الکترونیکی","سنسور","بدنه","نرم‌افزاری","سایر"],"faultPriorities":["کم","متوسط","زیاد","بحرانی"],"faultStatuses":["ثبت‌شده","در حال بررسی","در حال تعمیر","رفع شد","بسته‌شده"],"maintenanceTypes":["سرویس دوره‌ای","تعویض روغن","تعویض فیلتر","تعمیر مکانیکی","تعمیر برقی","معاینه فنی","تعویض لاستیک","سایر"],"gasLogTypes":["ثبت قرائت","کالیبراسیون","تعمیر","جابه‌جایی","تست عملکرد","سایر"],"maintenanceStatuses":["انجام‌شده","در انتظار قطعه","در حال انجام","لغوشده"]},
+      references: {"workplaces":["اهواز","آبادان","اندیمشک","ماهشهر","بندر امام","آغاجاری","سایر"],"leaveTypes":["استحقاقی","استعلاجی","بدون حقوق","ساعتی","سایر"],"missionTypes":["نظارت بر جوشکاری","بررسی انشعاب یا نشتی","بررسی آلودگی خاک یا آب","بازدید ایستگاه","سرویس تجهیزات","بازدید ایمنی","سایر"],"pipelineSizes":["۴","۶","۸","۱۰","۱۲","۱۴","۱۶","۲۰","۲۴","۳۰","۳۶"],"products":["نفت خام","نفت گاز","بنزین","نفت سفید","گاز مایع","آب آلوده","سایر"],"vehicleTypes":["خودروی آتش‌نشانی","خودروی پشتیبانی","وانت","سواری","مینی‌بوس","سایر"],"vehicleStatuses":["آماده","در سرویس","خارج از سرویس","در تعمیر"],"gasStatuses":["آماده استفاده","در کالیبراسیون","خارج از سرویس","در تعمیر"],"actionTypes":["نامه اداری","درخواست خرید","استعلام","برآورد هزینه","برآورد قیمت","برنامه‌ریزی مانور","تعمیر خودرو","ارسال کالیبراسیون","پاسخ نامه","پیگیری قطعه","ارسال تجهیزات","بازدید","بازرسی","ممیزی","اقدام اصلاحی","یادداشت عمومی","سایر"],"programCategories":["هدف","برنامه فعالیت","مانور","روتین","دوره آموزشی","سایر"],"programTypes":["مانور","تعمیر تجهیز","تعمیر خودرو","کالیبراسیون","بازرسی","اقدام اصلاحی","درخواست خرید","پروژه عملیاتی","سایر"],"workTypes":["شیفتی","روزکار"],"jobTitles":["اپراتور","تکنسین","سرپرست شیفت","کارشناس ایمنی","کارشناس HSE","راننده","نگهبان","انباردار","سایر"],"employmentTypes":["رسمی","پیمانی","قراردادی","شرکتی","سایر"],"shiftPatterns":["۱۲ ساعته روز/شب","۲۴/۴۸","ثابت روزکار","سایر"],"employeeStatuses":["آماده‌کار","در حال کار","شیفت","مأموریت","مرخصی","استراحت","اضافه‌کار","غیرفعال"],"missionStatuses":["برنامه‌ریزی‌شده","در جریان","انجام‌شده","لغو‌شده"],"leaveStatuses":["در انتظار بررسی","تأییدشده","ردشده","استفاده‌شده"],"healthStatuses":["سالم","نیازمند بررسی","دارای نقص","در حال تعمیر"],"noteStatuses":["شروع‌نشده","در حال انجام","در انتظار پاسخ","ارجاع‌شده","تکمیل‌شده","لغوشده","عقب‌افتاده"],"reportStatuses":["تهیه نشده","در حال تهیه","ارسال شده","نیازمند اصلاح"],"programStatuses":["برنامه‌ریزی‌شده","در حال اقدام","در انتظار پاسخ","متوقف","تکمیل‌شده","لغوشده"],"operationalPoints":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","محور جاده"],"gasSensorTypes":["گازسنج چهارکاره","گازسنج تک‌کاره","آشکارساز H₂S","آشکارساز LEL","آشکارساز O₂","سایر"],"gasSensorLocations":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","محور جاده","دفتر مرکزی","سایر"],"operationalRanges":["روستای سویسه","روستای الهایی","کیلومتر ۹۶ تا ۱۰۲","کیلومتر ۱۲۰ تا ۱۳۵","محور اهواز – آبادان"],"vehicleServiceTypes":["تعویض روغن","سرویس دوره‌ای","سوخت‌گیری","تعویض فیلتر","معاینه فنی","تعمیر اضطراری"],"missionTitles":["بازدید دوره‌ای خط","رفع نشتی","نظارت بر جوشکاری","بررسی انشعاب","پایش ایمنی","سرویس تجهیزات","مأموریت اضطراری","سایر"],"vehicleNames":["خودروی آتش‌نشانی ۱","خودروی پشتیبانی ۱","وانت عملیاتی ۱","سواری اداری ۱","مینی‌بوس ایاب و ذهاب"],"gasModels":["MX4","MX6","Tetra","Altair 4X","Altair 5X","Ventis Pro","GasAlert MicroClip","سایر"],"deploymentLocations":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","محور جاده","دفتر مرکزی","سایر"],"maneuverLocations":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","دفتر مرکزی","ایستگاه شماره ۱","محور جاده","سایر"],"faultAssetTypes":["خودرو","گازسنج","تجهیزات ایمنی","تأسیسات","سایر"],"faultCategories":["مکانیکی","برقی","الکترونیکی","سنسور","بدنه","نرم‌افزاری","سایر"],"faultPriorities":["کم","متوسط","زیاد","بحرانی"],"faultStatuses":["ثبت‌شده","در حال بررسی","در حال تعمیر","رفع شد","بسته‌شده"],"maintenanceTypes":["سرویس دوره‌ای","تعویض روغن","تعویض فیلتر","تعمیر مکانیکی","تعمیر برقی","معاینه فنی","تعویض لاستیک","سایر"],"gasLogTypes":["ثبت قرائت","کالیبراسیون","تعمیر","جابه‌جایی","تست عملکرد","سایر"],"maintenanceStatuses":["انجام‌شده","در انتظار قطعه","در حال انجام","لغوشده"],"placesByType":{},"lineColors":{}},
       history: [],
       shifts: [],
       updatedAt: ''
@@ -307,6 +318,13 @@
     });
     if (value.settings && typeof value.settings === 'object') out.settings = Object.assign(out.settings, value.settings);
     if (value.references && typeof value.references === 'object') out.references = Object.assign(out.references, value.references);
+    if (!out.references.placesByType || typeof out.references.placesByType !== 'object') out.references.placesByType = {};
+    if (!out.references.lineColors || typeof out.references.lineColors !== 'object') out.references.lineColors = {};
+    out.stations.forEach(function (record) {
+      if (!record.placeType && record.stationType) record.placeType = record.stationType;
+      if (!record.place && record.code) record.place = String(record.code);
+      if (record.place && record.placeType) placeRegister(record.placeType, record.place);
+    });
     if (Array.isArray(value.history)) out.history = value.history.slice(-3000);
     if (Array.isArray(value.shifts)) out.shifts = value.shifts.filter(function(item){return item&&typeof item==='object';});
     out.schemaVersion = 2;
@@ -452,6 +470,7 @@
     }
     const cryptoNote = storageCryptoNote();
     if (cryptoNote && !loadError) loadError = cryptoNote;
+    ensureReferenceLists();
     ready = true;
     refreshCurrentView();
     refreshDashboard();
@@ -716,6 +735,73 @@
     return (field.options || []).map(function (option) { return {value:option,label:option}; });
   }
 
+  // فیلدهای وابسته به نوع محل: فقط وقتی نوع انتخاب‌شده با شرط فیلد بخواند دیده می‌شوند.
+  function fieldVisible(field, record) {
+    const type = String((record && (record.placeType || record.stationType)) || '');
+    if (Array.isArray(field.onlyFor) && field.onlyFor.length) return field.onlyFor.indexOf(type) >= 0;
+    if (Array.isArray(field.hideFor) && field.hideFor.length) return field.hideFor.indexOf(type) < 0;
+    return true;
+  }
+
+  function placeLists() {
+    const refs = appData.references || {};
+    if (!refs.placesByType || typeof refs.placesByType !== 'object') refs.placesByType = {};
+    return refs.placesByType;
+  }
+
+  function placesForType(type) {
+    const lists = placeLists();
+    const list = lists[String(type || '')];
+    return Array.isArray(list) ? list.slice() : [];
+  }
+
+  function placeRegister(type, name) {
+    const key = String(type || '').trim();
+    const value = String(name || '').trim();
+    if (!key || !value) return;
+    const lists = placeLists();
+    if (!Array.isArray(lists[key])) lists[key] = [];
+    if (lists[key].indexOf(value) < 0) lists[key].push(value);
+    lists[key].sort(function (a, b) { return a.localeCompare(b, 'fa'); });
+  }
+
+  function placeRemove(type, name) {
+    const lists = placeLists();
+    const list = lists[String(type || '')];
+    if (!Array.isArray(list)) return;
+    for (let i = 0; i < list.length; i += 1) {
+      if (list[i] === name) { list.splice(i, 1); return; }
+    }
+  }
+
+  function rowControlMarkup(field, column, value, data) {
+    const attrs = ' data-col="' + esc(column.key) + '" autocomplete="off"';
+    if (column.listKey || Array.isArray(column.options)) {
+      const options = column.listKey ? getSelectOptions({ listKey: column.listKey }, data) : column.options.map(function (option) { return { value: option, label: option }; });
+      const chosen = String(value == null ? '' : value);
+      if (chosen && !options.some(function (option) { return String(option.value) === chosen; })) options.unshift({ value: chosen, label: chosen });
+      return '<select' + attrs + '><option value="">انتخاب کنید</option>' + options.map(function (option) {
+        return '<option value="' + esc(option.value) + '"' + (String(option.value) === chosen ? ' selected' : '') + '>' + esc(option.label) + '</option>';
+      }).join('') + '</select>';
+    }
+    const type = column.type === 'number' ? 'number' : 'text';
+    return '<input type="' + type + '"' + (column.min != null ? ' min="' + esc(column.min) + '"' : '') +
+      (column.max != null ? ' max="' + esc(column.max) + '"' : '') + (column.step != null ? ' step="' + esc(column.step) + '"' : '') +
+      attrs + ' value="' + esc(value) + '" placeholder="' + esc(column.label) + '">';
+  }
+
+  function rowEditorMarkup(field, value, data) {
+    const rows = Array.isArray(value) ? value : [];
+    const body = rows.map(function (row) {
+      return '<div class="module-row" data-row>' + field.columns.map(function (column) {
+        return '<label class="module-row-cell"><span>' + esc(column.label) + '</span>' + rowControlMarkup(field, column, row ? row[column.key] : '', data) + '</label>';
+      }).join('') + '<button type="button" class="module-row-remove" data-row-remove aria-label="حذف ردیف">×</button></div>';
+    }).join('');
+    return '<div class="module-rows" data-rows-field="' + esc(field.key) + '">' + body + '</div>' +
+      '<button type="button" class="secondary-btn module-rows-add" data-rows-add="' + esc(field.key) + '">' + esc(field.addLabel || '+ افزودن ردیف') + '</button>' +
+      (field.hint ? '<small class="module-field-hint">' + esc(field.hint) + '</small>' : '');
+  }
+
   function renderField(moduleKey, field, record, data) {
     const value = record && record[field.key] != null ? record[field.key] : (field.custom && record && record.customFields ? record.customFields[field.key] : '');
     const id = 'atlas-field-' + moduleKey + '-' + field.key;
@@ -733,7 +819,7 @@
         if (!field.multiple && value != null && value !== '' && !options.some(function (option) { return String(option.value) === String(value); })) {
           options.unshift({value:String(value),label:String(value)});
         }
-        control = '<select id="' + esc(id) + '" name="' + esc(field.key) + '"' + (field.multiple ? ' multiple size="4"' : '') + required + '>' +
+        control = '<select id="' + esc(id) + '" name="' + esc(field.key) + '"' + (field.multiple ? ' multiple size="4"' : '') + (field.stationTypeTrigger ? ' data-station-type="1"' : '') + required + '>' +
           (field.multiple ? '' : '<option value="">انتخاب کنید</option>') +
           options.map(function (option) {
             const selected = field.multiple ? chosenList.includes(String(option.value)) : String(value) === String(option.value);
@@ -742,6 +828,19 @@
           (field.listKey && !field.multiple ? '<button type="button" class="module-select-add" data-add-list-option="' + esc(field.listKey) + '" data-view="' + esc(moduleKey) + '" aria-label="افزودن گزینه به ' + esc(field.label) + '" title="افزودن گزینه جدید">+</button>' : '') +
           (field.multiple ? '<small class="module-field-hint">برای انتخاب چند مورد، کلید Ctrl را نگه‌دار.</small>' : '');
       }
+    } else if (field.type === 'place') {
+      const type = record && (record.placeType || record.stationType);
+      const options = placesForType(type);
+      if (value && options.indexOf(String(value)) < 0) options.unshift(String(value));
+      control = '<span class="module-select-with-add"><select id="' + esc(id) + '" name="' + esc(field.key) + '" data-place-select' + required + '>' +
+        '<option value="">' + (type ? 'انتخاب مکان' : 'ابتدا نوع محل را انتخاب کنید') + '</option>' +
+        options.map(function (option) {
+          return '<option value="' + esc(option) + '"' + (String(value) === String(option) ? ' selected' : '') + '>' + esc(option) + '</option>';
+        }).join('') + '</select>' +
+        '<button type="button" class="module-select-add" data-place-add="1" aria-label="افزودن مکان جدید" title="افزودن مکان جدید به فهرست این نوع محل">+</button></span>' +
+        '<small class="module-field-hint">' + (type ? 'مکان‌های ثبت‌شده برای «' + esc(type) + '»؛ با + می‌توانی مکان تازه اضافه کنی.' : 'فهرست مکان‌ها بر اساس نوع محل انتخاب‌شده نمایش داده می‌شود.') + '</small>';
+    } else if (field.type === 'rows') {
+      control = rowEditorMarkup(field, value, data);
     } else if (field.type === 'textarea') {
       control = '<textarea id="' + esc(id) + '" name="' + esc(field.key) + '" rows="3"' + required + ' placeholder="' + esc(field.placeholder || '') + '">' + esc(value) + '</textarea>';
     } else if (field.type === 'checks') {
@@ -773,7 +872,8 @@
         ' value="' + esc(value) + '" placeholder="' + esc(field.placeholder || '') + '" autocomplete="off">';
     }
     if (field.type === 'select' && field.listKey && !field.multiple) control = '<span class="module-select-with-add">' + control + '</span>';
-    return '<label class="module-field' + (field.wide ? ' module-field-wide' : '') + '" for="' + esc(id) + '">' + label + control + '</label>';
+    const shown = fieldVisible(field, record || {});
+    return '<label class="module-field' + (field.wide ? ' module-field-wide' : '') + '" for="' + esc(id) + '" data-field-key="' + esc(field.key) + '"' + (shown ? '' : ' hidden') + '>' + label + control + '</label>';
   }
 
   function rootWrap(content) {
@@ -890,6 +990,10 @@
       return count ? 'پیوست (' + faDigits(count) + ')' : '—';
     }
     if (field && field.type === 'checks' && Array.isArray(value)) return esc(value.join('، '));
+    if (field && field.type === 'rows') {
+      const rows = Array.isArray(value) ? value : [];
+      return rows.length ? faDigits(rows.length) + ' ردیف' : '—';
+    }
     if (field && field.type === 'number') return faDigits(value);
     return esc(Array.isArray(value) ? value.join('، ') : value);
   }
@@ -1341,16 +1445,13 @@
       const records=stationRecords();
       const map=stationsWidget.querySelector('[data-station-map]');
       if(map){
-        map.dataset.stationBound='';
-        map.innerHTML='<svg class="station-map-canvas" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'+
-          stationLineMarkup(stationGroups(records),stationPositions(records))+'</svg>'+
-          (records.length?stationNodeMarkup(records,stationPositions(records)):'<div class="station-map-empty">ایستگاهی ثبت نشده است.</div>');
+        map.innerHTML=stationMapInner(records);
         wireStationMap(stationsWidget);
       }
       const caption=stationsWidget.querySelector('.widget-title p');
-      if(caption)caption.textContent=records.length?'جایگاه ایستگاه‌ها روی نقشهٔ شماتیک خط':'هنوز ایستگاهی ثبت نشده است';
+      if(caption)caption.textContent=records.length?'برای دیدن اطلاعات هر مکان روی آن بزن':'هنوز ایستگاه یا مرکزی ثبت نشده است';
       const footer=stationsWidget.querySelector('[data-station-caption]');
-      if(footer)footer.innerHTML='<span>'+faDigits(records.length)+' ایستگاه ثبت‌شده</span><a class="station-caption-link" href="./index.html?view=stations">مدیریت و افزودن ایستگاه ←</a>';
+      if(footer)footer.innerHTML='<span>'+faDigits(records.length)+' ایستگاه / مرکز ثبت‌شده</span><a class="station-caption-link" href="./index.html?view=stations">مدیریت و افزودن ایستگاه ←</a>';
     }
 
     const foot=document.querySelector('.footnote');
@@ -1514,6 +1615,9 @@
     MODULES.forEach(function(moduleKey){
       (specs[moduleKey].fields||[]).forEach(function(field){
         if(field.listKey&&keys.indexOf(field.listKey)<0)keys.push(field.listKey);
+        (field.columns||[]).forEach(function(column){
+          if(column.listKey&&keys.indexOf(column.listKey)<0)keys.push(column.listKey);
+        });
       });
     });
     return keys.sort(function(a,b){return referenceListTitle(a).localeCompare(referenceListTitle(b),'fa');});
@@ -1524,8 +1628,16 @@
     if(!state.references||typeof state.references!=='object')state.references={};
     referenceKeys().forEach(function(key){
       if(!Array.isArray(state.references[key])){
-        const field=MODULES.map(function(m){return (specs[m].fields||[]).filter(function(f){return f.listKey===key;})[0];}).filter(Boolean)[0];
-        state.references[key]=(field&&Array.isArray(field.options)?field.options.slice():[]);
+        let source=null;
+        MODULES.forEach(function(m){
+          (specs[m].fields||[]).forEach(function(field){
+            if(!source&&field.listKey===key)source=field;
+            (field.columns||[]).forEach(function(column){
+              if(!source&&column.listKey===key)source=column;
+            });
+          });
+        });
+        state.references[key]=(source&&Array.isArray(source.options)?source.options.slice():[]);
       }
     });
     return state.references;
@@ -2398,31 +2510,159 @@
     );
   }
 
-  // ── اقدام‌های نقشهٔ ایستگاه‌ها ──
+  // ── اقدام‌های نقشه، اطلاعات مکان و مدیریت مکان‌ها ──
   document.addEventListener('click', async function (event) {
     const button = event.target.closest('[data-station-action]');
     if (!button) return;
     event.preventDefault();
+    const action = button.dataset.stationAction;
     const section = document.getElementById('sectionView');
-    if (button.dataset.stationAction === 'add') {
-      formState.stations = { open: true, id: null };
-      render('stations', section);
+
+    if (action === 'info-close') { closeStationInfo(); return; }
+    if (action === 'add') { closeStationInfo(); formState.stations = { open: true, id: null }; render('stations', section); return; }
+    if (action === 'edit') { closeStationInfo(); formState.stations = { open: true, id: button.dataset.id }; render('stations', section); return; }
+    if (action === 'auto') { await stationAutoLayout(); return; }
+    if (action === 'restore-layout') { await stationRestoreLayout(); return; }
+
+    if (action === 'place-add-type') {
+      const name = await askPrompt({ title: 'نوع محل جدید', label: 'نام نوع محل', placeholder: 'مثلاً ایستگاه برق', confirmLabel: 'افزودن' });
+      if (!name) return;
+      const list = Array.isArray(appData.references.placeTypes) ? appData.references.placeTypes : (appData.references.placeTypes = []);
+      if (list.indexOf(name) < 0) list.push(name);
+      if (await saveState()) { render('stations', section); toast('نوع محل «' + name + '» افزوده شد.'); }
       return;
     }
-    const records = appData.stations || [];
-    if (!records.length) { toast('ابتدا یک ایستگاه ثبت کنید.'); return; }
-    stationGroups(records).forEach(function (group) {
-      group.list.forEach(function (record, index) {
-        const point = stationPosition({ mapX: '', mapY: '' }, index, group.list.length);
-        record.mapX = point.x;
-        record.mapY = point.y;
-        record.updatedAt = new Date().toISOString();
+    if (action === 'place-add') {
+      const type = button.dataset.type || '';
+      const name = await askPrompt({ title: 'افزودن مکان', label: 'نام مکان در «' + type + '»', confirmLabel: 'افزودن' });
+      if (!name) return;
+      placeRegister(type, name);
+      if (await saveState()) { render('stations', section); toast('مکان «' + name + '» به «' + type + '» افزوده شد.'); }
+      return;
+    }
+    if (action === 'place-edit') {
+      const type = button.dataset.type || '';
+      const oldName = button.dataset.place || '';
+      const name = await askPrompt({ title: 'تغییر نام مکان', label: 'نام جدید', value: oldName, confirmLabel: 'ذخیره' });
+      if (!name || name === oldName) return;
+      const list = placesForType(type);
+      const index = list.indexOf(oldName);
+      if (index >= 0) placeLists()[type][index] = name;
+      placeRegister(type, name);
+      (appData.stations || []).forEach(function (record) {
+        if (String(record.placeType || '') === type && String(record.place || '') === oldName) record.place = name;
       });
-    });
-    if (await saveState()) { render('stations', section); toast('ایستگاه‌ها روی نقشه مرتب شدند.'); }
+      if (await saveState()) { render('stations', section); toast('نام مکان اصلاح شد.'); }
+      return;
+    }
+    if (action === 'place-delete') {
+      const type = button.dataset.type || '';
+      const name = button.dataset.place || '';
+      const approved = await askConfirm({ title: 'حذف مکان', message: 'مکان «' + name + '» از فهرست «' + type + '» حذف شود؟ اطلاعات ایستگاه‌هایی که این مکان را دارند تغییر نمی‌کند.', confirmLabel: 'حذف', danger: true });
+      if (!approved) return;
+      placeRemove(type, name);
+      if (await saveState()) { render('stations', section); toast('مکان حذف شد.'); }
+      return;
+    }
   });
 
-  // ── ثبت سریع از داشبورد: فرم همان بخش را باز می‌کند ──
+  // ── ویرایشگر ردیفی، افزودن مکان از داخل فرم و رنگ خطوط ──
+  document.addEventListener('click', async function (event) {
+    const addRow = event.target.closest('[data-rows-add]');
+    if (addRow) {
+      event.preventDefault();
+      const form = addRow.closest('[data-module-form]');
+      const moduleKey = form && form.dataset.view;
+      if (!form || !moduleKey) return;
+      const field = fieldsFor(moduleKey).find(function (item) { return item.key === addRow.dataset.rowsAdd; });
+      const holder = form.querySelector('[data-rows-field="' + addRow.dataset.rowsAdd + '"]');
+      if (!field || !holder) return;
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = '<div class="module-row" data-row>' + field.columns.map(function (column) {
+        return '<label class="module-row-cell"><span>' + esc(column.label) + '</span>' + rowControlMarkup(field, column, '', appData) + '</label>';
+      }).join('') + '<button type="button" class="module-row-remove" data-row-remove aria-label="حذف ردیف">×</button></div>';
+      if (wrapper.firstElementChild) holder.appendChild(wrapper.firstElementChild);
+      return;
+    }
+    const removeRow = event.target.closest('[data-row-remove]');
+    if (removeRow) {
+      event.preventDefault();
+      const row = removeRow.closest('[data-row]');
+      if (row) row.remove();
+      return;
+    }
+    const addPlace = event.target.closest('[data-place-add]');
+    if (addPlace) {
+      event.preventDefault();
+      const form = addPlace.closest('[data-module-form]');
+      const typeSelect = form && form.querySelector('[data-station-type]');
+      const type = typeSelect ? String(typeSelect.value || '') : '';
+      if (!type) { toast('ابتدا «نوع محل» را انتخاب کن.'); return; }
+      const name = await askPrompt({ title: 'افزودن مکان جدید', label: 'نام مکان در «' + type + '»', confirmLabel: 'افزودن' });
+      if (!name) return;
+      placeRegister(type, name);
+      await saveState();
+      const select = form.querySelector('[data-place-select]');
+      if (select) {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+        select.value = name;
+      }
+      const hint = form.querySelector('[data-field-key="place"] .module-field-hint');
+      if (hint) hint.textContent = 'مکان‌های ثبت‌شده برای «' + type + '»؛ با + می‌توانی مکان تازه اضافه کنی.';
+      toast('مکان «' + name + '» به فهرست «' + type + '» افزوده شد.');
+    }
+  });
+
+  document.addEventListener('change', function (event) {
+    const trigger = event.target.closest('[data-station-type]');
+    if (!trigger) return;
+    const form = trigger.closest('[data-module-form]');
+    if (!form) return;
+    const type = String(trigger.value || '');
+    const placeSelect = form.querySelector('[data-place-select]');
+    if (placeSelect) {
+      const current = placeSelect.value;
+      const places = placesForType(type);
+      placeSelect.innerHTML = '<option value="">' + (type ? 'انتخاب مکان' : 'ابتدا نوع محل را انتخاب کنید') + '</option>' +
+        places.map(function (place) {
+          return '<option value="' + esc(place) + '"' + (place === current ? ' selected' : '') + '>' + esc(place) + '</option>';
+        }).join('');
+      if (current && places.indexOf(current) < 0) placeSelect.value = '';
+      const hint = form.querySelector('[data-field-key="place"] .module-field-hint');
+      if (hint) hint.textContent = type
+        ? 'مکان‌های ثبت‌شده برای «' + type + '»؛ با + می‌توانی مکان تازه اضافه کنی.'
+        : 'فهرست مکان‌ها بر اساس نوع محل انتخاب‌شده نمایش داده می‌شود.';
+    }
+    fieldsFor('stations').forEach(function (field) {
+      const wrapper = form.querySelector('[data-field-key="' + field.key + '"]');
+      if (wrapper) wrapper.hidden = !fieldVisible(field, { placeType: type });
+    });
+  });
+
+  document.addEventListener('change', async function (event) {
+    const colorInput = event.target.closest('[data-line-color]');
+    if (!colorInput) return;
+    const line = colorInput.dataset.lineColor || '';
+    const refs = appData.references;
+    if (!refs.lineColors || typeof refs.lineColors !== 'object') refs.lineColors = {};
+    refs.lineColors[line] = String(colorInput.value || '');
+    if (await saveState()) {
+      const section = document.getElementById('sectionView');
+      const holder = section && section.querySelector('[data-station-map]');
+      if (holder) drawStationLines(holder);
+    }
+  });
+
+  // بستن کارت اطلاعات با کلیک بیرون از پنجره.
+  document.addEventListener('click', function (event) {
+    if (!event.target.closest('[data-station-info]')) return;
+    if (event.target.closest('.atlas-modal')) return;
+    closeStationInfo();
+  });
+
   document.addEventListener('click', function (event) {
     const quick = event.target.closest('[data-quick-add]');
     if (!quick) return;
@@ -2615,10 +2855,13 @@
     renderGasRegistry(document.getElementById('sectionView'));
   });
 
-  // ── ایستگاه‌ها: نقشهٔ شماتیک خط با جایگاه قابل کشیدن ──
+  // ── ایستگاه‌ها و مراکز: نقشهٔ شماتیک خطوط با جایگاه قابل کشیدن ──
   const STATION_TONES = ['info', 'ok', 'special', 'warn', 'accent', 'highlight'];
+  const STATION_LINE_COLORS = ['#5b8def', '#2fbf71', '#b06bff', '#ffb020', '#ff6b6b', '#00c2c7'];
 
   function stationRecords() { return (appData.stations || []).slice(); }
+
+  function stationTitle(record) { return String((record && (record.name || record.place)) || 'ایستگاه / مرکز'); }
 
   function stationCoord(value) {
     const text = String(value == null ? '' : value).trim();
@@ -2626,34 +2869,69 @@
     return Number(text);
   }
 
-  function stationPosition(record, index, total) {
-    const x = stationCoord(record.mapX);
-    const y = stationCoord(record.mapY);
-    if (Number.isFinite(x) && Number.isFinite(y)) {
-      return { x: Math.min(100, Math.max(0, x)), y: Math.min(100, Math.max(0, y)) };
+  function stationClamp(value) { return Math.min(100, Math.max(0, value)); }
+
+  function branchPlacement(branch) {
+    const x = stationCoord(branch && branch.x);
+    const y = stationCoord(branch && branch.y);
+    return Number.isFinite(x) && Number.isFinite(y) ? { x: stationClamp(x), y: stationClamp(y) } : null;
+  }
+
+  // ترتیب روی هر شاخه فقط با اعداد طبیعی تعیین می‌شود؛ مقدار حرفی یا صفر معتبر نیست.
+  function stationOrderValue(value) {
+    const order = Number(value);
+    return Number.isFinite(order) && order >= 1 ? Math.floor(order) : 1e6;
+  }
+
+  function branchOrderValue(branch) { return stationOrderValue(branch && branch.order); }
+
+  // یک مکان می‌تواند روی چند خط یا شاخه باشد و برای هر شاخه ترتیب و جایگاه جدا داشته باشد.
+  function stationBranches(record) {
+    const list = Array.isArray(record.branches)
+      ? record.branches.filter(function (branch) { return branch && typeof branch === 'object'; })
+      : [];
+    if (list.length) {
+      return list.map(function (branch, index) {
+        return { line: String(branch.line || 'خط اصلی'), order: branch.order, x: branch.x, y: branch.y, index: index };
+      });
     }
+    return [{ line: String(record.line || 'خط اصلی'), order: record.order, x: record.mapX, y: record.mapY, index: 0 }];
+  }
+
+  function stationGroups(records) {
+    const groups = {};
+    records.forEach(function (record) {
+      stationBranches(record).forEach(function (branch) {
+        const key = String(branch.line || 'خط اصلی');
+        (groups[key] = groups[key] || []).push({ record: record, branch: branch });
+      });
+    });
+    return Object.keys(groups).map(function (key) {
+      return {
+        key: key,
+        stops: groups[key].slice().sort(function (a, b) {
+          const diff = branchOrderValue(a.branch) - branchOrderValue(b.branch);
+          return diff || stationTitle(a.record).localeCompare(stationTitle(b.record), 'fa');
+        })
+      };
+    });
+  }
+
+  function stationStopKey(stop) { return String(stop.record.id) + '::' + String(stop.branch.index); }
+
+  function stationAutoPosition(index, total) {
     if (total <= 1) return { x: 50, y: 50 };
     return { x: Number((8 + (84 * index) / (total - 1)).toFixed(1)), y: index % 2 ? 64 : 36 };
   }
 
-  function stationOrderValue(record) {
-    const value = Number(record.order);
-    return Number.isFinite(value) ? value : 1e6;
-  }
-
-  // ایستگاه‌های هر خط به ترتیب «ترتیب روی خط» پشت سر هم قرار می‌گیرند.
-  function stationGroups(records) {
-    const groups = {};
-    records.forEach(function (record) {
-      const key = String(record.line || 'خط اصلی');
-      (groups[key] = groups[key] || []).push(record);
+  function stationPositions(groups) {
+    const positions = {};
+    groups.forEach(function (group) {
+      group.stops.forEach(function (stop, index) {
+        positions[stationStopKey(stop)] = branchPlacement(stop.branch) || stationAutoPosition(index, group.stops.length);
+      });
     });
-    return Object.keys(groups).map(function (key) {
-      return { key: key, list: groups[key].slice().sort(function (a, b) {
-        const diff = stationOrderValue(a) - stationOrderValue(b);
-        return diff || String(a.name || '').localeCompare(String(b.name || ''), 'fa');
-      }) };
-    });
+    return positions;
   }
 
   function stationTone(record) {
@@ -2664,58 +2942,346 @@
     return 'info';
   }
 
+  function stationLineColor(line) {
+    const colors = (appData.references && appData.references.lineColors) || {};
+    const value = String(colors[line] || '');
+    return /^#[0-9a-f]{6}$/i.test(value) ? value : '';
+  }
+
+  function stationLineFallbackColor(index) { return STATION_LINE_COLORS[index % STATION_LINE_COLORS.length]; }
+
   function stationLineMarkup(groups, positions) {
     return groups.map(function (group, index) {
-      const points = group.list.map(function (record) {
-        const point = positions[record.id];
+      const points = group.stops.map(function (stop) {
+        const point = positions[stationStopKey(stop)];
         return point.x + ',' + point.y;
       }).join(' ');
-      return '<polyline class="station-line" data-tone="' + STATION_TONES[index % STATION_TONES.length] + '" points="' + points + '"></polyline>';
+      const color = stationLineColor(group.key) || stationLineFallbackColor(index);
+      return '<polyline class="station-line" data-tone="' + STATION_TONES[index % STATION_TONES.length] +
+        '" stroke="' + esc(color) + '" points="' + points + '"></polyline>';
     }).join('');
   }
 
-  function stationPositions(records) {
-    const total = records.length;
-    const positions = {};
-    records.forEach(function (record, index) { positions[record.id] = stationPosition(record, index, total); });
-    return positions;
+  function stationNodeMarkup(groups, positions) {
+    return groups.map(function (group) {
+      return group.stops.map(function (stop) {
+        const point = positions[stationStopKey(stop)];
+        const order = branchOrderValue(stop.branch);
+        return '<button type="button" class="station-node" data-station-id="' + esc(stop.record.id) + '" data-branch-index="' + esc(stop.branch.index) +
+          '" data-tone="' + stationTone(stop.record) + '" style="left:' + point.x + '%;top:' + point.y + '%" aria-label="' + esc(stationTitle(stop.record)) +
+          (order < 1e6 ? ' — ترتیب ' + esc(order) : '') + '">' +
+          '<span class="station-node-dot"></span>' +
+          '<span class="station-node-text">' + esc(stationTitle(stop.record)) + '</span>' +
+          (order < 1e6 ? '<span class="station-node-order">ترتیب ' + faDigits(order) + '</span>' : '') +
+          '</button>';
+      }).join('');
+    }).join('');
   }
 
-  function stationNodeMarkup(records, positions) {
-    return records.map(function (record) {
-      const point = positions[record.id];
-      return '<button type="button" class="station-node" data-station-id="' + esc(record.id) + '" data-tone="' + stationTone(record) + '"' +
-        ' style="left:' + point.x + '%;top:' + point.y + '%"' +
-        ' aria-label="' + esc(record.name || 'ایستگاه') + (record.status ? ' — ' + esc(record.status) : '') + '">' +
-        '<span class="station-node-dot"></span>' +
-        '<span class="station-node-text">' + esc(record.name || 'ایستگاه') + '</span>' +
-        (record.status ? '<span class="station-node-status">' + esc(record.status) + '</span>' : '') +
-        '</button>';
+  function stationMapInner(records) {
+    const groups = stationGroups(records);
+    const positions = stationPositions(groups);
+    return '<svg class="station-map-canvas" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
+      stationLineMarkup(groups, positions) + '</svg>' +
+      (groups.length ? stationNodeMarkup(groups, positions)
+        : '<div class="station-map-empty">هنوز ایستگاه یا مرکزی ثبت نشده است. با «+ ثبت ایستگاه / مرکز» شروع کنید.</div>');
+  }
+
+  function stationLegendMarkup(groups) {
+    if (!groups.length) return '';
+    const items = groups.map(function (group, index) {
+      const color = stationLineColor(group.key) || stationLineFallbackColor(index);
+      return '<span class="station-legend-item" data-tone="' + STATION_TONES[index % STATION_TONES.length] + '">' +
+        '<input type="color" class="station-line-color" data-line-color="' + esc(group.key) + '" value="' + esc(color) +
+        '" aria-label="رنگ ' + esc(group.key) + '" title="رنگ خط را تغییر بده">' +
+        esc(group.key) + ' <small>(' + faDigits(group.stops.length) + ')</small></span>';
     }).join('');
+    return '<div class="station-legend">' + items + '</div>' +
+      '<div class="station-legend-hint">برای تغییر رنگ هر خط، روی نمونه‌رنگ همان خط بزن. ضخامت خطوط نمایشی بیشتر شده است.</div>';
   }
 
   function stationMapMarkup(records) {
-    const positions = stationPositions(records);
     const groups = stationGroups(records);
-    const nodes = stationNodeMarkup(records, positions);
-    const legend = groups.map(function (group, index) {
-      return '<span class="station-legend-item" data-tone="' + STATION_TONES[index % STATION_TONES.length] + '">' +
-        '<i class="station-legend-swatch"></i>' + esc(group.key) + ' <small>(' + faDigits(group.list.length) + ')</small></span>';
-    }).join('');
+    const hasBackup = !!(appData.settings && appData.settings.stationLayoutBackup);
     return '<section class="station-map-panel">' +
-      '<div class="station-map-head"><div><h3>نقشهٔ شماتیک خطوط</h3>' +
-        '<p>برای تعیین جایگاه، ایستگاه را بکشید — همان لحظه ذخیره می‌شود. کلیک روی ایستگاه فرم ویرایش را باز می‌کند.</p></div>' +
-        '<div class="station-map-tools">' +
-          '<button type="button" class="secondary-btn" data-station-action="auto">چیدمان خودکار</button>' +
-          '<button type="button" class="primary-btn" data-station-action="add">+ ثبت ایستگاه</button>' +
-        '</div></div>' +
-      '<div class="station-map" data-station-map>' +
-        '<svg class="station-map-canvas" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
-          stationLineMarkup(groups, positions) + '</svg>' +
-        (nodes || '<div class="station-map-empty">هنوز ایستگاهی ثبت نشده است. با «+ ثبت ایستگاه» شروع کنید.</div>') +
-      '</div>' +
-      (legend ? '<div class="station-legend">' + legend + '</div>' : '') +
+      '<div class="station-map-head"><div><h3>نقشهٔ شماتیک خطوط و مراکز</h3>' +
+      '<p>هر مکان می‌تواند روی چند خط یا شاخه باشد. برای جابه‌جایی گره را بکش؛ برای دیدن اطلاعات کامل، روی آن بزن.</p></div>' +
+      '<div class="station-map-tools">' +
+      '<button type="button" class="secondary-btn" data-station-action="auto">چیدمان خودکار</button>' +
+      (hasBackup ? '<button type="button" class="secondary-btn" data-station-action="restore-layout">بازگشت به چیدمان دستی</button>' : '') +
+      '<button type="button" class="primary-btn" data-station-action="add">+ ثبت ایستگاه / مرکز</button>' +
+      '</div></div>' +
+      '<div class="station-map" data-station-map>' + stationMapInner(records) + '</div>' +
+      stationLegendMarkup(groups) +
       '</section>';
+  }
+
+  function stationPlaceTypeBlock(type) {
+    const places = placesForType(type);
+    return '<div class="station-place-group"><div class="station-place-head"><strong>' + esc(type) + '</strong>' +
+      '<span>' + faDigits(places.length) + ' مکان</span>' +
+      '<button type="button" class="secondary-btn" data-station-action="place-add" data-type="' + esc(type) + '">+ مکان</button></div>' +
+      '<div class="station-place-list">' +
+      (places.length ? places.map(function (place) {
+        return '<span class="station-place-chip">' + esc(place) +
+          '<button type="button" data-station-action="place-edit" data-type="' + esc(type) + '" data-place="' + esc(place) + '" aria-label="تغییر نام مکان">✎</button>' +
+          '<button type="button" data-station-action="place-delete" data-type="' + esc(type) + '" data-place="' + esc(place) + '" aria-label="حذف مکان">×</button></span>';
+      }).join('') : '<span class="station-place-empty">هنوز مکانی ثبت نشده است.</span>') +
+      '</div></div>';
+  }
+
+  function stationPlaceTypes() {
+    const fromRefs = Array.isArray(appData.references.placeTypes) ? appData.references.placeTypes : [];
+    if (fromRefs.length) return fromRefs.slice();
+    const field = (specs.stations.fields || []).filter(function (item) { return item.key === 'placeType'; })[0];
+    return field && Array.isArray(field.options) ? field.options.slice() : [];
+  }
+
+  function stationPlacesPanel() {
+    const types = stationPlaceTypes();
+    return '<section class="station-places-panel">' +
+      '<div class="station-map-head"><div><h3>مدیریت مکان‌ها</h3>' +
+      '<p>هر مکان زیرمجموعهٔ یک «نوع محل» است؛ افزودن، تغییر نام و حذف از همین‌جا انجام می‌شود و در فرم ثبت ایستگاه قابل انتخاب است.</p></div>' +
+      '<div class="station-map-tools"><button type="button" class="secondary-btn" data-station-action="place-add-type">+ نوع محل</button></div></div>' +
+      '<div class="station-place-grid">' +
+      (types.length ? types.map(stationPlaceTypeBlock).join('') : '<div class="module-empty">ابتدا در تنظیمات یک «نوع محل» بساز.</div>') +
+      '</div></section>';
+  }
+
+  function stationPhonebookContacts() {
+    const keys = ['atlasShiftPhonebookV2', 'atlas-shift-phonebook', 'atlasShiftPhonebookV1'];
+    for (let i = 0; i < keys.length; i += 1) {
+      try {
+        const raw = localStorage.getItem(keys[i]);
+        if (!raw) continue;
+        const data = JSON.parse(raw);
+        if (Array.isArray(data)) return data.filter(function (item) { return item && typeof item === 'object'; });
+      } catch (error) { /* فهرست بعدی را امتحان کن */ }
+    }
+    return [];
+  }
+
+  function contactPhones(contact) {
+    const out = [];
+    const push = function (label, value, prefix) {
+      const text = String(value == null ? '' : value).trim();
+      if (text) out.push({ label: label, value: text, prefix: String(prefix || '').trim() });
+    };
+    if (Array.isArray(contact.phoneNumbers)) {
+      contact.phoneNumbers.forEach(function (phone) {
+        if (!phone || typeof phone !== 'object') return;
+        push(phone.label || (phone.kind === 'mobile' ? 'موبایل' : 'تلفن'), phone.value || phone.number, phone.prefix);
+      });
+    }
+    if (Array.isArray(contact.numbers)) {
+      contact.numbers.forEach(function (phone) {
+        if (Array.isArray(phone)) push(phone[0] || 'تلفن', phone[1], '');
+        else if (phone && typeof phone === 'object') push(phone.label || phone.type || 'تلفن', phone.value || phone.number, phone.prefix);
+      });
+    }
+    if (!out.length) {
+      push('موبایل', contact.mobile || contact.mobileNumber, '');
+      push('تلفن دفتر', contact.officePhone || contact.office, '');
+      push('داخلی', contact.extension || contact.shortNumber, '');
+    }
+    return out;
+  }
+
+  function contactMatchesStation(contact, record) {
+    const names = [record.name, record.place, record.city].filter(Boolean).map(String);
+    const fields = [contact.station, contact.transferCenter, contact.complex, contact.unit].filter(Boolean).map(String);
+    return names.some(function (name) { return fields.indexOf(name) >= 0; });
+  }
+
+  function stationInfoBlock(title, inner) {
+    if (!inner) return '';
+    return '<section class="station-info-block"><h4>' + esc(title) + '</h4><div class="station-info-body">' + inner + '</div></section>';
+  }
+
+  function stationInfoRow(label, value) {
+    const text = String(value == null ? '' : value).trim();
+    if (!text) return '';
+    return '<div class="station-info-row">' + (label ? '<span>' + esc(label) + '</span>' : '') + '<b>' + esc(text) + '</b></div>';
+  }
+
+  function stationInfoMarkup(record, allowEdit) {
+    if (!record) return '';
+    const contacts = stationPhonebookContacts().filter(function (contact) { return contactMatchesStation(contact, record); });
+    const chiefContact = contacts.filter(function (contact) { return /رئیس|مدیر|سرپرست/.test(String(contact.position || '')); })[0];
+    const chief = String(record.personInCharge || '').trim() || String((chiefContact && chiefContact.name) || '').trim();
+
+    const groups = stationGroups(stationRecords());
+    const neighbourLines = stationBranches(record).map(function (branch) {
+      const group = groups.filter(function (entry) { return entry.key === String(branch.line || 'خط اصلی'); })[0];
+      if (!group) return '';
+      let index = -1;
+      group.stops.forEach(function (stop, position) {
+        if (index < 0 && String(stop.record.id) === String(record.id) && String(stop.branch.index) === String(branch.index)) index = position;
+      });
+      if (index < 0) return '';
+      const distances = Array.isArray(record.distances) ? record.distances : [];
+      const distanceTo = function (stop) {
+        if (!stop) return '';
+        const city = String(stop.record.city || '').trim();
+        if (!city) return '';
+        const match = distances.filter(function (row) { return String(row.city || '') === city; })[0];
+        return match && match.km ? faDigits(match.km) + ' کیلومتر' : '';
+      };
+      const parts = [];
+      if (index > 0) {
+        const previous = group.stops[index - 1];
+        parts.push('قبلی: ' + stationTitle(previous.record) + (distanceTo(previous) ? ' · ' + distanceTo(previous) : ''));
+      }
+      if (index < group.stops.length - 1) {
+        const next = group.stops[index + 1];
+        parts.push('بعدی: ' + stationTitle(next.record) + (distanceTo(next) ? ' · ' + distanceTo(next) : ''));
+      }
+      if (!parts.length) return '';
+      const order = branchOrderValue(branch);
+      return '<div class="station-info-line"><b>' + esc(branch.line || 'خط اصلی') + '</b>' +
+        (order < 1e6 ? ' <small>ترتیب ' + faDigits(order) + '</small>' : '') +
+        '<span>' + esc(parts.join(' — ')) + '</span></div>';
+    }).filter(Boolean).join('');
+
+    const hasRow = function (row) {
+      return Object.keys(row || {}).some(function (key) { return String(row[key] == null ? '' : row[key]).trim() !== ''; });
+    };
+
+    const products = (Array.isArray(record.products) ? record.products : []).filter(hasRow);
+    const sizes = [];
+    products.forEach(function (row) {
+      const size = String(row.size || '').trim();
+      if (size && sizes.indexOf(size) < 0) sizes.push(size);
+    });
+    const linesSummary = sizes.length
+      ? stationInfoRow('خطوط عبوری', faDigits(sizes.length) + ' سایز · ' + sizes.join('، ') + ' اینچ')
+      : '';
+    const productsText = products.map(function (row) {
+      const facts = [row.product, row.size ? row.size + ' اینچ' : '', row.line].filter(Boolean);
+      return '<div class="station-info-chip">' + esc(facts.join(' · ')) + '</div>';
+    }).join('');
+
+    const tanks = (Array.isArray(record.tanks) ? record.tanks : []).filter(hasRow);
+    let tankTotal = 0;
+    tanks.forEach(function (row) { tankTotal += Number(row.count) || 0; });
+    const tanksText = tanks.length
+      ? stationInfoRow('تعداد کل مخازن', faDigits(tankTotal || tanks.length)) + tanks.map(function (row) {
+        const facts = [
+          row.product,
+          row.count ? 'تعداد ' + faDigits(row.count) : '',
+          row.volume ? 'حجم ' + faDigits(row.volume) : '',
+          row.diameter ? 'قطر ' + faDigits(row.diameter) + ' متر' : '',
+          row.height ? 'ارتفاع ' + faDigits(row.height) + ' متر' : ''
+        ].filter(Boolean);
+        return '<div class="station-info-chip">' + esc(facts.join(' · ')) + '</div>';
+      }).join('')
+      : '';
+
+    const rotating = (Array.isArray(record.rotating) ? record.rotating : []).filter(hasRow);
+    const rotatingText = rotating.map(function (row) {
+      const facts = [
+        row.kind,
+        row.model,
+        row.count ? faDigits(row.count) + ' دستگاه' : '',
+        row.power ? 'توان ' + faDigits(row.power) + ' کیلووات' : ''
+      ].filter(Boolean);
+      return '<div class="station-info-chip">' + esc(facts.join(' · ')) + '</div>';
+    }).join('');
+
+    const generators = (Array.isArray(record.generators) ? record.generators : []).filter(hasRow);
+    const generatorsText = generators.map(function (row) {
+      const facts = [
+        row.model || 'دیزل ژنراتور',
+        row.count ? faDigits(row.count) + ' دستگاه' : '',
+        row.power ? 'توان ' + faDigits(row.power) + ' کیلووات' : ''
+      ].filter(Boolean);
+      return '<div class="station-info-chip">' + esc(facts.join(' · ')) + '</div>';
+    }).join('');
+
+    const byPlace = {};
+    contacts.forEach(function (contact) {
+      const key = [contact.building, contact.unit].filter(Boolean).join(' / ') || 'بدون دسته‌بندی';
+      (byPlace[key] = byPlace[key] || []).push(contact);
+    });
+    const phonesText = Object.keys(byPlace).map(function (key) {
+      const people = byPlace[key].map(function (contact) {
+        const phones = contactPhones(contact).map(function (phone) {
+          const raw = String(phone.value || '');
+          const dial = raw.replace(/[^\d+]/g, '');
+          const shown = [phone.prefix, raw].filter(Boolean).join(' ');
+          return '<a class="station-info-phone" href="tel:' + esc(dial) + '"' + (dial ? '' : ' aria-disabled="true"') + '>' +
+            '<span>' + esc(phone.label) + '</span><b dir="ltr">' + esc(shown) + '</b></a>';
+        }).join('');
+        if (!phones) return '';
+        return '<span class="station-info-contact"><span>' + esc(contact.name || 'مخاطب') +
+          (contact.position ? ' · ' + esc(contact.position) : '') + '</span>' + phones + '</span>';
+      }).filter(Boolean).join('');
+      if (!people) return '';
+      return '<div class="station-info-line"><b>' + esc(key) + '</b><span class="station-info-phones">' + people + '</span></div>';
+    }).filter(Boolean).join('');
+
+    const blocks = [
+      stationInfoBlock('رئیس / سرپرست', stationInfoRow('نام رئیس', chief)),
+      stationInfoBlock('نوع و محل', [
+        stationInfoRow('نوع محل', record.placeType),
+        stationInfoRow('محل مکان', record.place),
+        stationInfoRow('شهر', record.city),
+        stationInfoRow('آدرس', record.address),
+        stationInfoRow('موقعیت جغرافیایی', record.coordinates)
+      ].join('')),
+      stationInfoBlock('فاصله تا شهرها', (Array.isArray(record.distances) ? record.distances : []).filter(hasRow).map(function (row) {
+        return stationInfoRow(row.city || 'شهر', row.km ? faDigits(row.km) + ' کیلومتر' : '');
+      }).join('')),
+      stationInfoBlock('خطوط انتقالی و مراکز مجاور', neighbourLines + linesSummary),
+      stationInfoBlock('فرآورده‌ها و خطوط', productsText),
+      stationInfoBlock('مخازن ذخیره', tanksText),
+      stationInfoBlock('تجهیزات دوار', rotatingText),
+      stationInfoBlock('دیزل ژنراتورها', generatorsText),
+      stationInfoBlock('شماره‌های تماس این محل (دفترچه تلفن)', phonesText),
+      stationInfoBlock('توضیحات', record.description ? '<p class="station-info-text">' + esc(record.description) + '</p>' : '')
+    ].filter(Boolean).join('');
+
+    return '<div class="atlas-modal-backdrop station-info-backdrop" data-station-info>' +
+      '<div class="atlas-modal station-info-modal" role="dialog" aria-modal="true" aria-labelledby="stationInfoTitle">' +
+      '<div class="atlas-modal-head"><div><h3 id="stationInfoTitle">' + esc(stationTitle(record)) + '</h3>' +
+      '<p>' + esc([record.placeType, record.place, record.city].filter(Boolean).join(' · ') || 'ایستگاه / مرکز') +
+      (record.status ? ' · ' + esc(record.status) : '') + '</p></div>' +
+      '<button type="button" class="atlas-modal-close" data-station-action="info-close" aria-label="بستن">×</button></div>' +
+      '<div class="atlas-modal-body">' +
+      (blocks || '<div class="module-empty">برای این مکان هنوز اطلاعاتی ثبت نشده است.</div>') +
+      '<div class="station-info-actions">' +
+      (allowEdit ? '<button type="button" class="primary-btn" data-station-action="edit" data-id="' + esc(record.id) + '">ویرایش اطلاعات</button>' : '') +
+      '<button type="button" class="secondary-btn" data-station-action="info-close">بستن</button></div>' +
+      '</div></div></div>';
+  }
+
+  function closeStationInfo() {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-station-info]'), function (node) { node.remove(); });
+  }
+
+  // این کارت فقط خواندنی است و تنظیمات را باز نمی‌کند.
+  function openStationInfo(id, allowEdit) {
+    const record = (appData.stations || []).find(function (item) { return String(item.id) === String(id); });
+    if (!record) return;
+    closeStationInfo();
+    const holder = document.createElement('div');
+    holder.innerHTML = stationInfoMarkup(record, allowEdit);
+    if (holder.firstElementChild) document.body.appendChild(holder.firstElementChild);
+  }
+
+  function stationSetPlacement(record, branchIndex, x, y) {
+    const list = Array.isArray(record.branches) ? record.branches.slice() : [];
+    if (!list.length) {
+      stationBranches(record).forEach(function (branch) {
+        list.push({ line: branch.line, order: branch.order, x: branch.x, y: branch.y });
+      });
+    }
+    while (list.length <= branchIndex) list.push({ line: 'خط اصلی', order: '', x: '', y: '' });
+    list[branchIndex].x = x;
+    list[branchIndex].y = y;
+    record.branches = list;
+    record.mapX = x;
+    record.mapY = y;
   }
 
   // خطوط را از جایگاه فعلی گره‌ها می‌کشد تا هنگام کشیدن هم زنده به‌روز شود.
@@ -2724,7 +3290,10 @@
     if (!canvas) return;
     const positions = {};
     Array.prototype.forEach.call(map.querySelectorAll('[data-station-id]'), function (node) {
-      positions[node.dataset.stationId] = { x: parseFloat(node.style.left) || 0, y: parseFloat(node.style.top) || 0 };
+      positions[String(node.dataset.stationId) + '::' + String(node.dataset.branchIndex || 0)] = {
+        x: parseFloat(node.style.left) || 0,
+        y: parseFloat(node.style.top) || 0
+      };
     });
     canvas.innerHTML = stationLineMarkup(stationGroups(stationRecords()), positions);
   }
@@ -2737,7 +3306,7 @@
     map.addEventListener('pointerdown', function (event) {
       const node = event.target.closest('[data-station-id]');
       if (!node) return;
-      drag = { node: node, id: node.dataset.stationId, x: 0, y: 0, moved: false };
+      drag = { node: node, id: node.dataset.stationId, branchIndex: Number(node.dataset.branchIndex || 0), x: 0, y: 0, moved: false };
       node.classList.add('is-dragging');
       try { node.setPointerCapture(event.pointerId); } catch (error) { /* optional */ }
       event.preventDefault();
@@ -2758,27 +3327,15 @@
       const current = drag;
       drag = null;
       current.node.classList.remove('is-dragging');
-      const sectionNow = document.getElementById('sectionView');
       if (!current.moved) {
-        formState.stations = { open: true, id: current.id };
-        if (current.node.closest('#sectionView')) {
-          render('stations', sectionNow);
-        } else {
-          const url = new URL(window.location.href);
-          url.searchParams.set('view', 'stations');
-          window.history.pushState({}, '', url.pathname + '?' + url.searchParams.toString());
-          if (typeof window.ATLAS_ROUTE === 'function') window.ATLAS_ROUTE('stations');
-          else render('stations', sectionNow);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+        openStationInfo(current.id, !!current.node.closest('#sectionView'));
         return;
       }
       const record = (appData.stations || []).find(function (item) { return String(item.id) === String(current.id); });
       if (!record) return;
-      record.mapX = current.x;
-      record.mapY = current.y;
+      stationSetPlacement(record, current.branchIndex, current.x, current.y);
       record.updatedAt = new Date().toISOString();
-      if (await saveState()) toast('جایگاه «' + (record.name || 'ایستگاه') + '» روی نقشه ذخیره شد.');
+      if (await saveState()) toast('جایگاه «' + stationTitle(record) + '» روی نقشه ذخیره شد.');
     });
     map.addEventListener('pointercancel', function () {
       if (!drag) return;
@@ -2787,10 +3344,60 @@
     });
   }
 
+  async function stationAutoLayout() {
+    const records = appData.stations || [];
+    if (!records.length) { toast('ابتدا یک ایستگاه یا مرکز ثبت کنید.'); return; }
+    const approved = await askConfirm({
+      title: 'چیدمان خودکار نقشه',
+      message: 'چیدمان دستی فعلی ذخیره می‌شود و هر زمان بخواهی می‌توانی به آن برگردی. چیدمان خودکار اعمال شود؟',
+      confirmLabel: 'بله، چیدمان خودکار'
+    });
+    if (!approved) return;
+    const backup = {};
+    records.forEach(function (record) {
+      backup[record.id] = {
+        mapX: record.mapX,
+        mapY: record.mapY,
+        branches: Array.isArray(record.branches) ? JSON.parse(JSON.stringify(record.branches)) : null
+      };
+    });
+    appData.settings.stationLayoutBackup = backup;
+    stationGroups(records).forEach(function (group) {
+      group.stops.forEach(function (stop, index) {
+        const point = stationAutoPosition(index, group.stops.length);
+        stationSetPlacement(stop.record, stop.branch.index, point.x, point.y);
+        stop.record.updatedAt = new Date().toISOString();
+      });
+    });
+    if (await saveState()) {
+      render('stations', document.getElementById('sectionView'));
+      toast('چیدمان خودکار اعمال شد. اگر مطلوب نبود، «بازگشت به چیدمان دستی» را بزن.');
+    }
+  }
+
+  async function stationRestoreLayout() {
+    const backup = appData.settings && appData.settings.stationLayoutBackup;
+    if (!backup) { toast('چیدمان قبلی برای بازگردانی وجود ندارد.'); return; }
+    (appData.stations || []).forEach(function (record) {
+      const saved = backup[record.id];
+      if (!saved) return;
+      record.mapX = saved.mapX;
+      record.mapY = saved.mapY;
+      if (saved.branches) record.branches = JSON.parse(JSON.stringify(saved.branches));
+      else delete record.branches;
+      record.updatedAt = new Date().toISOString();
+    });
+    delete appData.settings.stationLayoutBackup;
+    if (await saveState()) {
+      render('stations', document.getElementById('sectionView'));
+      toast('چیدمان دستی قبلی بازگردانده شد.');
+    }
+  }
+
   function renderStations(section) {
     renderCrud('stations', section);
     const summary = section.querySelector('.module-summary');
-    if (summary) summary.insertAdjacentHTML('afterend', stationMapMarkup(stationRecords()));
+    if (summary) summary.insertAdjacentHTML('afterend', stationMapMarkup(stationRecords()) + stationPlacesPanel());
     wireStationMap(section);
   }
 
@@ -2828,9 +3435,32 @@
   async function formValues(form, moduleKey, oldRecord) {
     const fields=formFields(moduleKey, form.dataset.faultScope==='vehicle'), data={};
     const fd=new FormData(form);
+    const typeField=form.querySelector('[data-station-type]');
+    const currentType=typeField?String(typeField.value||''):'';
     for(let i=0;i<fields.length;i+=1){
       const field=fields[i];
-      if(field.type==='file'||field.type==='file-multiple'){
+      if(!fieldVisible(field,{placeType:currentType})){
+        data[field.key]=oldRecord&&oldRecord[field.key]!=null?oldRecord[field.key]:(field.type==='rows'?[]:'');
+        continue;
+      }
+      if(field.type==='rows'){
+        const holder=form.querySelector('[data-rows-field="'+field.key+'"]');
+        const rows=[];
+        if(holder){
+          Array.prototype.forEach.call(holder.querySelectorAll('[data-row]'),function(row){
+            const item={};
+            let filled=false;
+            (field.columns||[]).forEach(function(column){
+              const input=row.querySelector('[data-col="'+column.key+'"]');
+              const raw=String(input&&input.value||'').trim();
+              item[column.key]=raw;
+              if(raw)filled=true;
+            });
+            if(filled)rows.push(item);
+          });
+        }
+        data[field.key]=rows;
+      }else if(field.type==='file'||field.type==='file-multiple'){
         const input=form.querySelector('[name="'+field.key+'"]');
         const selected=input&&input.files?Array.from(input.files):[];
         if(!selected.length){
@@ -2857,14 +3487,24 @@
     return data;
   }
 
+  function changeText(value) {
+    if (value == null) return '';
+    if (Array.isArray(value)) {
+      return value.map(function (item) {
+        if (!item || typeof item !== 'object') return String(item == null ? '' : item);
+        return Object.keys(item).map(function (key) { return String(item[key] == null ? '' : item[key]).trim(); }).filter(Boolean).join(' · ');
+      }).filter(Boolean).join('، ');
+    }
+    return String(value);
+  }
+
   function summarizeChanges(oldRecord, newRecord, moduleKey) {
     if(!oldRecord)return [];
     const fields=fieldsFor(moduleKey),changes=[];
     fields.forEach(function(field){
-      const before=field.custom&&oldRecord.customFields?oldRecord.customFields[field.key]:oldRecord[field.key];
-      const after=field.custom&&newRecord.customFields?newRecord.customFields[field.key]:newRecord[field.key];
-      const a=JSON.stringify(before==null?'':before),b=JSON.stringify(after==null?'':after);
-      if(a!==b)changes.push({field:field.label||field.key,before:String(before==null?'':Array.isArray(before)?before.join('، '):before),after:String(after==null?'':Array.isArray(after)?after.join('، '):after)});
+      const before=changeText(field.custom&&oldRecord.customFields?oldRecord.customFields[field.key]:oldRecord[field.key]);
+      const after=changeText(field.custom&&newRecord.customFields?newRecord.customFields[field.key]:newRecord[field.key]);
+      if(before!==after)changes.push({field:field.label||field.key,before:before,after:after});
     });
     return changes.slice(0,100);
   }
@@ -3126,6 +3766,15 @@
     if (field.source === 'gasmeters') {
       const meter = (data.gasmeters || []).find(function (item) { return String(item.id) === String(value); });
       return meter ? [meter.code, meter.serial].filter(Boolean).join(' · ') : String(value || '');
+    }
+    if (field.type === 'rows') {
+      const rows = Array.isArray(value) ? value : [];
+      return rows.map(function (row) {
+        return (field.columns || []).map(function (column) {
+          const cell = String(row && row[column.key] != null ? row[column.key] : '').trim();
+          return cell ? column.label + ': ' + cell : '';
+        }).filter(Boolean).join(' | ');
+      }).filter(Boolean).join(' ؛ ');
     }
     if (Array.isArray(value)) return value.join('، ');
     return String(value == null ? '' : value);
@@ -3869,6 +4518,13 @@
         if(moduleKey==='missions'&&values.startAt&&values.endAt&&values.endAt<values.startAt)throw new Error('زمان پایان مأموریت نباید قبل از زمان شروع باشد.');
         if(moduleKey==='programs'&&values.finalReportSent&&values.finalReportDue&&values.finalReportSent<values.finalReportDue&&values.status!=='تکمیل‌شده')throw new Error('تاریخ ارسال گزارش نهایی قبل از مهلت ثبت شده؛ وضعیت پرونده را بررسی کن.');
         if(moduleKey==='gasmeters'&&values.calibrationStart&&values.calibrationEnd&&values.calibrationEnd<values.calibrationStart)throw new Error('پایان اعتبار کالیبراسیون نباید قبل از شروع باشد.');
+        if(moduleKey==='stations'){
+          (Array.isArray(values.branches)?values.branches:[]).forEach(function(row){
+            const order=String(row&&row.order||'').trim();
+            if(order&&(!/^\d+$/.test(order)||Number(order)<1))throw new Error('ترتیب قرارگیری در هر شاخه باید یک عدد طبیعی باشد (۱، ۲، ۳ …)؛ حرف یا صفر مجاز نیست.');
+          });
+          if(values.placeType&&values.place)placeRegister(values.placeType,values.place);
+        }
         const record=Object.assign({},old||{},values,{id:old?old.id:createId(),createdAt:old?old.createdAt||new Date().toISOString():new Date().toISOString(),updatedAt:new Date().toISOString()});
         if(moduleKey==='gasmeters'){
           record.gases=Array.isArray(record.gases)?record.gases:[];
