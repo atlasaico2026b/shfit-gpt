@@ -1598,6 +1598,7 @@
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>ذخیره‌سازی</h3><p>هر تغییر بی‌درنگ در همین دستگاه ذخیره و رمزنگاری می‌شود.</p></div></div>' +
       '<div class="module-local-note" data-storage-status>' + storageSummary() + '</div>' +
       '<div class="module-local-note" data-storage-size style="margin-top:8px">حجم ذخیره‌شده: در حال محاسبه…</div></section>' +
+      stationPlacesPanel() +
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>مدیریت منوها و فهرست‌ها</h3><p>تمام گزینه‌های کشویی قابل تنظیم در یک محل؛ افزودن فوری نیز از کنار فیلدهای مرتبط انجام می‌شود.</p></div></div><div class="module-list-tools"><select id="referenceListKey">'+referenceKeys().map(function(k){return '<option value="'+esc(k)+'">'+esc(referenceListTitle(k))+'</option>';}).join('')+'</select><input id="referenceListValue" type="text" placeholder="عنوان گزینه جدید"><button type="button" class="primary-btn" data-module-action="reference-add">+ افزودن</button></div><div id="referenceListItems" class="module-local-note" style="margin-top:12px"></div></section>' +
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>فیلدهای سفارشی کارکنان</h3><p>برای هر فیلد یک عنوان و یک نوع انتخاب کن؛ نوع همان کادری را می‌سازد که هنگام ثبت پرونده می‌بینی: عدد، تاریخ شمسی، تاریخ و ساعت، متن بلند و …</p></div></div>'+
       '<form data-custom-fields-form class="module-form"><div class="module-custom-fields" data-custom-field-rows>'+(appData.settings.employeeCustomFields||'').split(/\r?\n/).map(function(l){return l.trim();}).filter(Boolean).map(customFieldRowHtml).join('')+'</div>'+
@@ -2833,7 +2834,7 @@
       if (!name) return;
       const list = Array.isArray(appData.references.placeTypes) ? appData.references.placeTypes : (appData.references.placeTypes = []);
       if (list.indexOf(name) < 0) list.push(name);
-      if (await saveState()) { render('stations', section); toast('نوع محل «' + name + '» افزوده شد.'); }
+      if (await saveState()) { refreshPlaceManager(); toast('نوع محل «' + name + '» افزوده شد.'); }
       return;
     }
     if (action === 'place-add') {
@@ -2841,7 +2842,7 @@
       const name = await askPrompt({ title: 'افزودن مکان', label: 'نام مکان در «' + type + '»', confirmLabel: 'افزودن' });
       if (!name) return;
       placeRegister(type, name);
-      if (await saveState()) { render('stations', section); toast('مکان «' + name + '» به «' + type + '» افزوده شد.'); }
+      if (await saveState()) { refreshPlaceManager(); toast('مکان «' + name + '» به «' + type + '» افزوده شد.'); }
       return;
     }
     if (action === 'place-edit') {
@@ -2856,7 +2857,7 @@
       (appData.stations || []).forEach(function (record) {
         if (String(record.placeType || '') === type && String(record.place || '') === oldName) record.place = name;
       });
-      if (await saveState()) { render('stations', section); toast('نام مکان اصلاح شد.'); }
+      if (await saveState()) { refreshPlaceManager(); toast('نام مکان اصلاح شد.'); }
       return;
     }
     if (action === 'place-delete') {
@@ -2865,7 +2866,7 @@
       const approved = await askConfirm({ title: 'حذف مکان', message: 'مکان «' + name + '» از فهرست «' + type + '» حذف شود؟ اطلاعات ایستگاه‌هایی که این مکان را دارند تغییر نمی‌کند.', confirmLabel: 'حذف', danger: true });
       if (!approved) return;
       placeRemove(type, name);
-      if (await saveState()) { render('stations', section); toast('مکان حذف شد.'); }
+      if (await saveState()) { refreshPlaceManager(); toast('مکان حذف شد.'); }
       return;
     }
   });
@@ -3757,12 +3758,20 @@
   function renderStations(section) {
     renderCrud('stations', section);
     const summary = section.querySelector('.module-summary');
-    if (summary) summary.insertAdjacentHTML('afterend', stationMapMarkup(stationRecords()) + stationPlacesPanel());
+    if (summary) summary.insertAdjacentHTML('afterend', stationMapMarkup(stationRecords()));
     wireStationMap(section);
+  }
+
+  let currentView = '';
+
+  function refreshPlaceManager() {
+    const section = document.getElementById('sectionView');
+    render(currentView === 'settings' ? 'settings' : 'stations', section);
   }
 
   function render(view, section) {
     if(!section)return;
+    currentView = view;
     prepareSection(section);
     if(!ready){
       section.innerHTML=rootWrap('<div class="module-empty">در حال آماده‌سازی اطلاعات محلی…</div>');
