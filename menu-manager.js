@@ -8,7 +8,8 @@
     { id: 'missions', title: 'مأموریت‌ها', icon: '↗', href: './index.html?view=missions' },
     { id: 'leaves', title: 'مرخصی‌ها', icon: '◷', href: './index.html?view=leaves' },
     { id: 'vehicles', title: 'خودروها', icon: '▰', href: './index.html?view=vehicles' },
-    { id: 'stations', title: 'ایستگاه‌ها', icon: '⌘', href: './index.html?view=stations' },
+    { id: 'places', title: 'مکان‌ها', icon: '⌖', href: './index.html?view=places' },
+    { id: 'stations', title: 'ایستگاه‌ها و مراکز', icon: '⌘', href: './index.html?view=stations' },
     { id: 'gasmeters', title: 'گازسنج‌ها', icon: '◉', href: './index.html?view=gasmeters' },
     { id: 'notes', title: 'یادداشت‌ها', icon: '▤', href: './index.html?view=notes' },
     { id: 'programs', title: 'برنامه‌ها و پرونده‌ها', icon: '✓', href: './index.html?view=programs' },
@@ -19,7 +20,7 @@
   const TARGETS = {
     dashboard: './index.html', employees: './index.html?view=employees',
     missions: './index.html?view=missions', leaves: './index.html?view=leaves',
-    vehicles: './index.html?view=vehicles', stations: './index.html?view=stations', gasmeters: './index.html?view=gasmeters',
+    vehicles: './index.html?view=vehicles', places: './index.html?view=places', stations: './index.html?view=stations', gasmeters: './index.html?view=gasmeters',
     maintenance: './index.html?view=maintenance', faults: './index.html?view=faults',
     gaslogs: './index.html?view=gaslogs',
     notes: './index.html?view=notes', programs: './index.html?view=programs',
