@@ -6,7 +6,7 @@
   const STORE_NAME = 'records';
   const STORE_KEY = 'main';
   const LEGACY_KEY = 'atlasShiftOperationalDataV1';
-  const MODULES = ['employees', 'missions', 'leaves', 'vehicles', 'gasmeters', 'notes', 'programs', 'faults', 'maintenance', 'gaslogs'];
+  const MODULES = ['employees', 'missions', 'leaves', 'vehicles', 'stations', 'gasmeters', 'notes', 'programs', 'faults', 'maintenance', 'gaslogs'];
   const formState = Object.create(null);
   const searchState = Object.create(null);
   const filterState = Object.create(null);
@@ -118,6 +118,25 @@
         {key:'attachments',label:'پیوست‌ها',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx'}
       ],
       columns: ['name','vehicleType','companyPlate','policePlate','status','currentCity','currentPlace','currentKm','nextOilKm','relatedMissions']
+    },
+    stations: {
+      title: 'ایستگاه‌ها', singular: 'ایستگاه',
+      subtitle: 'ثبت ایستگاه‌ها، جایگاه روی نقشهٔ شماتیک خط، فرآورده و وضعیت عملیاتی',
+      fields: [
+        {key:'name',label:'نام ایستگاه',required:true},
+        {key:'code',label:'کد ایستگاه'},
+        {key:'stationType',label:'نوع ایستگاه',type:'select',listKey:'stationTypes',options:['ایستگاه تقویت فشار','ایستگاه پمپاژ','ایستگاه اندازه‌گیری','مرکز انتقال نفت','ایستگاه مخابراتی','ایستگاه آتش‌نشانی','ایستگاه گازسنجی','سایر']},
+        {key:'line',label:'خط / شاخه',type:'select',listKey:'pipelineLines',options:['خط اصلی','شاخهٔ شمالی','شاخهٔ جنوبی','خط فرعی','خط صادراتی']},
+        {key:'order',label:'ترتیب روی خط',type:'number',min:0,placeholder:'۱، ۲، ۳ …'},
+        {key:'product',label:'فرآورده',type:'select',listKey:'products',options:['نفت خام','نفت گاز','بنزین','نفت سفید','گاز مایع','آب آلوده','سایر']},
+        {key:'capacity',label:'ظرفیت (هزار بشکه در روز)',type:'number',min:0},
+        {key:'status',label:'وضعیت عملیاتی',type:'select',listKey:'stationStatuses',options:['در سرویس','نیمه‌فعال','خارج از سرویس','در تعمیر','غیرفعال']},
+        {key:'personInCharge',label:'مسئول ایستگاه'},
+        {key:'mapX',label:'موقعیت افقی روی نقشه (۰ تا ۱۰۰)',type:'number',min:0,max:100,placeholder:'خالی = چیدمان خودکار'},
+        {key:'mapY',label:'موقعیت عمودی روی نقشه (۰ تا ۱۰۰)',type:'number',min:0,max:100},
+        {key:'description',label:'توضیحات',type:'textarea',wide:true}
+      ],
+      columns: ['name', 'code', 'stationType', 'line', 'order', 'status', 'personInCharge']
     },
     gasmeters: {
       title: 'گازسنج‌ها', singular: 'گازسنج',
@@ -1317,6 +1336,23 @@
       if(!summary){summary=document.createElement('div');summary.id='operationsRealDataSummary';summary.className='module-empty';if(chart)chart.insertAdjacentElement('afterend',summary);}
       summary.textContent='مأموریت‌های ثبت‌شده در بازهٔ '+faDigits(dashboardMissions.length)+' مورد است.';
     }
+    const stationsWidget=document.querySelector('[data-widget="stations"]');
+    if(stationsWidget){
+      const records=stationRecords();
+      const map=stationsWidget.querySelector('[data-station-map]');
+      if(map){
+        map.dataset.stationBound='';
+        map.innerHTML='<svg class="station-map-canvas" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'+
+          stationLineMarkup(stationGroups(records),stationPositions(records))+'</svg>'+
+          (records.length?stationNodeMarkup(records,stationPositions(records)):'<div class="station-map-empty">ایستگاهی ثبت نشده است.</div>');
+        wireStationMap(stationsWidget);
+      }
+      const caption=stationsWidget.querySelector('.widget-title p');
+      if(caption)caption.textContent=records.length?'جایگاه ایستگاه‌ها روی نقشهٔ شماتیک خط':'هنوز ایستگاهی ثبت نشده است';
+      const footer=stationsWidget.querySelector('[data-station-caption]');
+      if(footer)footer.innerHTML='<span>'+faDigits(records.length)+' ایستگاه ثبت‌شده</span><a class="station-caption-link" href="./index.html?view=stations">مدیریت و افزودن ایستگاه ←</a>';
+    }
+
     const foot=document.querySelector('.footnote');
     if(foot){const parts=foot.querySelectorAll('span');if(parts[1])parts[1].textContent='مرکز مدیریت عملیات ATLAS SHIFT';if(parts[3])parts[3].textContent='داده‌های نمونه برای بازبینی جریان کار';}
   }
@@ -1468,7 +1504,7 @@
   }
 
   function referenceListTitle(key){
-    const titles={workplaces:'شهرها و محل‌ها',leaveTypes:'انواع مرخصی',missionTypes:'انواع مأموریت',pipelineSizes:'قطر خطوط',products:'نوع فرآورده',vehicleTypes:'انواع خودرو',vehicleStatuses:'وضعیت خودرو',gasStatuses:'وضعیت گازسنج',actionTypes:'انواع یادداشت و اقدام',programTypes:'انواع برنامه',workTypes:'نوع کار',jobTitles:'عنوان‌های شغلی',employmentTypes:'نوع استخدام',shiftPatterns:'الگوی شیفت',employeeStatuses:'وضعیت کارکنان',missionStatuses:'وضعیت مأموریت',leaveStatuses:'وضعیت مرخصی',healthStatuses:'وضعیت سلامت',noteStatuses:'وضعیت یادداشت و پیگیری',reportStatuses:'وضعیت گزارش اولیه',programStatuses:'وضعیت پرونده',operationalPoints:'نقاط عملیاتی',gasSensorTypes:'نوع سنسور گازسنج',gasSensorLocations:'محل‌های استقرار',operationalRanges:'محدوده‌های عملیاتی',vehicleServiceTypes:'انواع سرویس خودرو',missionTitles:'عنوان‌های مأموریت',vehicleNames:'نام خودروها',gasModels:'مدل گازسنج‌ها',deploymentLocations:'محل‌های استقرار',maneuverLocations:'محل‌های اجرای مانور',faultAssetTypes:'نوع دارایی اشکال',faultCategories:'دسته‌های اشکال',faultPriorities:'اولویت اشکال',faultStatuses:'وضعیت رفع اشکال',maintenanceTypes:'نوع سرویس و تعمیر',maintenanceStatuses:'وضعیت سرویس',gasLogTypes:'نوع سابقهٔ گازسنج',programCategories:'دسته‌های برنامه'};
+    const titles={workplaces:'شهرها و محل‌ها',leaveTypes:'انواع مرخصی',missionTypes:'انواع مأموریت',pipelineSizes:'قطر خطوط',products:'نوع فرآورده',vehicleTypes:'انواع خودرو',vehicleStatuses:'وضعیت خودرو',gasStatuses:'وضعیت گازسنج',actionTypes:'انواع یادداشت و اقدام',programTypes:'انواع برنامه',workTypes:'نوع کار',jobTitles:'عنوان‌های شغلی',employmentTypes:'نوع استخدام',shiftPatterns:'الگوی شیفت',employeeStatuses:'وضعیت کارکنان',missionStatuses:'وضعیت مأموریت',leaveStatuses:'وضعیت مرخصی',healthStatuses:'وضعیت سلامت',noteStatuses:'وضعیت یادداشت و پیگیری',reportStatuses:'وضعیت گزارش اولیه',programStatuses:'وضعیت پرونده',operationalPoints:'نقاط عملیاتی',gasSensorTypes:'نوع سنسور گازسنج',gasSensorLocations:'محل‌های استقرار',operationalRanges:'محدوده‌های عملیاتی',vehicleServiceTypes:'انواع سرویس خودرو',missionTitles:'عنوان‌های مأموریت',vehicleNames:'نام خودروها',gasModels:'مدل گازسنج‌ها',deploymentLocations:'محل‌های استقرار',maneuverLocations:'محل‌های اجرای مانور',faultAssetTypes:'نوع دارایی اشکال',faultCategories:'دسته‌های اشکال',faultPriorities:'اولویت اشکال',faultStatuses:'وضعیت رفع اشکال',maintenanceTypes:'نوع سرویس و تعمیر',maintenanceStatuses:'وضعیت سرویس',gasLogTypes:'نوع سابقهٔ گازسنج',programCategories:'دسته‌های برنامه',stationTypes:'نوع ایستگاه',pipelineLines:'خطوط و شاخه‌ها',stationStatuses:'وضعیت ایستگاه'};
     return titles[key]||key;
   }
 
@@ -2362,6 +2398,30 @@
     );
   }
 
+  // ── اقدام‌های نقشهٔ ایستگاه‌ها ──
+  document.addEventListener('click', async function (event) {
+    const button = event.target.closest('[data-station-action]');
+    if (!button) return;
+    event.preventDefault();
+    const section = document.getElementById('sectionView');
+    if (button.dataset.stationAction === 'add') {
+      formState.stations = { open: true, id: null };
+      render('stations', section);
+      return;
+    }
+    const records = appData.stations || [];
+    if (!records.length) { toast('ابتدا یک ایستگاه ثبت کنید.'); return; }
+    stationGroups(records).forEach(function (group) {
+      group.list.forEach(function (record, index) {
+        const point = stationPosition({ mapX: '', mapY: '' }, index, group.list.length);
+        record.mapX = point.x;
+        record.mapY = point.y;
+        record.updatedAt = new Date().toISOString();
+      });
+    });
+    if (await saveState()) { render('stations', section); toast('ایستگاه‌ها روی نقشه مرتب شدند.'); }
+  });
+
   // ── ثبت سریع از داشبورد: فرم همان بخش را باز می‌کند ──
   document.addEventListener('click', function (event) {
     const quick = event.target.closest('[data-quick-add]');
@@ -2555,6 +2615,185 @@
     renderGasRegistry(document.getElementById('sectionView'));
   });
 
+  // ── ایستگاه‌ها: نقشهٔ شماتیک خط با جایگاه قابل کشیدن ──
+  const STATION_TONES = ['info', 'ok', 'special', 'warn', 'accent', 'highlight'];
+
+  function stationRecords() { return (appData.stations || []).slice(); }
+
+  function stationCoord(value) {
+    const text = String(value == null ? '' : value).trim();
+    if (!text) return NaN;
+    return Number(text);
+  }
+
+  function stationPosition(record, index, total) {
+    const x = stationCoord(record.mapX);
+    const y = stationCoord(record.mapY);
+    if (Number.isFinite(x) && Number.isFinite(y)) {
+      return { x: Math.min(100, Math.max(0, x)), y: Math.min(100, Math.max(0, y)) };
+    }
+    if (total <= 1) return { x: 50, y: 50 };
+    return { x: Number((8 + (84 * index) / (total - 1)).toFixed(1)), y: index % 2 ? 64 : 36 };
+  }
+
+  function stationOrderValue(record) {
+    const value = Number(record.order);
+    return Number.isFinite(value) ? value : 1e6;
+  }
+
+  // ایستگاه‌های هر خط به ترتیب «ترتیب روی خط» پشت سر هم قرار می‌گیرند.
+  function stationGroups(records) {
+    const groups = {};
+    records.forEach(function (record) {
+      const key = String(record.line || 'خط اصلی');
+      (groups[key] = groups[key] || []).push(record);
+    });
+    return Object.keys(groups).map(function (key) {
+      return { key: key, list: groups[key].slice().sort(function (a, b) {
+        const diff = stationOrderValue(a) - stationOrderValue(b);
+        return diff || String(a.name || '').localeCompare(String(b.name || ''), 'fa');
+      }) };
+    });
+  }
+
+  function stationTone(record) {
+    const status = String(record.status || '');
+    if (/خارج|غیرفعال|تعمیر/.test(status)) return 'danger';
+    if (/نیمه|انتظار/.test(status)) return 'warn';
+    if (/سرویس|فعال/.test(status)) return 'ok';
+    return 'info';
+  }
+
+  function stationLineMarkup(groups, positions) {
+    return groups.map(function (group, index) {
+      const points = group.list.map(function (record) {
+        const point = positions[record.id];
+        return point.x + ',' + point.y;
+      }).join(' ');
+      return '<polyline class="station-line" data-tone="' + STATION_TONES[index % STATION_TONES.length] + '" points="' + points + '"></polyline>';
+    }).join('');
+  }
+
+  function stationPositions(records) {
+    const total = records.length;
+    const positions = {};
+    records.forEach(function (record, index) { positions[record.id] = stationPosition(record, index, total); });
+    return positions;
+  }
+
+  function stationNodeMarkup(records, positions) {
+    return records.map(function (record) {
+      const point = positions[record.id];
+      return '<button type="button" class="station-node" data-station-id="' + esc(record.id) + '" data-tone="' + stationTone(record) + '"' +
+        ' style="left:' + point.x + '%;top:' + point.y + '%"' +
+        ' aria-label="' + esc(record.name || 'ایستگاه') + (record.status ? ' — ' + esc(record.status) : '') + '">' +
+        '<span class="station-node-dot"></span>' +
+        '<span class="station-node-text">' + esc(record.name || 'ایستگاه') + '</span>' +
+        (record.status ? '<span class="station-node-status">' + esc(record.status) + '</span>' : '') +
+        '</button>';
+    }).join('');
+  }
+
+  function stationMapMarkup(records) {
+    const positions = stationPositions(records);
+    const groups = stationGroups(records);
+    const nodes = stationNodeMarkup(records, positions);
+    const legend = groups.map(function (group, index) {
+      return '<span class="station-legend-item" data-tone="' + STATION_TONES[index % STATION_TONES.length] + '">' +
+        '<i class="station-legend-swatch"></i>' + esc(group.key) + ' <small>(' + faDigits(group.list.length) + ')</small></span>';
+    }).join('');
+    return '<section class="station-map-panel">' +
+      '<div class="station-map-head"><div><h3>نقشهٔ شماتیک خطوط</h3>' +
+        '<p>برای تعیین جایگاه، ایستگاه را بکشید — همان لحظه ذخیره می‌شود. کلیک روی ایستگاه فرم ویرایش را باز می‌کند.</p></div>' +
+        '<div class="station-map-tools">' +
+          '<button type="button" class="secondary-btn" data-station-action="auto">چیدمان خودکار</button>' +
+          '<button type="button" class="primary-btn" data-station-action="add">+ ثبت ایستگاه</button>' +
+        '</div></div>' +
+      '<div class="station-map" data-station-map>' +
+        '<svg class="station-map-canvas" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
+          stationLineMarkup(groups, positions) + '</svg>' +
+        (nodes || '<div class="station-map-empty">هنوز ایستگاهی ثبت نشده است. با «+ ثبت ایستگاه» شروع کنید.</div>') +
+      '</div>' +
+      (legend ? '<div class="station-legend">' + legend + '</div>' : '') +
+      '</section>';
+  }
+
+  // خطوط را از جایگاه فعلی گره‌ها می‌کشد تا هنگام کشیدن هم زنده به‌روز شود.
+  function drawStationLines(map) {
+    const canvas = map.querySelector('.station-map-canvas');
+    if (!canvas) return;
+    const positions = {};
+    Array.prototype.forEach.call(map.querySelectorAll('[data-station-id]'), function (node) {
+      positions[node.dataset.stationId] = { x: parseFloat(node.style.left) || 0, y: parseFloat(node.style.top) || 0 };
+    });
+    canvas.innerHTML = stationLineMarkup(stationGroups(stationRecords()), positions);
+  }
+
+  function wireStationMap(section) {
+    const map = section.querySelector('[data-station-map]');
+    if (!map || map.dataset.stationBound === '1') return;
+    map.dataset.stationBound = '1';
+    let drag = null;
+    map.addEventListener('pointerdown', function (event) {
+      const node = event.target.closest('[data-station-id]');
+      if (!node) return;
+      drag = { node: node, id: node.dataset.stationId, x: 0, y: 0, moved: false };
+      node.classList.add('is-dragging');
+      try { node.setPointerCapture(event.pointerId); } catch (error) { /* optional */ }
+      event.preventDefault();
+    });
+    map.addEventListener('pointermove', function (event) {
+      if (!drag) return;
+      const rect = map.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      drag.x = Math.round(Math.min(100, Math.max(0, ((event.clientX - rect.left) / rect.width) * 100)) * 10) / 10;
+      drag.y = Math.round(Math.min(100, Math.max(0, ((event.clientY - rect.top) / rect.height) * 100)) * 10) / 10;
+      drag.moved = true;
+      drag.node.style.left = drag.x + '%';
+      drag.node.style.top = drag.y + '%';
+      drawStationLines(map);
+    });
+    map.addEventListener('pointerup', async function () {
+      if (!drag) return;
+      const current = drag;
+      drag = null;
+      current.node.classList.remove('is-dragging');
+      const sectionNow = document.getElementById('sectionView');
+      if (!current.moved) {
+        formState.stations = { open: true, id: current.id };
+        if (current.node.closest('#sectionView')) {
+          render('stations', sectionNow);
+        } else {
+          const url = new URL(window.location.href);
+          url.searchParams.set('view', 'stations');
+          window.history.pushState({}, '', url.pathname + '?' + url.searchParams.toString());
+          if (typeof window.ATLAS_ROUTE === 'function') window.ATLAS_ROUTE('stations');
+          else render('stations', sectionNow);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        return;
+      }
+      const record = (appData.stations || []).find(function (item) { return String(item.id) === String(current.id); });
+      if (!record) return;
+      record.mapX = current.x;
+      record.mapY = current.y;
+      record.updatedAt = new Date().toISOString();
+      if (await saveState()) toast('جایگاه «' + (record.name || 'ایستگاه') + '» روی نقشه ذخیره شد.');
+    });
+    map.addEventListener('pointercancel', function () {
+      if (!drag) return;
+      drag.node.classList.remove('is-dragging');
+      drag = null;
+    });
+  }
+
+  function renderStations(section) {
+    renderCrud('stations', section);
+    const summary = section.querySelector('.module-summary');
+    if (summary) summary.insertAdjacentHTML('afterend', stationMapMarkup(stationRecords()));
+    wireStationMap(section);
+  }
+
   function render(view, section) {
     if(!section)return;
     prepareSection(section);
@@ -2565,6 +2804,7 @@
     if(view==='programs')renderPrograms(section);
     else if(view==='vehicles')renderVehicles(section);
     else if(view==='faults'){if(vehicleTab==='registry')setVehicleTab('history');renderVehicles(section);}
+    else if(view==='stations')renderStations(section);
     else if(view==='gasmeters')renderGasRegistry(section);
     else if(view==='gaslogs'){gasTab='logs';renderGasRegistry(section);}
     else if(view==='maintenance'){if(vehicleTab!=='service')setVehicleTab('service');renderVehicles(section);}

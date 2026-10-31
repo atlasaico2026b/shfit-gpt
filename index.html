@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="./design/print.css">
   <link rel="stylesheet" href="./design/spectrum.css">
   <link rel="stylesheet" href="./design/gaslogs.css">
+  <link rel="stylesheet" href="./design/stations.css">
   <link rel="stylesheet" href="./design/vehicle-tabs.css">
 </head>
 <body>
@@ -34,6 +35,7 @@
     <a class="app-menu-item" href="./index.html?view=missions" title="مأموریت‌ها"><svg viewBox="0 0 24 24"><path d="M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1Z"/><path d="M8 6H6a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-2"/><path d="M9 12h6M9 16h4"/></svg>مأموریت</a>
     <a class="app-menu-item" href="./index.html?view=leaves" title="مرخصی‌ها"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/><path d="M12 14v3h2"/></svg>مرخصی</a>
     <a class="app-menu-item" href="./index.html?view=vehicles" title="خودروها"><svg viewBox="0 0 24 24"><path d="M4 13l1.8-5.2A2 2 0 0 1 7.7 6.5h8.6a2 2 0 0 1 1.9 1.3L20 13"/><path d="M3 13h18v5a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H6v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5Z"/><circle cx="7.5" cy="15.5" r="1"/><circle cx="16.5" cy="15.5" r="1"/></svg>خودرو</a>
+    <a class="app-menu-item" href="./index.html?view=stations" title="ایستگاه‌ها"><svg viewBox="0 0 24 24"><path d="M3 20V9l4-3 4 3v11"/><path d="M13 20V4h8v16"/><path d="M15 8h4M15 12h4M15 16h4"/><path d="M2 20h20"/></svg>ایستگاه</a>
     <a class="app-menu-item" href="./index.html?view=gasmeters" title="گازسنج‌ها"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 12l4-3"/><path d="M12 3v2M21 12h-2M12 21v-2M3 12h2"/></svg>گازسنج</a>
     <a class="app-menu-item" href="./index.html?view=notes" title="یادداشت‌ها"><svg viewBox="0 0 24 24"><path d="M5 4h11l4 4v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z"/><path d="M15 4v5h5"/><path d="M8 13h8M8 17h5"/></svg>یادداشت</a>
     <a class="app-menu-item" href="./index.html?view=programs" title="برنامه‌ها و پرونده‌ها"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m8 12 2.5 2.5L16 9"/></svg>برنامه‌ها</a>
@@ -110,6 +112,7 @@
     <button type="button" class="quick-add-btn" data-quick-add="programs" data-tone="accent"><span class="quick-add-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h10M4 19h7"/></svg></span><span>برنامه</span></button>
     <button type="button" class="quick-add-btn" data-quick-add="maintenance" data-tone="ok"><span class="quick-add-icon"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0 5 5L21 21H3l1.3-9.7a4 4 0 0 0 5-5Z"/><path d="M9 13h6"/></svg></span><span>سرویس خودرو</span></button>
     <button type="button" class="quick-add-btn" data-quick-add="faults" data-tone="danger" data-preset='{"assetType":"خودرو"}'><span class="quick-add-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2.8 20h18.4L12 3ZM12 9v4M12 17h.01"/></svg></span><span>اشکال خودرو</span></button>
+    <button type="button" class="quick-add-btn" data-quick-add="stations" data-tone="info"><span class="quick-add-icon"><svg viewBox="0 0 24 24"><path d="M3 20V9l4-3 4 3v11"/><path d="M13 20V4h8v16"/><path d="M2 20h20"/></svg></span><span>ایستگاه</span></button>
     <button type="button" class="quick-add-btn" data-quick-add="gaslogs" data-tone="highlight" data-preset='{"logType":"ثبت قرائت"}'><span class="quick-add-icon"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v5l-4 7a4 4 0 0 0 3.5 6h5A4 4 0 0 0 18 15l-4-7V3"/></svg></span><span>سابقهٔ گازسنج</span></button>
     </div>
   </section>
@@ -182,8 +185,8 @@
 
     <article class="widget" data-widget="stations" data-size="compact">
       <div class="widget-header"><div class="widget-title"><span class="widget-icon" data-tone="warn"><svg viewBox="0 0 24 24"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg></span><div><h2>نمای ایستگاه‌ها</h2><p>موقعیت‌های نمونه عملیاتی</p></div></div><div class="widget-meta"><div class="edit-tools"><button class="drag-handle" aria-label="جابه‌جایی پنجره">⠿</button><button class="size-btn" data-size-action="compact">کوچک</button><button class="size-btn" data-size-action="medium">معمولی</button></div></div></div>
-      <div class="station-map"><svg class="map-route" viewBox="0 0 300 150" preserveAspectRatio="none" aria-hidden="true"><path d="M260 112 C220 115 220 61 170 47 S95 45 38 91" fill="none" stroke="rgba(var(--c-cyan-rgb),.23)" stroke-width="2" stroke-dasharray="4 5"/><path d="M260 112 C220 115 220 61 170 47" fill="none" stroke="var(--accent2)" stroke-width="1" opacity=".8"/></svg><div class="station-node ahvaz"><span class="node"></span><span>اهواز<small>پایگاه مرکزی</small></span></div><div class="station-node abad"><span class="node" data-tone="info" class="tone-ring"></span><span>آبادان<small>ایستگاه غربی</small></span></div><div class="station-node andimeshk"><span class="node tone-ring" data-tone="warn"></span><span>اندیمشک<small>ایستگاه شمالی</small></span></div></div>
-      <div style="display:flex;justify-content:space-between;color:var(--muted);font-size:9px;margin-top:12px"><span>۳ ایستگاه در نمای نمونه</span><span class="tone-text" data-tone="info">● داده نمایشی</span></div>
+      <div class="station-map" data-station-map></div>
+      <div class="station-caption" data-station-caption></div>
     </article>
   </section>
   <div class="footnote"><span class="pulse"></span><span>پوستهٔ تعاملی ATLAS SHIFT</span><span style="opacity:.45">•</span><span>اطلاعات این پیش‌نمایش ساختگی است و به سامانه عملیاتی متصل نیست.</span><span style="margin-right:auto;opacity:.8">LIVE PREVIEW BUILD · 2026.10.19</span></div>

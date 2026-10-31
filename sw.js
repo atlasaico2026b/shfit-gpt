@@ -1,10 +1,10 @@
 /* ATLAS SHIFT service worker — canonical app shell and offline fallback */
-const CACHE_NAME = 'atlas-shift-v89-storage-size';
+const CACHE_NAME = 'atlas-shift-v90-stations-map';
 const APP_FILES = [
   './', './index.html',
   './design/tokens.css', './design/styles.css', './design/skins/flat.css', './design/tones.css',
   './design/table-fix.css', './design/settings-tabs.css', './design/phonebook.css', './design/option-manager.css',
-  './design/modals-export.css', './design/print.css', './design/spectrum.css', './design/gaslogs.css',
+  './design/modals-export.css', './design/print.css', './design/spectrum.css', './design/gaslogs.css', './design/stations.css',
   './design/vehicle-tabs.css',
   './design/theme-switch.js',
   './app.js', './design/secure-store.js', './modules.js', './theme-two.js', './settings-tabs.js', './menu-manager.js',
