@@ -9,6 +9,13 @@
   <title>ATLAS SHIFT | مرکز عملیات</title>
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="icon" href="./design/icons/icon-192.png" sizes="192x192" type="image/png">
+  <!-- iOS فقط PNG را برای آیکون صفحهٔ اصلی می‌پذیرد؛ بدون این، آیکون خالی می‌ماند -->
+  <link rel="apple-touch-icon" href="./design/icons/icon-180.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="ATLAS SHIFT">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <!-- ── لایهٔ طراحی: ترتیب بارگذاری مهم است (tokens → base → skin → tones) ── -->
   <link rel="stylesheet" href="./design/tokens.css">
   <link rel="stylesheet" href="./design/styles.css">
@@ -312,14 +319,62 @@
 <script src="./settings-tabs.js" defer></script>
 <script src="./menu-manager.js" defer></script>
 <script>
-  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
-    window.addEventListener('load', async function () {
-      try {
-        const registration = await navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' });
-        await registration.update();
-      } catch (_) {}
-    });
-  }
+  (function () {
+    // حافظهٔ پایدار: بدون این، مرورگر می‌تواند زیر فشار فضا داده‌های محلی را پاک کند.
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {});
+
+    var notice = null;
+    function showNotice(message, actionLabel, onAction) {
+      if (notice) notice.remove();
+      notice = document.createElement('div');
+      notice.className = 'atlas-notice';
+      var text = document.createElement('span');
+      text.textContent = message;
+      notice.appendChild(text);
+      if (actionLabel) {
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'atlas-notice-action';
+        button.textContent = actionLabel;
+        button.addEventListener('click', function () { notice.remove(); notice = null; onAction(); });
+        notice.appendChild(button);
+      }
+      var close = document.createElement('button');
+      close.type = 'button';
+      close.className = 'atlas-notice-close';
+      close.setAttribute('aria-label', 'بستن');
+      close.textContent = '×';
+      close.addEventListener('click', function () { notice.remove(); notice = null; });
+      notice.appendChild(close);
+      document.body.appendChild(notice);
+      return notice;
+    }
+
+    // نسخهٔ تازه نصب شد (سرویس‌ورکر در activate پیام می‌دهد).
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', function (event) {
+        if (!event.data || event.data.type !== 'atlas-shell-updated') return;
+        showNotice('نسخهٔ تازهٔ برنامه ذخیره شد. برای دیدنش صفحه را بازخوانی کنید.', 'بازخوانی', function () { location.reload(); });
+      });
+    }
+
+    // وضعیت آفلاین: کاربر باید بداند داده‌ها روی همین دستگاه ذخیره می‌شوند.
+    function offlineNotice() {
+      var box = showNotice('آفلاین هستید. همه‌چیز کار می‌کند و تغییرات روی همین دستگاه ذخیره می‌شوند.');
+      setTimeout(function () { if (box.isConnected) box.remove(); }, 6000);
+    }
+    if (!navigator.onLine) window.addEventListener('load', offlineNotice);
+    window.addEventListener('offline', offlineNotice);
+
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+      window.addEventListener('load', async function () {
+        try {
+          const registration = await navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' });
+          await registration.update();
+        } catch (_) {}
+      });
+    }
+  }());
 </script>
 
 <script id="atlas-ui-scale-script">

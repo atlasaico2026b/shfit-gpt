@@ -1,25 +1,28 @@
-/* ATLAS SHIFT service worker — canonical app shell and offline fallback */
-const CACHE_NAME = 'atlas-shift-v90-stations-map';
+/* ATLAS SHIFT service worker — offline-first app shell
+   راهبرد: cache-first. هیچ درخواست شبکه‌ای پیش از نمایش لازم نیست.
+   - install: همهٔ فایل‌های پوسته به‌صورت یکجا پیش‌کش می‌شوند؛ اگر یکی شکست بخورد
+     نصب شکست می‌خورد، پس نسخهٔ قبلی و کش سالمش دست‌نخورده می‌ماند (بدون پوستهٔ نیمه‌کاره).
+   - fetch: اول کش؛ شبکه فقط برای پر کردن کش چیزی که نداریم و به‌عنوان پشتیبان.
+   - activate: کش‌های قدیمی پاک می‌شوند و اگر نسخهٔ قبلی وجود داشت، به صفحه اعلام می‌شود.
+   افزایش CACHE_NAME در هر انتشار، نصب نسخهٔ تازه و پیش‌کش اتمی را تضمین می‌کند. */
+const CACHE_NAME = 'atlas-shift-v91-offline-first';
 const APP_FILES = [
   './', './index.html',
   './design/tokens.css', './design/styles.css', './design/skins/flat.css', './design/tones.css',
   './design/table-fix.css', './design/settings-tabs.css', './design/phonebook.css', './design/option-manager.css',
-  './design/modals-export.css', './design/print.css', './design/spectrum.css', './design/gaslogs.css', './design/stations.css',
-  './design/vehicle-tabs.css',
+  './design/modals-export.css', './design/print.css', './design/spectrum.css', './design/gaslogs.css',
+  './design/stations.css', './design/vehicle-tabs.css',
   './design/theme-switch.js',
-  './app.js', './design/secure-store.js', './modules.js', './theme-two.js', './settings-tabs.js', './menu-manager.js',
-  './visual-engine.js', './manifest.json', './icon.svg'
+  './app.js', './design/secure-store.js', './modules.js', './theme-two.js', './settings-tabs.js',
+  './menu-manager.js', './visual-engine.js', './manifest.json', './icon.svg',
+  './design/icons/icon-192.png', './design/icons/icon-512.png', './design/icons/icon-180.png'
 ];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
-    await Promise.all(APP_FILES.map(async path => {
-      try {
-        const response = await fetch(path, { cache: 'no-store' });
-        if (response.ok) await cache.put(path, response);
-      } catch (_) {}
-    }));
+    // addAll اتمی است: اگر حتی یک فایل گرفته نشود، کل نصب رد می‌شود.
+    await cache.addAll(APP_FILES);
     await self.skipWaiting();
   })());
 });
@@ -27,12 +30,30 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys
-      .filter(key => key.startsWith('atlas-shift-') && key !== CACHE_NAME)
-      .map(key => caches.delete(key)));
+    const older = keys.filter(key => key.startsWith('atlas-shift-') && key !== CACHE_NAME);
+    await Promise.all(older.map(key => caches.delete(key)));
     await self.clients.claim();
+    // فقط وقتی نسخهٔ قبلی وجود داشت، به کاربر خبر بده (نصب اول نباید پیام بدهد).
+    if (!older.length) return;
+    const windows = await self.clients.matchAll({ type: 'window' });
+    windows.forEach(client => client.postMessage({ type: 'atlas-shell-updated' }));
   })());
 });
+
+function offlineResponse(isNavigation) {
+  return new Response(
+    isNavigation
+      ? 'برنامه در حالت آفلاین در دسترس نیست. یک بار با اتصال اینترنت بازش کنید تا کامل ذخیره شود.'
+      : '',
+    {
+      status: 503,
+      headers: {
+        'Content-Type': isNavigation ? 'text/plain; charset=utf-8' : 'text/plain',
+        'Cache-Control': 'no-store'
+      }
+    }
+  );
+}
 
 self.addEventListener('fetch', event => {
   const request = event.request;
@@ -40,30 +61,21 @@ self.addEventListener('fetch', event => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  const isNavigation = request.mode === 'navigate' || url.pathname.endsWith('/index.html');
+  // پیمایش‌ها همیشه پوستهٔ کش‌شده می‌گیرند، حتی با ?view= متفاوت.
+  const isNavigation = request.mode === 'navigate' || /\/index\.html$/.test(url.pathname) || url.pathname.endsWith('/');
+  const key = isNavigation ? './index.html' : request;
+
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(key, { ignoreSearch: isNavigation });
+    if (cached) return cached;
+
     try {
       const response = await fetch(request, { cache: 'no-store' });
-      if (response.ok) {
-        await cache.put(isNavigation ? './index.html' : request, response.clone());
-      }
+      if (response && response.ok) await cache.put(key, response.clone());
       return response;
     } catch (_) {
-      const key = isNavigation ? './index.html' : request;
-      const cached = await cache.match(key, { ignoreSearch: true }) ||
-        await caches.match(key, { ignoreSearch: true });
-      if (cached) return cached;
-      return new Response(
-        isNavigation ? 'برنامه در حالت آفلاین در دسترس نیست. پس از اتصال دوباره بارگذاری کنید.' : '',
-        {
-          status: 503,
-          headers: {
-            'Content-Type': isNavigation ? 'text/plain; charset=utf-8' : 'text/plain',
-            'Cache-Control': 'no-store'
-          }
-        }
-      );
+      return offlineResponse(isNavigation);
     }
   })());
 });

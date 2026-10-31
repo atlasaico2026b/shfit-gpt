@@ -469,3 +469,26 @@ body > .drawer-backdrop,body > .drawer,body > .settings-popover,body > .toast{po
 .storage-alert{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;padding:11px 14px;border:1px solid var(--danger-line);border-radius:14px;background:var(--danger-soft);font-size:12.5px;line-height:1.9}
 .storage-alert strong{color:var(--danger);font-size:12.5px}
 .storage-alert span{color:var(--text);min-width:0}
+
+/* ── اطلاع کوتاه پایین صفحه: نسخهٔ تازهٔ پوسته یا حالت آفلاین ── */
+.atlas-notice{
+  position:fixed;inset-inline:12px;bottom:12px;z-index:9000;
+  display:flex;align-items:center;gap:10px;
+  max-width:640px;margin-inline:auto;
+  padding:12px 14px;border-radius:14px;
+  background:var(--panel-2);color:var(--text);
+  border:1px solid var(--line-hi);
+  box-shadow:0 14px 34px var(--scrim);
+  font-size:13px;line-height:1.7;
+}
+.atlas-notice>span{flex:1 1 auto}
+.atlas-notice-action{
+  flex:0 0 auto;cursor:pointer;
+  padding:6px 14px;border-radius:10px;border:1px solid var(--accent);
+  background:var(--wash-accent);color:var(--text-bright);font-family:inherit;font-size:12px;
+}
+.atlas-notice-close{
+  flex:0 0 auto;cursor:pointer;border:0;background:transparent;
+  color:var(--muted);font-size:20px;line-height:1;padding:0 4px;font-family:inherit;
+}
+@media print{.atlas-notice{display:none!important}}
