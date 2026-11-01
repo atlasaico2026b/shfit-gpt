@@ -304,3 +304,26 @@
   padding: 6px 8px;
 }
 .dash-comment-foot { display: flex; gap: 6px; }
+
+/* رشتهٔ کامنت‌های یک سابقه (یادداشت، برنامه، اشکال، …) */
+.record-comments {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 210px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(6, 10, 24, 0.4);
+  margin-bottom: 10px;
+}
+.record-comment-line {
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--text);
+  border-inline-start: 2px solid rgba(var(--accent-rgb), 0.5);
+  padding-inline-start: 8px;
+}
+.record-comments .module-local-note { margin: 0; }
