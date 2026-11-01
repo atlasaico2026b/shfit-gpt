@@ -5560,6 +5560,69 @@
   // اندازه وجود ندارد.
   const DASHBOARD_SPAN_BY_SIZE = { compact: 4, medium: 6, wide: 8, full: 12 };
 
+  // کادرهای آماده‌ای که می‌توان به داشبورد افزود یا از آن برداشت.
+  const DASHBOARD_CARD_ICON = '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 14h8M8 17h5"/></svg>';
+
+  const DASHBOARD_CARD_TYPES = [
+    { id: 'card-notes', module: 'notes', title: 'یادداشت‌ها و پیگیری‌ها', subtitle: 'آخرین اقدام‌ها و وضعیت پیگیری', size: 'medium', tone: 'warn', unit: 'یادداشت', statusField: 'status' },
+    { id: 'card-missions', module: 'missions', title: 'مأموریت‌ها', subtitle: 'مأموریت‌های ثبت‌شده', size: 'medium', tone: 'info', unit: 'مأموریت', statusField: 'status' },
+    { id: 'card-employees', module: 'employees', title: 'کارکنان', subtitle: 'پرونده‌های پرسنلی', size: 'compact', tone: 'ok', unit: 'نفر', statusField: 'status' },
+    { id: 'card-leaves', module: 'leaves', title: 'مرخصی‌ها', subtitle: 'درخواست‌های مرخصی', size: 'compact', tone: 'accent', unit: 'درخواست', statusField: 'status' },
+    { id: 'card-vehicles', module: 'vehicles', title: 'خودروها', subtitle: 'وضعیت ناوگان', size: 'compact', tone: 'info', unit: 'خودرو', statusField: 'status' },
+    { id: 'card-gasmeters', module: 'gasmeters', title: 'گازسنج‌ها', subtitle: 'وضعیت کالیبراسیون و استقرار', size: 'compact', tone: 'warn', unit: 'گازسنج', statusField: 'status' },
+    { id: 'card-programs', module: 'programs', title: 'برنامه‌ها و پرونده‌ها', subtitle: 'پرونده‌های در جریان', size: 'medium', tone: 'accent', unit: 'پرونده', statusField: 'status' },
+    { id: 'card-faults', module: 'faults', title: 'اشکال‌ها', subtitle: 'اشکال‌های ثبت‌شده', size: 'compact', tone: 'warn', unit: 'اشکال', statusField: 'status' },
+    { id: 'card-reports', module: 'reports', title: 'گزارشات', subtitle: 'گزارش‌های ثبت‌شده', size: 'compact', tone: 'ok', unit: 'گزارش', statusField: 'status' },
+    { id: 'card-phonebook', module: 'phonebook', title: 'دفترچه تلفن', subtitle: 'شماره‌های تماس', size: 'compact', tone: 'info', unit: 'مخاطب' }
+  ];
+
+  function activeDashboardCards() {
+    if (!appData.settings || typeof appData.settings !== 'object') appData.settings = {};
+    if (!Array.isArray(appData.settings.dashboardCards)) appData.settings.dashboardCards = [];
+    appData.settings.dashboardCards = appData.settings.dashboardCards.filter(function (id) {
+      return DASHBOARD_CARD_TYPES.some(function (type) { return type.id === id; });
+    });
+    return appData.settings.dashboardCards;
+  }
+
+  function dashboardCardMeta(type, record) {
+    const parts = [];
+    const status = type.statusField ? record[type.statusField] : '';
+    if (status) parts.push(String(status));
+    const date = record.date || record.letterDate || record.plannedDate;
+    if (date) parts.push(formatJalali(date, false));
+    return parts.join(' · ') || (specs[type.module] ? specs[type.module].singular : '');
+  }
+
+  function dashboardModuleCardMarkup(type) {
+    const records = Array.isArray(appData[type.module]) ? appData[type.module] : [];
+    const sorted = records.slice().sort(function (a, b) {
+      const left = String(b.createdAt || b.updatedAt || b.date || '');
+      const right = String(a.createdAt || a.updatedAt || a.date || '');
+      return left.localeCompare(right);
+    });
+    const items = sorted.slice(0, 3).map(function (record) {
+      return '<div class="list-item"><div class="list-main"><b>' + esc(recordLabel(type.module, record)) + '</b><span>' + esc(dashboardCardMeta(type, record)) + '</span></div></div>';
+    }).join('');
+    return '<article class="widget dash-module-card" data-widget="' + esc(type.id) + '" data-dashboard-card="' + esc(type.id) + '" data-size="' + esc(type.size) + '">' +
+      '<div class="widget-header"><div class="widget-title"><span class="widget-icon" data-tone="' + esc(type.tone) + '">' + DASHBOARD_CARD_ICON + '</span><div><h2>' + esc(type.title) + '</h2><p>' + esc(type.subtitle) + '</p></div></div>' +
+      '<div class="widget-meta"><span class="status-pill" data-tone="' + esc(type.tone) + '">' + faDigits(records.length) + ' ' + esc(type.unit) + '</span>' +
+      '<a class="dash-card-link" href="./index.html?view=' + esc(type.module) + '">همه ←</a></div></div>' +
+      '<div class="list">' + (items || '<div class="list-item"><div class="list-main"><b>موردی ثبت نشده است</b><span>از همین بخش اولین مورد را اضافه کن</span></div></div>') + '</div>' +
+      '</article>';
+  }
+
+  // کادرهای افزوده‌شده پیش از اعمال چیدمان ساخته می‌شوند تا در مرجع چیدمان دیده شوند.
+  function renderDashboardCards() {
+    const host = document.getElementById('dashboard');
+    if (!host) return;
+    Array.prototype.slice.call(host.querySelectorAll('[data-dashboard-card]')).forEach(function (node) { node.remove(); });
+    activeDashboardCards().forEach(function (id) {
+      const type = DASHBOARD_CARD_TYPES.filter(function (item) { return item.id === id; })[0];
+      if (type) host.insertAdjacentHTML('beforeend', dashboardModuleCardMarkup(type));
+    });
+  }
+
   function dashboardWidgetCatalog() {
     const host = document.getElementById('dashboard');
     if (!host) return [];
@@ -5606,6 +5669,7 @@
   function applyDashboardLayout() {
     const host = document.getElementById('dashboard');
     if (!host) return;
+    renderDashboardCards();
     const layout = dashboardLayout();
     const nodes = Array.prototype.slice.call(host.querySelectorAll('[data-widget]'));
     nodes.forEach(function (node) {
@@ -5650,22 +5714,38 @@
   }
 
   function dashboardEditorMarkup() {
+    renderDashboardCards();
     const catalog = dashboardWidgetCatalog();
     const layout = dashboardLayout();
     const byId = function (id) { return catalog.filter(function (item) { return item.id === id; })[0]; };
     const visible = layout.order.map(byId).filter(Boolean).filter(function (widget) { return layout.hidden.indexOf(widget.id) < 0; });
-    const hidden = catalog.filter(function (widget) { return layout.hidden.indexOf(widget.id) >= 0; });
+    const activeCards = activeDashboardCards();
+    const availableCards = DASHBOARD_CARD_TYPES.filter(function (type) { return activeCards.indexOf(type.id) < 0; });
+    const hiddenBuiltins = catalog.filter(function (widget) {
+      return layout.hidden.indexOf(widget.id) >= 0 && widget.id.indexOf('card-') !== 0;
+    });
+    const options = [];
+    if (availableCards.length) {
+      options.push('<optgroup label="کادرهای آمادهٔ داشبورد">' + availableCards.map(function (type) {
+        return '<option value="' + esc(type.id) + '">' + esc(type.title) + '</option>';
+      }).join('') + '</optgroup>');
+    }
+    if (hiddenBuiltins.length) {
+      options.push('<optgroup label="کادرهای حذف‌شده">' + hiddenBuiltins.map(function (widget) {
+        return '<option value="' + esc(widget.id) + '">' + esc(widget.title) + '</option>';
+      }).join('') + '</optgroup>');
+    }
     return '<section class="module-list-panel">' +
       '<div class="module-list-head"><div><h3>تنظیمات داشبورد</h3>' +
-      '<p>چیدمان کادرهای سربرگ داشبورد اینجا تعیین می‌شود: با کشیدن دستگیرهٔ ⠿ جای کادر را عوض کن، از لبه‌ها و گوشه‌ها ابعاد را کم و زیاد کن و کادرهای اضافه را حذف یا برگردان.</p></div>' +
+      '<p>چیدمان کادرهای سربرگ داشبورد اینجا تعیین می‌شود: با کشیدن دستگیرهٔ ⠿ جای کادر را عوض کن، از لبه‌ها و گوشه‌ها ابعاد را کم و زیاد کن و کادرهای تازه مثل یادداشت‌ها را اضافه یا حذف کن.</p></div>' +
       '<div class="module-list-tools">' +
-        (hidden.length
-          ? '<select data-dash-hidden-select aria-label="کادرهای پنهان">' + hidden.map(function (widget) { return '<option value="' + esc(widget.id) + '">' + esc(widget.title) + '</option>'; }).join('') + '</select><button type="button" class="secondary-btn" data-dash-add>+ افزودن کادر</button>'
+        (options.length
+          ? '<select data-dash-hidden-select aria-label="کادرهای قابل افزودن">' + options.join('') + '</select><button type="button" class="secondary-btn" data-dash-add>+ افزودن کادر</button>'
           : '<span class="module-local-note">همهٔ کادرها روی داشبورد هستند.</span>') +
         '<button type="button" class="secondary-btn" data-dash-reset>بازنشانی چیدمان</button>' +
       '</div></div>' +
       '<div class="dash-editor" data-dash-editor>' + visible.map(function (widget) { return dashboardCardMarkup(widget, layout); }).join('') + '</div>' +
-      '<p class="dash-editor-note">تغییرها بی‌درنگ ذخیره و روی داشبورد اعمال می‌شوند. شبکهٔ داشبورد ۱۲ ستونه است؛ «عرض» تعداد ستون‌ها و «ارتفاع» کمینهٔ ارتفاع کادر است.</p>' +
+      '<p class="dash-editor-note">تغییرها بی‌درنگ ذخیره و روی داشبورد اعمال می‌شوند. شبکهٔ داشبورد ۱۲ ستونه است؛ «عرض» تعداد ستون‌ها و «ارتفاع» کمینهٔ ارتفاع کادر است. کادرهای حذف‌شده در همین فهرست «افزودن کادر» باقی می‌مانند.</p>' +
       '</section>';
   }
 
@@ -5764,6 +5844,82 @@
     document.addEventListener('pointercancel', onDashEditEnd);
   }
 
+  // ── مسیردهی چرخ ماوس ───────────────────────────────────────────────────────
+  // چرخ ماوس هرجا باشد، اولویت با بالاترین پنجرهٔ باز است: صفحهٔ زیرین اسکرول
+  // نمی‌شود و اگر نشانگر روی بخش غیرقابل‌اسکرول پنجره باشد، بدنهٔ همان پنجره
+  // اسکرول می‌شود.
+  function wheelLayers() {
+    const list = [];
+    Array.prototype.slice.call(document.querySelectorAll('[data-modal-backdrop]')).forEach(function (node) {
+      if (node.hidden) return;
+      const style = window.getComputedStyle(node);
+      if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return;
+      list.push(node);
+    });
+    if (document.body.classList.contains('notifications-open')) {
+      const drawer = document.getElementById('notificationDrawer');
+      if (drawer) list.push(drawer);
+    }
+    const panel = document.getElementById('settingsPanel');
+    if (panel && panel.classList.contains('open')) list.push(panel);
+    Array.prototype.slice.call(document.querySelectorAll('.calendar-panel.open, .jalali-picker')).forEach(function (node) {
+      if (node.hidden) return;
+      const rect = node.getBoundingClientRect();
+      if (rect.width > 4 && rect.height > 4) list.push(node);
+    });
+    return list;
+  }
+
+  function topWheelLayer() {
+    const layers = wheelLayers();
+    if (!layers.length) return null;
+    let top = layers[0];
+    let topZ = -Infinity;
+    layers.forEach(function (node) {
+      const z = parseInt(window.getComputedStyle(node).zIndex, 10);
+      const value = isNaN(z) ? 0 : z;
+      if (value >= topZ) { top = node; topZ = value; }
+    });
+    return top;
+  }
+
+  function scrollableAncestor(node, boundary) {
+    let current = node;
+    while (current && current !== boundary.parentElement) {
+      const overflow = window.getComputedStyle(current).overflowY;
+      if ((overflow === 'auto' || overflow === 'scroll' || overflow === 'overlay') && current.scrollHeight - current.clientHeight > 2) return current;
+      current = current.parentElement;
+    }
+    return null;
+  }
+
+  function firstScrollableInside(layer) {
+    const nodes = layer.querySelectorAll('*');
+    for (let i = 0; i < nodes.length; i += 1) {
+      const node = nodes[i];
+      const overflow = window.getComputedStyle(node).overflowY;
+      if ((overflow === 'auto' || overflow === 'scroll') && node.scrollHeight - node.clientHeight > 2) return node;
+    }
+    return null;
+  }
+
+  function routeWheelScroll(event) {
+    if (event.ctrlKey || event.defaultPrevented) return;
+    if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+    const layer = topWheelLayer();
+    if (!layer) return;
+    const stack = document.elementsFromPoint(event.clientX, event.clientY) || [];
+    const inside = stack.filter(function (node) { return layer.contains(node); })[0];
+    const scroller = (inside && scrollableAncestor(inside, layer)) || firstScrollableInside(layer);
+    if (!scroller) { event.preventDefault(); return; }
+    const max = scroller.scrollHeight - scroller.clientHeight;
+    if (max <= 2) { event.preventDefault(); return; }
+    scroller.scrollTop = Math.max(0, Math.min(max, scroller.scrollTop + event.deltaY));
+    event.preventDefault();
+  }
+
+  document.addEventListener('wheel', routeWheelScroll, { passive: false });
+
   // ── تب‌های تنظیمات و اقدام‌های صفحهٔ تنظیمات ──
   document.addEventListener('keydown', function (event) {
     if (event.key !== 'Enter') return;
@@ -5796,21 +5952,34 @@
       event.preventDefault();
       const layout = dashboardLayout();
       const id = removeCard.dataset.dashRemove;
-      if (layout.hidden.indexOf(id) < 0) layout.hidden.push(id);
+      if (id.indexOf('card-') === 0) {
+        appData.settings.dashboardCards = activeDashboardCards().filter(function (item) { return item !== id; });
+        layout.order = layout.order.filter(function (item) { return item !== id; });
+        layout.hidden = layout.hidden.filter(function (item) { return item !== id; });
+        delete layout.spans[id];
+        delete layout.heights[id];
+      } else if (layout.hidden.indexOf(id) < 0) {
+        layout.hidden.push(id);
+      }
       applyDashboardLayout();
-      if (await saveState()) { render('settings', view); toast('کادر از داشبورد حذف شد.'); }
+      if (await saveState()) { render('settings', view); toast('کادر از داشبورد حذف شد. هر وقت خواستی از «افزودن کادر» برمی‌گردد.'); }
       return;
     }
     const addCard = event.target.closest('[data-dash-add]');
     if (addCard) {
       event.preventDefault();
       const picker = document.querySelector('[data-dash-hidden-select]');
-      const id = picker && picker.value;
-      if (!id) return;
+      const value = picker && picker.value;
+      if (!value) return;
       const layout = dashboardLayout();
-      layout.hidden = layout.hidden.filter(function (item) { return item !== id; });
+      const isCardType = DASHBOARD_CARD_TYPES.some(function (type) { return type.id === value; });
+      if (isCardType) {
+        const cards = activeDashboardCards();
+        if (cards.indexOf(value) < 0) cards.push(value);
+      }
+      layout.hidden = layout.hidden.filter(function (item) { return item !== value; });
       applyDashboardLayout();
-      if (await saveState()) { render('settings', view); toast('کادر به داشبورد بازگشت.'); }
+      if (await saveState()) { render('settings', view); toast('کادر به داشبورد افزوده شد.'); }
       return;
     }
     const resetCards = event.target.closest('[data-dash-reset]');
@@ -5818,6 +5987,7 @@
       event.preventDefault();
       if (!(await askConfirm({ title: 'بازنشانی چیدمان داشبورد', message: 'اندازه‌ها، ترتیب و کادرهای حذف‌شده به حالت اولیه برمی‌گردند.', confirmLabel: 'بازنشانی' }))) return;
       delete appData.settings.dashboardLayout;
+      appData.settings.dashboardCards = [];
       dashboardLayout();
       applyDashboardLayout();
       if (await saveState()) { render('settings', view); toast('چیدمان داشبورد بازنشانی شد.'); }
