@@ -431,7 +431,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 280px;
+  max-height: 340px;
   padding: 8px;
   border: 1px solid rgba(var(--c-accent-rgb, 90,170,255), .28);
   border-radius: 12px;
@@ -448,7 +448,7 @@
   font-family: inherit;
   font-size: 12px;
 }
-.atlas-combo-list { display: flex; flex-direction: column; gap: 2px; overflow-y: auto; max-height: 200px; }
+.atlas-combo-list { display: flex; flex-direction: column; gap: 2px; overflow-y: auto; max-height: 250px; }
 .atlas-combo-option {
   padding: 7px 9px;
   border: 0;
