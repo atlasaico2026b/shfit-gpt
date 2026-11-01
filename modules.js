@@ -1114,7 +1114,7 @@
             }
             return '<td>' + displayValue(moduleKey, key, value, data) + '</td>';
           }).join('') +
-          '<td class="module-row-actions">' + (moduleKey === 'employees' ? renderContactActions(record) : '') + renderHistoryButton(moduleKey, record) +
+          '<td class="module-row-actions">' + (moduleKey === 'employees' ? renderContactActions(record) : '') + renderCommentButton(moduleKey, record) + renderHistoryButton(moduleKey, record) +
           '<button type="button" class="secondary-btn" data-module-action="edit" data-view="' + esc(moduleKey) + '" data-id="' + esc(record.id) + '">ویرایش</button> ' +
           '<button type="button" class="module-delete-btn" data-module-action="delete" data-view="' + esc(moduleKey) + '" data-id="' + esc(record.id) + '">حذف</button></td></tr>';
       }).join('') + '</tbody></table></div>';
@@ -1988,7 +1988,7 @@
       (record.status ? '<div class="program-meta">وضعیت: ' + esc(record.status) + '</div>' : '') +
       (stageRows ? '<div class="program-stages">' + stageRows + '</div>' : '') +
       '<div class="program-stage-add"><input type="text" data-program-stage-input="' + esc(record.id) + '" placeholder="نام مرحلهٔ جدید"><button class="secondary-btn" type="button" data-program-action="stage-add" data-program="' + esc(record.id) + '">افزودن مرحله</button></div>' +
-      '<div class="program-chips"><button type="button" data-program-action="edit" data-program="' + esc(record.id) + '">ویرایش</button><button type="button" data-program-action="delete" data-program="' + esc(record.id) + '">حذف</button></div>' +
+      '<div class="program-chips">' + renderCommentButton('programs', record) + '<button type="button" data-program-action="edit" data-program="' + esc(record.id) + '">ویرایش</button><button type="button" data-program-action="delete" data-program="' + esc(record.id) + '">حذف</button></div>' +
     '</article>';
   }
 
@@ -2095,7 +2095,7 @@
       stepsHtml +
       '<div class="fault-card-foot"><span class="fault-priority" data-tone="' + (record.priority === 'بحرانی' ? 'danger' : record.priority === 'زیاد' ? 'attention' : 'info') + '">اولویت: ' + esc(record.priority || '—') + '</span>' +
       (open ? '<div class="fault-step-add"><input type="text" data-fault-step-input="' + esc(record.id) + '" placeholder="اقدام انجام‌شده را بنویس و Enter بزن"><button type="button" class="secondary-btn" data-fault-action="add-step" data-fault="' + esc(record.id) + '">+ اقدام</button></div>' : '') +
-      '<div class="fault-card-actions"><button type="button" class="secondary-btn" data-module-action="edit" data-view="faults" data-id="' + esc(record.id) + '">ویرایش</button>' +
+      '<div class="fault-card-actions">' + renderCommentButton('faults', record) + '<button type="button" class="secondary-btn" data-module-action="edit" data-view="faults" data-id="' + esc(record.id) + '">ویرایش</button>' +
       (open ? '<button type="button" class="secondary-btn" data-fault-action="resolve" data-fault="' + esc(record.id) + '">علامت‌گذاری رفع شد</button>' : '') +
       '<button type="button" class="module-delete-btn" data-module-action="delete" data-view="faults" data-id="' + esc(record.id) + '">حذف</button></div></div></article>';
   }
@@ -4661,6 +4661,108 @@
       toast(error.message||'فایل انتخاب‌شده نسخهٔ پشتیبان معتبر ATLAS SHIFT نیست.');
     }
   }
+
+  // ── کامنت روی هر سابقه (یادداشت، برنامه، اشکال، مأموریت، مرخصی، …) ─────────
+  // هر بخشی که فیلد کامنت دارد، دکمهٔ «کامنت» می‌گیرد؛ متن با تاریخ و ساعت شمسی
+  // در همان فیلد ثبت و در «سوابق» همان مورد هم ثبت می‌شود.
+  const RECORD_COMMENT_FIELDS = {
+    employees: 'notes', missions: 'notes', leaves: 'description', stations: 'notes',
+    notes: 'comments', programs: 'actionsLog', faults: 'steps', maintenance: 'description',
+    gaslogs: 'description', gasmeters: 'notes', vehicles: 'notes'
+  };
+
+  function recordCommentField(moduleKey) {
+    const key = RECORD_COMMENT_FIELDS[moduleKey];
+    if (!key) return '';
+    return fieldsFor(moduleKey).some(function (field) { return field.key === key; }) ? key : '';
+  }
+
+  function recordCommentLines(record, fieldKey) {
+    return String(record && record[fieldKey] || '').split('\n').map(function (line) { return line.trim(); }).filter(Boolean);
+  }
+
+  function renderCommentButton(moduleKey, record) {
+    if (!recordCommentField(moduleKey)) return '';
+    return '<button type="button" class="secondary-btn" data-record-comment="' + esc(moduleKey + ':' + record.id) + '">کامنت</button> ';
+  }
+
+  function openCommentDialog(moduleKey, recordId) {
+    const record = (appData[moduleKey] || []).find(function (item) { return String(item.id) === String(recordId); });
+    if (!record) return;
+    const fieldKey = recordCommentField(moduleKey);
+    if (!fieldKey) { toast('برای این بخش فیلد کامنت تعریف نشده است.'); return; }
+    const fieldDef = fieldsFor(moduleKey).find(function (field) { return field.key === fieldKey; }) || { label: 'کامنت' };
+    const statusField = fieldsFor(moduleKey).find(function (field) { return field.key === 'status'; });
+    const statusValues = statusField ? (statusField.options || []) : [];
+    const lines = recordCommentLines(record, fieldKey).reverse();
+    const thread = lines.length
+      ? lines.map(function (line) {
+          return '<div class="record-comment-line">' + esc(line) + '</div>';
+        }).join('')
+      : '<p class="module-local-note">هنوز کامنتی روی این مورد ثبت نشده است.</p>';
+    const body =
+      '<div class="record-comments">' + thread + '</div>' +
+      '<div class="atlas-dialog-field"><label for="recordCommentText">کامنت یا اقدام جدید</label>' +
+      '<textarea id="recordCommentText" class="atlas-dialog-input" rows="3" placeholder="' + esc(fieldDef.placeholder || 'تاریخ | شخص | شرح اقدام | وضعیت') + '"></textarea>' +
+      '<p class="atlas-dialog-error" data-dialog-error hidden></p></div>' +
+      (statusValues.length
+        ? '<div class="atlas-dialog-field"><label for="recordCommentStatus">وضعیت این مورد (اختیاری)</label>' +
+          '<select id="recordCommentStatus" class="atlas-dialog-input"><option value="">بدون تغییر</option>' +
+          statusValues.map(function (value) {
+            return '<option value="' + esc(value) + '"' + (value === record.status ? ' selected' : '') + '>' + esc(value) + '</option>';
+          }).join('') + '</select></div>'
+        : '');
+    const backdrop = dialogShell({
+      title: 'کامنت برای ' + (specs[moduleKey] ? specs[moduleKey].singular : 'مورد'),
+      message: recordLabel(moduleKey, record),
+      body: body,
+      confirmLabel: 'ثبت کامنت',
+      hint: 'کامنت با تاریخ و ساعت شمسی در فیلد «' + fieldDef.label + '» و در سوابق همین مورد ثبت می‌شود.'
+    });
+    const textarea = backdrop.querySelector('#recordCommentText');
+    const error = backdrop.querySelector('[data-dialog-error]');
+    const statusSelect = backdrop.querySelector('#recordCommentStatus');
+    let settled = false;
+    function finish() {
+      if (settled) return;
+      settled = true;
+      backdrop.remove();
+    }
+    backdrop.querySelectorAll('[data-dialog-cancel]').forEach(function (btn) { btn.addEventListener('click', finish); });
+    backdrop.addEventListener('click', function (event) { if (event.target === backdrop) finish(); });
+    if (textarea) textarea.focus();
+    backdrop.querySelector('[data-dialog-ok]').addEventListener('click', async function () {
+      const text = String(textarea && textarea.value || '').trim();
+      if (!text) {
+        if (error) { error.textContent = 'متن کامنت را بنویس.'; error.hidden = false; }
+        if (textarea) textarea.focus();
+        return;
+      }
+      const nextStatus = statusSelect ? String(statusSelect.value || '') : '';
+      const current = String(record[fieldKey] || '').replace(/\s+$/, '');
+      const line = [commentStamp(), 'کامنت', text, nextStatus || record.status || ''].filter(Boolean).join(' | ');
+      record[fieldKey] = current ? current + '\n' + line : line;
+      addHistory(moduleKey, record, 'کامنت', [{ field: fieldDef.label, before: '', after: text.slice(0, 90) }]);
+      if (nextStatus && nextStatus !== record.status) {
+        addHistory(moduleKey, record, 'تغییر وضعیت', [{ field: 'وضعیت', before: record.status || '—', after: nextStatus }]);
+        record.status = nextStatus;
+      }
+      record.updatedAt = new Date().toISOString();
+      finish();
+      const saved = await saveState();
+      render(currentView, document.getElementById('sectionView'));
+      toast(saved ? 'کامنت ثبت شد و در سوابق این مورد آمد.' : 'کامنت ثبت شد ولی ذخیره‌سازی انجام نشد؛ صفحه را نگه دار و دوباره تلاش کن.');
+    });
+  }
+
+  document.addEventListener('click', function (event) {
+    const button = event.target.closest('[data-record-comment]');
+    if (!button) return;
+    event.preventDefault();
+    const parts = String(button.dataset.recordComment || '').split(':');
+    if (parts.length < 2) return;
+    openCommentDialog(parts[0], parts.slice(1).join(':'));
+  });
 
   function openHistory(moduleKey, id) {
     const record=appData[moduleKey].find(function(item){return String(item.id)===String(id);});
