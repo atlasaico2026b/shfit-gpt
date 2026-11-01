@@ -327,3 +327,61 @@
   padding-inline-start: 8px;
 }
 .record-comments .module-local-note { margin: 0; }
+
+/* ─────────────────────────────────────────────────────────────
+   دسته‌بندی رنگی اعلان‌ها (کشوی اعلان + ویجت داشبورد)
+   گازسنج زرد · خودرو قرمز کم‌رنگ · اشکال نارنجی · یادداشت سفید
+   برنامه بنفش · مأموریت آبی · مرخصی سبزآبی
+   ───────────────────────────────────────────────────────────── */
+[data-kind="gasmeter"] { --kind-rgb: 245, 197, 66; }
+[data-kind="vehicle"] { --kind-rgb: 255, 138, 128; }
+[data-kind="fault"] { --kind-rgb: 255, 171, 94; }
+[data-kind="note"] { --kind-rgb: 244, 247, 255; }
+[data-kind="program"] { --kind-rgb: 183, 156, 255; }
+[data-kind="mission"] { --kind-rgb: 126, 200, 255; }
+[data-kind="leave"] { --kind-rgb: 111, 227, 196; }
+[data-kind="other"] { --kind-rgb: 168, 180, 204; }
+
+.notice-card[data-kind] {
+  border-inline-start: 3px solid rgba(var(--kind-rgb), 0.75);
+}
+.notice-card[data-kind].unread {
+  background: linear-gradient(100deg, rgba(var(--kind-rgb), 0.15), rgba(var(--c-white-rgb), 0.035));
+  border-color: rgba(var(--kind-rgb), 0.28);
+  border-inline-start-color: rgba(var(--kind-rgb), 0.9);
+}
+.notice-card[data-kind] .notice-mark {
+  background: rgba(var(--kind-rgb), 0.16);
+  border: 1px solid rgba(var(--kind-rgb), 0.32);
+  color: rgb(var(--kind-rgb));
+  font-size: 14px;
+}
+.notice-card[data-kind] .notice-body b { color: rgb(var(--kind-rgb)); }
+.notice-card[data-kind] .notice-unread { background: rgb(var(--kind-rgb)); }
+
+.alert-item[data-kind] {
+  border-inline-start: 3px solid rgba(var(--kind-rgb), 0.7);
+  padding-inline-start: 9px;
+  border-radius: 8px;
+}
+.alert-item[data-kind] .alert-symbol {
+  background: rgba(var(--kind-rgb), 0.14);
+  border-color: rgba(var(--kind-rgb), 0.3);
+  color: rgb(var(--kind-rgb));
+}
+.alert-item[data-kind] .alert-copy b { color: rgb(var(--kind-rgb)); }
+
+.notice-quick-comment {
+  margin-top: 6px;
+  border: 1px solid rgba(var(--kind-rgb, 168, 180, 204), 0.45);
+  background: rgba(var(--kind-rgb, 168, 180, 204), 0.12);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 9px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+.notice-quick-comment:hover { background: rgba(var(--kind-rgb, 168, 180, 204), 0.22); }
+.alert-item .notice-quick-comment { margin-top: 0; align-self: center; }

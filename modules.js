@@ -1253,55 +1253,107 @@
     return Math.round((target.getTime() - now.getTime()) / 86400000);
   }
 
+  // دستهٔ هر اعلان رنگ خودش را دارد: گازسنج زرد، خودرو قرمز کم‌رنگ، یادداشت سفید،
+  // برنامه بنفش، اشکال نارنجی، مأموریت آبی، مرخصی سبزآبی.
+  const ALERT_KIND_META = {
+    gasmeter: { label: 'گازسنج', icon: '◉' },
+    vehicle: { label: 'خودرو', icon: '⌁' },
+    fault: { label: 'اشکال', icon: '!' },
+    note: { label: 'یادداشت', icon: '✎' },
+    program: { label: 'برنامه', icon: '▤' },
+    mission: { label: 'مأموریت', icon: '➤' },
+    leave: { label: 'مرخصی', icon: '☰' }
+  };
+
+  function alertCommentButton(alert) {
+    if (!alert || !alert.module || !alert.recordId) return '';
+    if (!recordCommentField(alert.module)) return '';
+    return '<button type="button" class="notice-quick-comment" data-record-comment="' + esc(alert.module + ':' + alert.recordId) + '">کامنت سریع</button>';
+  }
+
   function alertsForData() {
     const alerts = [];
     (appData.gasmeters || []).forEach(function (meter) {
       const name = meter.code || meter.serial || 'دستگاه';
       if (gasMeterInCalibration(meter)) {
         alerts.push({
-          key:'meter-cal-' + meter.id, critical:true,
+          key:'meter-cal-' + meter.id, kind:'gasmeter', critical:true,
           title:'گازسنج در کالیبراسیون',
           detail:name + ' · ارسال ' + (meter.calibrationDispatch ? formatJalali(meter.calibrationDispatch, false) : 'ثبت‌شده') + ' · در انتظار دریافت',
-          at:meter.calibrationDispatch || meter.updatedAt
+          at:meter.calibrationDispatch || meter.updatedAt,
+          module:'gasmeters', recordId:meter.id
         });
         return;
       }
       const left = dueInDays(meter.calibrationEnd);
       if (Number.isFinite(left) && left <= GAS_CALIBRATION_WARN_DAYS) {
         alerts.push({
-          key:'meter-' + meter.id, critical:left <= 7,
+          key:'meter-' + meter.id, kind:'gasmeter', critical:left <= 7,
           title:'موعد کالیبراسیون گازسنج',
           detail:name + ' · ' + (left < 0 ? 'مهلت گذشته' : 'تا ' + faDigits(left) + ' روز دیگر'),
-          at:meter.calibrationEnd
+          at:meter.calibrationEnd,
+          module:'gasmeters', recordId:meter.id
         });
       }
     });
-    appData.vehicles.forEach(function (vehicle) {
+    (appData.vehicles || []).forEach(function (vehicle) {
       if (['در تعمیر','خارج از سرویس'].includes(vehicle.status) || vehicle.healthStatus === 'دارای نقص') {
-        alerts.push({key:'vehicle-' + vehicle.id,critical:true,title:'خودرو نیازمند رسیدگی',detail:(vehicle.name || 'خودرو') + ' · ' + (vehicle.status || vehicle.healthStatus || ''),at:vehicle.updatedAt});
+        alerts.push({ key:'vehicle-' + vehicle.id, kind:'vehicle', critical:true, title:'خودرو نیازمند رسیدگی', detail:(vehicle.name || 'خودرو') + ' · ' + (vehicle.status || vehicle.healthStatus || ''), at:vehicle.updatedAt, module:'vehicles', recordId:vehicle.id });
       }
       const km = Number(vehicle.currentKm), next = Number(vehicle.nextOilKm);
       if (Number.isFinite(km) && Number.isFinite(next) && next > 0 && next - km <= 500) {
-        alerts.push({key:'oil-' + vehicle.id,critical:next <= km,title:'سررسید سرویس روغن',detail:(vehicle.name || 'خودرو') + ' · ' + (next <= km ? 'موعد گذشته' : faDigits(next - km) + ' کیلومتر مانده'),at:vehicle.updatedAt});
+        alerts.push({ key:'oil-' + vehicle.id, kind:'vehicle', critical:next <= km, title:'سررسید سرویس روغن', detail:(vehicle.name || 'خودرو') + ' · ' + (next <= km ? 'موعد گذشته' : faDigits(next - km) + ' کیلومتر مانده'), at:vehicle.updatedAt, module:'vehicles', recordId:vehicle.id });
       }
     });
     (appData.faults || []).forEach(function (fault) {
       const open = fault.status !== 'رفع شد' && fault.status !== 'بسته‌شده';
       if (!open) return;
       alerts.push({
-        key:'fault-' + fault.id,
+        key:'fault-' + fault.id, kind:'fault',
         critical:fault.priority === 'بحرانی' || fault.priority === 'زیاد',
         title:'اشکال باز: ' + (fault.title || 'بدون عنوان'),
         detail:(faultAssetLabel(fault) || '') + ' · ' + (fault.status || 'ثبت‌شده') + ' · ' + faDigits(faultProgress(fault)) + '٪ رفع',
-        at:fault.reportedAt,
-        view:'faults'
+        at:fault.reportedAt, view:'faults',
+        module:'faults', recordId:fault.id
       });
     });
-    appData.notes.forEach(function (note) {
+    (appData.notes || []).forEach(function (note) {
       const left = dueInDays(note.dueDate);
       if (note.dueDate && left < 0 && !['تکمیل‌شده','لغوشده'].includes(note.status)) {
-        alerts.push({key:'note-' + note.id,critical:false,title:'پیگیری با موعد گذشته',detail:note.title || 'پیگیری',at:note.dueDate});
+        alerts.push({ key:'note-' + note.id, kind:'note', critical:false, title:'پیگیری با موعد گذشته', detail:note.title || 'پیگیری', at:note.dueDate, module:'notes', recordId:note.id });
       }
+    });
+    (appData.programs || []).forEach(function (program) {
+      if (['تکمیل‌شده','لغوشده'].includes(program.status)) return;
+      const left = dueInDays(program.dueDate);
+      if (!program.dueDate || !Number.isFinite(left) || left > 3) return;
+      alerts.push({
+        key:'program-' + program.id, kind:'program', critical:left < 0,
+        title:left < 0 ? 'برنامه با مهلت گذشته' : 'مهلت برنامه نزدیک است',
+        detail:(program.title || 'برنامه') + ' · ' + (left < 0 ? faDigits(Math.abs(left)) + ' روز گذشته' : 'تا ' + faDigits(left) + ' روز دیگر'),
+        at:program.dueDate, module:'programs', recordId:program.id
+      });
+    });
+    const today = todayIso();
+    (appData.missions || []).forEach(function (mission) {
+      if (['انجام‌شده','لغو‌شده'].includes(mission.status)) return;
+      if (String(mission.startAt || '').slice(0, 10) !== today) return;
+      alerts.push({
+        key:'mission-' + mission.id, kind:'mission', critical:false,
+        title:'مأموریت امروز',
+        detail:(mission.title || 'مأموریت') + ' · ' + (mission.status || 'برنامه‌ریزی‌شده'),
+        at:mission.startAt, module:'missions', recordId:mission.id
+      });
+    });
+    (appData.leaves || []).forEach(function (leave) {
+      if (leave.status !== 'در انتظار تأیید') return;
+      const person = (appData.employees || []).find(function (item) { return String(item.id) === String(leave.employeeId); });
+      alerts.push({
+        key:'leave-' + leave.id, kind:'leave', critical:false,
+        title:'مرخصی در انتظار تأیید',
+        detail:(person ? employeeName(person) : 'کارمند') + ' · ' + (leave.startDate ? formatJalali(leave.startDate, false) : ''),
+        at:leave.startDate, module:'leaves', recordId:leave.id
+      });
     });
     return alerts.sort(function (a,b) { return Number(b.critical)-Number(a.critical); });
   }
@@ -1466,14 +1518,27 @@
     const alertsWidget=document.querySelector('[data-widget="alerts"]'),alertList=alertsWidget&&alertsWidget.querySelector('.alert-list');
     if(alertList){
       const existingButton=document.getElementById('seeAllAlerts');
-      alertList.innerHTML=alerts.length?alerts.slice(0,5).map(function(a){return '<div class="alert-item'+(a.critical?' critical':'')+'"><div class="alert-symbol">'+(a.critical?'!':'↗')+'</div><div class="alert-copy"><b>'+esc(a.title)+'</b><p>'+esc(a.detail)+'</p></div><span class="alert-age">'+(a.critical?'توجه':'پیگیری')+'</span></div>';}).join(''):'<div class="module-empty">هشدار عملیاتی ثبت‌شده‌ای وجود ندارد.</div>';
+      alertList.innerHTML=alerts.length?alerts.slice(0,5).map(function(a){
+        return '<div class="alert-item alert-kind-'+esc(a.kind||'other')+(a.critical?' critical':'')+'" data-kind="'+esc(a.kind||'other')+'">'+
+          '<div class="alert-symbol">'+esc((ALERT_KIND_META[a.kind]||{icon:'↗'}).icon)+'</div>'+
+          '<div class="alert-copy"><b>'+esc(a.title)+'</b><p>'+esc(a.detail)+'</p></div>'+
+          alertCommentButton(a)+
+          '<span class="alert-age">'+esc((ALERT_KIND_META[a.kind]||{label:'پیگیری'}).label)+'</span></div>';
+      }).join(''):'<div class="module-empty">هشدار عملیاتی ثبت‌شده‌ای وجود ندارد.</div>';
       if(existingButton)alertList.appendChild(existingButton);
       const count=document.getElementById('notificationCount');if(count)count.textContent=faDigits(alerts.length);
     }
     const notificationList=document.getElementById('noticeList');
     if(notificationList){
       const drawerButton=document.getElementById('seeAllAlerts');
-      notificationList.innerHTML=alerts.length?alerts.map(function(a){return '<div class="notice-card'+(a.critical?' unread':'')+'"><div class="notice-icon">'+(a.critical?'!':'↗')+'</div><div><b>'+esc(a.title)+'</b><p>'+esc(a.detail)+'</p></div></div>';}).join(''):'<div class="module-empty">اعلان تازه‌ای وجود ندارد.</div>';
+      notificationList.innerHTML=alerts.length?alerts.map(function(a){
+        return '<div class="notice-card notice-kind-'+esc(a.kind||'other')+(a.critical?' unread':'')+'" data-kind="'+esc(a.kind||'other')+'">'+
+          '<div class="notice-mark">'+esc((ALERT_KIND_META[a.kind]||{icon:'↗'}).icon)+'</div>'+
+          '<div class="notice-body"><b>'+esc(a.title)+'</b><p>'+esc(a.detail)+'</p>'+
+          '<small>'+esc((ALERT_KIND_META[a.kind]||{label:'پیگیری'}).label)+'</small>'+
+          alertCommentButton(a)+'</div>'+
+          '<span class="notice-unread"></span></div>';
+      }).join(''):'<div class="module-empty">اعلان تازه‌ای وجود ندارد.</div>';
     }
     const operations=document.querySelector('[data-widget="operations"]');
     if(operations){
@@ -4666,7 +4731,7 @@
   // هر بخشی که فیلد کامنت دارد، دکمهٔ «کامنت» می‌گیرد؛ متن با تاریخ و ساعت شمسی
   // در همان فیلد ثبت و در «سوابق» همان مورد هم ثبت می‌شود.
   const RECORD_COMMENT_FIELDS = {
-    employees: 'notes', missions: 'notes', leaves: 'description', stations: 'notes',
+    employees: 'notes', missions: 'result', leaves: 'reason', stations: 'description',
     notes: 'comments', programs: 'actionsLog', faults: 'steps', maintenance: 'description',
     gaslogs: 'description', gasmeters: 'notes', vehicles: 'notes'
   };
@@ -5665,14 +5730,14 @@
   const DASHBOARD_CARD_ICON = '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 14h8M8 17h5"/></svg>';
 
   const DASHBOARD_CARD_TYPES = [
-    { id: 'card-notes', module: 'notes', title: 'یادداشت‌ها و پیگیری‌ها', subtitle: 'اقدام‌های باز؛ همین‌جا کامنت بگذار', size: 'medium', tone: 'warn', unit: 'یادداشت', statusField: 'status', commentField: 'comments', commentLabel: 'کامنت', openOnly: true, closedStatuses: ['تکمیل‌شده', 'لغوشده'] },
+    { id: 'card-notes', module: 'notes', title: 'یادداشت‌ها و پیگیری‌ها', subtitle: 'اقدام‌های باز؛ همین‌جا کامنت بگذار', size: 'medium', tone: 'warn', unit: 'یادداشت', statusField: 'status', commentLabel: 'کامنت', openOnly: true, closedStatuses: ['تکمیل‌شده', 'لغوشده'] },
     { id: 'card-missions', module: 'missions', title: 'مأموریت‌ها', subtitle: 'مأموریت‌های ثبت‌شده', size: 'medium', tone: 'info', unit: 'مأموریت', statusField: 'status' },
     { id: 'card-employees', module: 'employees', title: 'کارکنان', subtitle: 'پرونده‌های پرسنلی', size: 'compact', tone: 'ok', unit: 'نفر', statusField: 'status' },
     { id: 'card-leaves', module: 'leaves', title: 'مرخصی‌ها', subtitle: 'درخواست‌های مرخصی', size: 'compact', tone: 'accent', unit: 'درخواست', statusField: 'status' },
     { id: 'card-vehicles', module: 'vehicles', title: 'خودروها', subtitle: 'وضعیت ناوگان', size: 'compact', tone: 'info', unit: 'خودرو', statusField: 'status' },
     { id: 'card-gasmeters', module: 'gasmeters', title: 'گازسنج‌ها', subtitle: 'وضعیت کالیبراسیون و استقرار', size: 'compact', tone: 'warn', unit: 'گازسنج', statusField: 'status' },
-    { id: 'card-programs', module: 'programs', title: 'برنامه‌ها و پرونده‌ها', subtitle: 'پرونده‌های باز؛ اقدام و کامنت همین‌جا', size: 'medium', tone: 'accent', unit: 'پرونده', statusField: 'status', commentField: 'actionsLog', commentLabel: 'کامنت/اقدام', openOnly: true, closedStatuses: ['تکمیل‌شده', 'لغوشده'] },
-    { id: 'card-faults', module: 'faults', title: 'اشکال‌های خودرو', subtitle: 'اشکال‌های باز؛ همین‌جا رفع یا اقدام ثبت کن', size: 'medium', tone: 'warn', unit: 'اشکال', statusField: 'status', commentField: 'steps', commentLabel: 'اقدام', resolve: true, openOnly: true, closedStatuses: ['رفع شد', 'بسته‌شده'] },
+    { id: 'card-programs', module: 'programs', title: 'برنامه‌ها و پرونده‌ها', subtitle: 'پرونده‌های باز؛ اقدام و کامنت همین‌جا', size: 'medium', tone: 'accent', unit: 'پرونده', statusField: 'status', commentLabel: 'کامنت/اقدام', openOnly: true, closedStatuses: ['تکمیل‌شده', 'لغوشده'] },
+    { id: 'card-faults', module: 'faults', title: 'اشکال‌های خودرو', subtitle: 'اشکال‌های باز؛ همین‌جا رفع یا اقدام ثبت کن', size: 'medium', tone: 'warn', unit: 'اشکال', statusField: 'status', commentLabel: 'اقدام', resolve: true, openOnly: true, closedStatuses: ['رفع شد', 'بسته‌شده'] },
     { id: 'card-reports', module: 'reports', title: 'گزارشات', subtitle: 'گزارش‌های ثبت‌شده', size: 'compact', tone: 'ok', unit: 'گزارش', statusField: 'status' },
     { id: 'card-phonebook', module: 'phonebook', title: 'دفترچه تلفن', subtitle: 'شماره‌های تماس', size: 'compact', tone: 'info', unit: 'مخاطب' }
   ];
@@ -5715,7 +5780,7 @@
   function dashboardItemActions(type, record) {
     const key = esc(type.module + ':' + record.id);
     const parts = [];
-    if (type.commentField) {
+    if (recordCommentField(type.module)) {
       parts.push('<button type="button" class="dash-mini-btn" data-dash-comment="' + key + '" aria-expanded="false">✎ ' + esc(type.commentLabel || 'کامنت') + '</button>');
     }
     if (type.resolve && (type.closedStatuses || []).indexOf(record.status) < 0) {
@@ -5725,7 +5790,7 @@
   }
 
   function dashboardCommentBox(type, record) {
-    if (!type.commentField) return '';
+    if (!recordCommentField(type.module)) return '';
     const key = esc(type.module + ':' + record.id);
     return '<div class="dash-comment" data-dash-comment-box="' + key + '" hidden>' +
       '<textarea rows="2" data-dash-comment-text="' + key + '" placeholder="' + esc(type.commentPlaceholder || 'کامنت یا اقدام انجام‌شده را با تاریخ بنویس…') + '"></textarea>' +
@@ -5736,7 +5801,8 @@
   function dashboardModuleCardMarkup(type) {
     const records = dashboardTypeRecords(type);
     const items = records.slice(0, 4).map(function (record) {
-      const last = type.commentField ? lastCommentLine(record[type.commentField]) : '';
+      const commentField = recordCommentField(type.module);
+      const last = commentField ? lastCommentLine(record[commentField]) : '';
       const meta = last ? 'آخرین: ' + last : dashboardCardMeta(type, record);
       return '<div class="list-item dash-item">' +
         '<div class="list-main"><b>' + esc(recordLabel(type.module, record)) + '</b><span>' + esc(meta) + '</span></div>' +
@@ -5752,8 +5818,6 @@
   }
 
   // ── کامنت/رفع از روی کادرهای داشبورد ───────────────────────────────────────
-  const DASHBOARD_COMMENT_FIELDS = { notes: 'comments', programs: 'actionsLog', faults: 'steps' };
-
   function dashboardRecordById(moduleKey, recordId) {
     return (appData[moduleKey] || []).filter(function (record) {
       return String(record.id) === String(recordId);
@@ -5767,7 +5831,7 @@
   }
 
   function appendDashboardComment(moduleKey, record, text) {
-    const field = DASHBOARD_COMMENT_FIELDS[moduleKey];
+    const field = recordCommentField(moduleKey);
     if (!field || !record) return false;
     const line = [commentStamp(), 'داشبورد', text, record.status || ''].filter(Boolean).join(' | ');
     const current = String(record[field] || '').replace(/\s+$/, '');
