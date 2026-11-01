@@ -231,12 +231,11 @@
     },
     faults: {
       title: 'اشکالات و رفع اشکال', singular: 'اشکال',
-      subtitle: 'ثبت اشکال خودرو، گازسنج و تجهیزات با روند رفع، مسئول و تاریخ رفع',
+      subtitle: 'ثبت اشکال خودرو و تجهیزات با روند رفع، مسئول و تاریخ رفع',
       fields: [
         {key:'title',label:'عنوان اشکال',required:true,placeholder:'مثلاً نشتی روغن گیربکس'},
-        {key:'assetType',label:'نوع دارایی',type:'select',required:true,listKey:'faultAssetTypes',options:['خودرو','گازسنج','تجهیزات ایمنی','تأسیسات','سایر']},
+        {key:'assetType',label:'نوع دارایی',type:'select',required:true,listKey:'faultAssetTypes',options:['خودرو','تجهیزات ایمنی','تأسیسات','سایر']},
         {key:'vehicleId',label:'خودرو',type:'select',source:'vehicles'},
-        {key:'gasmeterId',label:'گازسنج',type:'select',source:'gasmeters'},
         {key:'category',label:'دستهٔ اشکال',type:'select',listKey:'faultCategories',options:['مکانیکی','برقی','الکترونیکی','سنسور','بدنه','نرم‌افزاری','سایر']},
         {key:'priority',label:'اولویت',type:'select',required:true,listKey:'faultPriorities',options:['کم','متوسط','زیاد','بحرانی']},
         {key:'reportedAt',label:'تاریخ ثبت شمسی',type:'jalali',required:true},
@@ -249,7 +248,7 @@
         {key:'responsibleId',label:'مسئول رفع',type:'select',source:'employees'},
         {key:'attachments',label:'پیوست‌ها',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx'}
       ],
-      columns: ['title','assetType','vehicleId','gasmeterId','priority','reportedAt','status','progress']
+      columns: ['title','assetType','vehicleId','priority','reportedAt','status','progress']
     },
     maintenance: {
       title: 'سوابق سرویس و تعمیر', singular: 'سابقهٔ سرویس',
@@ -5564,14 +5563,14 @@
   const DASHBOARD_CARD_ICON = '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 14h8M8 17h5"/></svg>';
 
   const DASHBOARD_CARD_TYPES = [
-    { id: 'card-notes', module: 'notes', title: 'یادداشت‌ها و پیگیری‌ها', subtitle: 'آخرین اقدام‌ها و وضعیت پیگیری', size: 'medium', tone: 'warn', unit: 'یادداشت', statusField: 'status' },
+    { id: 'card-notes', module: 'notes', title: 'یادداشت‌ها و پیگیری‌ها', subtitle: 'اقدام‌های باز؛ همین‌جا کامنت بگذار', size: 'medium', tone: 'warn', unit: 'یادداشت', statusField: 'status', commentField: 'comments', commentLabel: 'کامنت', openOnly: true, closedStatuses: ['تکمیل‌شده', 'لغوشده'] },
     { id: 'card-missions', module: 'missions', title: 'مأموریت‌ها', subtitle: 'مأموریت‌های ثبت‌شده', size: 'medium', tone: 'info', unit: 'مأموریت', statusField: 'status' },
     { id: 'card-employees', module: 'employees', title: 'کارکنان', subtitle: 'پرونده‌های پرسنلی', size: 'compact', tone: 'ok', unit: 'نفر', statusField: 'status' },
     { id: 'card-leaves', module: 'leaves', title: 'مرخصی‌ها', subtitle: 'درخواست‌های مرخصی', size: 'compact', tone: 'accent', unit: 'درخواست', statusField: 'status' },
     { id: 'card-vehicles', module: 'vehicles', title: 'خودروها', subtitle: 'وضعیت ناوگان', size: 'compact', tone: 'info', unit: 'خودرو', statusField: 'status' },
     { id: 'card-gasmeters', module: 'gasmeters', title: 'گازسنج‌ها', subtitle: 'وضعیت کالیبراسیون و استقرار', size: 'compact', tone: 'warn', unit: 'گازسنج', statusField: 'status' },
-    { id: 'card-programs', module: 'programs', title: 'برنامه‌ها و پرونده‌ها', subtitle: 'پرونده‌های در جریان', size: 'medium', tone: 'accent', unit: 'پرونده', statusField: 'status' },
-    { id: 'card-faults', module: 'faults', title: 'اشکال‌ها', subtitle: 'اشکال‌های ثبت‌شده', size: 'compact', tone: 'warn', unit: 'اشکال', statusField: 'status' },
+    { id: 'card-programs', module: 'programs', title: 'برنامه‌ها و پرونده‌ها', subtitle: 'پرونده‌های باز؛ اقدام و کامنت همین‌جا', size: 'medium', tone: 'accent', unit: 'پرونده', statusField: 'status', commentField: 'actionsLog', commentLabel: 'کامنت/اقدام', openOnly: true, closedStatuses: ['تکمیل‌شده', 'لغوشده'] },
+    { id: 'card-faults', module: 'faults', title: 'اشکال‌های خودرو', subtitle: 'اشکال‌های باز؛ همین‌جا رفع یا اقدام ثبت کن', size: 'medium', tone: 'warn', unit: 'اشکال', statusField: 'status', commentField: 'steps', commentLabel: 'اقدام', resolve: true, openOnly: true, closedStatuses: ['رفع شد', 'بسته‌شده'] },
     { id: 'card-reports', module: 'reports', title: 'گزارشات', subtitle: 'گزارش‌های ثبت‌شده', size: 'compact', tone: 'ok', unit: 'گزارش', statusField: 'status' },
     { id: 'card-phonebook', module: 'phonebook', title: 'دفترچه تلفن', subtitle: 'شماره‌های تماس', size: 'compact', tone: 'info', unit: 'مخاطب' }
   ];
@@ -5594,23 +5593,155 @@
     return parts.join(' · ') || (specs[type.module] ? specs[type.module].singular : '');
   }
 
-  function dashboardModuleCardMarkup(type) {
-    const records = Array.isArray(appData[type.module]) ? appData[type.module] : [];
-    const sorted = records.slice().sort(function (a, b) {
-      const left = String(b.createdAt || b.updatedAt || b.date || '');
-      const right = String(a.createdAt || a.updatedAt || a.date || '');
+  function dashboardTypeRecords(type) {
+    const all = Array.isArray(appData[type.module]) ? appData[type.module].slice() : [];
+    const open = type.openOnly ? all.filter(function (record) {
+      return (type.closedStatuses || []).indexOf(record[type.statusField || 'status']) < 0;
+    }) : all;
+    return open.sort(function (a, b) {
+      const left = String(b.reportedAt || b.dueDate || b.plannedDate || b.date || b.createdAt || '');
+      const right = String(a.reportedAt || a.dueDate || a.plannedDate || a.date || a.createdAt || '');
       return left.localeCompare(right);
     });
-    const items = sorted.slice(0, 3).map(function (record) {
-      return '<div class="list-item"><div class="list-main"><b>' + esc(recordLabel(type.module, record)) + '</b><span>' + esc(dashboardCardMeta(type, record)) + '</span></div></div>';
+  }
+
+  function lastCommentLine(value) {
+    const lines = String(value || '').split('\n').filter(function (line) { return line.trim(); });
+    return lines.length ? lines[lines.length - 1].trim() : '';
+  }
+
+  function dashboardItemActions(type, record) {
+    const key = esc(type.module + ':' + record.id);
+    const parts = [];
+    if (type.commentField) {
+      parts.push('<button type="button" class="dash-mini-btn" data-dash-comment="' + key + '" aria-expanded="false">✎ ' + esc(type.commentLabel || 'کامنت') + '</button>');
+    }
+    if (type.resolve && (type.closedStatuses || []).indexOf(record.status) < 0) {
+      parts.push('<button type="button" class="dash-mini-btn is-resolve" data-dash-resolve="' + key + '">✔ رفع شد</button>');
+    }
+    return parts.length ? '<div class="dash-item-actions">' + parts.join('') + '</div>' : '';
+  }
+
+  function dashboardCommentBox(type, record) {
+    if (!type.commentField) return '';
+    const key = esc(type.module + ':' + record.id);
+    return '<div class="dash-comment" data-dash-comment-box="' + key + '" hidden>' +
+      '<textarea rows="2" data-dash-comment-text="' + key + '" placeholder="' + esc(type.commentPlaceholder || 'کامنت یا اقدام انجام‌شده را با تاریخ بنویس…') + '"></textarea>' +
+      '<div class="dash-comment-foot"><button type="button" class="dash-mini-btn is-save" data-dash-comment-save="' + key + '">ثبت کامنت</button>' +
+      '<button type="button" class="dash-mini-btn" data-dash-comment-close="' + key + '">بستن</button></div></div>';
+  }
+
+  function dashboardModuleCardMarkup(type) {
+    const records = dashboardTypeRecords(type);
+    const items = records.slice(0, 4).map(function (record) {
+      const last = type.commentField ? lastCommentLine(record[type.commentField]) : '';
+      const meta = last ? 'آخرین: ' + last : dashboardCardMeta(type, record);
+      return '<div class="list-item dash-item">' +
+        '<div class="list-main"><b>' + esc(recordLabel(type.module, record)) + '</b><span>' + esc(meta) + '</span></div>' +
+        dashboardItemActions(type, record) + '</div>' + dashboardCommentBox(type, record);
     }).join('');
+    const count = records.length;
     return '<article class="widget dash-module-card" data-widget="' + esc(type.id) + '" data-dashboard-card="' + esc(type.id) + '" data-size="' + esc(type.size) + '">' +
       '<div class="widget-header"><div class="widget-title"><span class="widget-icon" data-tone="' + esc(type.tone) + '">' + DASHBOARD_CARD_ICON + '</span><div><h2>' + esc(type.title) + '</h2><p>' + esc(type.subtitle) + '</p></div></div>' +
-      '<div class="widget-meta"><span class="status-pill" data-tone="' + esc(type.tone) + '">' + faDigits(records.length) + ' ' + esc(type.unit) + '</span>' +
+      '<div class="widget-meta"><span class="status-pill" data-tone="' + esc(type.tone) + '">' + faDigits(count) + ' ' + esc(type.openOnly ? 'باز' : type.unit) + '</span>' +
       '<a class="dash-card-link" href="./index.html?view=' + esc(type.module) + '">همه ←</a></div></div>' +
-      '<div class="list">' + (items || '<div class="list-item"><div class="list-main"><b>موردی ثبت نشده است</b><span>از همین بخش اولین مورد را اضافه کن</span></div></div>') + '</div>' +
+      '<div class="list">' + (items || '<div class="list-item"><div class="list-main"><b>مورد بازی نیست</b><span>همهٔ موارد این بخش بسته شده‌اند</span></div></div>') + '</div>' +
       '</article>';
   }
+
+  // ── کامنت/رفع از روی کادرهای داشبورد ───────────────────────────────────────
+  const DASHBOARD_COMMENT_FIELDS = { notes: 'comments', programs: 'actionsLog', faults: 'steps' };
+
+  function dashboardRecordById(moduleKey, recordId) {
+    return (appData[moduleKey] || []).filter(function (record) {
+      return String(record.id) === String(recordId);
+    })[0] || null;
+  }
+
+  function commentStamp() {
+    const now = new Date();
+    const time = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    return formatJalali(todayIso(), false) + ' ' + time;
+  }
+
+  function appendDashboardComment(moduleKey, record, text) {
+    const field = DASHBOARD_COMMENT_FIELDS[moduleKey];
+    if (!field || !record) return false;
+    const line = [commentStamp(), 'داشبورد', text, record.status || ''].filter(Boolean).join(' | ');
+    const current = String(record[field] || '').replace(/\s+$/, '');
+    record[field] = current ? current + '\n' + line : line;
+    addHistory(moduleKey, record, 'کامنت از داشبورد', [{ field: 'کامنت', before: '', after: text.slice(0, 80) }]);
+    return true;
+  }
+
+  function resolveFaultFromDashboard(record) {
+    if (!record) return false;
+    const before = record.status || 'ثبت‌شده';
+    record.status = 'رفع شد';
+    record.progress = 100;
+    record.resolvedAt = todayIso();
+    const line = [commentStamp(), 'داشبورد', 'رفع شد از داشبورد', 'رفع شد'].join(' | ');
+    const steps = String(record.steps || '').replace(/\s+$/, '');
+    record.steps = steps ? steps + '\n' + line : line;
+    addHistory('faults', record, 'رفع از داشبورد', [{ field: 'وضعیت', before: before, after: 'رفع شد' }]);
+    return true;
+  }
+
+  document.addEventListener('click', async function (event) {
+    const toggle = event.target.closest('[data-dash-comment]');
+    if (toggle) {
+      event.preventDefault();
+      const key = toggle.dataset.dashComment;
+      const box = document.querySelector('[data-dash-comment-box="' + key + '"]');
+      if (!box) return;
+      const opening = box.hidden;
+      document.querySelectorAll('[data-dash-comment-box]').forEach(function (node) { if (node !== box) node.hidden = true; });
+      box.hidden = !opening;
+      toggle.setAttribute('aria-expanded', String(opening));
+      if (opening) {
+        const textarea = box.querySelector('textarea');
+        if (textarea) textarea.focus();
+      }
+      return;
+    }
+    const close = event.target.closest('[data-dash-comment-close]');
+    if (close) {
+      event.preventDefault();
+      const box = document.querySelector('[data-dash-comment-box="' + close.dataset.dashCommentClose + '"]');
+      if (box) box.hidden = true;
+      return;
+    }
+    const save = event.target.closest('[data-dash-comment-save]');
+    if (save) {
+      event.preventDefault();
+      const key = save.dataset.dashCommentSave;
+      const split = key.split(':');
+      const textarea = document.querySelector('[data-dash-comment-text="' + key + '"]');
+      const text = textarea ? textarea.value.trim() : '';
+      if (!text) { if (textarea) textarea.focus(); return; }
+      const record = dashboardRecordById(split[0], split[1]);
+      if (!record || !appendDashboardComment(split[0], record, text)) { toast('ثبت کامنت انجام نشد.'); return; }
+      if (textarea) textarea.value = '';
+      const saved = await saveState();
+      applyDashboardLayout();
+      toast(saved ? 'کامنت ثبت شد.' : 'کامنت در حافظهٔ موقت ثبت شد؛ ذخیره‌سازی را بررسی کن.');
+      return;
+    }
+    const resolveBtn = event.target.closest('[data-dash-resolve]');
+    if (resolveBtn) {
+      event.preventDefault();
+      const split = resolveBtn.dataset.dashResolve.split(':');
+      const record = dashboardRecordById(split[0], split[1]);
+      if (!record) return;
+      const ok = await askConfirm({ title: 'رفع اشکال', message: 'این اشکال «رفع شد» ثبت شود؟ روند رفع هم به‌صورت یک اقدام در سابقه می‌آید.', confirmLabel: 'بله، رفع شد' });
+      if (!ok) return;
+      resolveFaultFromDashboard(record);
+      const saved = await saveState();
+      applyDashboardLayout();
+      toast(saved ? 'اشکال به‌عنوان رفع‌شده ثبت شد.' : 'وضعیت تغییر کرد ولی ذخیره‌سازی انجام نشد.');
+      return;
+    }
+  });
 
   // کادرهای افزوده‌شده پیش از اعمال چیدمان ساخته می‌شوند تا در مرجع چیدمان دیده شوند.
   function renderDashboardCards() {
@@ -6008,6 +6139,21 @@
     setGasTab: setGasTab,
     setVehicleTab: setVehicleTab,
     saveNow: saveState,
+    addReferenceValue: async function (key, value) {
+      const text = String(value == null ? '' : value).trim();
+      if (!key || !text) return false;
+      const base = referenceBaseKey(key);
+      if (!appData.references || typeof appData.references !== 'object') appData.references = {};
+      [base, key].forEach(function (target) {
+        if (!target) return;
+        if (!Array.isArray(appData.references[target])) appData.references[target] = [];
+        if (appData.references[target].indexOf(text) < 0) {
+          appData.references[target].push(text);
+          appData.references[target].sort(function (a, b) { return String(a).localeCompare(String(b), 'fa'); });
+        }
+      });
+      return saveState();
+    },
     updateSettings: async function (patch) {
       if (!patch || typeof patch !== 'object') return false;
       appData.settings = Object.assign(appData.settings || {}, patch);

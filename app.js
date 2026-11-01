@@ -518,6 +518,10 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
         };
       }).filter(p=>p.value);
     }
+    ['position','city','station','complex','unit'].forEach(key=>{
+      const input=section.querySelector('#atlasPb_'+key);
+      if(input)input.addEventListener('focus',fillDatalists);
+    });
     section.querySelector('#atlasPbAddPhone').addEventListener('click',()=>{const current=readPhoneRows();current.push({kind:'mobile',label:(options.phoneLabel||PHONEBOOK_DEFAULT_OPTIONS.phoneLabel)[0]||'تلفن اصلی',value:''});renderPhoneRows(current);phoneRows.lastElementChild?.querySelector('input')?.focus();});
     function normalizePhoneForCheck(value){
       let v=String(value||'').trim().replace(/[\s().\-\/]+/g,'');
@@ -559,10 +563,35 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
       return null;
     }
     function persist(){try{localStorage.setItem(PHONEBOOK_KEY,JSON.stringify(contacts));return true;}catch(_){showFormError('ذخیره‌سازی انجام نشد؛ فضای ذخیره‌سازی مرورگر را بررسی کن. اطلاعات فرم پاک نمی‌شود.');return false;}}
+    // گزینه‌های پیوندخورده: سمت از کارکنان، شهر از محل‌ها و ایستگاه از ایستگاه‌های ثبت‌شده می‌آید
+    // تا هر چه در منوهای مرتبط ساخته شود، همین‌جا هم قابل انتخاب باشد.
+    function linkedOptions(key){
+      const api=window.ATLAS_MODULES;
+      const data=api&&typeof api.getData==='function'?api.getData():null;
+      if(!data)return [];
+      const refs=data.references||{};
+      const clean=list=>[...new Set((list||[]).map(v=>String(v==null?'':v).trim()).filter(Boolean))];
+      if(key==='position'){
+        return clean([...(refs.jobTitles||[]),...(data.employees||[]).map(e=>e.jobTitle)]);
+      }
+      if(key==='city'){
+        return clean([...(refs.workplaces||[]),...(refs.places||[])]);
+      }
+      if(key==='station'){
+        return clean((data.stations||[]).map(st=>st.name||st.title||st.code));
+      }
+      if(key==='complex'||key==='unit'){
+        return clean([...(refs.deploymentLocations||[]),...(refs.maneuverLocations||[])]);
+      }
+      return [];
+    }
+    function fieldOptions(key){
+      return [...new Set([...(options[key]||[]),...linkedOptions(key)])].sort((a,b)=>a.localeCompare(b,'fa'));
+    }
     function fillDatalists(){
       fields.filter(f=>f[4]).forEach(([key])=>{
         const list=section.querySelector('#atlasPbList_'+key);if(!list)return;
-        list.innerHTML=(options[key]||[]).map(value=>'<option value="'+escPb(value)+'"></option>').join('');
+        list.innerHTML=fieldOptions(key).map(value=>'<option value="'+escPb(value)+'"></option>').join('');
       });
     }
     function refillFilters(){
@@ -611,6 +640,12 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
       const key=button.dataset.pbAddOption,input=form.elements[key],value=String(input.value||'').trim();
       if(!value){input.focus();return;}
       if(!(options[key]||[]).includes(value)){options[key].push(value);options[key].sort((a,b)=>a.localeCompare(b,'fa'));phonebookOptionsSave(options);fillDatalists();}
+      // مقدار تازهٔ «سمت» و «شهر» به فهرست‌های مشترک برنامه (عنوان‌های شغلی / محل‌ها) هم اضافه می‌شود
+      if(window.ATLAS_MODULES&&typeof window.ATLAS_MODULES.addReferenceValue==='function'){
+        if(key==='position')window.ATLAS_MODULES.addReferenceValue('jobTitles',value);
+        else if(key==='city')window.ATLAS_MODULES.addReferenceValue('workplaces',value);
+        else if(key==='complex'||key==='unit')window.ATLAS_MODULES.addReferenceValue('deploymentLocations',value);
+      }
       input.value=value;input.focus();
     }));
     form.onsubmit=event=>{
