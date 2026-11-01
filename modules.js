@@ -297,7 +297,7 @@
     const state = {
       schemaVersion: 2,
       settings: { employeeCustomFields: '' },
-      references: {"workplaces":["اهواز","آبادان","اندیمشک","ماهشهر","بندر امام","آغاجاری","سایر"],"leaveTypes":["استحقاقی","استعلاجی","بدون حقوق","ساعتی","سایر"],"missionTypes":["نظارت بر جوشکاری","بررسی انشعاب یا نشتی","بررسی آلودگی خاک یا آب","بازدید ایستگاه","سرویس تجهیزات","بازدید ایمنی","سایر"],"pipelineSizes":["۴","۶","۸","۱۰","۱۲","۱۴","۱۶","۲۰","۲۴","۳۰","۳۶"],"products":["نفت خام","نفت گاز","بنزین","نفت سفید","گاز مایع","آب آلوده","سایر"],"vehicleTypes":["خودروی آتش‌نشانی","خودروی پشتیبانی","وانت","سواری","مینی‌بوس","سایر"],"vehicleStatuses":["آماده","در سرویس","خارج از سرویس","در تعمیر"],"gasStatuses":["آماده استفاده","در کالیبراسیون","خارج از سرویس","در تعمیر"],"actionTypes":["نامه اداری","درخواست خرید","استعلام","برآورد هزینه","برآورد قیمت","برنامه‌ریزی مانور","تعمیر خودرو","ارسال کالیبراسیون","پاسخ نامه","پیگیری قطعه","ارسال تجهیزات","بازدید","بازرسی","ممیزی","اقدام اصلاحی","یادداشت عمومی","سایر"],"programCategories":["هدف","برنامه فعالیت","مانور","روتین","دوره آموزشی","سایر"],"programTypes":["مانور","تعمیر تجهیز","تعمیر خودرو","کالیبراسیون","بازرسی","اقدام اصلاحی","درخواست خرید","پروژه عملیاتی","سایر"],"workTypes":["شیفتی","روزکار"],"jobTitles":["اپراتور","تکنسین","سرپرست شیفت","کارشناس ایمنی","کارشناس HSE","راننده","نگهبان","انباردار","سایر"],"employmentTypes":["رسمی","پیمانی","قراردادی","شرکتی","سایر"],"shiftPatterns":["۱۲ ساعته روز/شب","۲۴/۴۸","ثابت روزکار","سایر"],"employeeStatuses":["آماده‌کار","در حال کار","شیفت","مأموریت","مرخصی","استراحت","اضافه‌کار","غیرفعال"],"missionStatuses":["برنامه‌ریزی‌شده","در جریان","انجام‌شده","لغو‌شده"],"leaveStatuses":["در انتظار بررسی","تأییدشده","ردشده","استفاده‌شده"],"healthStatuses":["سالم","نیازمند بررسی","دارای نقص","در حال تعمیر"],"noteStatuses":["شروع‌نشده","در حال انجام","در انتظار پاسخ","ارجاع‌شده","تکمیل‌شده","لغوشده","عقب‌افتاده"],"reportStatuses":["تهیه نشده","در حال تهیه","ارسال شده","نیازمند اصلاح"],"programStatuses":["برنامه‌ریزی‌شده","در حال اقدام","در انتظار پاسخ","متوقف","تکمیل‌شده","لغوشده"],"operationalPoints":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","محور جاده"],"gasSensorTypes":["گازسنج چهارکاره","گازسنج تک‌کاره","آشکارساز H₂S","آشکارساز LEL","آشکارساز O₂","سایر"],"gasSensorLocations":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","محور جاده","دفتر مرکزی","سایر"],"operationalRanges":["روستای سویسه","روستای الهایی","کیلومتر ۹۶ تا ۱۰۲","کیلومتر ۱۲۰ تا ۱۳۵","محور اهواز – آبادان"],"vehicleServiceTypes":["تعویض روغن","سرویس دوره‌ای","سوخت‌گیری","تعویض فیلتر","معاینه فنی","تعمیر اضطراری"],"missionTitles":["بازدید دوره‌ای خط","رفع نشتی","نظارت بر جوشکاری","بررسی انشعاب","پایش ایمنی","سرویس تجهیزات","مأموریت اضطراری","سایر"],"vehicleNames":["خودروی آتش‌نشانی ۱","خودروی پشتیبانی ۱","وانت عملیاتی ۱","سواری اداری ۱","مینی‌بوس ایاب و ذهاب"],"gasModels":["MX4","MX6","Tetra","Altair 4X","Altair 5X","Ventis Pro","GasAlert MicroClip","سایر"],"deploymentLocations":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","محور جاده","دفتر مرکزی","سایر"],"maneuverLocations":["پارکینگ مرکزی","تعمیرگاه مرکزی","انبار مرکزی","دفتر مرکزی","ایستگاه شماره ۱","محور جاده","سایر"],"faultAssetTypes":["خودرو","گازسنج","تجهیزات ایمنی","تأسیسات","سایر"],"faultCategories":["مکانیکی","برقی","الکترونیکی","سنسور","بدنه","نرم‌افزاری","سایر"],"faultPriorities":["کم","متوسط","زیاد","بحرانی"],"faultStatuses":["ثبت‌شده","در حال بررسی","در حال تعمیر","رفع شد","بسته‌شده"],"maintenanceTypes":["سرویس دوره‌ای","تعویض روغن","تعویض فیلتر","تعمیر مکانیکی","تعمیر برقی","معاینه فنی","تعویض لاستیک","سایر"],"gasLogTypes":["ثبت قرائت","کالیبراسیون","تعمیر","جابه‌جایی","تست عملکرد","سایر"],"maintenanceStatuses":["انجام‌شده","در انتظار قطعه","در حال انجام","لغوشده"],"placesByType":{},"lineColors":{}},
+      references: { placesByType: {}, lineColors: {} },
       history: [],
       shifts: [],
       updatedAt: ''
@@ -328,6 +328,7 @@
     });
     if (value.settings && typeof value.settings === 'object') out.settings = Object.assign(out.settings, value.settings);
     if (value.references && typeof value.references === 'object') out.references = Object.assign(out.references, value.references);
+    migrateReferenceAliases(out);
     if (!out.references.placesByType || typeof out.references.placesByType !== 'object') out.references.placesByType = {};
     if (!out.references.lineColors || typeof out.references.lineColors !== 'object') out.references.lineColors = {};
     out.stations.forEach(function (record) {
@@ -483,6 +484,7 @@
     ensureReferenceLists();
     ready = true;
     refreshCurrentView();
+    applyDashboardLayout();
     refreshDashboard();
   }
 
@@ -746,8 +748,9 @@
         return {value:item.id,label:(item.code || 'گازسنج') + (item.serial ? ' · ' + item.serial : '')};
       });
     }
-    if (field.listKey && data.references && Array.isArray(data.references[field.listKey])) {
-      return data.references[field.listKey].map(function (option) { return {value:option,label:option}; });
+    if (field.listKey && data.references) {
+      const shared = data.references[referenceBaseKey(field.listKey)];
+      if (Array.isArray(shared)) return shared.map(function (option) { return {value:option,label:option}; });
     }
     return (field.options || []).map(function (option) { return {value:option,label:option}; });
   }
@@ -1589,23 +1592,54 @@
       '<button type="button" class="module-delete-btn" data-module-action="custom-field-remove">حذف</button></div>';
   }
 
-  function renderSettings(section) {
-    section.innerHTML=rootWrap(
-      pageHead('تنظیمات','مدیریت محلی اطلاعات، فیلدهای پرسنلی قابل تنظیم و نسخهٔ پشتیبان. تم فعلی تغییر داده نمی‌شود.','')+
-      '<section class="module-list-panel"><div class="module-list-head"><div><h3>پشتیبان‌گیری و بازیابی</h3><p>نسخهٔ پشتیبان تمام پرونده‌ها، تاریخچه، تنظیمات و پیوست‌های محلی را دربر می‌گیرد.</p></div></div>'+
-      '<div class="module-backup-grid"><div class="module-backup-card"><strong>ساخت نسخهٔ پشتیبان</strong><p>یک فایل JSON از تمام داده‌های موجود در این دستگاه دریافت می‌کنی.</p><button type="button" class="primary-btn" data-module-action="backup">دریافت فایل پشتیبان</button></div>'+
-      '<div class="module-backup-card"><strong>بازیابی نسخهٔ پشتیبان</strong><p>بازیابی، داده‌های فعلی را جایگزین اطلاعات درون فایل انتخاب‌شده می‌کند.</p><button type="button" class="secondary-btn" data-module-action="restore-select">انتخاب فایل پشتیبان</button><input type="file" id="atlasRestoreFile" accept=".json,application/json" hidden></div></div></section>'+
+  let settingsTab = 'lists';
+
+  const SETTINGS_TABS = [
+    { id: 'lists', title: 'منوها و فهرست‌ها', icon: '☰' },
+    { id: 'places', title: 'مکان‌های ایستگاه', icon: '⚑' },
+    { id: 'dashboard', title: 'تنظیمات داشبورد', icon: '▦' },
+    { id: 'employees', title: 'فیلدهای کارکنان', icon: '☺' },
+    { id: 'backup', title: 'پشتیبان‌گیری و ذخیره‌سازی', icon: '⤓' }
+  ];
+
+  function backupSectionMarkup() {
+    return '<section class="module-list-panel"><div class="module-list-head"><div><h3>پشتیبان‌گیری و بازیابی</h3><p>نسخهٔ پشتیبان تمام پرونده‌ها، تاریخچه، تنظیمات و پیوست‌های محلی را دربر می‌گیرد.</p></div></div>' +
+      '<div class="module-backup-grid"><div class="module-backup-card"><strong>ساخت نسخهٔ پشتیبان</strong><p>یک فایل JSON از تمام داده‌های موجود در این دستگاه دریافت می‌کنی.</p><button type="button" class="primary-btn" data-module-action="backup">دریافت فایل پشتیبان</button></div>' +
+      '<div class="module-backup-card"><strong>بازیابی نسخهٔ پشتیبان</strong><p>بازیابی، داده‌های فعلی را جایگزین اطلاعات درون فایل انتخاب‌شده می‌کند.</p><button type="button" class="secondary-btn" data-module-action="restore-select">انتخاب فایل پشتیبان</button><input type="file" id="atlasRestoreFile" accept=".json,application/json" hidden></div></div></section>' +
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>ذخیره‌سازی</h3><p>هر تغییر بی‌درنگ در همین دستگاه ذخیره و رمزنگاری می‌شود.</p></div></div>' +
       '<div class="module-local-note" data-storage-status>' + storageSummary() + '</div>' +
-      '<div class="module-local-note" data-storage-size style="margin-top:8px">حجم ذخیره‌شده: در حال محاسبه…</div></section>' +
-      stationPlacesPanel() +
-      '<section class="module-list-panel"><div class="module-list-head"><div><h3>مدیریت منوها و فهرست‌ها</h3><p>تمام گزینه‌های کشویی قابل تنظیم در یک محل؛ افزودن فوری نیز از کنار فیلدهای مرتبط انجام می‌شود.</p></div></div><div class="module-list-tools"><select id="referenceListKey">'+referenceKeys().map(function(k){return '<option value="'+esc(k)+'">'+esc(referenceListTitle(k))+'</option>';}).join('')+'</select><input id="referenceListValue" type="text" placeholder="عنوان گزینه جدید"><button type="button" class="primary-btn" data-module-action="reference-add">+ افزودن</button></div><div id="referenceListItems" class="module-local-note" style="margin-top:12px"></div></section>' +
-      '<section class="module-list-panel"><div class="module-list-head"><div><h3>فیلدهای سفارشی کارکنان</h3><p>برای هر فیلد یک عنوان و یک نوع انتخاب کن؛ نوع همان کادری را می‌سازد که هنگام ثبت پرونده می‌بینی: عدد، تاریخ شمسی، تاریخ و ساعت، متن بلند و …</p></div></div>'+
-      '<form data-custom-fields-form class="module-form"><div class="module-custom-fields" data-custom-field-rows>'+(appData.settings.employeeCustomFields||'').split(/\r?\n/).map(function(l){return l.trim();}).filter(Boolean).map(customFieldRowHtml).join('')+'</div>'+
-      '<div class="module-form-actions"><span class="module-required-help">حداکثر ۲۰ فیلد سفارشی.</span><div><button type="button" class="secondary-btn" data-module-action="custom-field-add">+ افزودن فیلد</button> <button type="submit" class="primary-btn">ذخیرهٔ فیلدها</button></div></div></form></section>'
+      '<div class="module-local-note" data-storage-size style="margin-top:8px">حجم ذخیره‌شده: در حال محاسبه…</div></section>';
+  }
+
+  function customFieldsSectionMarkup() {
+    return '<section class="module-list-panel"><div class="module-list-head"><div><h3>فیلدهای سفارشی کارکنان</h3><p>برای هر فیلد یک عنوان و یک نوع انتخاب کن؛ نوع همان کادری را می‌سازد که هنگام ثبت پرونده می‌بینی: عدد، تاریخ شمسی، تاریخ و ساعت، متن بلند و …</p></div></div>' +
+      '<form data-custom-fields-form class="module-form"><div class="module-custom-fields" data-custom-field-rows>' + (appData.settings.employeeCustomFields || '').split(/\r?\n/).map(function (line) { return line.trim(); }).filter(Boolean).map(customFieldRowHtml).join('') + '</div>' +
+      '<div class="module-form-actions"><span class="module-required-help">حداکثر ۲۰ فیلد سفارشی.</span><div><button type="button" class="secondary-btn" data-module-action="custom-field-add">+ افزودن فیلد</button> <button type="submit" class="primary-btn">ذخیرهٔ فیلدها</button></div></div></form></section>';
+  }
+
+  function settingsPaneMarkup(id) {
+    if (id === 'lists') return referenceManagerMarkup();
+    if (id === 'places') {
+      return '<p class="reference-hint">هر مکان زیرمجموعهٔ یک «نوع محل» است و همان‌جا افزودن، تغییر نام و حذف می‌شود. فهرست مشترک مکان‌ها (شهر، محل خدمت، محل استقرار، محدودهٔ عملیاتی) در تب «منوها و فهرست‌ها» › «مکان‌ها و محل‌ها» است.</p>' + stationPlacesPanel();
+    }
+    if (id === 'dashboard') return dashboardEditorMarkup();
+    if (id === 'employees') return customFieldsSectionMarkup();
+    return backupSectionMarkup();
+  }
+
+  function renderSettings(section) {
+    if (!SETTINGS_TABS.some(function (tab) { return tab.id === settingsTab; })) settingsTab = 'lists';
+    section.innerHTML = rootWrap(
+      pageHead('تنظیمات', 'مدیریت محلی اطلاعات: فهرست‌های کشویی، مکان‌ها، چیدمان داشبورد، فیلدهای پرسنلی و نسخهٔ پشتیبان.', '') +
+      '<div class="settings-view-tabs" role="tablist">' + SETTINGS_TABS.map(function (tab) {
+        return '<button type="button" role="tab" class="settings-view-tab' + (tab.id === settingsTab ? ' is-active' : '') + '" data-settings-tab="' + tab.id + '" aria-selected="' + (tab.id === settingsTab) + '"><span aria-hidden="true">' + tab.icon + '</span>' + esc(tab.title) + '</button>';
+      }).join('') + '</div>' +
+      '<div class="settings-view-panes">' + SETTINGS_TABS.map(function (tab) {
+        return '<div class="settings-view-pane" data-settings-pane="' + tab.id + '"' + (tab.id === settingsTab ? '' : ' hidden') + '>' + settingsPaneMarkup(tab.id) + '</div>';
+      }).join('') + '</div>'
     );
-    renderReferenceList();
-    fillStorageSize();
+    if (settingsTab === 'backup') fillStorageSize();
+    if (settingsTab === 'dashboard') wireDashboardEditor();
   }
 
   // حجم واقعی داده روی دستگاه در برابر حجم متن ساده — تا «کم‌حجم بودن» قابل دیدن باشد.
@@ -1646,21 +1680,149 @@
       (loadError ? ' · <span data-tone="danger">' + esc(loadError) + '</span>' : '');
   }
 
+    // ── فهرست‌های مرجع ───────────────────────────────────────────────────────────
+  // چند منو که به یک ماهیت اشاره دارند (مکان، وضعیت) به یک فهرست مشترک ارجاع داده
+  // می‌شوند؛ هر تغییری در همان فهرست، بی‌درنگ در همهٔ فیلدهای وابسته دیده می‌شود.
+  const REFERENCE_ALIASES = {
+    workplaces: 'places',
+    deploymentLocations: 'places',
+    gasSensorLocations: 'places',
+    maneuverLocations: 'places',
+    operationalPoints: 'places',
+    operationalRanges: 'places',
+    employeeStatuses: 'statuses',
+    missionStatuses: 'statuses',
+    leaveStatuses: 'statuses',
+    healthStatuses: 'statuses',
+    noteStatuses: 'statuses',
+    reportStatuses: 'statuses',
+    programStatuses: 'statuses',
+    vehicleStatuses: 'statuses',
+    gasStatuses: 'statuses',
+    faultStatuses: 'statuses',
+    maintenanceStatuses: 'statuses',
+    stationStatuses: 'statuses'
+  };
+
+  function referenceBaseKey(key) {
+    const raw = String(key == null ? '' : key);
+    return REFERENCE_ALIASES[raw] || raw;
+  }
+
+  // دسته‌بندی فهرست‌ها؛ هر دسته یک تب جدا در «مدیریت منوها» می‌شود.
+  const REFERENCE_GROUPS = [
+    {
+      id: 'places',
+      title: 'مکان‌ها و محل‌ها',
+      hint: 'شهر، محل خدمت، محل استقرار، مبدأ و مقصد، محدودهٔ عملیاتی و نقاط عملیاتی همه یک مرجع دارند؛ هر موردی که اینجا اضافه شود در تمام این فیلدها قابل انتخاب است.',
+      keys: ['places']
+    },
+    {
+      id: 'statuses',
+      title: 'وضعیت‌ها',
+      hint: 'وضعیت کارکنان، مأموریت، مرخصی، خودرو، گازسنج، اشکال، سرویس، یادداشت، گزارش، پرونده و ایستگاه از یک فهرست کامل خوانده می‌شوند تا واژه‌ها یکدست بمانند.',
+      keys: ['statuses']
+    },
+    {
+      id: 'types',
+      title: 'انواع و دسته‌بندی‌ها',
+      hint: 'انواع، دسته‌ها، اولویت‌ها، مدل‌ها، اندازه‌ها و فرآورده‌ها؛ هر کدام فهرست مستقل خود را دارد چون ماهیت متفاوتی دارند.',
+      keys: ['placeTypes', 'faultAssetTypes', 'faultCategories', 'faultPriorities', 'missionTypes',
+        'leaveTypes', 'maintenanceTypes', 'programCategories', 'programTypes', 'vehicleTypes',
+        'vehicleServiceTypes', 'employmentTypes', 'workTypes', 'gasSensorTypes', 'actionTypes',
+        'gasLogTypes', 'pipelineLines', 'pipelineSizes', 'products', 'shiftPatterns']
+    },
+    {
+      id: 'titles',
+      title: 'عنوان‌ها و نام‌ها',
+      hint: 'عنوان‌های شغلی، عنوان مأموریت، نام خودروها و مدل گازسنج‌ها.',
+      keys: ['jobTitles', 'missionTitles', 'vehicleNames', 'gasModels']
+    }
+  ];
+
+  function referenceGroupOf(key) {
+    const base = referenceBaseKey(key);
+    for (let i = 0; i < REFERENCE_GROUPS.length; i += 1) {
+      if (REFERENCE_GROUPS[i].keys.indexOf(base) >= 0) return REFERENCE_GROUPS[i];
+    }
+    return null;
+  }
+
+  // گزینه‌های پیش‌فرض همهٔ فیلدهایی که به یک فهرست مشترک ارجاع می‌دهند، یکی می‌شوند.
+  function referenceDefaultsFor(key) {
+    const base = referenceBaseKey(key);
+    const out = [];
+    const push = function (list) {
+      (list || []).forEach(function (option) {
+        const text = String(option == null ? '' : option).trim();
+        if (text && out.indexOf(text) < 0) out.push(text);
+      });
+    };
+    MODULES.forEach(function (moduleKey) {
+      ((specs[moduleKey] || {}).fields || []).forEach(function (field) {
+        if (field.listKey && referenceBaseKey(field.listKey) === base) push(field.options);
+        (field.columns || []).forEach(function (column) {
+          if (column.listKey && referenceBaseKey(column.listKey) === base) push(column.options);
+        });
+      });
+    });
+    return out;
+  }
+
+  // فیلدهایی که یک فهرست را مصرف می‌کنند؛ برای نمایش «مشترک بین …» و برای هم‌زمان
+  // به‌روزرسانی سوابق هنگام تغییر نام یک گزینه.
+  function referenceConsumers(key) {
+    const base = referenceBaseKey(key);
+    const found = [];
+    MODULES.forEach(function (moduleKey) {
+      ((specs[moduleKey] || {}).fields || []).forEach(function (field) {
+        if (!field.listKey || referenceBaseKey(field.listKey) !== base) return;
+        found.push({ module: moduleKey, field: field.key, label: (specs[moduleKey].title || moduleKey) + ' · ' + field.label });
+      });
+    });
+    return found;
+  }
+
+  function migrateReferenceAliases(state) {
+    const refs = state && state.references;
+    if (!refs || typeof refs !== 'object') return;
+    Object.keys(REFERENCE_ALIASES).forEach(function (alias) {
+      const base = REFERENCE_ALIASES[alias];
+      const values = Array.isArray(refs[alias]) ? refs[alias] : [];
+      if (!Array.isArray(refs[base])) refs[base] = [];
+      values.forEach(function (value) {
+        if (value && refs[base].indexOf(value) < 0) refs[base].push(value);
+      });
+      delete refs[alias];
+    });
+  }
+
   function referenceListTitle(key){
-    const titles={workplaces:'شهرها و محل‌ها',leaveTypes:'انواع مرخصی',missionTypes:'انواع مأموریت',pipelineSizes:'قطر خطوط',products:'نوع فرآورده',vehicleTypes:'انواع خودرو',vehicleStatuses:'وضعیت خودرو',gasStatuses:'وضعیت گازسنج',actionTypes:'انواع یادداشت و اقدام',programTypes:'انواع برنامه',workTypes:'نوع کار',jobTitles:'عنوان‌های شغلی',employmentTypes:'نوع استخدام',shiftPatterns:'الگوی شیفت',employeeStatuses:'وضعیت کارکنان',missionStatuses:'وضعیت مأموریت',leaveStatuses:'وضعیت مرخصی',healthStatuses:'وضعیت سلامت',noteStatuses:'وضعیت یادداشت و پیگیری',reportStatuses:'وضعیت گزارش اولیه',programStatuses:'وضعیت پرونده',operationalPoints:'نقاط عملیاتی',gasSensorTypes:'نوع سنسور گازسنج',gasSensorLocations:'محل‌های استقرار',operationalRanges:'محدوده‌های عملیاتی',vehicleServiceTypes:'انواع سرویس خودرو',missionTitles:'عنوان‌های مأموریت',vehicleNames:'نام خودروها',gasModels:'مدل گازسنج‌ها',deploymentLocations:'محل‌های استقرار',maneuverLocations:'محل‌های اجرای مانور',faultAssetTypes:'نوع دارایی اشکال',faultCategories:'دسته‌های اشکال',faultPriorities:'اولویت اشکال',faultStatuses:'وضعیت رفع اشکال',maintenanceTypes:'نوع سرویس و تعمیر',maintenanceStatuses:'وضعیت سرویس',gasLogTypes:'نوع سابقهٔ گازسنج',programCategories:'دسته‌های برنامه',stationTypes:'نوع ایستگاه',pipelineLines:'خطوط و شاخه‌ها',stationStatuses:'وضعیت ایستگاه'};
+    const titles={places:'مکان‌ها و محل‌ها',statuses:'وضعیت‌ها',workplaces:'شهرها و محل‌ها',leaveTypes:'انواع مرخصی',missionTypes:'انواع مأموریت',pipelineSizes:'قطر خطوط',products:'نوع فرآورده',vehicleTypes:'انواع خودرو',vehicleStatuses:'وضعیت خودرو',gasStatuses:'وضعیت گازسنج',actionTypes:'انواع یادداشت و اقدام',programTypes:'انواع برنامه',workTypes:'نوع کار',jobTitles:'عنوان‌های شغلی',employmentTypes:'نوع استخدام',shiftPatterns:'الگوی شیفت',employeeStatuses:'وضعیت کارکنان',missionStatuses:'وضعیت مأموریت',leaveStatuses:'وضعیت مرخصی',healthStatuses:'وضعیت سلامت',noteStatuses:'وضعیت یادداشت و پیگیری',reportStatuses:'وضعیت گزارش اولیه',programStatuses:'وضعیت پرونده',operationalPoints:'نقاط عملیاتی',gasSensorTypes:'نوع سنسور گازسنج',gasSensorLocations:'محل‌های استقرار',operationalRanges:'محدوده‌های عملیاتی',vehicleServiceTypes:'انواع سرویس خودرو',missionTitles:'عنوان‌های مأموریت',vehicleNames:'نام خودروها',gasModels:'مدل گازسنج‌ها',deploymentLocations:'محل‌های استقرار',maneuverLocations:'محل‌های اجرای مانور',faultAssetTypes:'نوع دارایی اشکال',faultCategories:'دسته‌های اشکال',faultPriorities:'اولویت اشکال',faultStatuses:'وضعیت رفع اشکال',maintenanceTypes:'نوع سرویس و تعمیر',maintenanceStatuses:'وضعیت سرویس',gasLogTypes:'نوع سابقهٔ گازسنج',programCategories:'دسته‌های برنامه',stationTypes:'نوع ایستگاه',pipelineLines:'خطوط و شاخه‌ها',stationStatuses:'وضعیت ایستگاه'};
     return titles[key]||key;
   }
 
   // هر فهرستی که در فرم‌ها استفاده شود، حتی اگر هنوز ساخته نشده باشد، در تنظیمات دیده می‌شود.
+  // مخازن ساختاری (نقشهٔ مکان‌ها، رنگ خطوط) فهرست کشویی نیستند و در تنظیمات نمی‌آیند.
+  const REFERENCE_NON_LISTS = ['placesByType', 'lineColors'];
+
   function referenceKeys(target){
-    const keys=Object.keys((target||appData).references||{});
+    const refs=(target||appData).references||{};
+    const raw=Object.keys(refs).filter(function(key){
+      return REFERENCE_NON_LISTS.indexOf(key)<0 && (Array.isArray(refs[key]) || refs[key]==null);
+    });
     MODULES.forEach(function(moduleKey){
       (specs[moduleKey].fields||[]).forEach(function(field){
-        if(field.listKey&&keys.indexOf(field.listKey)<0)keys.push(field.listKey);
+        if(field.listKey)raw.push(field.listKey);
         (field.columns||[]).forEach(function(column){
-          if(column.listKey&&keys.indexOf(column.listKey)<0)keys.push(column.listKey);
+          if(column.listKey)raw.push(column.listKey);
         });
       });
+    });
+    const keys=[];
+    raw.forEach(function(key){
+      const base=referenceBaseKey(key);
+      if(keys.indexOf(base)<0)keys.push(base);
     });
     return keys.sort(function(a,b){return referenceListTitle(a).localeCompare(referenceListTitle(b),'fa');});
   }
@@ -1668,27 +1830,78 @@
   function ensureReferenceLists(target){
     const state=target||appData;
     if(!state.references||typeof state.references!=='object')state.references={};
-    referenceKeys().forEach(function(key){
+    migrateReferenceAliases(state);
+    referenceKeys(state).forEach(function(key){
       if(!Array.isArray(state.references[key])){
-        let source=null;
-        MODULES.forEach(function(m){
-          (specs[m].fields||[]).forEach(function(field){
-            if(!source&&field.listKey===key)source=field;
-            (field.columns||[]).forEach(function(column){
-              if(!source&&column.listKey===key)source=column;
-            });
-          });
+        state.references[key]=referenceDefaultsFor(key);
+      }else{
+        // گزینه‌های تازهٔ همان فهرست (اگر نسخهٔ جدیدی از برنامه آمده باشد) به انتها اضافه می‌شوند.
+        referenceDefaultsFor(key).forEach(function(option){
+          if(state.references[key].indexOf(option)<0)state.references[key].push(option);
         });
-        state.references[key]=(source&&Array.isArray(source.options)?source.options.slice():[]);
       }
     });
     return state.references;
   }
 
-  function renderReferenceList(){
-    const key=document.getElementById('referenceListKey'),host=document.getElementById('referenceListItems');
-    if(!key||!host)return;
-    host.innerHTML=(appData.references[key.value]||[]).map(function(value,i){return '<div class="module-reference-row"><span>'+esc(value)+'</span><span style="display:flex;gap:5px;flex-wrap:wrap"><button type="button" class="secondary-btn" data-module-action="reference-up" data-index="'+i+'" aria-label="انتقال به بالا" '+(i===0?'disabled':'')+'>↑</button><button type="button" class="secondary-btn" data-module-action="reference-down" data-index="'+i+'" aria-label="انتقال به پایین" '+(i===(appData.references[key.value]||[]).length-1?'disabled':'')+'>↓</button><button type="button" class="secondary-btn" data-module-action="reference-edit" data-index="'+i+'">ویرایش</button><button type="button" class="secondary-btn" data-module-action="reference-delete" data-index="'+i+'">حذف</button></span></div>';}).join('')||'این فهرست هنوز گزینه‌ای ندارد.';
+  let referenceTab = 'places';
+
+  function referenceGroupTabs() {
+    const groups = REFERENCE_GROUPS.slice();
+    const known = [];
+    REFERENCE_GROUPS.forEach(function (group) { group.keys.forEach(function (key) { known.push(key); }); });
+    const extra = referenceKeys().filter(function (key) { return known.indexOf(key) < 0; });
+    if (extra.length) groups.push({ id: 'other', title: 'سایر فهرست‌ها', hint: 'فهرست‌هایی که در دسته‌های بالا جای نگرفته‌اند.', keys: extra });
+    return groups;
+  }
+
+  function referenceCardMarkup(key) {
+    const values = Array.isArray(appData.references[key]) ? appData.references[key] : [];
+    const consumers = referenceConsumers(key);
+    const sharedLabel = consumers.length > 1
+      ? 'مشترک بین ' + faDigits(consumers.length) + ' فیلد — ' + consumers.slice(0, 3).map(function (item) { return item.label; }).join('، ') + (consumers.length > 3 ? ' و …' : '')
+      : (consumers.length === 1 ? 'استفاده در ' + consumers[0].label : 'در هیچ فیلدی استفاده نمی‌شود.');
+    const rows = values.map(function (value, index) {
+      return '<div class="reference-row">' +
+        '<span class="reference-value">' + esc(value) + '</span>' +
+        '<span class="reference-actions">' +
+          '<button type="button" class="secondary-btn" data-module-action="reference-up" data-list-key="' + esc(key) + '" data-index="' + index + '" aria-label="انتقال به بالا"' + (index === 0 ? ' disabled' : '') + '>↑</button>' +
+          '<button type="button" class="secondary-btn" data-module-action="reference-down" data-list-key="' + esc(key) + '" data-index="' + index + '" aria-label="انتقال به پایین"' + (index === values.length - 1 ? ' disabled' : '') + '>↓</button>' +
+          '<button type="button" class="secondary-btn" data-module-action="reference-edit" data-list-key="' + esc(key) + '" data-index="' + index + '">ویرایش</button>' +
+          '<button type="button" class="secondary-btn" data-module-action="reference-delete" data-list-key="' + esc(key) + '" data-index="' + index + '">حذف</button>' +
+        '</span></div>';
+    }).join('');
+    return '<article class="reference-card" data-reference-card="' + esc(key) + '">' +
+      '<header class="reference-card-head"><div><h4>' + esc(referenceListTitle(key)) + '</h4>' +
+      '<p>' + esc(sharedLabel) + '</p></div>' +
+      '<span class="reference-count">' + faDigits(values.length) + ' گزینه</span></header>' +
+      '<div class="reference-items">' + (rows || '<span class="reference-empty">هنوز گزینه‌ای ندارد.</span>') + '</div>' +
+      '<div class="reference-add"><input type="text" autocomplete="off" data-reference-input="' + esc(key) + '" placeholder="گزینهٔ جدید برای «' + esc(referenceListTitle(key)) + '»" aria-label="گزینهٔ جدید"><button type="button" class="primary-btn" data-module-action="reference-add" data-list-key="' + esc(key) + '">+ افزودن</button></div>' +
+      '</article>';
+  }
+
+  function referenceManagerMarkup() {
+    const groups = referenceGroupTabs();
+    if (!groups.some(function (group) { return group.id === referenceTab; })) referenceTab = groups.length ? groups[0].id : 'places';
+    const active = groups.filter(function (group) { return group.id === referenceTab; })[0] || { keys: [] };
+    return '<section class="module-list-panel">' +
+      '<div class="module-list-head"><div><h3>مدیریت منوها و فهرست‌ها</h3>' +
+      '<p>هر دسته یک تب جدا دارد. فهرست‌های هم‌ماهیت به یک مرجع واحد ارجاع داده شده‌اند؛ هر گزینه‌ای که اینجا اضافه یا ویرایش شود در همهٔ فیلدهای مرتبط هم دیده می‌شود.</p></div></div>' +
+      '<div class="reference-group-tabs" role="tablist">' + groups.map(function (group) {
+        const total = group.keys.reduce(function (sum, key) { return sum + (Array.isArray(appData.references[key]) ? appData.references[key].length : 0); }, 0);
+        return '<button type="button" role="tab" class="reference-group-tab' + (group.id === referenceTab ? ' is-active' : '') + '" data-reference-tab="' + esc(group.id) + '" aria-selected="' + (group.id === referenceTab) + '">' +
+          '<b>' + esc(group.title) + '</b><span>' + faDigits(group.keys.length) + ' فهرست · ' + faDigits(total) + ' گزینه</span></button>';
+      }).join('') + '</div>' +
+      (active.hint ? '<p class="reference-hint">' + esc(active.hint) + '</p>' : '') +
+      '<div class="reference-group-body" id="referenceManager">' +
+      (active.keys.length ? active.keys.map(referenceCardMarkup).join('') : '<div class="module-empty">فهرستی برای نمایش نیست.</div>') +
+      '</div></section>';
+  }
+
+  function refreshReferenceCard(key) {
+    const node = document.querySelector('[data-reference-card="' + key + '"]');
+    if (!node) return;
+    node.outerHTML = referenceCardMarkup(key);
   }
 
   function refreshCurrentView() {
@@ -3789,6 +4002,7 @@
     else if(view==='settings')renderSettings(section);
     else{section.hidden=true;section.innerHTML='';}
     enhanceJalaliInputs(section);
+    if(view==='dashboard')applyDashboardLayout();
   }
 
   async function readFileAsDataUrl(file) {
@@ -4525,7 +4739,7 @@
       const field=confirmInline.closest('.module-field');
       const box=wrap&&wrap.querySelector('input');
       const toggle=field&&field.querySelector('[data-add-list-option]');
-      const key=toggle?toggle.dataset.addListOption:'';
+      const key=referenceBaseKey(toggle?toggle.dataset.addListOption:'');
       const clean=String(box&&box.value||'').trim();
       if(!key||!wrap)return;
       if(!clean){toast('عنوان گزینه را وارد کن.');if(box)box.focus();return;}
@@ -4536,7 +4750,7 @@
         const select=field.querySelector('select');
         if(select){const option=document.createElement('option');option.value=clean;option.textContent=clean;option.selected=true;select.appendChild(option);}
         wrap.remove();
-        toast('گزینه افزوده و ذخیره شد.');
+        toast('گزینه به فهرست مشترک «'+referenceListTitle(key)+'» افزوده شد.');
       }
       return;
     }
@@ -4545,12 +4759,69 @@
     const action=button.dataset.moduleAction;
     const moduleKey=button.dataset.view||new URLSearchParams(window.location.search).get('view')||'dashboard';
     if(action==='reference-add'||action==='reference-edit'||action==='reference-delete'||action==='reference-up'||action==='reference-down'){
-      const key=document.getElementById('referenceListKey'),input=document.getElementById('referenceListValue'),listKey=key&&key.value;
+      const listKey=referenceBaseKey(button.dataset.listKey||'');
       if(!listKey||!Array.isArray(appData.references[listKey]))return;
       const list=appData.references[listKey];
-      if(action==='reference-add'){const value=String(input&&input.value||'').trim();if(!value){toast('عنوان گزینه را وارد کن.');return;}if(list.includes(value)){toast('این گزینه از قبل وجود دارد.');return;}list.push(value);if(input)input.value='';}
-      else{const i=Number(button.dataset.index);if(i<0||i>=list.length)return;if(action==='reference-edit'){const value=await askPrompt({title:'ویرایش گزینهٔ فهرست',label:'عنوان جدید گزینه',value:list[i],confirmLabel:'ذخیره'});if(value===null)return;const next=value;if(list.includes(next)&&next!==list[i]){toast('این گزینه از قبل وجود دارد.');return;}const previous=list[i];list[i]=next;MODULES.forEach(function(m){(specs[m].fields||[]).forEach(function(field){if(field.listKey!==listKey)return;(appData[m]||[]).forEach(function(record){if(record[field.key]===previous)record[field.key]=next;else if(Array.isArray(record[field.key]))record[field.key]=record[field.key].map(function(v){return v===previous?next:v;});});});});}else if(action==='reference-delete'){if(!(await askConfirm({title:'حذف گزینه از فهرست',message:'گزینه از فهرست حذف شود؟ سوابق قبلی حفظ می‌شوند و مقدارهای ثبت‌شده پاک نخواهند شد.',confirmLabel:'حذف',danger:true})))return;list.splice(i,1);}else{const nextIndex=action==='reference-up'?i-1:i+1;if(nextIndex<0||nextIndex>=list.length)return;const swap=list[nextIndex];list[nextIndex]=list[i];list[i]=swap;}}
-      if(await saveState()){renderReferenceList();if(action==='reference-edit'){const current=document.getElementById('sectionView');const view=new URLSearchParams(window.location.search).get('view')||'dashboard';if(specs[view])render(view,current);}toast('فهرست ذخیره شد.');}return;
+      const title=referenceListTitle(listKey);
+      const sharedCount=referenceConsumers(listKey).length;
+      const sharedNote=sharedCount>1?' این تغییر در '+faDigits(sharedCount)+' فیلد مشترک اعمال شد.':'';
+      if(action==='reference-add'){
+        const input=document.querySelector('[data-reference-input="'+listKey+'"]');
+        const value=String(input&&input.value||'').trim();
+        if(!value){toast('عنوان گزینه را وارد کن.');if(input)input.focus();return;}
+        if(list.includes(value)){toast('این گزینه از قبل وجود دارد.');if(input)input.select();return;}
+        list.push(value);
+        if(input)input.value='';
+        if(await saveState()){refreshReferenceCard(listKey);toast('گزینه به «'+title+'» افزوده شد.'+sharedNote);if(input)input.focus();}
+        return;
+      }
+      const i=Number(button.dataset.index);
+      if(!(i>=0)||i>=list.length)return;
+      if(action==='reference-edit'){
+        const value=await askPrompt({title:'ویرایش گزینهٔ «'+title+'»',label:'عنوان جدید',value:list[i],confirmLabel:'ذخیره'});
+        if(value===null)return;
+        const next=String(value).trim();
+        if(!next||next===list[i])return;
+        if(list.includes(next)){toast('این گزینه از قبل وجود دارد.');return;}
+        const previous=list[i];
+        list[i]=next;
+        MODULES.forEach(function(m){
+          (specs[m].fields||[]).forEach(function(field){
+            if(!field.listKey||referenceBaseKey(field.listKey)!==listKey)return;
+            (appData[m]||[]).forEach(function(record){
+              const current=record[field.key];
+              if(current===previous)record[field.key]=next;
+              else if(Array.isArray(current)){
+                if(field.type==='rows'){
+                  current.forEach(function(row){
+                    if(!row||typeof row!=='object')return;
+                    (field.columns||[]).forEach(function(column){
+                      if(column.listKey&&referenceBaseKey(column.listKey)===listKey&&row[column.key]===previous)row[column.key]=next;
+                    });
+                  });
+                }else{
+                  record[field.key]=current.map(function(item){return item===previous?next:item;});
+                }
+              }
+            });
+          });
+        });
+        if(await saveState()){refreshReferenceCard(listKey);toast('نام گزینه اصلاح شد.'+sharedNote);}
+        return;
+      }
+      if(action==='reference-delete'){
+        if(!(await askConfirm({title:'حذف گزینه از «'+title+'»',message:'گزینه از این فهرست مشترک حذف شود؟ سوابق قبلی و مقدارهای ثبت‌شده پاک نمی‌شوند.',confirmLabel:'حذف',danger:true})))return;
+        list.splice(i,1);
+        if(await saveState()){refreshReferenceCard(listKey);toast('گزینه حذف شد.'+sharedNote);}
+        return;
+      }
+      const nextIndex=action==='reference-up'?i-1:i+1;
+      if(nextIndex<0||nextIndex>=list.length)return;
+      const swap=list[nextIndex];
+      list[nextIndex]=list[i];
+      list[i]=swap;
+      if(await saveState())refreshReferenceCard(listKey);
+      return;
     }
     if(action==='custom-field-add'||action==='custom-field-remove'){
       const form=button.closest('[data-custom-fields-form]');
@@ -4972,7 +5243,6 @@
 
   document.addEventListener('change', function(event) {
     const target=event.target;
-    if(target.id==='referenceListKey'){renderReferenceList();return;}
     if(target.matches('[data-module-filter]')){
       filterState[target.dataset.view]=target.value;
       render(target.dataset.view,document.getElementById('sectionView'));
@@ -5285,9 +5555,279 @@
     if (event.key === 'Escape' && jalaliPopover && !jalaliPopover.hidden) closeJalaliPopover();
   });
 
+  // ── تنظیمات داشبورد: چیدمان کادرهای سربرگ ─────────────────────────────────
+  // ابعاد و جای هر کادر در تنظیمات تعیین می‌شود؛ در خود داشبورد دستگیرهٔ تغییر
+  // اندازه وجود ندارد.
+  const DASHBOARD_SPAN_BY_SIZE = { compact: 4, medium: 6, wide: 8, full: 12 };
+
+  function dashboardWidgetCatalog() {
+    const host = document.getElementById('dashboard');
+    if (!host) return [];
+    return Array.prototype.slice.call(host.querySelectorAll('[data-widget]')).map(function (node) {
+      const title = node.querySelector('.widget-title h2');
+      const subtitle = node.querySelector('.widget-title p');
+      return {
+        id: node.dataset.widget,
+        title: title ? title.textContent.trim() : node.dataset.widget,
+        subtitle: subtitle ? subtitle.textContent.trim() : '',
+        size: node.dataset.size || 'medium'
+      };
+    });
+  }
+
+  function dashboardDefaultLayout() {
+    const layout = { order: [], spans: {}, heights: {}, hidden: [] };
+    dashboardWidgetCatalog().forEach(function (widget) {
+      layout.order.push(widget.id);
+      layout.spans[widget.id] = DASHBOARD_SPAN_BY_SIZE[widget.size] || 6;
+    });
+    return layout;
+  }
+
+  function dashboardLayout() {
+    if (!appData.settings || typeof appData.settings !== 'object') appData.settings = {};
+    let layout = appData.settings.dashboardLayout;
+    if (!layout || typeof layout !== 'object') layout = { order: [], spans: {}, heights: {}, hidden: [] };
+    const defaults = dashboardDefaultLayout();
+    if (!Array.isArray(layout.order)) layout.order = [];
+    if (!layout.spans || typeof layout.spans !== 'object') layout.spans = {};
+    if (!layout.heights || typeof layout.heights !== 'object') layout.heights = {};
+    if (!Array.isArray(layout.hidden)) layout.hidden = [];
+    defaults.order.forEach(function (id) {
+      if (layout.order.indexOf(id) < 0) layout.order.push(id);
+      if (!layout.spans[id]) layout.spans[id] = defaults.spans[id];
+    });
+    layout.order = layout.order.filter(function (id) { return defaults.order.indexOf(id) >= 0; });
+    appData.settings.dashboardLayout = layout;
+    return layout;
+  }
+
+  // چیدمان ذخیره‌شده روی کادرهای واقعی داشبورد اعمال می‌شود.
+  function applyDashboardLayout() {
+    const host = document.getElementById('dashboard');
+    if (!host) return;
+    const layout = dashboardLayout();
+    const nodes = Array.prototype.slice.call(host.querySelectorAll('[data-widget]'));
+    nodes.forEach(function (node) {
+      const id = node.dataset.widget;
+      const span = layout.spans[id];
+      const hidden = layout.hidden.indexOf(id) >= 0;
+      node.style.display = hidden ? 'none' : '';
+      node.style.gridColumn = span ? 'span ' + span : '';
+      const height = layout.heights[id];
+      node.style.minHeight = height ? height + 'px' : '';
+    });
+    layout.order.forEach(function (id) {
+      const node = nodes.filter(function (item) { return item.dataset.widget === id; })[0];
+      if (node) host.appendChild(node);
+    });
+  }
+
+  function dashCardFoot(card) {
+    const span = Number(card.dataset.dashSpan || 6);
+    const height = Number(card.dataset.dashHeight || 0);
+    const spanNode = card.querySelector('[data-dash-foot-span]');
+    const heightNode = card.querySelector('[data-dash-foot-height]');
+    if (spanNode) spanNode.textContent = 'عرض: ' + faDigits(span) + ' از ۱۲';
+    if (heightNode) heightNode.textContent = 'ارتفاع: ' + (height ? faDigits(height) + ' پیکسل' : 'خودکار');
+  }
+
+  function dashboardCardMarkup(widget, layout) {
+    const span = Number(layout.spans[widget.id] || 6);
+    const height = Number(layout.heights[widget.id] || 0);
+    return '<article class="dash-card" data-dash-card="' + esc(widget.id) + '" data-dash-span="' + span + '" data-dash-height="' + height + '" style="--span:' + span + (height ? ';min-height:' + height + 'px' : '') + '">' +
+      '<header class="dash-card-head">' +
+        '<button type="button" class="dash-card-drag" data-dash-drag="' + esc(widget.id) + '" aria-label="جابه‌جایی کادر">⠿</button>' +
+        '<div class="dash-card-title"><b>' + esc(widget.title) + '</b><span>' + esc(widget.subtitle) + '</span></div>' +
+        '<button type="button" class="dash-card-remove" data-dash-remove="' + esc(widget.id) + '" aria-label="حذف کادر از داشبورد" title="حذف از داشبورد">×</button>' +
+      '</header>' +
+      '<div class="dash-card-body" aria-hidden="true"></div>' +
+      '<footer class="dash-card-foot"><span data-dash-foot-span>عرض: ' + faDigits(span) + ' از ۱۲</span><span data-dash-foot-height>ارتفاع: ' + (height ? faDigits(height) + ' پیکسل' : 'خودکار') + '</span></footer>' +
+      '<span class="dash-resize" data-dash-resize="w" role="separator" aria-label="تغییر عرض کادر"></span>' +
+      '<span class="dash-resize" data-dash-resize="h" role="separator" aria-label="تغییر ارتفاع کادر"></span>' +
+      '<span class="dash-resize dash-resize-corner" data-dash-resize="both" role="separator" aria-label="تغییر اندازهٔ کادر"></span>' +
+    '</article>';
+  }
+
+  function dashboardEditorMarkup() {
+    const catalog = dashboardWidgetCatalog();
+    const layout = dashboardLayout();
+    const byId = function (id) { return catalog.filter(function (item) { return item.id === id; })[0]; };
+    const visible = layout.order.map(byId).filter(Boolean).filter(function (widget) { return layout.hidden.indexOf(widget.id) < 0; });
+    const hidden = catalog.filter(function (widget) { return layout.hidden.indexOf(widget.id) >= 0; });
+    return '<section class="module-list-panel">' +
+      '<div class="module-list-head"><div><h3>تنظیمات داشبورد</h3>' +
+      '<p>چیدمان کادرهای سربرگ داشبورد اینجا تعیین می‌شود: با کشیدن دستگیرهٔ ⠿ جای کادر را عوض کن، از لبه‌ها و گوشه‌ها ابعاد را کم و زیاد کن و کادرهای اضافه را حذف یا برگردان.</p></div>' +
+      '<div class="module-list-tools">' +
+        (hidden.length
+          ? '<select data-dash-hidden-select aria-label="کادرهای پنهان">' + hidden.map(function (widget) { return '<option value="' + esc(widget.id) + '">' + esc(widget.title) + '</option>'; }).join('') + '</select><button type="button" class="secondary-btn" data-dash-add>+ افزودن کادر</button>'
+          : '<span class="module-local-note">همهٔ کادرها روی داشبورد هستند.</span>') +
+        '<button type="button" class="secondary-btn" data-dash-reset>بازنشانی چیدمان</button>' +
+      '</div></div>' +
+      '<div class="dash-editor" data-dash-editor>' + visible.map(function (widget) { return dashboardCardMarkup(widget, layout); }).join('') + '</div>' +
+      '<p class="dash-editor-note">تغییرها بی‌درنگ ذخیره و روی داشبورد اعمال می‌شوند. شبکهٔ داشبورد ۱۲ ستونه است؛ «عرض» تعداد ستون‌ها و «ارتفاع» کمینهٔ ارتفاع کادر است.</p>' +
+      '</section>';
+  }
+
+  let dashEdit = null;
+  let dashEditorBound = false;
+
+  function onDashEditMove(event) {
+    if (!dashEdit) return;
+    const editor = dashEdit.editor;
+    const card = dashEdit.card;
+    if (dashEdit.mode === 'resize') {
+      if (dashEdit.axis === 'w' || dashEdit.axis === 'both') {
+        const rect = editor.getBoundingClientRect();
+        const style = window.getComputedStyle(editor);
+        const gap = parseFloat(style.columnGap || style.gap) || 0;
+        const columnWidth = (rect.width - gap * 11) / 12;
+        const unit = columnWidth + gap;
+        const cardRect = card.getBoundingClientRect();
+        const rtl = (document.documentElement.dir || 'rtl') === 'rtl';
+        const distance = rtl ? (cardRect.right - event.clientX) : (event.clientX - cardRect.left);
+        const span = Math.min(12, Math.max(1, Math.round((distance + gap) / unit)));
+        card.dataset.dashSpan = String(span);
+        card.style.setProperty('--span', String(span));
+      }
+      if (dashEdit.axis === 'h' || dashEdit.axis === 'both') {
+        const height = Math.min(1200, Math.max(140, Math.round(dashEdit.startHeight + (event.clientY - dashEdit.startY))));
+        card.dataset.dashHeight = String(height);
+        card.style.minHeight = height + 'px';
+      }
+      dashCardFoot(card);
+      event.preventDefault();
+      return;
+    }
+    const over = document.elementFromPoint(event.clientX, event.clientY);
+    const target = over && over.closest ? over.closest('[data-dash-card]') : null;
+    if (!target || target === card || !editor.contains(target)) return;
+    const rect = target.getBoundingClientRect();
+    const rtl = (document.documentElement.dir || 'rtl') === 'rtl';
+    const dx = event.clientX - (rect.left + rect.width / 2);
+    const dy = event.clientY - (rect.top + rect.height / 2);
+    let after;
+    if (Math.abs(dx) > Math.abs(dy)) after = rtl ? dx < 0 : dx > 0;
+    else after = dy > 0;
+    editor.insertBefore(card, after ? target.nextSibling : target);
+  }
+
+  function onDashEditEnd() {
+    if (!dashEdit) return;
+    const card = dashEdit.card;
+    const editor = dashEdit.editor;
+    const mode = dashEdit.mode;
+    card.classList.remove('is-resizing', 'is-dragging');
+    const layout = dashboardLayout();
+    if (mode === 'resize') {
+      layout.spans[card.dataset.dashCard] = Number(card.dataset.dashSpan || 6);
+      const height = Number(card.dataset.dashHeight || 0);
+      if (height) layout.heights[card.dataset.dashCard] = height;
+      else delete layout.heights[card.dataset.dashCard];
+    } else {
+      const order = Array.prototype.slice.call(editor.querySelectorAll('[data-dash-card]')).map(function (node) { return node.dataset.dashCard; });
+      const rest = layout.order.filter(function (id) { return order.indexOf(id) < 0; });
+      layout.order = order.concat(rest);
+    }
+    dashEdit = null;
+    applyDashboardLayout();
+    saveState();
+  }
+
+  function wireDashboardEditor() {
+    const editor = document.querySelector('[data-dash-editor]');
+    if (!editor) return;
+    editor.addEventListener('pointerdown', function (event) {
+      const card = event.target.closest('[data-dash-card]');
+      if (!card) return;
+      const resize = event.target.closest('[data-dash-resize]');
+      const drag = event.target.closest('[data-dash-drag]');
+      const rect = card.getBoundingClientRect();
+      if (resize) {
+        dashEdit = { mode: 'resize', axis: resize.dataset.dashResize, card: card, editor: editor, startX: event.clientX, startY: event.clientY, startHeight: rect.height };
+        card.classList.add('is-resizing');
+        if (resize.setPointerCapture) resize.setPointerCapture(event.pointerId);
+        event.preventDefault();
+        return;
+      }
+      if (drag) {
+        dashEdit = { mode: 'drag', card: card, editor: editor, startX: event.clientX, startY: event.clientY };
+        card.classList.add('is-dragging');
+        if (drag.setPointerCapture) drag.setPointerCapture(event.pointerId);
+        event.preventDefault();
+      }
+    });
+    if (dashEditorBound) return;
+    dashEditorBound = true;
+    document.addEventListener('pointermove', onDashEditMove);
+    document.addEventListener('pointerup', onDashEditEnd);
+    document.addEventListener('pointercancel', onDashEditEnd);
+  }
+
+  // ── تب‌های تنظیمات و اقدام‌های صفحهٔ تنظیمات ──
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Enter') return;
+    const input = event.target.closest ? event.target.closest('[data-reference-input]') : null;
+    if (!input) return;
+    event.preventDefault();
+    const card = input.closest('[data-reference-card]');
+    const button = card && card.querySelector('[data-module-action="reference-add"]');
+    if (button) button.click();
+  });
+
+  document.addEventListener('click', async function (event) {
+    const settingsButton = event.target.closest('[data-settings-tab]');
+    const view = document.getElementById('sectionView');
+    if (settingsButton) {
+      event.preventDefault();
+      settingsTab = settingsButton.dataset.settingsTab || 'lists';
+      render('settings', view);
+      return;
+    }
+    const referenceTabButton = event.target.closest('[data-reference-tab]');
+    if (referenceTabButton) {
+      event.preventDefault();
+      referenceTab = referenceTabButton.dataset.referenceTab || 'places';
+      render('settings', view);
+      return;
+    }
+    const removeCard = event.target.closest('[data-dash-remove]');
+    if (removeCard) {
+      event.preventDefault();
+      const layout = dashboardLayout();
+      const id = removeCard.dataset.dashRemove;
+      if (layout.hidden.indexOf(id) < 0) layout.hidden.push(id);
+      applyDashboardLayout();
+      if (await saveState()) { render('settings', view); toast('کادر از داشبورد حذف شد.'); }
+      return;
+    }
+    const addCard = event.target.closest('[data-dash-add]');
+    if (addCard) {
+      event.preventDefault();
+      const picker = document.querySelector('[data-dash-hidden-select]');
+      const id = picker && picker.value;
+      if (!id) return;
+      const layout = dashboardLayout();
+      layout.hidden = layout.hidden.filter(function (item) { return item !== id; });
+      applyDashboardLayout();
+      if (await saveState()) { render('settings', view); toast('کادر به داشبورد بازگشت.'); }
+      return;
+    }
+    const resetCards = event.target.closest('[data-dash-reset]');
+    if (resetCards) {
+      event.preventDefault();
+      if (!(await askConfirm({ title: 'بازنشانی چیدمان داشبورد', message: 'اندازه‌ها، ترتیب و کادرهای حذف‌شده به حالت اولیه برمی‌گردند.', confirmLabel: 'بازنشانی' }))) return;
+      delete appData.settings.dashboardLayout;
+      dashboardLayout();
+      applyDashboardLayout();
+      if (await saveState()) { render('settings', view); toast('چیدمان داشبورد بازنشانی شد.'); }
+    }
+  });
+
   window.ATLAS_MODULES = {
     render: render,
     refreshDashboard: refreshDashboard,
+    applyDashboardLayout: applyDashboardLayout,
     getData: function () { return appData; },
     isReady: function () { return ready; },
     parseJalali: parseJalali,

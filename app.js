@@ -8,6 +8,8 @@
   const safeRead=(key)=>{try{return localStorage.getItem(key)}catch(e){return null}};
   const safeWrite=(key,value)=>{try{localStorage.setItem(key,value)}catch(e){}}
   function applySavedLayout(){
+    // چیدمان داشبورد از این پس در تنظیمات › «تنظیمات داشبورد» تعیین می‌شود.
+    if(window.ATLAS_MODULES&&typeof window.ATLAS_MODULES.applyDashboardLayout==='function'){window.ATLAS_MODULES.applyDashboardLayout();return}
     let saved;try{saved=JSON.parse(safeRead('atlasShiftLayout')||'null')}catch(e){saved=null}
     if(saved&&Array.isArray(saved.order)){
       saved.order.forEach(id=>{const node=$(`[data-widget="${id}"]`);if(node)dashboard.appendChild(node)});
