@@ -234,7 +234,6 @@
       subtitle: 'ثبت اشکال خودرو و تجهیزات با روند رفع، مسئول و تاریخ رفع',
       fields: [
         {key:'title',label:'عنوان اشکال',required:true,placeholder:'مثلاً نشتی روغن گیربکس'},
-        {key:'assetType',label:'نوع دارایی',type:'select',required:true,listKey:'faultAssetTypes',options:['خودرو','تجهیزات ایمنی','تأسیسات','سایر']},
         {key:'vehicleId',label:'خودرو',type:'select',source:'vehicles'},
         {key:'category',label:'دستهٔ اشکال',type:'select',listKey:'faultCategories',options:['مکانیکی','برقی','الکترونیکی','سنسور','بدنه','نرم‌افزاری','سایر']},
         {key:'priority',label:'اولویت',type:'select',required:true,listKey:'faultPriorities',options:['کم','متوسط','زیاد','بحرانی']},
@@ -248,7 +247,7 @@
         {key:'responsibleId',label:'مسئول رفع',type:'select',source:'employees'},
         {key:'attachments',label:'پیوست‌ها',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx'}
       ],
-      columns: ['title','assetType','vehicleId','priority','reportedAt','status','progress']
+      columns: ['title','vehicleId','category','priority','reportedAt','status','progress']
     },
     maintenance: {
       title: 'سوابق سرویس و تعمیر', singular: 'سابقهٔ سرویس',
@@ -684,7 +683,7 @@
   }
 
   // در ثبت اشکال از مسیر خودرو، «نوع دارایی» و «گازسنج» در فرم نمی‌آیند.
-  const FAULT_VEHICLE_HIDDEN_FIELDS = ['assetType', 'gasmeterId'];
+  const FAULT_VEHICLE_HIDDEN_FIELDS = ['gasmeterId'];
 
   function formFields(moduleKey, vehicleScope) {
     const fields = fieldsFor(moduleKey);
@@ -1564,6 +1563,8 @@
 
     const foot=document.querySelector('.footnote');
     if(foot){const parts=foot.querySelectorAll('span');if(parts[1])parts[1].textContent='مرکز مدیریت عملیات ATLAS SHIFT';if(parts[3])parts[3].textContent='داده‌های نمونه برای بازبینی جریان کار';}
+    enhanceSearchSelects(document.body);
+
   }
 
   function reportDateFor(moduleKey, record) {
@@ -1791,7 +1792,7 @@
       id: 'types',
       title: 'انواع و دسته‌بندی‌ها',
       hint: 'انواع، دسته‌ها، اولویت‌ها، مدل‌ها، اندازه‌ها و فرآورده‌ها؛ هر کدام فهرست مستقل خود را دارد چون ماهیت متفاوتی دارند.',
-      keys: ['placeTypes', 'faultAssetTypes', 'faultCategories', 'faultPriorities', 'missionTypes',
+      keys: ['placeTypes', 'faultCategories', 'faultPriorities', 'missionTypes',
         'leaveTypes', 'maintenanceTypes', 'programCategories', 'programTypes', 'vehicleTypes',
         'vehicleServiceTypes', 'employmentTypes', 'workTypes', 'gasSensorTypes', 'actionTypes',
         'gasLogTypes', 'pipelineLines', 'pipelineSizes', 'products', 'shiftPatterns']
@@ -1862,7 +1863,7 @@
   }
 
   function referenceListTitle(key){
-    const titles={places:'مکان‌ها و محل‌ها',statuses:'وضعیت‌ها',workplaces:'شهرها و محل‌ها',leaveTypes:'انواع مرخصی',missionTypes:'انواع مأموریت',pipelineSizes:'قطر خطوط',products:'نوع فرآورده',vehicleTypes:'انواع خودرو',vehicleStatuses:'وضعیت خودرو',gasStatuses:'وضعیت گازسنج',actionTypes:'انواع یادداشت و اقدام',programTypes:'انواع برنامه',workTypes:'نوع کار',jobTitles:'عنوان‌های شغلی',employmentTypes:'نوع استخدام',shiftPatterns:'الگوی شیفت',employeeStatuses:'وضعیت کارکنان',missionStatuses:'وضعیت مأموریت',leaveStatuses:'وضعیت مرخصی',healthStatuses:'وضعیت سلامت',noteStatuses:'وضعیت یادداشت و پیگیری',reportStatuses:'وضعیت گزارش اولیه',programStatuses:'وضعیت پرونده',operationalPoints:'نقاط عملیاتی',gasSensorTypes:'نوع سنسور گازسنج',gasSensorLocations:'محل‌های استقرار',operationalRanges:'محدوده‌های عملیاتی',vehicleServiceTypes:'انواع سرویس خودرو',missionTitles:'عنوان‌های مأموریت',vehicleNames:'نام خودروها',gasModels:'مدل گازسنج‌ها',deploymentLocations:'محل‌های استقرار',maneuverLocations:'محل‌های اجرای مانور',faultAssetTypes:'نوع دارایی اشکال',faultCategories:'دسته‌های اشکال',faultPriorities:'اولویت اشکال',faultStatuses:'وضعیت رفع اشکال',maintenanceTypes:'نوع سرویس و تعمیر',maintenanceStatuses:'وضعیت سرویس',gasLogTypes:'نوع سابقهٔ گازسنج',programCategories:'دسته‌های برنامه',stationTypes:'نوع ایستگاه',pipelineLines:'خطوط و شاخه‌ها',stationStatuses:'وضعیت ایستگاه'};
+    const titles={places:'مکان‌ها و محل‌ها',statuses:'وضعیت‌ها',workplaces:'شهرها و محل‌ها',leaveTypes:'انواع مرخصی',missionTypes:'انواع مأموریت',pipelineSizes:'قطر خطوط',products:'نوع فرآورده',vehicleTypes:'انواع خودرو',vehicleStatuses:'وضعیت خودرو',gasStatuses:'وضعیت گازسنج',actionTypes:'انواع یادداشت و اقدام',programTypes:'انواع برنامه',workTypes:'نوع کار',jobTitles:'عنوان‌های شغلی',employmentTypes:'نوع استخدام',shiftPatterns:'الگوی شیفت',employeeStatuses:'وضعیت کارکنان',missionStatuses:'وضعیت مأموریت',leaveStatuses:'وضعیت مرخصی',healthStatuses:'وضعیت سلامت',noteStatuses:'وضعیت یادداشت و پیگیری',reportStatuses:'وضعیت گزارش اولیه',programStatuses:'وضعیت پرونده',operationalPoints:'نقاط عملیاتی',gasSensorTypes:'نوع سنسور گازسنج',gasSensorLocations:'محل‌های استقرار',operationalRanges:'محدوده‌های عملیاتی',vehicleServiceTypes:'انواع سرویس خودرو',missionTitles:'عنوان‌های مأموریت',vehicleNames:'نام خودروها',gasModels:'مدل گازسنج‌ها',deploymentLocations:'محل‌های استقرار',maneuverLocations:'محل‌های اجرای مانور',faultCategories:'دسته‌های اشکال',faultPriorities:'اولویت اشکال',faultStatuses:'وضعیت رفع اشکال',maintenanceTypes:'نوع سرویس و تعمیر',maintenanceStatuses:'وضعیت سرویس',gasLogTypes:'نوع سابقهٔ گازسنج',programCategories:'دسته‌های برنامه',stationTypes:'نوع ایستگاه',pipelineLines:'خطوط و شاخه‌ها',stationStatuses:'وضعیت ایستگاه'};
     return titles[key]||key;
   }
 
@@ -3241,6 +3242,7 @@
       if (hint) hint.textContent = type
         ? 'مکان‌های ثبت‌شده برای «' + type + '»؛ با + می‌توانی مکان تازه اضافه کنی.'
         : 'فهرست مکان‌ها بر اساس نوع محل انتخاب‌شده نمایش داده می‌شود.';
+      enhanceSearchSelects(form);
     }
     fieldsFor('stations').forEach(function (field) {
       const wrapper = form.querySelector('[data-field-key="' + field.key + '"]');
@@ -5319,7 +5321,7 @@
       const old= id ? appData[moduleKey].find(function(item){return String(item.id)===String(id);}) : null;
       try{
         const values=await formValues(form,moduleKey,old);
-        if(moduleKey==='faults'&&form.dataset.faultScope==='vehicle'&&!old)values.assetType='خودرو';
+        if(moduleKey==='faults')values.assetType='خودرو';
         if(moduleKey==='leaves'&&values.startDate&&values.endDate&&values.endDate<values.startDate)throw new Error('تاریخ پایان مرخصی نباید قبل از تاریخ شروع باشد.');
         if(moduleKey==='missions'&&values.startAt&&values.endAt&&values.endAt<values.startAt)throw new Error('زمان پایان مأموریت نباید قبل از زمان شروع باشد.');
         if(moduleKey==='programs'&&values.finalReportSent&&values.finalReportDue&&values.finalReportSent<values.finalReportDue&&values.status!=='تکمیل‌شده')throw new Error('تاریخ ارسال گزارش نهایی قبل از مهلت ثبت شده؛ وضعیت پرونده را بررسی کن.');
@@ -5568,7 +5570,234 @@
       wrap.appendChild(input);
       syncJalaliField(wrap);
     });
+    enhanceSearchSelects(root);
   }
+
+  // ── لیست‌های کشویی جستجوپذیر ────────────────────────────────
+  // گزینه‌های هر select به ترتیب حروف الفبا مرتب می‌شود و هر لیستی که
+  // بیش از COMBO_SEARCH_MIN گزینه دارد با کادر جستجو باز می‌شود.
+  const COMBO_SEARCH_MIN = 5;
+  const normalizeSearchText = function (value) {
+    return String(value == null ? '' : value)
+      .replace(/\u200c/g, ' ')
+      .replace(/ي/g, 'ی').replace(/ك/g, 'ک')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
+  function sortSelectOptions(select) {
+    const pinned = [];
+    const rest = [];
+    Array.prototype.forEach.call(select.options, function (option) {
+      const value = String(option.value);
+      if (value === '' || value === 'all') pinned.push(option);
+      else rest.push(option);
+    });
+    rest.sort(function (a, b) {
+      return String(a.textContent).localeCompare(String(b.textContent), 'fa', { numeric: true });
+    });
+    pinned.concat(rest).forEach(function (option) { select.appendChild(option); });
+  }
+
+  let combinedPanel = null;
+  function closeOpenCombos() {
+    document.querySelectorAll('.atlas-combo.is-open').forEach(function (wrap) {
+      const btn = wrap.querySelector('.atlas-combo-btn');
+      const panel = wrap.atlasPanel;
+      if (panel) {
+        panel.hidden = true;
+        panel.style.left = '';
+        panel.style.top = '';
+        if (panel.parentNode !== wrap) wrap.appendChild(panel);
+      }
+      wrap.classList.remove('is-open');
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+    });
+    combinedPanel = null;
+  }
+  // اسکرول صفحه نباید پنل را ببندد؛ فقط جای آن را تازه می‌کند.
+  const repositionOpenCombo = function () {
+    if (!combinedPanel) return;
+    if (typeof combinedPanel.atlasPlace === 'function') combinedPanel.atlasPlace();
+  };
+  document.addEventListener('scroll', repositionOpenCombo, true);
+  window.addEventListener('resize', repositionOpenCombo);
+
+  function comboLabelText(select) {
+    const option = select.options[select.selectedIndex];
+    if (!option || String(option.value) === '') return '';
+    return String(option.textContent);
+  }
+
+  function buildCombo(select) {
+    const wrap = document.createElement('span');
+    wrap.className = 'atlas-combo';
+    wrap.innerHTML =
+      '<button type="button" class="atlas-combo-btn" aria-haspopup="listbox" aria-expanded="false">' +
+        '<span class="atlas-combo-value"></span><span class="atlas-combo-caret" aria-hidden="true">▾</span>' +
+      '</button>' +
+      '<span class="atlas-combo-panel" hidden>' +
+        '<input type="text" class="atlas-combo-search" autocomplete="off" placeholder="جستجو در فهرست…" aria-label="جستجو در فهرست">' +
+        '<span class="atlas-combo-list" role="listbox"></span>' +
+      '</span>';
+    select.parentNode.insertBefore(wrap, select);
+    wrap.appendChild(select);
+    select.classList.add('atlas-combo-native');
+
+    const btn = wrap.querySelector('.atlas-combo-btn');
+    const valueEl = wrap.querySelector('.atlas-combo-value');
+    const panel = wrap.querySelector('.atlas-combo-panel');
+    const search = wrap.querySelector('.atlas-combo-search');
+    const list = wrap.querySelector('.atlas-combo-list');
+
+    const syncLabel = function () {
+      const text = comboLabelText(select);
+      valueEl.textContent = text || select.dataset.comboPlaceholder || 'انتخاب کنید';
+      valueEl.classList.toggle('is-empty', !text);
+    };
+    wrap.atlasSync = syncLabel;
+    wrap.atlasPanel = panel;
+    syncLabel();
+
+    const optionsOf = function () {
+      return Array.prototype.slice.call(select.options).filter(function (option) {
+        return !option.hidden && !option.disabled;
+      });
+    };
+
+    const paint = function () {
+      const query = normalizeSearchText(search.value);
+      const current = String(select.value);
+      const items = optionsOf().filter(function (option) {
+        if (!query) return true;
+        return normalizeSearchText(option.textContent).indexOf(query) > -1;
+      });
+      list.innerHTML = items.length ? items.map(function (option) {
+        const value = String(option.value);
+        return '<button type="button" class="atlas-combo-option' + (value === current ? ' is-selected' : '') +
+          (value === '' ? ' is-empty-option' : '') + '" role="option" data-combo-value="' + esc(value) + '">' +
+          esc(String(option.textContent)) + '</button>';
+      }).join('') : '<span class="atlas-combo-none">گزینه‌ای پیدا نشد.</span>';
+    };
+
+    const close = function () {
+      panel.hidden = true;
+      wrap.classList.remove('is-open');
+      btn.setAttribute('aria-expanded', 'false');
+      panel.style.left = '';
+      panel.style.top = '';
+      panel.style.width = '';
+      panel.style.right = '';
+      panel.style.insetInlineStart = '';
+      if (panel.parentNode !== wrap) wrap.appendChild(panel);
+    };
+    // پنل روی body قرار می‌گیرد تا داخل مودال/کادر اسکرول‌شونده بریده نشود.
+    const placePanel = function () {
+      const rect = btn.getBoundingClientRect();
+      const margin = 8;
+      const width = Math.min(Math.max(rect.width, 220), window.innerWidth - margin * 2);
+      panel.style.width = width + 'px';
+      panel.style.insetInlineStart = 'auto';
+      panel.style.right = 'auto';
+      panel.style.left = Math.max(margin, Math.min(rect.left, window.innerWidth - width - margin)) + 'px';
+      panel.hidden = false;
+      const height = panel.offsetHeight;
+      let top = rect.bottom + 4;
+      if (top + height > window.innerHeight - margin) {
+        const above = rect.top - height - 4;
+        top = above >= margin ? above : Math.max(margin, window.innerHeight - height - margin);
+      }
+      panel.style.top = top + 'px';
+    };
+    const open = function () {
+      closeOpenCombos();
+      if (panel.parentNode !== document.body) document.body.appendChild(panel);
+      panel.style.position = 'fixed';
+      search.value = '';
+      paint();
+      placePanel();
+      wrap.classList.add('is-open');
+      btn.setAttribute('aria-expanded', 'true');
+      const selected = list.querySelector('.atlas-combo-option.is-selected');
+      if (selected) selected.scrollIntoView({ block: 'nearest' });
+      if (!matchMedia('(hover: none)').matches) search.focus();
+      panel.atlasPlace = placePanel;
+      combinedPanel = panel;
+    };
+
+    const choose = function (value) {
+      select.value = value;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      syncLabel();
+      close();
+      btn.focus();
+    };
+
+    btn.addEventListener('click', function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (panel.hidden) open(); else close();
+    });
+    search.addEventListener('input', paint);
+    search.addEventListener('keydown', function (event) {
+      const items = Array.prototype.slice.call(list.querySelectorAll('.atlas-combo-option'));
+      const active = list.querySelector('.atlas-combo-option.is-active');
+      let index = items.indexOf(active);
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        if (!items.length) return;
+        index = event.key === 'ArrowDown' ? Math.min(items.length - 1, index + 1) : Math.max(0, index - 1);
+        items.forEach(function (item) { item.classList.remove('is-active'); });
+        items[index].classList.add('is-active');
+        items[index].scrollIntoView({ block: 'nearest' });
+      } else if (event.key === 'Enter') {
+        event.preventDefault();
+        const target = active || items[0];
+        if (target) choose(target.dataset.comboValue);
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        close();
+        btn.focus();
+      }
+    });
+    list.addEventListener('click', function (event) {
+      const option = event.target.closest('[data-combo-value]');
+      if (!option) return;
+      choose(option.dataset.comboValue);
+    });
+    select.addEventListener('change', syncLabel);
+    select.addEventListener('input', syncLabel);
+
+    // اگر کد جای دیگری مقدار select را عوض کند، برچسب هم به‌روز بماند.
+    const proto = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+    if (proto && proto.get && proto.set) {
+      Object.defineProperty(select, 'value', {
+        configurable: true,
+        get: function () { return proto.get.call(select); },
+        set: function (next) { proto.set.call(select, next); syncLabel(); }
+      });
+    }
+  }
+
+  function enhanceSearchSelects(root) {
+    if (!root || !root.querySelectorAll) return;
+    Array.prototype.forEach.call(root.querySelectorAll('select'), function (select) {
+      if (select.dataset.comboReady) return;
+      if (select.multiple) return;
+      select.dataset.comboReady = '1';
+      sortSelectOptions(select);
+      const real = Array.prototype.filter.call(select.options, function (option) {
+        return String(option.value) !== '' && String(option.value) !== 'all';
+      });
+      if (real.length < COMBO_SEARCH_MIN) return;
+      buildCombo(select);
+    });
+  }
+
+  document.addEventListener('click', function (event) {
+    if (event.target.closest('.atlas-combo') || event.target.closest('.atlas-combo-panel')) return;
+    closeOpenCombos();
+  });
 
   function jalaliPopoverEl() {
     if (!jalaliPopover) {
