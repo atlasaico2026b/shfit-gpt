@@ -1,23 +1,39 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#182b55"/>
-      <stop offset="1" stop-color="#0a1022"/>
+      <stop offset="0" stop-color="#1d2660"/>
+      <stop offset="0.55" stop-color="#111739"/>
+      <stop offset="1" stop-color="#070b1a"/>
     </linearGradient>
-    <linearGradient id="line" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#8fb4ff"/>
-      <stop offset="1" stop-color="#6fe2e6"/>
+    <radialGradient id="glow" cx="0.3" cy="0.18" r="0.8">
+      <stop offset="0" stop-color="#6fe2e6" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#6fe2e6" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="star" x1="0.1" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#b6e6ff"/>
+      <stop offset="0.42" stop-color="#6fe2e6"/>
+      <stop offset="1" stop-color="#4f7dff"/>
+    </linearGradient>
+    <linearGradient id="starDim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3d4f92"/>
+      <stop offset="1" stop-color="#1d2650"/>
     </linearGradient>
   </defs>
+
   <rect width="512" height="512" rx="118" fill="url(#bg)"/>
-  <rect x="42" y="42" width="428" height="428" rx="94" fill="none" stroke="#8db5ff" stroke-opacity=".2" stroke-width="4"/>
-  <g fill="url(#line)">
-    <rect x="135" y="235" width="45" height="135" rx="22"/>
-    <rect x="217" y="143" width="45" height="227" rx="22"/>
-    <rect x="299" y="190" width="45" height="180" rx="22"/>
+  <rect width="512" height="512" rx="118" fill="url(#glow)"/>
+  <rect x="24" y="24" width="464" height="464" rx="100" fill="none" stroke="#8fb4ff" stroke-opacity="0.15" stroke-width="3"/>
+
+  <g transform="rotate(-14 256 256)">
+    <path d="M256 60 C266 176 300 210 416 256 C300 302 266 336 256 452 C246 336 212 302 96 256 C212 210 246 176 256 60 Z"
+          fill="url(#starDim)"/>
+    <path d="M256 60 C266 176 300 210 416 256 C300 302 266 336 256 452 C246 336 212 302 96 256 C212 210 246 176 256 60 Z"
+          fill="url(#star)" opacity="0.96"
+          transform="translate(0 0) scale(0.999)"/>
+    <path d="M256 60 C266 176 300 210 416 256 L256 256 Z" fill="#ffffff" opacity="0.16"/>
+    <path d="M256 60 C246 176 212 210 96 256 L256 256 Z" fill="#04081a" opacity="0.22"/>
   </g>
-  <path d="M127 196 239 112 354 157" fill="none" stroke="#6fe2e6" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>
-  <circle cx="127" cy="196" r="13" fill="#6fe2e6"/>
-  <circle cx="239" cy="112" r="13" fill="#8fb4ff"/>
-  <circle cx="354" cy="157" r="13" fill="#6fe2e6"/>
+
+  <circle cx="256" cy="256" r="34" fill="#080d20" stroke="#6fe2e6" stroke-width="7"/>
+  <circle cx="256" cy="256" r="11" fill="#6fe2e6"/>
 </svg>

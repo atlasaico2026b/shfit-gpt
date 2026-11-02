@@ -1255,14 +1255,19 @@
   // دستهٔ هر اعلان رنگ خودش را دارد: گازسنج زرد، خودرو قرمز کم‌رنگ، یادداشت سفید،
   // برنامه بنفش، اشکال نارنجی، مأموریت آبی، مرخصی سبزآبی.
   const ALERT_KIND_META = {
-    gasmeter: { label: 'گازسنج', icon: '◉' },
-    vehicle: { label: 'خودرو', icon: '⌁' },
-    fault: { label: 'اشکال', icon: '!' },
-    note: { label: 'یادداشت', icon: '✎' },
-    program: { label: 'برنامه', icon: '▤' },
-    mission: { label: 'مأموریت', icon: '➤' },
-    leave: { label: 'مرخصی', icon: '☰' }
+    gasmeter: { label: 'گازسنج', icon: 'gasmeters' },
+    vehicle: { label: 'خودرو', icon: 'vehicles' },
+    fault: { label: 'اشکال', icon: 'faults' },
+    note: { label: 'یادداشت', icon: 'notes' },
+    program: { label: 'برنامه', icon: 'programs' },
+    mission: { label: 'مأموریت', icon: 'missions' },
+    leave: { label: 'مرخصی', icon: 'leaves' }
   };
+
+  function alertKindIcon(kind) {
+    const name = (ALERT_KIND_META[kind] || {}).icon || 'faults';
+    return window.atlasIcon ? window.atlasIcon(name) : '';
+  }
 
   function alertCommentButton(alert) {
     if (!alert || !alert.module || !alert.recordId) return '';
@@ -1520,7 +1525,7 @@
       const existingButton=document.getElementById('seeAllAlerts');
       alertList.innerHTML=alerts.length?alerts.slice(0,5).map(function(a){
         return '<div class="alert-item alert-kind-'+esc(a.kind||'other')+(a.critical?' critical':'')+'" data-kind="'+esc(a.kind||'other')+'">'+
-          '<div class="alert-symbol">'+esc((ALERT_KIND_META[a.kind]||{icon:'↗'}).icon)+'</div>'+
+          '<div class="alert-symbol">'+alertKindIcon(a.kind)+'</div>'+
           '<div class="alert-copy"><b>'+esc(a.title)+'</b><p>'+esc(a.detail)+'</p></div>'+
           alertCommentButton(a)+
           '<span class="alert-age">'+esc((ALERT_KIND_META[a.kind]||{label:'پیگیری'}).label)+'</span></div>';
@@ -1533,7 +1538,7 @@
       const drawerButton=document.getElementById('seeAllAlerts');
       notificationList.innerHTML=alerts.length?alerts.map(function(a){
         return '<div class="notice-card notice-kind-'+esc(a.kind||'other')+(a.critical?' unread':'')+'" data-kind="'+esc(a.kind||'other')+'">'+
-          '<div class="notice-mark">'+esc((ALERT_KIND_META[a.kind]||{icon:'↗'}).icon)+'</div>'+
+          '<div class="notice-mark">'+alertKindIcon(a.kind)+'</div>'+
           '<div class="notice-body"><b>'+esc(a.title)+'</b><p>'+esc(a.detail)+'</p>'+
           '<small>'+esc((ALERT_KIND_META[a.kind]||{label:'پیگیری'}).label)+'</small>'+
           alertCommentButton(a)+'</div>'+
@@ -3278,17 +3283,17 @@
   // دکمه‌های «ثبت سریع» از همین فهرست ساخته می‌شوند؛ ترتیب و نمایش هر دکمه در
   // تنظیمات › «ثبت سریع داشبورد» تعیین می‌شود و در settings.quickAdd ذخیره می‌گردد.
   const QUICK_ADD_CATALOG = [
-    { id:'employees', label:'کارمند', tone:'info', view:'employees', icon:'<path d="M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/>' },
-    { id:'leaves', label:'مرخصی', tone:'ok', view:'leaves', icon:'<path d="M12 3v18M5 8h14"/>' },
-    { id:'missions', label:'مأموریت', tone:'special', view:'missions', icon:'<path d="M3 7h18M6 3h12v18H6zM9 11h6"/>' },
-    { id:'notes', label:'یادداشت', tone:'warn', view:'notes', icon:'<path d="M5 3h9l5 5v13H5zM14 3v5h5"/>' },
-    { id:'programs', label:'برنامه', tone:'accent', view:'programs', icon:'<path d="M4 5h16M4 12h10M4 19h7"/>' },
-    { id:'maintenance', label:'سرویس خودرو', tone:'ok', view:'maintenance', icon:'<path d="M14.7 6.3a4 4 0 0 0 5 5L21 21H3l1.3-9.7a4 4 0 0 0 5-5Z"/><path d="M9 13h6"/>' },
-    { id:'faults', label:'اشکال خودرو', tone:'danger', view:'faults', preset:{ assetType:'خودرو' }, icon:'<path d="M12 3 2.8 20h18.4L12 3ZM12 9v4M12 17h.01"/>' },
-    { id:'stations', label:'ایستگاه / مرکز', tone:'info', view:'stations', icon:'<path d="M3 20V9l4-3 4 3v11"/><path d="M13 20V4h8v16"/><path d="M2 20h20"/>' },
-    { id:'gaslogs', label:'سابقهٔ گازسنج', tone:'highlight', view:'gaslogs', preset:{ logType:'ثبت قرائت' }, icon:'<path d="M9 3h6M10 3v5l-4 7a4 4 0 0 0 3.5 6h5A4 4 0 0 0 18 15l-4-7V3"/>' },
-    { id:'vehicles', label:'خودرو', tone:'info', view:'vehicles', icon:'<path d="M3 13l2-6h14l2 6v6h-3v-2H6v2H3zM5 13h14M7 16h.01M17 16h.01"/>' },
-    { id:'gasmeters', label:'گازسنج', tone:'highlight', view:'gasmeters', icon:'<path d="M12 3v3M5 21h14M7 21V9l5-3 5 3v12M12 13v3"/>' }
+    { id:'employees', label:'کارمند', tone:'info', view:'employees', icon:'employees' },
+    { id:'leaves', label:'مرخصی', tone:'ok', view:'leaves', icon:'leaves' },
+    { id:'missions', label:'مأموریت', tone:'special', view:'missions', icon:'missions' },
+    { id:'notes', label:'یادداشت', tone:'warn', view:'notes', icon:'notes' },
+    { id:'programs', label:'برنامه', tone:'accent', view:'programs', icon:'programs' },
+    { id:'maintenance', label:'سرویس خودرو', tone:'ok', view:'maintenance', icon:'maintenance' },
+    { id:'faults', label:'اشکال خودرو', tone:'danger', view:'faults', preset:{ assetType:'خودرو' }, icon:'faults' },
+    { id:'stations', label:'ایستگاه / مرکز', tone:'info', view:'stations', icon:'stations' },
+    { id:'gaslogs', label:'سابقهٔ گازسنج', tone:'highlight', view:'gaslogs', preset:{ logType:'ثبت قرائت' }, icon:'gaslogs' },
+    { id:'vehicles', label:'خودرو', tone:'info', view:'vehicles', icon:'vehicles' },
+    { id:'gasmeters', label:'گازسنج', tone:'highlight', view:'gasmeters', icon:'gasmeters' }
   ];
   const QUICK_ADD_DEFAULT = ['employees','leaves','missions','notes','programs','maintenance','faults','stations','gaslogs'];
 
@@ -3325,7 +3330,7 @@
     if (!def) return '';
     return '<button type="button" class="quick-add-btn" data-quick-add="' + esc(def.view) + '" data-qa-id="' + esc(def.id) + '" data-tone="' + esc(def.tone) + '"' +
       (def.preset ? ' data-preset=\'' + JSON.stringify(def.preset) + '\'' : '') + '>' +
-      '<span class="quick-add-icon"><svg viewBox="0 0 24 24">' + def.icon + '</svg></span><span>' + esc(def.label) + '</span></button>';
+      '<span class="quick-add-icon">' + (window.atlasIcon ? window.atlasIcon(def.icon) : '') + '</span><span>' + esc(def.label) + '</span></button>';
   }
 
   function renderQuickAdd() {

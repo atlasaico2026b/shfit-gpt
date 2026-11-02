@@ -3,18 +3,18 @@
 
   const STORAGE_KEY = 'atlasShiftMainMenuConfigV1';
   const DEFAULTS = [
-    { id: 'dashboard', title: 'داشبورد', icon: '⌂', href: './index.html', fixed: true },
-    { id: 'employees', title: 'کارکنان', icon: '♙', href: './index.html?view=employees' },
-    { id: 'missions', title: 'مأموریت‌ها', icon: '↗', href: './index.html?view=missions' },
-    { id: 'leaves', title: 'مرخصی‌ها', icon: '◷', href: './index.html?view=leaves' },
-    { id: 'vehicles', title: 'خودروها', icon: '▰', href: './index.html?view=vehicles' },
-    { id: 'stations', title: 'ایستگاه‌ها', icon: '⌘', href: './index.html?view=stations' },
-    { id: 'gasmeters', title: 'گازسنج‌ها', icon: '◉', href: './index.html?view=gasmeters' },
-    { id: 'notes', title: 'یادداشت‌ها', icon: '▤', href: './index.html?view=notes' },
-    { id: 'programs', title: 'برنامه‌ها و پرونده‌ها', icon: '✓', href: './index.html?view=programs' },
-    { id: 'phonebook', title: 'دفترچه تلفن', icon: '☎', href: './index.html?view=phonebook' },
-    { id: 'reports', title: 'گزارشات', icon: '▥', href: './index.html?view=reports' },
-    { id: 'settings', title: 'تنظیمات', icon: '⚙', href: './index.html?view=settings', fixed: true }
+    { id: 'dashboard', title: 'داشبورد', icon: 'dashboard', href: './index.html', fixed: true },
+    { id: 'employees', title: 'کارکنان', icon: 'employees', href: './index.html?view=employees' },
+    { id: 'missions', title: 'مأموریت‌ها', icon: 'missions', href: './index.html?view=missions' },
+    { id: 'leaves', title: 'مرخصی‌ها', icon: 'leaves', href: './index.html?view=leaves' },
+    { id: 'vehicles', title: 'خودروها', icon: 'vehicles', href: './index.html?view=vehicles' },
+    { id: 'stations', title: 'ایستگاه‌ها', icon: 'stations', href: './index.html?view=stations' },
+    { id: 'gasmeters', title: 'گازسنج‌ها', icon: 'gasmeters', href: './index.html?view=gasmeters' },
+    { id: 'notes', title: 'یادداشت‌ها', icon: 'notes', href: './index.html?view=notes' },
+    { id: 'programs', title: 'برنامه‌ها و پرونده‌ها', icon: 'programs', href: './index.html?view=programs' },
+    { id: 'phonebook', title: 'دفترچه تلفن', icon: 'phonebook', href: './index.html?view=phonebook' },
+    { id: 'reports', title: 'گزارشات', icon: 'reports', href: './index.html?view=reports' },
+    { id: 'settings', title: 'تنظیمات', icon: 'settings', href: './index.html?view=settings', fixed: true }
   ];
   const TARGETS = {
     dashboard: './index.html', employees: './index.html?view=employees',
@@ -86,7 +86,12 @@
       a.href = item.href;
       a.dataset.menuId = item.id;
       const icon = document.createElement('span');
-      icon.textContent = item.icon;
+      icon.className = 'nav-ico';
+      if (window.atlasIcon && window.ATLAS_ICONS && window.ATLAS_ICONS[item.icon]) {
+        icon.innerHTML = window.atlasIcon(item.icon);
+      } else {
+        icon.textContent = item.icon;
+      }
       a.append(icon, document.createTextNode(item.title));
       fragment.appendChild(a);
     });
