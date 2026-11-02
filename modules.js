@@ -1385,6 +1385,7 @@
 
   function refreshDashboard() {
     if (!ready) return;
+    renderQuickAdd();
     const staff = appData.employees;
     const missions = appData.missions;
     const vehicles = appData.vehicles;
@@ -1663,6 +1664,7 @@
     { id: 'lists', title: 'منوها و فهرست‌ها', icon: '☰' },
     { id: 'places', title: 'مکان‌های ایستگاه', icon: '⚑' },
     { id: 'dashboard', title: 'تنظیمات داشبورد', icon: '▦' },
+    { id: 'quickadd', title: 'ثبت سریع داشبورد', icon: '⚡' },
     { id: 'employees', title: 'فیلدهای کارکنان', icon: '☺' },
     { id: 'backup', title: 'پشتیبان‌گیری و ذخیره‌سازی', icon: '⤓' }
   ];
@@ -1688,6 +1690,7 @@
       return '<p class="reference-hint">هر مکان زیرمجموعهٔ یک «نوع محل» است و همان‌جا افزودن، تغییر نام و حذف می‌شود. فهرست مشترک مکان‌ها (شهر، محل خدمت، محل استقرار، محدودهٔ عملیاتی) در تب «منوها و فهرست‌ها» › «مکان‌ها و محل‌ها» است.</p>' + stationPlacesPanel();
     }
     if (id === 'dashboard') return dashboardEditorMarkup();
+    if (id === 'quickadd') return quickAddEditorMarkup();
     if (id === 'employees') return customFieldsSectionMarkup();
     return backupSectionMarkup();
   }
@@ -1695,7 +1698,7 @@
   function renderSettings(section) {
     if (!SETTINGS_TABS.some(function (tab) { return tab.id === settingsTab; })) settingsTab = 'lists';
     section.innerHTML = rootWrap(
-      pageHead('تنظیمات', 'مدیریت محلی اطلاعات: فهرست‌های کشویی، مکان‌ها، چیدمان داشبورد، فیلدهای پرسنلی و نسخهٔ پشتیبان.', '') +
+      pageHead('تنظیمات', 'مدیریت محلی اطلاعات: فهرست‌های کشویی، مکان‌ها، چیدمان و ثبت سریع داشبورد، فیلدهای پرسنلی و نسخهٔ پشتیبان.', '') +
       '<div class="settings-view-tabs" role="tablist">' + SETTINGS_TABS.map(function (tab) {
         return '<button type="button" role="tab" class="settings-view-tab' + (tab.id === settingsTab ? ' is-active' : '') + '" data-settings-tab="' + tab.id + '" aria-selected="' + (tab.id === settingsTab) + '"><span aria-hidden="true">' + tab.icon + '</span>' + esc(tab.title) + '</button>';
       }).join('') + '</div>' +
@@ -3270,6 +3273,90 @@
     if (event.target.closest('.atlas-modal')) return;
     closeStationInfo();
   });
+
+  // ── ثبت سریع داشبورد ──────────────────────────────────────────────────────
+  // دکمه‌های «ثبت سریع» از همین فهرست ساخته می‌شوند؛ ترتیب و نمایش هر دکمه در
+  // تنظیمات › «ثبت سریع داشبورد» تعیین می‌شود و در settings.quickAdd ذخیره می‌گردد.
+  const QUICK_ADD_CATALOG = [
+    { id:'employees', label:'کارمند', tone:'info', view:'employees', icon:'<path d="M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/>' },
+    { id:'leaves', label:'مرخصی', tone:'ok', view:'leaves', icon:'<path d="M12 3v18M5 8h14"/>' },
+    { id:'missions', label:'مأموریت', tone:'special', view:'missions', icon:'<path d="M3 7h18M6 3h12v18H6zM9 11h6"/>' },
+    { id:'notes', label:'یادداشت', tone:'warn', view:'notes', icon:'<path d="M5 3h9l5 5v13H5zM14 3v5h5"/>' },
+    { id:'programs', label:'برنامه', tone:'accent', view:'programs', icon:'<path d="M4 5h16M4 12h10M4 19h7"/>' },
+    { id:'maintenance', label:'سرویس خودرو', tone:'ok', view:'maintenance', icon:'<path d="M14.7 6.3a4 4 0 0 0 5 5L21 21H3l1.3-9.7a4 4 0 0 0 5-5Z"/><path d="M9 13h6"/>' },
+    { id:'faults', label:'اشکال خودرو', tone:'danger', view:'faults', preset:{ assetType:'خودرو' }, icon:'<path d="M12 3 2.8 20h18.4L12 3ZM12 9v4M12 17h.01"/>' },
+    { id:'stations', label:'ایستگاه / مرکز', tone:'info', view:'stations', icon:'<path d="M3 20V9l4-3 4 3v11"/><path d="M13 20V4h8v16"/><path d="M2 20h20"/>' },
+    { id:'gaslogs', label:'سابقهٔ گازسنج', tone:'highlight', view:'gaslogs', preset:{ logType:'ثبت قرائت' }, icon:'<path d="M9 3h6M10 3v5l-4 7a4 4 0 0 0 3.5 6h5A4 4 0 0 0 18 15l-4-7V3"/>' },
+    { id:'vehicles', label:'خودرو', tone:'info', view:'vehicles', icon:'<path d="M3 13l2-6h14l2 6v6h-3v-2H6v2H3zM5 13h14M7 16h.01M17 16h.01"/>' },
+    { id:'gasmeters', label:'گازسنج', tone:'highlight', view:'gasmeters', icon:'<path d="M12 3v3M5 21h14M7 21V9l5-3 5 3v12M12 13v3"/>' }
+  ];
+  const QUICK_ADD_DEFAULT = ['employees','leaves','missions','notes','programs','maintenance','faults','stations','gaslogs'];
+
+  function quickAddCatalogItem(id) {
+    return QUICK_ADD_CATALOG.filter(function (item) { return item.id === id; })[0] || null;
+  }
+
+  function quickAddState() {
+    const settings = appData.settings || {};
+    const stored = Array.isArray(settings.quickAdd) ? settings.quickAdd : null;
+    const out = [];
+    const seen = {};
+    (stored || []).forEach(function (entry) {
+      const id = typeof entry === 'string' ? entry : (entry && entry.id);
+      if (!id || seen[id] || !quickAddCatalogItem(id)) return;
+      seen[id] = true;
+      out.push({ id: id, enabled: typeof entry === 'string' ? true : entry.enabled !== false });
+    });
+    QUICK_ADD_CATALOG.forEach(function (item) {
+      if (seen[item.id]) return;
+      out.push({ id: item.id, enabled: stored ? false : QUICK_ADD_DEFAULT.indexOf(item.id) >= 0 });
+    });
+    return out;
+  }
+
+  async function saveQuickAddState(items) {
+    appData.settings.quickAdd = items.map(function (item) { return { id: item.id, enabled: !!item.enabled }; });
+    renderQuickAdd();
+    return saveState();
+  }
+
+  function quickAddButtonMarkup(item) {
+    const def = quickAddCatalogItem(item.id);
+    if (!def) return '';
+    return '<button type="button" class="quick-add-btn" data-quick-add="' + esc(def.view) + '" data-qa-id="' + esc(def.id) + '" data-tone="' + esc(def.tone) + '"' +
+      (def.preset ? ' data-preset=\'' + JSON.stringify(def.preset) + '\'' : '') + '>' +
+      '<span class="quick-add-icon"><svg viewBox="0 0 24 24">' + def.icon + '</svg></span><span>' + esc(def.label) + '</span></button>';
+  }
+
+  function renderQuickAdd() {
+    const grid = document.querySelector('#dashboardQuickAdd .quick-add-grid');
+    if (!grid) return;
+    const enabled = quickAddState().filter(function (item) { return item.enabled; });
+    grid.innerHTML = enabled.length
+      ? enabled.map(quickAddButtonMarkup).join('')
+      : '<p class="quick-add-empty">هیچ دکمهٔ ثبت سریعی فعال نیست. از تنظیمات › «ثبت سریع داشبورد» یکی را روشن کن.</p>';
+  }
+
+  function quickAddEditorMarkup() {
+    const items = quickAddState();
+    const enabledCount = items.filter(function (item) { return item.enabled; }).length;
+    return '<section class="module-list-panel"><div class="module-list-head"><div><h3>دکمه‌های ثبت سریع داشبورد</h3>' +
+      '<p>هر دکمه‌ای را که می‌خواهی روی نوار «ثبت سریع» داشبورد ببینی روشن کن؛ با ↑ و ↓ جای آن را عوض کن. ترتیب همین فهرست، ترتیب دکمه‌ها روی داشبورد است.</p></div>' +
+      '<div class="module-list-tools"><span class="module-tag">' + faDigits(enabledCount) + ' از ' + faDigits(items.length) + ' فعال</span>' +
+      '<button type="button" class="secondary-btn" data-qa-reset>بازنشانی پیش‌فرض</button></div></div>' +
+      '<div class="qa-list" data-qa-list>' + items.map(function (item, index) {
+        const def = quickAddCatalogItem(item.id);
+        return '<div class="qa-row' + (item.enabled ? '' : ' is-off') + '" data-qa-row="' + esc(item.id) + '">' +
+          '<label class="qa-main"><input type="checkbox" data-qa-toggle="' + esc(item.id) + '"' + (item.enabled ? ' checked' : '') + '>' +
+          '<span class="qa-label">' + esc(def.label) + '</span></label>' +
+          '<div class="qa-actions">' +
+            '<button type="button" class="qa-btn" data-qa-up="' + esc(item.id) + '" aria-label="بالا"' + (index === 0 ? ' disabled' : '') + '>↑</button>' +
+            '<button type="button" class="qa-btn" data-qa-down="' + esc(item.id) + '" aria-label="پایین"' + (index === items.length - 1 ? ' disabled' : '') + '>↓</button>' +
+          '</div></div>';
+      }).join('') + '</div>' +
+      '<p class="module-field-hint">دکمه‌های خاموش از داشبورد برداشته می‌شوند ولی همین‌جا می‌مانند تا هر وقت خواستی دوباره روشنشان کنی.</p>' +
+      '</section>';
+  }
 
   document.addEventListener('click', function (event) {
     const quick = event.target.closest('[data-quick-add]');
@@ -6508,6 +6595,29 @@
       if (await saveState()) { render('settings', view); toast('کادر به داشبورد افزوده شد.'); }
       return;
     }
+    const qaUp = event.target.closest('[data-qa-up]');
+    const qaDown = event.target.closest('[data-qa-down]');
+    if (qaUp || qaDown) {
+      event.preventDefault();
+      const id = (qaUp || qaDown).dataset[qaUp ? 'qaUp' : 'qaDown'];
+      const items = quickAddState();
+      const index = items.findIndex(function (item) { return item.id === id; });
+      const target = qaUp ? index - 1 : index + 1;
+      if (index < 0 || target < 0 || target >= items.length) return;
+      const moved = items.splice(index, 1)[0];
+      items.splice(target, 0, moved);
+      if (await saveQuickAddState(items)) render('settings', view);
+      return;
+    }
+    const qaReset = event.target.closest('[data-qa-reset]');
+    if (qaReset) {
+      event.preventDefault();
+      if (!(await askConfirm({ title: 'بازنشانی ثبت سریع', message: 'دکمه‌های ثبت سریع داشبورد به ترتیب و حالت پیش‌فرض برمی‌گردند.', confirmLabel: 'بازنشانی' }))) return;
+      delete appData.settings.quickAdd;
+      renderQuickAdd();
+      if (await saveState()) { render('settings', view); toast('ثبت سریع داشبورد بازنشانی شد.'); }
+      return;
+    }
     const resetCards = event.target.closest('[data-dash-reset]');
     if (resetCards) {
       event.preventDefault();
@@ -6517,6 +6627,21 @@
       dashboardLayout();
       applyDashboardLayout();
       if (await saveState()) { render('settings', view); toast('چیدمان داشبورد بازنشانی شد.'); }
+    }
+  });
+
+  // روشن/خاموش کردن دکمه‌های ثبت سریع از تنظیمات.
+  document.addEventListener('change', async function (event) {
+    const toggle = event.target.closest('[data-qa-toggle]');
+    if (!toggle) return;
+    const id = toggle.dataset.qaToggle;
+    const items = quickAddState().map(function (item) {
+      return item.id === id ? { id: item.id, enabled: toggle.checked } : item;
+    });
+    const view = document.getElementById('sectionView');
+    if (await saveQuickAddState(items)) {
+      if (view) render('settings', view);
+      toast(toggle.checked ? 'دکمهٔ «' + (quickAddCatalogItem(id) || {}).label + '» به ثبت سریع داشبورد افزوده شد.' : 'دکمهٔ «' + (quickAddCatalogItem(id) || {}).label + '» از ثبت سریع داشبورد برداشته شد.');
     }
   });
 

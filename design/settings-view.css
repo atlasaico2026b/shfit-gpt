@@ -330,46 +330,69 @@
 
 /* ─────────────────────────────────────────────────────────────
    دسته‌بندی رنگی اعلان‌ها (کشوی اعلان + ویجت داشبورد)
-   گازسنج زرد · خودرو قرمز کم‌رنگ · اشکال نارنجی · یادداشت سفید
-   برنامه بنفش · مأموریت آبی · مرخصی سبزآبی
+   هر دسته یک رنگ پرتضاد و یک نشان توپر جدا دارد تا در یک نگاه از
+   بقیه جدا شود: گازسنج کهربایی · خودرو قرمز · اشکال نارنجی ·
+   یادداشت سفید · برنامه بنفش · مأموریت آبی · مرخصی سبز
    ───────────────────────────────────────────────────────────── */
-[data-kind="gasmeter"] { --kind-rgb: 245, 197, 66; }
-[data-kind="vehicle"] { --kind-rgb: 255, 138, 128; }
-[data-kind="fault"] { --kind-rgb: 255, 171, 94; }
-[data-kind="note"] { --kind-rgb: 244, 247, 255; }
-[data-kind="program"] { --kind-rgb: 183, 156, 255; }
-[data-kind="mission"] { --kind-rgb: 126, 200, 255; }
-[data-kind="leave"] { --kind-rgb: 111, 227, 196; }
-[data-kind="other"] { --kind-rgb: 168, 180, 204; }
+[data-kind="gasmeter"] { --kind-rgb: 255, 193, 7; --kind-ink: 26, 18, 0; }
+[data-kind="vehicle"] { --kind-rgb: 255, 45, 85; --kind-ink: 255, 255, 255; }
+[data-kind="fault"] { --kind-rgb: 255, 109, 0; --kind-ink: 30, 12, 0; }
+[data-kind="note"] { --kind-rgb: 226, 234, 255; --kind-ink: 12, 18, 34; }
+[data-kind="program"] { --kind-rgb: 168, 85, 247; --kind-ink: 255, 255, 255; }
+[data-kind="mission"] { --kind-rgb: 56, 132, 255; --kind-ink: 255, 255, 255; }
+[data-kind="leave"] { --kind-rgb: 16, 185, 129; --kind-ink: 0, 26, 18; }
+[data-kind="other"] { --kind-rgb: 148, 163, 184; --kind-ink: 12, 18, 34; }
 
 .notice-card[data-kind] {
-  border-inline-start: 3px solid rgba(var(--kind-rgb), 0.75);
+  border: 1px solid rgba(var(--kind-rgb), 0.34);
+  border-inline-start: 4px solid rgb(var(--kind-rgb));
+  background: linear-gradient(100deg, rgba(var(--kind-rgb), 0.16), rgba(var(--c-white-rgb), 0.03));
 }
 .notice-card[data-kind].unread {
-  background: linear-gradient(100deg, rgba(var(--kind-rgb), 0.15), rgba(var(--c-white-rgb), 0.035));
-  border-color: rgba(var(--kind-rgb), 0.28);
-  border-inline-start-color: rgba(var(--kind-rgb), 0.9);
+  background: linear-gradient(100deg, rgba(var(--kind-rgb), 0.3), rgba(var(--c-white-rgb), 0.05));
+  border-color: rgba(var(--kind-rgb), 0.55);
+  border-inline-start-color: rgb(var(--kind-rgb));
 }
 .notice-card[data-kind] .notice-mark {
-  background: rgba(var(--kind-rgb), 0.16);
-  border: 1px solid rgba(var(--kind-rgb), 0.32);
-  color: rgb(var(--kind-rgb));
+  background: rgb(var(--kind-rgb));
+  border: 1px solid rgb(var(--kind-rgb));
+  color: rgb(var(--kind-ink));
   font-size: 14px;
+  font-weight: 800;
+  box-shadow: 0 0 0 3px rgba(var(--kind-rgb), 0.16);
 }
 .notice-card[data-kind] .notice-body b { color: rgb(var(--kind-rgb)); }
 .notice-card[data-kind] .notice-unread { background: rgb(var(--kind-rgb)); }
+.notice-card[data-kind] .notice-age {
+  background: rgba(var(--kind-rgb), 0.18);
+  border: 1px solid rgba(var(--kind-rgb), 0.4);
+  color: rgb(var(--kind-rgb));
+  font-weight: 800;
+}
 
-.alert-item[data-kind] {
-  border-inline-start: 3px solid rgba(var(--kind-rgb), 0.7);
+.alert-item[data-kind],
+.dashboard .widget .alert-item[data-kind] {
+  border: 1px solid rgba(var(--kind-rgb), 0.3);
+  border-inline-start: 4px solid rgb(var(--kind-rgb));
+  background: rgba(var(--kind-rgb), 0.1);
   padding-inline-start: 9px;
   border-radius: 8px;
 }
-.alert-item[data-kind] .alert-symbol {
-  background: rgba(var(--kind-rgb), 0.14);
-  border-color: rgba(var(--kind-rgb), 0.3);
-  color: rgb(var(--kind-rgb));
+.alert-item[data-kind] .alert-symbol,
+.dashboard .widget .alert-item[data-kind] .alert-symbol {
+  background: rgb(var(--kind-rgb));
+  border-color: rgb(var(--kind-rgb));
+  color: rgb(var(--kind-ink));
+  font-weight: 800;
+  box-shadow: 0 0 0 3px rgba(var(--kind-rgb), 0.14);
 }
 .alert-item[data-kind] .alert-copy b { color: rgb(var(--kind-rgb)); }
+.alert-item[data-kind] .alert-age {
+  background: rgba(var(--kind-rgb), 0.18);
+  border: 1px solid rgba(var(--kind-rgb), 0.4);
+  color: rgb(var(--kind-rgb));
+  font-weight: 800;
+}
 
 .notice-quick-comment {
   margin-top: 6px;
@@ -470,3 +493,38 @@
   .atlas-combo-list { max-height: 40vh; }
   .atlas-combo-option { padding: 9px 10px; font-size: 13px; }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   ویرایشگر «ثبت سریع داشبورد» (تنظیمات)
+   ───────────────────────────────────────────────────────────── */
+.qa-list { display: flex; flex-direction: column; gap: 6px; }
+.qa-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(var(--c-white-rgb), 0.1);
+  background: rgba(var(--c-white-rgb), 0.03);
+}
+.qa-row.is-off { opacity: 0.55; border-style: dashed; }
+.qa-main { display: flex; align-items: center; gap: 9px; flex: 1; min-width: 0; cursor: pointer; }
+.qa-main input { width: 16px; height: 16px; accent-color: rgb(var(--c-accent-rgb, 90, 170, 255)); cursor: pointer; }
+.qa-label { font-size: 12px; font-weight: 700; }
+.qa-actions { display: flex; gap: 4px; flex: none; }
+.qa-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px solid rgba(var(--c-white-rgb), 0.14);
+  background: rgba(var(--c-white-rgb), 0.05);
+  color: var(--text, #eaf0ff);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+.qa-btn:hover:not(:disabled) { background: rgba(var(--c-accent-rgb, 90, 170, 255), 0.2); border-color: rgba(var(--c-accent-rgb, 90, 170, 255), 0.5); }
+.qa-btn:disabled { opacity: 0.3; cursor: default; }
+.quick-add-empty { grid-column: 1 / -1; margin: 0; font-size: 11px; color: var(--muted); }
