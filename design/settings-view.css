@@ -343,56 +343,105 @@
 [data-kind="leave"] { --kind-rgb: 16, 185, 129; --kind-ink: 0, 26, 18; }
 [data-kind="other"] { --kind-rgb: 148, 163, 184; --kind-ink: 12, 18, 34; }
 
+/* کارت اعلان، روشن و رنگ‌آمیزی‌شده با رنگ دسته است تا متن مشکی روی آن
+   خوانا بماند و رنگ دسته هم دیده شود. */
 .notice-card[data-kind] {
-  border: 1px solid rgba(var(--kind-rgb), 0.34);
-  border-inline-start: 4px solid rgb(var(--kind-rgb));
-  background: linear-gradient(100deg, rgba(var(--kind-rgb), 0.16), rgba(var(--c-white-rgb), 0.03));
+  border: 1px solid rgba(var(--kind-rgb), 0.55);
+  border-inline-start: 5px solid rgb(var(--kind-rgb));
+  background-color: rgba(255, 255, 255, 0.94);
+  background-image: linear-gradient(100deg, rgba(var(--kind-rgb), 0.5), rgba(var(--kind-rgb), 0.3));
+  color: #0a0e16;
 }
 .notice-card[data-kind].unread {
-  background: linear-gradient(100deg, rgba(var(--kind-rgb), 0.3), rgba(var(--c-white-rgb), 0.05));
-  border-color: rgba(var(--kind-rgb), 0.55);
-  border-inline-start-color: rgb(var(--kind-rgb));
+  border-color: rgba(var(--kind-rgb), 0.85);
+  background-color: rgba(255, 255, 255, 0.97);
+  background-image: linear-gradient(100deg, rgba(var(--kind-rgb), 0.66), rgba(var(--kind-rgb), 0.4));
 }
 .notice-card[data-kind] .notice-mark {
   background: rgb(var(--kind-rgb));
-  border: 1px solid rgb(var(--kind-rgb));
+  border: 1px solid rgba(0, 0, 0, 0.14);
   color: rgb(var(--kind-ink));
+  font-size: 15px;
+  font-weight: 800;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+.notice-card[data-kind] .notice-body b {
+  color: #05070c;
   font-size: 14px;
   font-weight: 800;
-  box-shadow: 0 0 0 3px rgba(var(--kind-rgb), 0.16);
+  line-height: 1.75;
 }
-.notice-card[data-kind] .notice-body b { color: rgb(var(--kind-rgb)); }
-.notice-card[data-kind] .notice-unread { background: rgb(var(--kind-rgb)); }
+.notice-card[data-kind] .notice-body p {
+  color: rgba(5, 7, 12, 0.82);
+  font-size: 12px;
+  line-height: 1.85;
+}
+.notice-card[data-kind] .notice-body small {
+  color: rgba(5, 7, 12, 0.68);
+  font-size: 11px;
+  font-weight: 700;
+}
+.notice-card[data-kind] .notice-unread { background: #05070c; }
 .notice-card[data-kind] .notice-age {
-  background: rgba(var(--kind-rgb), 0.18);
-  border: 1px solid rgba(var(--kind-rgb), 0.4);
-  color: rgb(var(--kind-rgb));
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  color: #05070c;
   font-weight: 800;
 }
+.notice-card[data-kind] .notice-quick-comment {
+  border-color: rgba(5, 7, 12, 0.32);
+  background: rgba(255, 255, 255, 0.6);
+  color: #05070c;
+  font-size: 10.5px;
+}
+.notice-card[data-kind] .notice-quick-comment:hover { background: rgba(255, 255, 255, 0.9); }
 
 .alert-item[data-kind],
 .dashboard .widget .alert-item[data-kind] {
-  border: 1px solid rgba(var(--kind-rgb), 0.3);
-  border-inline-start: 4px solid rgb(var(--kind-rgb));
-  background: rgba(var(--kind-rgb), 0.1);
+  border: 1px solid rgba(var(--kind-rgb), 0.5);
+  border-inline-start: 5px solid rgb(var(--kind-rgb));
+  background-color: rgba(255, 255, 255, 0.93);
+  background-image: linear-gradient(100deg, rgba(var(--kind-rgb), 0.44), rgba(var(--kind-rgb), 0.26));
+  color: #0a0e16;
   padding-inline-start: 9px;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 .alert-item[data-kind] .alert-symbol,
 .dashboard .widget .alert-item[data-kind] .alert-symbol {
   background: rgb(var(--kind-rgb));
-  border-color: rgb(var(--kind-rgb));
+  border-color: rgba(0, 0, 0, 0.14);
   color: rgb(var(--kind-ink));
+  font-size: 15px;
   font-weight: 800;
-  box-shadow: 0 0 0 3px rgba(var(--kind-rgb), 0.14);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
 }
-.alert-item[data-kind] .alert-copy b { color: rgb(var(--kind-rgb)); }
-.alert-item[data-kind] .alert-age {
-  background: rgba(var(--kind-rgb), 0.18);
-  border: 1px solid rgba(var(--kind-rgb), 0.4);
-  color: rgb(var(--kind-rgb));
+.alert-item[data-kind] .alert-copy b,
+.dashboard .widget .alert-item[data-kind] .alert-copy b {
+  color: #05070c;
+  font-size: 13.5px;
   font-weight: 800;
 }
+.alert-item[data-kind] .alert-copy p,
+.dashboard .widget .alert-item[data-kind] .alert-copy p {
+  color: rgba(5, 7, 12, 0.8);
+  font-size: 11.5px;
+}
+.alert-item[data-kind] .alert-age,
+.dashboard .widget .alert-item[data-kind] .alert-age {
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  color: #05070c;
+  font-size: 10.5px;
+  font-weight: 800;
+}
+.alert-item[data-kind] .notice-quick-comment,
+.dashboard .widget .alert-item[data-kind] .notice-quick-comment {
+  border-color: rgba(5, 7, 12, 0.32);
+  background: rgba(255, 255, 255, 0.6);
+  color: #05070c;
+  font-size: 10.5px;
+}
+.alert-item[data-kind] .notice-quick-comment:hover { background: rgba(255, 255, 255, 0.9); }
 
 .notice-quick-comment {
   margin-top: 6px;
