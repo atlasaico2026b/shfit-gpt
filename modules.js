@@ -3367,18 +3367,18 @@
     const quick = event.target.closest('[data-quick-add]');
     if (!quick) return;
     const view = quick.dataset.quickAdd;
-    if (!view) return;
+    if (!view || !specs[view]) return;
     let preset = null;
     try { preset = quick.dataset.preset ? JSON.parse(quick.dataset.preset) : null; } catch (error) { preset = null; }
     if (view === 'faults') { preset = Object.assign({ reportedAt: todayIso() }, preset || {}); faultFormScope = 'vehicle'; }
     if (view === 'gaslogs' || view === 'maintenance') preset = Object.assign({ date: todayIso() }, preset || {});
     formState[view] = { open:true, id:null, preset:preset };
-    const url = new URL(window.location.href);
-    url.searchParams.set('view', view);
-    window.history.pushState({}, '', url.pathname + '?' + url.searchParams.toString());
-    if (typeof window.ATLAS_ROUTE === 'function') window.ATLAS_ROUTE(view);
-    else render(view, document.getElementById('sectionView'));
-    window.scrollTo({ top:0, behavior:'smooth' });
+    // فرم روی همان صفحه‌ای باز می‌شود که دکمهٔ ثبت سریع در آن است؛ مسیر و منوی فعال جابه‌جا نمی‌شود.
+    clearDetachedModals();
+    document.body.insertAdjacentHTML('beforeend', renderForm(view, appData));
+    enhanceJalaliInputs(document.body);
+    const first = document.querySelector('[data-modal-backdrop] [name]');
+    if (first) first.focus();
   });
 
   // ── اقدام‌های دفتر اشکالات، دفتر گازسنج و دفتر سرویس ──
