@@ -1,0 +1,631 @@
+/* ============================================================================
+   ATLAS SHIFT · NEW UI LAYER  (design/new-ui.css)
+   ----------------------------------------------------------------------------
+   لایهٔ ظاهری تازه بر پایهٔ کدهای پیوست (docx). هر بخش با شمارهٔ ردیف همان سند
+   علامت‌گذاری شده تا معلوم باشد کدام کد کجای اپ نشسته است. این فایل آخرین
+   استایل بارگذاری می‌شود و ساختار صفحه را تغییر نمی‌دهد؛ فقط رنگ، سایه،
+   فاصله و حرکت‌ها را عوض می‌کند. رنگ‌ها همه از design/tokens.css می‌آیند.
+
+     ردیف ۱  → همهٔ دکمه‌ها (hover کشیده‌شدن حروف + درخشش، active فشرده‌شدن)
+     ردیف ۲  → چک‌باکس‌ها به کلید کشویی (slider)
+     ردیف ۳  → فیلدهای تایپی: خط زیرین موجی از مرکز
+     ردیف ۴  → انتخاب پالت رنگ (swatch سه‌بعدی)
+     ردیف ۵  → تب‌ها و منوها (پیل نئومورفیک)
+     ردیف ۶  → دکمهٔ ثبت نهایی فرم‌ها (glow)
+     ردیف ۷  → زیرتب‌ها/آکاردئون (گوشهٔ گرادیانی بازشو)
+     ردیف ۸  → آیتم‌های لیست و اعلان‌ها (alert با نوار کنار)
+     ردیف ۹  → کارت‌های ثبت سریع (آیکن گرد با inset glow)
+     ردیف ۱۰ → کارت‌های پنجرهٔ داشبورد (پشتهٔ کیف‌مانند)
+     ردیف ۱۲ → نمایش داده/نمودار (قاب نور گردان)
+     ردیف ۱۳ → ارسال کامنت (پرواز آیکن + پیام «ارسال شد»)
+   ========================================================================== */
+
+:root {
+  --nu-glow: rgba(var(--accent-rgb), .55);
+  --nu-glow-soft: rgba(var(--accent-rgb), .22);
+  --nu-shadow-1: 0 2px 6px rgba(var(--c-black-rgb), .35);
+  --nu-shadow-2: 0 10px 26px rgba(var(--c-black-rgb), .42);
+  --nu-ease: .28s cubic-bezier(.22, .8, .28, 1);
+}
+
+@property --nu-spin {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/* ── ردیف ۱ · همهٔ دکمه‌ها ─────────────────────────────────────────────── */
+.primary-btn,
+.secondary-btn,
+.dash-mini-btn,
+.quick-add-btn,
+.module-row-remove,
+.atlas-modal-close,
+.settings-tab,
+.widget-dock-item,
+.module-subtab,
+.pb-structure-accordion > summary,
+.atlas-dialog button {
+  transition: transform var(--nu-ease), box-shadow var(--nu-ease),
+              background-color var(--nu-ease), border-color var(--nu-ease),
+              letter-spacing var(--nu-ease), color var(--nu-ease);
+  will-change: transform;
+}
+
+.primary-btn,
+.secondary-btn,
+.dash-mini-btn {
+  border-radius: var(--radius-pill) !important;
+  letter-spacing: .01em;
+  position: relative;
+}
+
+.primary-btn:hover,
+.secondary-btn:hover,
+.dash-mini-btn:hover {
+  letter-spacing: .06em;
+  transform: translateY(-2px);
+}
+
+.secondary-btn:hover {
+  border-color: rgba(var(--accent-rgb), .55) !important;
+  box-shadow: 0 0 0 1px var(--nu-glow-soft), 0 8px 22px -8px var(--nu-glow);
+}
+
+.primary-btn:hover,
+.dash-mini-btn.is-save:hover {
+  box-shadow: 0 0 0 1px rgba(var(--c-white-rgb), .28),
+              0 10px 30px -6px var(--nu-glow),
+              inset 0 1px 0 rgba(var(--c-white-rgb), .35);
+}
+
+.primary-btn:active,
+.secondary-btn:active,
+.dash-mini-btn:active,
+.quick-add-btn:active,
+.module-subtab:active,
+.settings-tab:active {
+  transform: translateY(2px) scale(.985);
+  box-shadow: none !important;
+  transition-duration: 90ms;
+}
+
+.icon-btn:hover {
+  transform: translateY(-1px) rotate(-6deg);
+  box-shadow: 0 6px 18px -8px var(--nu-glow);
+}
+
+.atlas-modal-close:hover {
+  transform: rotate(90deg);
+  color: var(--c-red);
+  border-color: rgba(var(--c-red-rgb), .5) !important;
+}
+
+/* ── ردیف ۲ · چک‌باکس به کلید کشویی ───────────────────────────────────── */
+input[type="checkbox"]:not(.nu-keep-native) {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 22px;
+  margin: 0;
+  border-radius: 20px;
+  border: 0;
+  background: rgba(var(--c-white-rgb), .10);
+  box-shadow: inset 0 0 8px rgba(var(--c-black-rgb), .55),
+              inset 0 1px 0 rgba(var(--c-white-rgb), .08);
+  position: relative;
+  cursor: pointer;
+  transition: background-color var(--nu-ease), box-shadow var(--nu-ease);
+  vertical-align: middle;
+}
+
+input[type="checkbox"]:not(.nu-keep-native)::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #fff, #d8dcef);
+  box-shadow: 0 2px 6px rgba(var(--c-black-rgb), .55);
+  transition: transform var(--nu-ease), box-shadow var(--nu-ease);
+}
+
+input[type="checkbox"]:not(.nu-keep-native):checked {
+  background: linear-gradient(90deg, rgba(var(--accent-rgb), .95), rgba(var(--c-cyan-rgb), .75));
+  box-shadow: inset 0 0 8px rgba(var(--c-black-rgb), .35),
+              0 0 12px -2px var(--nu-glow);
+}
+
+input[type="checkbox"]:not(.nu-keep-native):checked::before {
+  transform: translateX(-18px);
+}
+
+input[type="checkbox"]:not(.nu-keep-native):active::before {
+  width: 22px;
+}
+
+input[type="checkbox"]:not(.nu-keep-native):focus-visible {
+  outline: 2px solid var(--nu-glow);
+  outline-offset: 3px;
+}
+
+input[type="checkbox"]:not(.nu-keep-native):disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+/* ── ردیف ۳ · فیلدهای تایپی: خط موجی از مرکز ──────────────────────────── */
+.module-field > input,
+.atlas-pb-form input,
+.atlas-pb-field > input,
+.atlas-dialog-input,
+.dash-comment textarea,
+.module-form textarea,
+.settings-section input[type="text"],
+.settings-section input[type="number"],
+.settings-section textarea {
+  background-color: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  border-bottom: 1px solid rgba(var(--c-white-rgb), .20) !important;
+  background-image: linear-gradient(var(--accent), var(--accent)) !important;
+  background-repeat: no-repeat !important;
+  background-position: center bottom !important;
+  background-size: 0% 2px !important;
+  padding: 10px 2px !important;
+  transition: background-size .38s var(--nu-ease), border-color var(--nu-ease) !important;
+}
+
+.module-field > input:focus,
+.atlas-pb-form input:focus,
+.atlas-pb-field > input:focus,
+.atlas-dialog-input:focus,
+.dash-comment textarea:focus,
+.module-form textarea:focus,
+.settings-section input:focus,
+.settings-section textarea:focus {
+  outline: none !important;
+  border-bottom-color: transparent !important;
+  background-size: 100% 2px !important;
+  box-shadow: none !important;
+}
+
+.module-field > span,
+.atlas-pb-field > label {
+  transition: color var(--nu-ease), transform var(--nu-ease);
+  transform-origin: inline-start center;
+}
+
+.module-field:focus-within > span,
+.atlas-pb-field:focus-within > label {
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.module-field:focus-within > span i {
+  color: var(--c-red);
+}
+
+/* ── ردیف ۴ · انتخاب پالت (تم‌های برنامه: .theme-option) ─────────────────────── */
+.theme-option {
+  transition: transform var(--nu-ease), box-shadow var(--nu-ease), border-color var(--nu-ease);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.theme-option:hover,
+.theme-option:focus-visible {
+  transform: translateY(-3px) rotateX(4deg);
+  border-color: var(--nu-glow);
+  box-shadow: var(--nu-shadow-2), 0 0 0 1px var(--nu-glow-soft);
+}
+.theme-option.active {
+  border-color: var(--nu-glow);
+  box-shadow: var(--nu-shadow-1), 0 0 0 2px var(--nu-glow-soft);
+}
+.theme-option:active {
+  transform: translateY(1px) scale(.99);
+  transition-duration: 100ms;
+}
+
+/* ── ردیف ۵ · تب‌ها و منوها ────────────────────────────────────────────── */
+.settings-tabs,
+.module-subtabs {
+  gap: 6px;
+  padding: 6px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(var(--c-white-rgb), .045), rgba(var(--c-black-rgb), .22));
+  border: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 rgba(var(--c-white-rgb), .07);
+}
+
+.settings-tabs {
+  display: flex !important;
+  flex-wrap: wrap;
+}
+
+.settings-tab,
+.module-subtab {
+  position: relative;
+  border: 1px solid transparent !important;
+  border-radius: 14px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--muted) !important;
+}
+
+.settings-tab:hover,
+.module-subtab:hover {
+  transform: scale(1.05);
+  color: var(--text) !important;
+  background: rgba(var(--c-white-rgb), .05) !important;
+  box-shadow: -2px -3px 10px rgba(var(--c-white-rgb), .04),
+              3px 6px 14px rgba(var(--c-black-rgb), .35) !important;
+}
+
+.settings-tab.is-active,
+.module-subtab.active {
+  color: var(--c-white) !important;
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), .28), rgba(var(--c-cyan-rgb), .10)) !important;
+  border-color: rgba(var(--accent-rgb), .45) !important;
+  box-shadow: inset 0 1px 0 rgba(var(--c-white-rgb), .25),
+              0 8px 22px -10px var(--nu-glow) !important;
+}
+
+.settings-tab.is-active::after,
+.module-subtab.active::after {
+  content: "";
+  position: absolute;
+  inset-inline: 28%;
+  bottom: 4px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+}
+
+/* ── ردیف ۶ · دکمهٔ ثبت نهایی ──────────────────────────────────────────── */
+.module-form button[type="submit"],
+.atlas-pb-form button[type="submit"],
+.atlas-dialog [data-dialog-ok] {
+  --nu-glow-color: rgba(var(--c-purple-rgb), .85);
+  --nu-glow-spread: rgba(var(--c-purple-rgb), .30);
+  border: 1px solid var(--nu-glow-color) !important;
+  border-radius: 14px !important;
+  background: linear-gradient(180deg, rgba(var(--c-purple-rgb), .38), rgba(var(--c-purple-rgb), .16)) !important;
+  color: #f4ecff !important;
+  font-weight: 800;
+  letter-spacing: .02em;
+  box-shadow: 0 0 14px -2px var(--nu-glow-color),
+              0 0 34px -10px var(--nu-glow-spread),
+              inset 0 0 10px -4px var(--nu-glow-color) !important;
+  text-shadow: 0 0 10px rgba(var(--c-purple-rgb), .55);
+  position: relative;
+  overflow: visible;
+}
+
+.module-form button[type="submit"]::after,
+.atlas-pb-form button[type="submit"]::after,
+.atlas-dialog [data-dialog-ok]::after {
+  content: "";
+  position: absolute;
+  inset-inline: 6%;
+  top: 115%;
+  height: 70%;
+  border-radius: inherit;
+  background: var(--nu-glow-spread);
+  filter: blur(18px);
+  opacity: .55;
+  transform: perspective(1.5em) rotateX(35deg) scale(1, .6);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.module-form button[type="submit"]:hover,
+.atlas-pb-form button[type="submit"]:hover,
+.atlas-dialog [data-dialog-ok]:hover {
+  color: #1a1030 !important;
+  background: linear-gradient(180deg, #efe2ff, #d9c2ff) !important;
+  box-shadow: 0 0 18px 2px var(--nu-glow-color),
+              0 0 46px 4px var(--nu-glow-spread),
+              inset 0 0 12px -3px var(--nu-glow-color) !important;
+}
+
+/* ── ردیف ۷ · آکاردئون‌ها و زیرتب‌ها ───────────────────────────────────── */
+.pb-structure-accordion,
+.settings-section details,
+#settingsPanel .pb-structure-accordion {
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow var(--nu-ease), border-color var(--nu-ease), transform var(--nu-ease);
+}
+
+.pb-structure-accordion::before {
+  content: "";
+  position: absolute;
+  inset-inline-end: -40%;
+  bottom: -60%;
+  width: 80%;
+  height: 120%;
+  background: radial-gradient(circle at 70% 90%,
+              rgba(var(--accent-rgb), .30), rgba(var(--c-purple-rgb), .16) 42%, transparent 70%);
+  opacity: 0;
+  transition: opacity .5s var(--nu-ease), transform .6s var(--nu-ease);
+  transform: scale(.6);
+  pointer-events: none;
+}
+
+.pb-structure-accordion:hover {
+  border-color: rgba(var(--accent-rgb), .40) !important;
+  box-shadow: 0 12px 30px -16px var(--nu-glow), inset 0 1px 0 rgba(var(--c-white-rgb), .10);
+  transform: translateY(-1px);
+}
+
+.pb-structure-accordion:hover::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.pb-structure-accordion[open] {
+  border-color: rgba(var(--accent-rgb), .38) !important;
+}
+
+.pb-structure-accordion[open] > summary {
+  color: var(--c-white);
+}
+
+.pb-structure-accordion[open] > summary::after {
+  transform: rotate(45deg);
+}
+
+/* ── ردیف ۸ · آیتم‌های لیست و اعلان‌ها ────────────────────────────────── */
+.notice-card {
+  position: relative;
+  border-radius: 12px !important;
+  border: 1px solid var(--line) !important;
+  border-inline-start: 4px solid rgba(var(--accent-rgb), .75) !important;
+  background: linear-gradient(90deg, rgba(var(--accent-rgb), .10), rgba(var(--c-white-rgb), .02)) !important;
+  transition: transform var(--nu-ease), background-color var(--nu-ease), box-shadow var(--nu-ease);
+}
+
+.notice-card:hover {
+  transform: scale(1.02) translateY(-1px);
+  box-shadow: 0 12px 26px -16px rgba(var(--c-black-rgb), .9);
+}
+
+.notice-card[data-notice="calibration"] {
+  border-inline-start-color: rgba(var(--c-yellow-rgb), .85) !important;
+  background: linear-gradient(90deg, rgba(var(--c-yellow-rgb), .12), rgba(var(--c-white-rgb), .02)) !important;
+}
+
+.notice-card[data-notice="maintenance"] {
+  border-inline-start-color: rgba(var(--c-cyan-rgb), .85) !important;
+  background: linear-gradient(90deg, rgba(var(--c-cyan-rgb), .12), rgba(var(--c-white-rgb), .02)) !important;
+}
+
+.notice-card[data-notice="mission"] {
+  border-inline-start-color: rgba(var(--c-green-rgb), .85) !important;
+  background: linear-gradient(90deg, rgba(var(--c-green-rgb), .12), rgba(var(--c-white-rgb), .02)) !important;
+}
+
+.notice-card.unread::after {
+  content: "";
+  position: absolute;
+  inset-inline-end: 10px;
+  top: 10px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--c-red);
+  box-shadow: 0 0 10px rgba(var(--c-red-rgb), .8);
+}
+
+.atlas-pb-option-row,
+.atlas-pb-tree-row {
+  border-radius: 12px;
+  border: 1px solid transparent;
+  transition: background-color var(--nu-ease), border-color var(--nu-ease), transform var(--nu-ease);
+}
+
+.atlas-pb-option-row:hover,
+.atlas-pb-tree-row:hover {
+  background: rgba(var(--accent-rgb), .08);
+  border-color: rgba(var(--accent-rgb), .28);
+  transform: translateX(-2px);
+}
+
+/* ── ردیف ۹ · کارت‌های ثبت سریع ───────────────────────────────────────── */
+.quick-add {
+  border-radius: 22px;
+}
+
+.quick-add-btn {
+  border-radius: 16px !important;
+  border: 1px solid var(--line) !important;
+  background: linear-gradient(160deg, rgba(var(--c-white-rgb), .055), rgba(var(--c-black-rgb), .18)) !important;
+  box-shadow: inset 0 1px 0 rgba(var(--c-white-rgb), .07),
+              inset 0 0 18px rgba(var(--c-white-rgb), .04),
+              0 6px 16px -12px rgba(var(--c-black-rgb), .9) !important;
+  overflow: hidden;
+}
+
+.quick-add-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(120px circle at var(--nu-x, 50%) var(--nu-y, 0%),
+              rgba(var(--accent-rgb), .22), transparent 62%);
+  opacity: 0;
+  transition: opacity .35s var(--nu-ease);
+  pointer-events: none;
+}
+
+.quick-add-btn:hover::after {
+  opacity: 1;
+}
+
+.quick-add-icon {
+  border-radius: 50% !important;
+  transition: transform .45s cubic-bezier(.175, .885, .32, 1.1), box-shadow .35s var(--nu-ease);
+  box-shadow: inset 0 0 16px rgba(var(--c-white-rgb), .22),
+              inset 0 0 4px rgba(var(--c-white-rgb), .35),
+              0 4px 10px -6px rgba(var(--c-black-rgb), .9);
+}
+
+.quick-add-btn:hover .quick-add-icon {
+  transform: translate(6px, -6px) scale(1.08);
+  box-shadow: inset 0 0 20px rgba(var(--c-white-rgb), .35),
+              0 10px 22px -10px var(--nu-glow);
+}
+
+.quick-add-btn:hover > span:last-child {
+  transform: translateX(-2px);
+}
+
+.quick-add-btn > span:last-child {
+  transition: transform var(--nu-ease);
+}
+
+/* ── ردیف ۱۰ + ۱۲ · کارت‌های پنجرهٔ داشبورد و قاب نور ─────────────────── */
+.widget {
+  position: relative;
+  transition: transform .35s var(--nu-ease), box-shadow .35s var(--nu-ease),
+              border-color .35s var(--nu-ease);
+}
+
+.widget::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(from var(--nu-spin),
+              rgba(var(--accent-rgb), 0) 0 55%,
+              rgba(var(--accent-rgb), .85) 72%,
+              rgba(var(--c-cyan-rgb), .95) 82%,
+              rgba(var(--accent-rgb), 0) 92% 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity .45s var(--nu-ease);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.widget:hover::before,
+.widget.dock-focus::before {
+  opacity: 1;
+  animation: nu-spin 3.4s linear infinite;
+}
+
+@keyframes nu-spin {
+  to { --nu-spin: 360deg; }
+}
+
+.widget:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 -2px 0 rgba(var(--c-white-rgb), .06) inset,
+              0 22px 44px -26px rgba(var(--c-black-rgb), .95),
+              0 8px 18px -14px var(--nu-glow);
+}
+
+.widget-dock-item.active {
+  box-shadow: inset 0 1px 0 rgba(var(--c-white-rgb), .2),
+              0 10px 24px -14px var(--nu-glow) !important;
+}
+
+/* ── ردیف ۱۳ · ارسال کامنت ────────────────────────────────────────────── */
+.dash-comment textarea {
+  border-radius: 0 !important;
+  resize: vertical;
+  min-height: 44px;
+}
+
+.dash-mini-btn.is-save {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  border-radius: 14px !important;
+  background: linear-gradient(180deg, rgba(var(--accent-rgb), .22), rgba(var(--accent-rgb), .08)) !important;
+  border: 1px solid rgba(var(--accent-rgb), .38) !important;
+  box-shadow: inset 0 1px 0 rgba(var(--c-white-rgb), .16),
+              0 6px 16px -12px var(--nu-glow);
+}
+
+.dash-mini-btn.is-save::before {
+  content: "➤";
+  display: inline-block;
+  font-size: 12px;
+  line-height: 1;
+  transition: transform .45s var(--nu-ease), opacity .3s var(--nu-ease);
+}
+
+.dash-mini-btn.is-save.is-sending::before {
+  animation: nu-send .9s var(--nu-ease) forwards;
+}
+
+.dash-mini-btn.is-save.is-sent {
+  border-color: rgba(var(--c-green-rgb), .6) !important;
+  background: linear-gradient(180deg, rgba(var(--c-green-rgb), .26), rgba(var(--c-green-rgb), .10)) !important;
+  color: #dcffee !important;
+}
+
+@keyframes nu-send {
+  0% { transform: translateX(0) rotate(0); }
+  60% { transform: translateX(-6px) rotate(38deg); opacity: 1; }
+  100% { transform: translateX(-60px) rotate(38deg); opacity: 0; }
+}
+
+/* ── ریزچیزها ──────────────────────────────────────────────────────────── */
+.atlas-pb-card {
+  transition: border-color var(--nu-ease), box-shadow var(--nu-ease), transform var(--nu-ease);
+}
+
+.atlas-pb-card:hover {
+  box-shadow: inset 0 1px 0 rgba(var(--c-white-rgb), .10),
+              0 14px 30px -22px rgba(var(--c-black-rgb), .95);
+}
+
+.atlas-pb-chip {
+  transition: transform var(--nu-ease), background-color var(--nu-ease), border-color var(--nu-ease);
+}
+
+.atlas-pb-chip:hover {
+  transform: translateY(-1px);
+  border-color: rgba(var(--accent-rgb), .45);
+}
+
+.module-table tbody tr {
+  transition: background-color var(--nu-ease);
+}
+
+.module-table tbody tr:hover {
+  background: rgba(var(--accent-rgb), .06);
+}
+
+/* حرکت کمتر برای کاربرانی که ترجیح می‌دهند */
+@media (prefers-reduced-motion: reduce) {
+  .widget:hover::before,
+  .widget.dock-focus::before,
+}
+
+/* موبایل: درخشش سنگین و پرش‌های بزرگ لازم نیست */
+@media (max-width: 780px) {
+  .settings-tab:hover,
+  .module-subtab:hover,
+  .notice-card:hover,
+  .pb-structure-accordion:hover {
+    transform: none;
+  }
+
+
+  .widget:hover {
+    transform: none;
+  }
+}
