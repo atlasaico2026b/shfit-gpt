@@ -1,3 +1,4 @@
+// Android wrapper build configuration for ATLAS SHIFT.
 plugins {
     id 'com.android.application'
 }
