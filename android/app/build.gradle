@@ -1,4 +1,5 @@
 // Android wrapper build configuration for ATLAS SHIFT.
+// CI packaging configuration revision 2.
 plugins {
     id 'com.android.application'
 }
