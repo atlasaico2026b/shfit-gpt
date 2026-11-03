@@ -4142,6 +4142,8 @@
 
   function render(view, section) {
     if(!section)return;
+    // رندر دوبارهٔ بخش، مارک‌آپ قبلی را حذف می‌کند؛ فهرست‌های کشویی باز هم باید بسته شوند.
+    closeOpenCombos();
     currentView = view;
     prepareSection(section);
     if(!ready){
@@ -5311,10 +5313,14 @@
   // پنجره‌هایی که مستقیم به body اضافه می‌شوند (مثل «+ سابقه» یا انتخاب ستون‌های گزارش)
   // با رندر دوبارهٔ بخش حذف نمی‌شوند و باید صریح بسته شوند.
   function clearDetachedModals() {
+    closeOpenCombos();
     document.querySelectorAll('body > [data-modal-backdrop]').forEach(function (node) { node.remove(); });
   }
 
   function closeModal(view) {
+    // هر فهرست باز (کشویی/سالنامه) با بسته شدن پنجره هم بسته می‌شود.
+    closeOpenCombos();
+    if (jalaliPopover) jalaliPopover.hidden = true;
     const backdrops = document.querySelectorAll('[data-modal-backdrop]');
     const backdrop = backdrops.length ? backdrops[backdrops.length - 1] : null;
     if (backdrop && backdrop.dataset.modalKind === 'dialog') {
@@ -5352,7 +5358,7 @@
 
   document.addEventListener('keydown', function (event) {
     if (event.key !== 'Escape') return;
-    if (!document.querySelector('[data-modal-backdrop]')) return;
+    if (!document.querySelector('[data-modal-backdrop]')) { closeOpenCombos(); return; }
     event.preventDefault();
     closeModal();
   });
@@ -5692,7 +5698,14 @@
   }
 
   let combinedPanel = null;
+  // پنل باز روی body می‌رود؛ اگر پنجره‌ای که آن را باز کرده بسته و از DOM حذف شود،
+  // دیگر با querySelector پیدا نمی‌شود. پس فهرست بازها را نگه می‌داریم.
+  const openCombos = new Set();
   function closeOpenCombos() {
+    Array.from(openCombos).forEach(function (wrap) {
+      if (wrap && typeof wrap.atlasClose === 'function') wrap.atlasClose();
+    });
+    openCombos.clear();
     document.querySelectorAll('.atlas-combo.is-open').forEach(function (wrap) {
       const btn = wrap.querySelector('.atlas-combo-btn');
       const panel = wrap.atlasPanel;
@@ -5704,6 +5717,12 @@
       }
       wrap.classList.remove('is-open');
       if (btn) btn.setAttribute('aria-expanded', 'false');
+    });
+    // پنل‌های جامانده روی body که صاحبشان از صفحه حذف شده است.
+    document.querySelectorAll('body > .atlas-combo-panel').forEach(function (panel) {
+      panel.hidden = true;
+      panel.style.left = '';
+      panel.style.top = '';
     });
     combinedPanel = null;
   }
@@ -5782,7 +5801,9 @@
       panel.style.right = '';
       panel.style.insetInlineStart = '';
       if (panel.parentNode !== wrap) wrap.appendChild(panel);
+      openCombos.delete(wrap);
     };
+    wrap.atlasClose = close;
     // پنل روی body قرار می‌گیرد تا داخل مودال/کادر اسکرول‌شونده بریده نشود.
     const placePanel = function () {
       const rect = btn.getBoundingClientRect();
@@ -5815,6 +5836,7 @@
       if (!matchMedia('(hover: none)').matches) search.focus();
       panel.atlasPlace = placePanel;
       combinedPanel = panel;
+      openCombos.add(wrap);
     };
 
     const choose = function (value) {
