@@ -48,6 +48,7 @@
     var selected = THEMES.indexOf(name) >= 0 ? name : DEFAULT_THEME;
     var root = document.documentElement;
     root.dataset.appTheme = selected;
+    root.dataset.atlasTheme = selected === 'theme-two' ? 'theme-two' : 'atlas-flat';
     Array.prototype.forEach.call(document.querySelectorAll('[data-app-theme]'), function (option) {
       var active = option.dataset.appTheme === selected;
       option.classList.toggle('active', active);
