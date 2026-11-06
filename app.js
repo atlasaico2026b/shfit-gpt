@@ -482,7 +482,9 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
     ];
     function fieldMarkup(field){
       const [key,label,type,required,dropdown]=field;
-      const input='<input id="atlasPb_'+key+'" name="'+key+'" type="'+type+'" '+(required?'required ':'')+NO_AUTOFILL+' placeholder="'+label+'">';
+      // نام کادرها عمداً «آدرس‌مانند» نیست (city/area/building/...): کروم روی همین نام‌ها
+      // پاپ‌آپ «Manage addresses» را باز می‌کند و مقدار خیابان را داخل «واحد» می‌نویسد.
+      const input='<input id="atlasPb_'+key+'" name="atlasPb_'+key+'" type="'+type+'" '+(required?'required ':'')+NO_AUTOFILL+' placeholder="'+label+'">';
       return '<div class="atlas-pb-field"><label for="atlasPb_'+key+'">'+label+'</label>'+(dropdown?
         '<div class="atlas-pb-combo">'+input+'<button type="button" class="atlas-pb-add-option" data-pb-add-option="'+key+'" title="افزودن مقدار تایپ‌شده به فهرست" aria-label="افزودن '+label+' به فهرست">+</button></div><datalist id="atlasPbList_'+key+'"></datalist>':
         input)+'</div>';
@@ -499,6 +501,7 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
       '<button type="button" class="atlas-modal-close" data-pb-modal-close aria-label="بستن پنجره">×</button></div>'+
       '<div class="atlas-modal-body">'+formMarkup+'</div></div>';
     document.body.appendChild(modal);
+    const fieldEl=key=>modal.querySelector('#atlasPb_'+key);
     const modalTitle=modal.querySelector('#atlasPbModalTitle');
     function openForm(title,submitLabel){
       modalTitle.textContent=title||'ثبت شخص جدید';
@@ -645,11 +648,11 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
         const existing=duplicatePhoneInContacts(phoneFull(p),editIndex);
         if(existing)return {value:phoneFull(p),contact:existing.contact,insideForm:false};
       }
-      const ext=normalizePhoneForCheck(form.elements.extension.value);
+      const ext=normalizePhoneForCheck(fieldEl('extension').value);
       if(ext){
-        if(seen.has(ext))return {value:form.elements.extension.value,insideForm:true};
-        const existing=duplicatePhoneInContacts(form.elements.extension.value,editIndex);
-        if(existing)return {value:form.elements.extension.value,contact:existing.contact,insideForm:false};
+        if(seen.has(ext))return {value:fieldEl('extension').value,insideForm:true};
+        const existing=duplicatePhoneInContacts(fieldEl('extension').value,editIndex);
+        if(existing)return {value:fieldEl('extension').value,contact:existing.contact,insideForm:false};
       }
       return null;
     }
@@ -773,7 +776,7 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
     section.querySelector('#atlasPbNew').onclick=()=>{reset();renderPhoneRows([]);form.classList.add('open');openForm('ثبت شخص جدید','ذخیره اطلاعات');};
     form.querySelector('#atlasPbCancel').onclick=reset;
     form.querySelectorAll('[data-pb-add-option]').forEach(button=>button.addEventListener('click',()=>{
-      const key=button.dataset.pbAddOption,input=form.elements[key],value=String(input.value||'').trim();
+      const key=button.dataset.pbAddOption,input=fieldEl(key),value=String(input.value||'').trim();
       if(!value){input.focus();return;}
       if(!(options[key]||[]).includes(value)){options[key].push(value);options[key].sort((a,b)=>a.localeCompare(b,'fa'));phonebookOptionsSave(options);fillDatalists();}
       // مقدار تازهٔ «سمت»، «شهر» و «واحد» به فهرست‌های مشترک برنامه هم اضافه می‌شود.
@@ -787,13 +790,13 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
       input.value=value;input.focus();
     }));
     form.onsubmit=event=>{
-      event.preventDefault();const fd=new FormData(form);
+      event.preventDefault();
       clearFormError();
       const record={};
-      fields.forEach(([key])=>record[key]=String(fd.get(key)||'').trim());
+      fields.forEach(([key])=>record[key]=String((fieldEl(key)&&fieldEl(key).value)||'').trim());
       record.phoneNumbers=readPhoneRows();
       record.numbers=[];
-      if(record.extension&&!/^[0-9۰-۹٠-٩]{4}$/.test(record.extension)){showFormError('شماره داخلی باید دقیقاً چهار رقم باشد.');form.elements.extension.focus();return;}
+      if(record.extension&&!/^[0-9۰-۹٠-٩]{4}$/.test(record.extension)){showFormError('شماره داخلی باید دقیقاً چهار رقم باشد.');fieldEl('extension').focus();return;}
       const duplicate=duplicatePhoneInForm();
       if(duplicate){
         const message=duplicate.insideForm
@@ -801,7 +804,7 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
           : 'این شماره قبلاً برای مخاطب «'+duplicate.contact.name+'» ثبت شده است: '+duplicate.value+' — شماره تکراری قابل ذخیره نیست.';
         showFormError(message);
         const target=[...phoneRows.querySelectorAll('input[type="tel"]')].find(input=>normalizePhoneForCheck(input.value)===normalizePhoneForCheck(duplicate.value));
-        (target||form.elements.extension).focus();
+        (target||fieldEl('extension')).focus();
         return;
       }
       const previousRecord=editIndex>=0?contacts[editIndex]:null;
@@ -827,7 +830,7 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
         document.dispatchEvent(new CustomEvent('atlas-open-file',{detail:{contact:contacts[i]}}));
       }else if(edit){
         editIndex=Number(edit.dataset.pbEdit);const c=contacts[editIndex];if(!c)return;
-        fields.forEach(([key])=>form.elements[key].value=c[key]||'');
+        fields.forEach(([key])=>{const el=fieldEl(key);if(el)el.value=c[key]||'';});
         renderPhoneRows(c.phoneNumbers||[]);
         form.classList.add('open');openForm('ویرایش '+(c.name||'مخاطب'),'ذخیره تغییرات');
       }else if(del){
