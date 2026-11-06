@@ -57,3 +57,7 @@ missions, leave, vehicles, gas detectors, notes/actions, reports, settings.
 - To change an existing build artefact, edit the source file at the repo root — do not edit `dist/`.
 - Low-use panels open as popover/sheet/modal and collapse again; avoid long vertical forms.
 - Verify a change by loading the preview and checking the console is clean, not just by inspecting the diff.
+- **Git: always merge after push.** «کامیت و پوش» یعنی کامیت → پوش → باز کردن PR و **بلافاصله مرج به `main`**
+  (`gh pr merge <n> --merge --delete-branch`). کار تمام‌شده نباید روی شاخهٔ باز بماند؛ `main` تنها نسخهٔ
+  معتبر است. بعد از مرج: `git checkout main && git pull --ff-only`، بازسازی `dist/` و آزمون دود.
+
