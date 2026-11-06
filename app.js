@@ -758,11 +758,13 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
       const key=button.dataset.pbAddOption,input=form.elements[key],value=String(input.value||'').trim();
       if(!value){input.focus();return;}
       if(!(options[key]||[]).includes(value)){options[key].push(value);options[key].sort((a,b)=>a.localeCompare(b,'fa'));phonebookOptionsSave(options);fillDatalists();}
-      // مقدار تازهٔ «سمت» و «شهر» به فهرست‌های مشترک برنامه (عنوان‌های شغلی / محل‌ها) هم اضافه می‌شود
+      // مقدار تازهٔ «سمت»، «شهر» و «واحد» به فهرست‌های مشترک برنامه هم اضافه می‌شود.
+      // «واحد» واحد شغلی است و به فهرست واحدهای شغلی می‌رود، نه به فهرست مکان‌ها.
       if(window.ATLAS_MODULES&&typeof window.ATLAS_MODULES.addReferenceValue==='function'){
         if(key==='position')window.ATLAS_MODULES.addReferenceValue('jobTitles',value);
         else if(key==='city')window.ATLAS_MODULES.addReferenceValue('workplaces',value);
-        else if(key==='complex'||key==='unit')window.ATLAS_MODULES.addReferenceValue('deploymentLocations',value);
+        else if(key==='complex')window.ATLAS_MODULES.addReferenceValue('deploymentLocations',value);
+        else if(key==='unit')window.ATLAS_MODULES.addReferenceValue('jobUnits',value);
       }
       input.value=value;input.focus();
     }));

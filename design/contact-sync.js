@@ -114,7 +114,7 @@
         nationalId: employee.nationalId,
         position: employee.jobTitle,
         city: employee.workplace,
-        unit: employee.workplace,
+        unit: employee.unit,
         phoneNumbers: [],
         origin: 'employee',
         sourceEmployeeId: String(employee.id),
@@ -133,6 +133,11 @@
       if (fillEmpty(contact, 'name', fullName(employee))) changed = true;
       if (fillEmpty(contact, 'position', employee.jobTitle)) changed = true;
       if (fillEmpty(contact, 'city', employee.workplace)) changed = true;
+      // پیش از این «واحد» مخاطب با «شهر» کارمند پر می‌شد؛ همان مقدار غلط اصلاح می‌شود.
+      if (String(employee.unit || '').trim() && String(contact.unit || '').trim() === String(employee.workplace || '').trim()) {
+        contact.unit = String(employee.unit).trim();
+        changed = true;
+      } else if (fillEmpty(contact, 'unit', employee.unit)) changed = true;
       if (!contact.phoneNumbers.length && String(employee.mobile || '').trim()) {
         contact.phoneNumbers.push({ kind: 'mobile', label: 'تلفن همراه', prefix: '', value: String(employee.mobile).trim(), secretary: '' });
         changed = true;

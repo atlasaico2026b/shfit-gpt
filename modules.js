@@ -47,7 +47,10 @@
         {key:'employmentType',label:'نوع استخدام',type:'select',required:true,listKey:'employmentTypes',options:['رسمی','پیمانی','قراردادی','شرکتی','سایر']},
         {key:'hireDate',label:'تاریخ استخدام',type:'jalali'},
         {key:'workplace',label:'محل سمت سازمانی',type:'select',required:true,listKey:'workplaces',options:['اهواز','آبادان','اندیمشک','ماهشهر','بندر امام','آغاجاری','سایر']},
-        {key:'assignedWorkplace',label:'محل خدمت فعلی',placeholder:'ایستگاه، محدوده یا محل مأموریت'},
+        // «واحد» یعنی واحد شغلی/سازمانی (برق، مکانیک، ابزار دقیق و …)؛ هیچ ارتباطی با شهر و مکان ندارد.
+        {key:'unit',label:'واحد',type:'select',listKey:'jobUnits',options:['برق','مکانیک','ابزار دقیق','بهره‌برداری','تعمیرات','ایمنی و آتش‌نشانی','مخابرات','انبار','اداری و مالی','سایر']},
+        // «محل خدمت فعلی» از فهرست مشترک مکان‌ها و محل‌ها انتخاب می‌شود، نه نوشتن آزاد.
+        {key:'assignedWorkplace',label:'محل خدمت فعلی',type:'select',listKey:'workplaces'},
         {key:'workType',label:'نوع شیفت کاری',type:'select',required:true,listKey:'workTypes',options:['روزکار ثابت','شیفت کاری']},
         {key:'shiftPattern',label:'الگوی شیفت',type:'select',listKey:'shiftPatterns',dependsOn:{key:'workType',values:['شیفت کاری','شیفتی']},options:['۱۲ ساعته روز/شب','۲۴/۴۸','۸ ساعته سه‌شیفت','۱۲ ساعته شب','سایر']},
         {key:'maritalStatus',label:'وضعیت تأهل',type:'select',listKey:'maritalStatuses',options:['مجرد','متأهل']},
@@ -62,7 +65,7 @@
         ['firstName','lastName'],
         ['personnelId','nationalId','mobile'],
         ['jobTitle','employmentType','hireDate'],
-        ['workplace','assignedWorkplace'],
+        ['workplace','unit','assignedWorkplace'],
         ['workType','shiftPattern'],
         ['maritalStatus','childrenCount'],
         ['notes'],
@@ -934,7 +937,7 @@
 
   // فقط فهرست‌های بلند و متغیر (افراد، خودروها، ایستگاه‌ها، مکان‌ها و …) پنل جستجوپذیر
   // می‌گیرند؛ منوهای کوتاه و اختصاصی مثل وضعیت‌ها همان لیست کشویی ساده می‌مانند.
-  const SEARCHABLE_LIST_KEYS = ['places', 'jobTitles', 'missionTitles', 'vehicleNames',
+  const SEARCHABLE_LIST_KEYS = ['places', 'jobTitles', 'jobUnits', 'missionTitles', 'vehicleNames',
     'gasModels', 'pipelineLines', 'products', 'actionTypes', 'gasLogTypes'];
 
   function isSearchableSelect(field) {
@@ -1990,6 +1993,12 @@
       keys: ['places']
     },
     {
+      id: 'units',
+      title: 'واحدهای شغلی',
+      hint: '«واحد» یعنی واحد شغلی و سازمانی (مثل واحد برق، واحد مکانیک، واحد ابزار دقیق)، نه شهر و مکان. هر گزینه‌ای که اینجا اضافه شود در فیلد «واحد» کارمند و دفترچه تلفن قابل انتخاب است.',
+      keys: ['jobUnits']
+    },
+    {
       id: 'statuses',
       title: 'وضعیت‌ها',
       hint: 'هر بخش وضعیت اختصاصی خودش را دارد و هیچ وضعیتی بین بخش‌ها مشترک نیست؛ فهرست هر بخش همین‌جاست و کوتاه می‌ماند.',
@@ -2070,7 +2079,7 @@
   }
 
   function referenceListTitle(key){
-    const titles={places:'مکان‌ها و محل‌ها',statuses:'وضعیت‌ها',workplaces:'شهرها و محل‌ها',leaveTypes:'انواع مرخصی',missionTypes:'انواع مأموریت',pipelineSizes:'قطر خطوط',products:'نوع فرآورده',vehicleTypes:'انواع خودرو',vehicleStatuses:'وضعیت خودرو',gasStatuses:'وضعیت گازسنج',actionTypes:'انواع یادداشت و اقدام',programTypes:'انواع برنامه',workTypes:'نوع کار',jobTitles:'عنوان‌های شغلی',employmentTypes:'نوع استخدام',shiftPatterns:'الگوی شیفت',employeeStatuses:'وضعیت کارکنان',missionStatuses:'وضعیت مأموریت',leaveStatuses:'وضعیت مرخصی',healthStatuses:'وضعیت سلامت',noteStatuses:'وضعیت یادداشت و پیگیری',reportStatuses:'وضعیت گزارش اولیه',programStatuses:'وضعیت پرونده',operationalPoints:'نقاط عملیاتی',gasSensorTypes:'نوع سنسور گازسنج',gasSensorLocations:'محل‌های استقرار',operationalRanges:'محدوده‌های عملیاتی',vehicleServiceTypes:'انواع سرویس خودرو',missionTitles:'عنوان‌های مأموریت',vehicleNames:'نام خودروها',gasModels:'مدل گازسنج‌ها',deploymentLocations:'محل‌های استقرار',maneuverLocations:'محل‌های اجرای مانور',faultCategories:'دسته‌های اشکال',faultPriorities:'اولویت اشکال',faultStatuses:'وضعیت رفع اشکال',maintenanceTypes:'نوع سرویس و تعمیر',maintenanceStatuses:'وضعیت سرویس',gasLogTypes:'نوع سابقهٔ گازسنج',programCategories:'دسته‌های برنامه',stationTypes:'نوع ایستگاه',pipelineLines:'خطوط و شاخه‌ها',stationStatuses:'وضعیت ایستگاه'};
+    const titles={places:'مکان‌ها و محل‌ها',jobUnits:'واحدهای شغلی',statuses:'وضعیت‌ها',workplaces:'شهرها و محل‌ها',leaveTypes:'انواع مرخصی',missionTypes:'انواع مأموریت',pipelineSizes:'قطر خطوط',products:'نوع فرآورده',vehicleTypes:'انواع خودرو',vehicleStatuses:'وضعیت خودرو',gasStatuses:'وضعیت گازسنج',actionTypes:'انواع یادداشت و اقدام',programTypes:'انواع برنامه',workTypes:'نوع کار',jobTitles:'عنوان‌های شغلی',employmentTypes:'نوع استخدام',shiftPatterns:'الگوی شیفت',employeeStatuses:'وضعیت کارکنان',missionStatuses:'وضعیت مأموریت',leaveStatuses:'وضعیت مرخصی',healthStatuses:'وضعیت سلامت',noteStatuses:'وضعیت یادداشت و پیگیری',reportStatuses:'وضعیت گزارش اولیه',programStatuses:'وضعیت پرونده',operationalPoints:'نقاط عملیاتی',gasSensorTypes:'نوع سنسور گازسنج',gasSensorLocations:'محل‌های استقرار',operationalRanges:'محدوده‌های عملیاتی',vehicleServiceTypes:'انواع سرویس خودرو',missionTitles:'عنوان‌های مأموریت',vehicleNames:'نام خودروها',gasModels:'مدل گازسنج‌ها',deploymentLocations:'محل‌های استقرار',maneuverLocations:'محل‌های اجرای مانور',faultCategories:'دسته‌های اشکال',faultPriorities:'اولویت اشکال',faultStatuses:'وضعیت رفع اشکال',maintenanceTypes:'نوع سرویس و تعمیر',maintenanceStatuses:'وضعیت سرویس',gasLogTypes:'نوع سابقهٔ گازسنج',programCategories:'دسته‌های برنامه',stationTypes:'نوع ایستگاه',pipelineLines:'خطوط و شاخه‌ها',stationStatuses:'وضعیت ایستگاه'};
     return titles[key]||key;
   }
 
