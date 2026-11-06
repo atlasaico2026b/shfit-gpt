@@ -132,3 +132,8 @@ html[data-atlas-theme="atlas-flat"] .atlas-pb-toolbar select,html[data-atlas-the
 .atlas-pb-contact:hover{background:rgba(var(--surf-rgb),.34)}
 .atlas-pb-form-error{margin:0;padding:9px 12px;border-radius:11px;font-size:11.5px;line-height:1.7;color:var(--danger);background:var(--danger-soft);border:1px solid var(--danger-line)}
 .atlas-pb-form-error[hidden]{display:none}
+
+/* مخاطبی که با ایجاد کارمند ساخته شده و هنوز تکمیل/اصلاح نشده: کادر زرد */
+.atlas-pb-card.is-from-employee{border-color:rgba(var(--warn-rgb),.55)!important;background:linear-gradient(100deg,rgba(var(--warn-rgb),.16),rgba(var(--c-black-rgb),.42))!important;box-shadow:inset 3px 0 0 var(--warn),inset 0 1px 0 rgba(var(--c-white-rgb),.07)!important}
+.atlas-pb-chip-source{border-color:rgba(var(--warn-rgb),.55);background:rgba(var(--warn-rgb),.18);color:var(--warn);font-weight:700}
+.atlas-pb-card.is-from-employee .atlas-pb-name{color:var(--warn)}

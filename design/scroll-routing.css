@@ -1,0 +1,39 @@
+/* ── مهار اسکرول (همراه design/scroll-routing.js) ────────────────────────────
+   هر ناحیهٔ اسکرول‌شونده باید «سرریز» خودش را نگه دارد: با رسیدن به انتها،
+   چرخ/لمس به پنجرهٔ زیرین یا بدنهٔ صفحه منتقل نمی‌شود. فهرست زیر تنها جایی است
+   که این خاصیت تعریف می‌شود؛ ناحیهٔ اسکرول جدید را همین‌جا اضافه کنید. */
+
+.atlas-combo-list,
+.atlas-combo-panel,
+.jalali-popover,
+.jalali-wheel,
+[role='listbox'],
+.atlas-modal,
+.atlas-modal-body,
+[data-modal-backdrop],
+[role='dialog'],
+#settingsPanel,
+#notificationDrawer,
+.drawer,
+.settings-popover,
+.module-table-wrap,
+.option-manager-list,
+.gas-group-list,
+.atlas-pb-modal,
+.rf-backdrop,
+.rf-sheet-wrap,
+.frame-body {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* فهرست‌های بازشو: فضای نوار اسکرول از قبل رزرو شود تا با ظاهر شدنش محتوا نپرد. */
+.atlas-combo-list,
+.option-manager-list {
+  scrollbar-gutter: stable;
+}
+
+/* بدنهٔ برنامه: کشیدن صفحه در موبایل نباید نوار آدرس/رفرش را حرکت دهد. */
+body {
+  overscroll-behavior-y: none;
+}

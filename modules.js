@@ -32,6 +32,7 @@
       subtitle: 'پروندهٔ پرسنلی، نوع کار، محل خدمت، شیفت و وضعیت روزانه',
       fields: [
         {key:'personnelId',label:'شمارهٔ پرسنلی'},
+        {key:'nationalId',label:'کد ملی',placeholder:'۱۰ رقم'},
         {key:'firstName',label:'نام',required:true},
         {key:'lastName',label:'نام خانوادگی',required:true},
         {key:'mobile',label:'شمارهٔ همراه',type:'tel'},
@@ -164,7 +165,6 @@
         {key:'status',label:'وضعیت دستگاه',type:'select',required:true,listKey:'gasStatuses',options:['آماده استفاده','در کالیبراسیون','استندبای منطقه','خارج از سرویس','در تعمیر']},
         {key:'healthStatus',label:'وضعیت سلامت',type:'select',listKey:'healthStatuses',options:['سالم','نیازمند بررسی','دارای نقص','در حال تعمیر']},
         {key:'location',label:'محل استقرار',type:'select',listKey:'deploymentLocations',options:['پارکینگ مرکزی','تعمیرگاه مرکزی','انبار مرکزی','محور جاده','دفتر مرکزی','سایر']},
-        {key:'locationPoint',label:'محل استقرار (فهرست نقاط)',type:'select',listKey:'gasSensorLocations',options:['پارکینگ مرکزی','تعمیرگاه مرکزی','انبار مرکزی','محور جاده','دفتر مرکزی','سایر']},
         {key:'stationId',label:'مرکز / ایستگاه استقرار',type:'select',source:'stations',hint:'اگر خالی بماند، آخرین موقعیت ثبت‌شده در سوابق همین دستگاه مبنای استقرار است.'},
         {key:'positionKind',label:'نوع موقعیت استقرار',type:'select',options:['ساختمان','خودرو','محوطه','سایر']},
         {key:'positionDetail',label:'ساختمان / خودرو (جزئیات)',placeholder:'مثلاً اتاق فرمان عملیات یا خودرو پلاک ۱۲'},
@@ -591,8 +591,14 @@
     let hh = withTime ? Number(m[4]) : 12;
     let mm = withTime ? Number(m[5]) : 0;
     if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return null;
-    const first = jalaliYearStart(jy);
-    const next = jalaliYearStart(jy + 1);
+    let first, next;
+    try {
+      first = jalaliYearStart(jy);
+      next = jalaliYearStart(jy + 1);
+    } catch (error) {
+      // سالی که تقویم مرورگر نمی‌تواند تبدیل کند، تاریخ معتبر نیست.
+      return null;
+    }
     let offset = jm <= 6 ? (jm - 1) * 31 + jd - 1 : 186 + (jm - 7) * 30 + jd - 1;
     const date = new Date(first.getFullYear(), first.getMonth(), first.getDate() + offset, hh, mm, 0, 0);
     const p = intlJalaliParts(date);
@@ -773,6 +779,20 @@
     return Array.isArray(list) ? list.slice() : [];
   }
 
+  // همهٔ مکان‌ها و محل‌ها یک فهرست مشترک دارند: هر مکانی که برای هر نوع محلی ثبت شود
+  // در همهٔ فیلدهای مکانی دیده می‌شود («یکی کردن لیست مکان‌ها»).
+  function allPlaceNames() {
+    const lists = placeLists();
+    const out = [];
+    Object.keys(lists).forEach(function (key) {
+      (Array.isArray(lists[key]) ? lists[key] : []).forEach(function (name) {
+        const text = String(name == null ? '' : name).trim();
+        if (text && out.indexOf(text) < 0) out.push(text);
+      });
+    });
+    return out.sort(function (a, b) { return a.localeCompare(b, 'fa'); });
+  }
+
   function placeRegister(type, name) {
     const key = String(type || '').trim();
     const value = String(name || '').trim();
@@ -793,7 +813,7 @@
   }
 
   function rowControlMarkup(field, column, value, data) {
-    const attrs = ' data-col="' + esc(column.key) + '" autocomplete="off"';
+    const attrs = ' data-col="' + esc(column.key) + '" autocomplete="new-password"';
     if (column.listKey || Array.isArray(column.options)) {
       const options = column.listKey ? getSelectOptions({ listKey: column.listKey }, data) : column.options.map(function (option) { return { value: option, label: option }; });
       const chosen = String(value == null ? '' : value);
@@ -820,6 +840,21 @@
       (field.hint ? '<small class="module-field-hint">' + esc(field.hint) + '</small>' : '');
   }
 
+  // مرورگر روی کادرهای متنی فرم‌ها پیشنهاد «مدیریت آدرس‌ها» باز می‌کند و کاربر را
+  // از فرم بیرون می‌برد؛ با این ترکیب، پیشنهادهای خودکار مرورگر خاموش می‌شود.
+  const NO_AUTOFILL = ' autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other"';
+
+  // فقط فهرست‌های بلند و متغیر (افراد، خودروها، ایستگاه‌ها، مکان‌ها و …) پنل جستجوپذیر
+  // می‌گیرند؛ منوهای کوتاه و اختصاصی مثل وضعیت‌ها همان لیست کشویی ساده می‌مانند.
+  const SEARCHABLE_LIST_KEYS = ['places', 'jobTitles', 'missionTitles', 'vehicleNames',
+    'gasModels', 'pipelineLines', 'products', 'actionTypes', 'gasLogTypes'];
+
+  function isSearchableSelect(field) {
+    if (!field || field.multiple) return false;
+    if (field.type === 'place' || field.source) return true;
+    return !!(field.listKey && SEARCHABLE_LIST_KEYS.indexOf(referenceBaseKey(field.listKey)) >= 0);
+  }
+
   function renderField(moduleKey, field, record, data) {
     const value = record && record[field.key] != null ? record[field.key] : (field.custom && record && record.customFields ? record.customFields[field.key] : '');
     const id = 'atlas-field-' + moduleKey + '-' + field.key;
@@ -837,7 +872,7 @@
         if (!field.multiple && value != null && value !== '' && !options.some(function (option) { return String(option.value) === String(value); })) {
           options.unshift({value:String(value),label:String(value)});
         }
-        control = '<select id="' + esc(id) + '" name="' + esc(field.key) + '"' + (field.multiple ? ' multiple size="4"' : '') + (field.stationTypeTrigger ? ' data-station-type="1"' : '') + required + '>' +
+        control = '<select id="' + esc(id) + '" name="' + esc(field.key) + '"' + (field.multiple ? ' multiple size="4"' : '') + (field.stationTypeTrigger ? ' data-station-type="1"' : '') + (isSearchableSelect(field) ? ' data-search-select="1"' : '') + required + '>' +
           (field.multiple ? '' : '<option value="">انتخاب کنید</option>') +
           options.map(function (option) {
             const selected = field.multiple ? chosenList.includes(String(option.value)) : String(value) === String(option.value);
@@ -848,21 +883,27 @@
       }
     } else if (field.type === 'place') {
       const type = record && (record.placeType || record.stationType);
-      const options = placesForType(type);
+      const options = allPlaceNames();
       if (value && options.indexOf(String(value)) < 0) options.unshift(String(value));
-      control = '<span class="module-select-with-add"><select id="' + esc(id) + '" name="' + esc(field.key) + '" data-place-select' + required + '>' +
-        '<option value="">' + (type ? 'انتخاب مکان' : 'ابتدا نوع محل را انتخاب کنید') + '</option>' +
-        options.map(function (option) {
-          return '<option value="' + esc(option) + '"' + (String(value) === String(option) ? ' selected' : '') + '>' + esc(option) + '</option>';
-        }).join('') + '</select>' +
-        '<button type="button" class="module-select-add" data-place-add="1" aria-label="افزودن مکان جدید" title="افزودن مکان جدید به فهرست این نوع محل">+</button></span>' +
-        '<small class="module-field-hint">' + (type ? 'مکان‌های ثبت‌شده برای «' + esc(type) + '»؛ با + می‌توانی مکان تازه اضافه کنی.' : 'فهرست مکان‌ها بر اساس نوع محل انتخاب‌شده نمایش داده می‌شود.') + '</small>';
+      if (!options.length) {
+        // تا وقتی هیچ مکانی ثبت نشده، نوشتن نام مکان راه را نمی‌بندد.
+        control = '<input id="' + esc(id) + '" name="' + esc(field.key) + '" type="text" placeholder="نام مکان یا محل"' + required + NO_AUTOFILL + ' value="' + esc(value) + '">' +
+          '<small class="module-field-hint">هنوز مکانی ثبت نشده است؛ نام مکان را همین‌جا بنویس تا به فهرست مشترک اضافه شود.</small>';
+      } else {
+        control = '<span class="module-select-with-add"><select id="' + esc(id) + '" name="' + esc(field.key) + '" data-place-select data-search-select="1"' + required + '>' +
+          '<option value="">انتخاب مکان از فهرست مشترک</option>' +
+          options.map(function (option) {
+            return '<option value="' + esc(option) + '"' + (String(value) === String(option) ? ' selected' : '') + '>' + esc(option) + '</option>';
+          }).join('') + '</select>' +
+          '<button type="button" class="module-select-add" data-place-add="1" aria-label="افزودن مکان جدید" title="افزودن مکان جدید به فهرست مشترک">+</button></span>' +
+          '<small class="module-field-hint">' + (type ? '«' + esc(type) + '» · ' : '') + 'یک فهرست مشترک برای همهٔ مکان‌ها و محل‌ها؛ با + می‌توانی مکان تازه اضافه کنی.</small>';
+      }
     } else if (field.type === 'rows') {
       control = rowEditorMarkup(field, value, data);
     } else if (field.type === 'people') {
       const names = stationChiefSuggestions(data);
       control = '<input id="' + esc(id) + '" name="' + esc(field.key) + '" list="' + esc(id) + '-people" value="' + esc(value) +
-        '" placeholder="' + esc(field.placeholder || 'جستجو در مخاطبان یا نام جدید') + '" autocomplete="off"' + required + '>' +
+        '" placeholder="' + esc(field.placeholder || 'جستجو در مخاطبان یا نام جدید') + '" autocomplete="new-password"' + required + '>' +
         '<datalist id="' + esc(id) + '-people">' + names.map(function (name) {
           return '<option value="' + esc(name) + '"></option>';
         }).join('') + '</datalist>' +
@@ -887,15 +928,15 @@
     } else if (field.type === 'jalali' || field.type === 'jalali-datetime') {
       const withTime = field.type === 'jalali-datetime';
       const shownDate = value ? jalaliInputValue(value, withTime) : (field.required ? jalaliInputValue('', withTime) : '');
-      control = '<input id="' + esc(id) + '" name="' + esc(field.key) + '" type="text" inputmode="text" autocomplete="off"' + required +
+      control = '<input id="' + esc(id) + '" name="' + esc(field.key) + '" type="text" inputmode="text" autocomplete="new-password"' + required +
         ' value="' + esc(shownDate) +
         '" placeholder="' + dateInputHint(field.type) + '" data-jalali-input="' + esc(field.type) + '">' +
         '<small class="module-field-hint">تاریخ شمسی؛ نمونه: ' + dateInputHint(field.type) + '</small>';
     } else {
       const type = field.type || 'text';
       control = '<input id="' + esc(id) + '" name="' + esc(field.key) + '" type="' + esc(type) + '"' +
-        (field.min != null ? ' min="' + esc(field.min) + '"' : '') + required +
-        ' value="' + esc(value) + '" placeholder="' + esc(field.placeholder || '') + '" autocomplete="off">';
+        (field.min != null ? ' min="' + esc(field.min) + '"' : '') + required + NO_AUTOFILL +
+        ' value="' + esc(value) + '" placeholder="' + esc(field.placeholder || '') + '">';
     }
     if (field.type === 'select' && field.listKey && !field.multiple) control = '<span class="module-select-with-add">' + control + '</span>';
     const shown = fieldVisible(field, record || {});
@@ -961,7 +1002,7 @@
       '<div class="atlas-modal-head"><div><h3 id="atlasModalTitle">' +
       (existing ? 'ویرایش ' : 'ثبت ') + esc(specs[moduleKey].singular) + '</h3><p>پس از ذخیره، اطلاعات به فهرست، داشبورد و گزارش‌های مرتبط منتقل می‌شود.</p></div>' +
       '<button type="button" class="atlas-modal-close" data-module-action="cancel" data-view="' + esc(moduleKey) + '" aria-label="بستن پنجره">×</button></div>' +
-      '<div class="atlas-modal-body"><form class="module-form" data-module-form data-view="' + esc(moduleKey) + '" data-id="' + esc(existing ? existing.id : '') + '"' + (vehicleScope ? ' data-fault-scope="vehicle"' : '') + '>' +
+      '<div class="atlas-modal-body"><form class="module-form" data-module-form autocomplete="off" data-view="' + esc(moduleKey) + '" data-id="' + esc(existing ? existing.id : '') + '"' + (vehicleScope ? ' data-fault-scope="vehicle"' : '') + '>' +
       '<div class="module-fields">' + fields.map(function (field) { return renderField(moduleKey, field, draft, data); }).join('') + '</div>' +
       fileNotice +
       '<div class="module-form-actions"><span class="module-required-help">موارد دارای * ضروری هستند.</span><div>' +
@@ -1113,7 +1154,9 @@
             }
             return '<td>' + displayValue(moduleKey, key, value, data) + '</td>';
           }).join('') +
-          '<td class="module-row-actions">' + (moduleKey === 'employees' ? renderContactActions(record) : '') + renderCommentButton(moduleKey, record) + renderHistoryButton(moduleKey, record) +
+          '<td class="module-row-actions">' + (moduleKey === 'employees' ? renderContactActions(record) : '') +
+          '<button type="button" class="secondary-btn module-file-btn" data-module-action="file" data-view="' + esc(moduleKey) + '" data-id="' + esc(record.id) + '">مشاهدهٔ پرونده</button> ' +
+          renderCommentButton(moduleKey, record) + renderHistoryButton(moduleKey, record) +
           '<button type="button" class="secondary-btn" data-module-action="edit" data-view="' + esc(moduleKey) + '" data-id="' + esc(record.id) + '">ویرایش</button> ' +
           '<button type="button" class="module-delete-btn" data-module-action="delete" data-view="' + esc(moduleKey) + '" data-id="' + esc(record.id) + '">حذف</button></td></tr>';
       }).join('') + '</tbody></table></div>';
@@ -1756,26 +1799,22 @@
     // ── فهرست‌های مرجع ───────────────────────────────────────────────────────────
   // چند منو که به یک ماهیت اشاره دارند (مکان، وضعیت) به یک فهرست مشترک ارجاع داده
   // می‌شوند؛ هر تغییری در همان فهرست، بی‌درنگ در همهٔ فیلدهای وابسته دیده می‌شود.
+  // فقط مکان‌ها و محل‌ها یک فهرست مشترک دارند («یکی کردن لیست مکان‌ها»).
+  // هر فهرست وضعیت مستقل و کوتاه است تا هر منو فقط وضعیت‌های همان بخش را نشان دهد.
   const REFERENCE_ALIASES = {
     workplaces: 'places',
     deploymentLocations: 'places',
     gasSensorLocations: 'places',
     maneuverLocations: 'places',
     operationalPoints: 'places',
-    operationalRanges: 'places',
-    employeeStatuses: 'statuses',
-    missionStatuses: 'statuses',
-    leaveStatuses: 'statuses',
-    healthStatuses: 'statuses',
-    noteStatuses: 'statuses',
-    reportStatuses: 'statuses',
-    programStatuses: 'statuses',
-    vehicleStatuses: 'statuses',
-    gasStatuses: 'statuses',
-    faultStatuses: 'statuses',
-    maintenanceStatuses: 'statuses',
-    stationStatuses: 'statuses'
+    operationalRanges: 'places'
   };
+
+  const STATUS_LIST_KEYS = [
+    'employeeStatuses', 'missionStatuses', 'leaveStatuses', 'healthStatuses',
+    'noteStatuses', 'reportStatuses', 'programStatuses', 'vehicleStatuses',
+    'gasStatuses', 'faultStatuses', 'maintenanceStatuses', 'stationStatuses'
+  ];
 
   function referenceBaseKey(key) {
     const raw = String(key == null ? '' : key);
@@ -1793,8 +1832,8 @@
     {
       id: 'statuses',
       title: 'وضعیت‌ها',
-      hint: 'وضعیت کارکنان، مأموریت، مرخصی، خودرو، گازسنج، اشکال، سرویس، یادداشت، گزارش، پرونده و ایستگاه از یک فهرست کامل خوانده می‌شوند تا واژه‌ها یکدست بمانند.',
-      keys: ['statuses']
+      hint: 'هر بخش وضعیت اختصاصی خودش را دارد و هیچ وضعیتی بین بخش‌ها مشترک نیست؛ فهرست هر بخش همین‌جاست و کوتاه می‌ماند.',
+      keys: STATUS_LIST_KEYS
     },
     {
       id: 'types',
@@ -1900,10 +1939,35 @@
     return keys.sort(function(a,b){return referenceListTitle(a).localeCompare(referenceListTitle(b),'fa');});
   }
 
+  // فهرست وضعیت‌های مشترک قبلی («statuses») به فهرست اختصاصی هر بخش تبدیل می‌شود؛
+  // گزینه‌های پیش‌فرض همان فیلد و مقادیری که در سوابق استفاده شده‌اند حفظ می‌شوند.
+  function seedStatusLists(state) {
+    const refs = state && state.references;
+    if (!refs || typeof refs !== 'object') return;
+    STATUS_LIST_KEYS.forEach(function (key) {
+      if (Array.isArray(refs[key]) && refs[key].length) return;
+      const seed = [];
+      const push = function (value) {
+        const text = String(value == null ? '' : value).trim();
+        if (text && seed.indexOf(text) < 0) seed.push(text);
+      };
+      MODULES.forEach(function (moduleKey) {
+        (specs[moduleKey].fields || []).forEach(function (field) {
+          if (field.listKey !== key) return;
+          (field.options || []).forEach(push);
+          (state[moduleKey] || []).forEach(function (record) { push(record && record[field.key]); });
+        });
+      });
+      refs[key] = seed;
+    });
+    delete refs.statuses;
+  }
+
   function ensureReferenceLists(target){
     const state=target||appData;
     if(!state.references||typeof state.references!=='object')state.references={};
     migrateReferenceAliases(state);
+    seedStatusLists(state);
     referenceKeys(state).forEach(function(key){
       if(!Array.isArray(state.references[key])){
         state.references[key]=referenceDefaultsFor(key);
@@ -2460,7 +2524,8 @@
         '<td>' + (record.calibrationEnd ? formatJalali(record.calibrationEnd, false) : '—') + '</td>' +
         '<td>' + statusTag(state.label) + '<div class="cell-sub">' + (state.left == null ? '—' : (state.left < 0 ? faDigits(Math.abs(state.left)) + ' روز گذشته' : faDigits(state.left) + ' روز مانده')) + '</div></td>' +
         '<td>' + faDigits(logs) + ' مورد</td>' +
-        '<td class="module-row-actions"><button type="button" class="secondary-btn" data-gas-action="log" data-gas="' + esc(record.id) + '">+ سابقه</button>' +
+        '<td class="module-row-actions"><button type="button" class="secondary-btn" data-module-action="file" data-view="gasmeters" data-id="' + esc(record.id) + '">مشاهدهٔ پرونده</button>' +
+        '<button type="button" class="secondary-btn" data-gas-action="log" data-gas="' + esc(record.id) + '">+ سابقه</button>' +
         '<button type="button" class="secondary-btn" data-module-action="edit" data-view="gasmeters" data-id="' + esc(record.id) + '">ویرایش</button>' +
         '<button type="button" class="module-delete-btn" data-module-action="delete" data-view="gasmeters" data-id="' + esc(record.id) + '">حذف</button></td></tr>';
     }).join('');
@@ -2644,7 +2709,7 @@
   // فیلد تاریخ از انتخابگر سالنامهٔ خود برنامه استفاده می‌کند (enhanceJalaliInputs).
   function jalaliFieldMarkup(label, name, value, placeholder) {
     return '<label class="module-field"><span>' + esc(label) + '</span>' +
-      '<input type="text" data-gas-group-field="' + esc(name) + '" data-jalali-input="jalali" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || '۱۴۰۵/۰۸/۰۹') + '" autocomplete="off"></label>';
+      '<input type="text" data-gas-group-field="' + esc(name) + '" data-jalali-input="jalali" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || '۱۴۰۵/۰۸/۰۹') + '" autocomplete="new-password"></label>';
   }
 
   function openGasGroupDialog(mode) {
@@ -4175,6 +4240,76 @@
     });
   }
 
+  // ── اعتبارسنجی فیلدهای اجباری ────────────────────────────────
+  // فیلد اجباری خالی، کادر کمرنگ قرمز می‌گیرد و زیر آن پیام «فیلد مورد نظر اجباری است» می‌آید.
+  function clearRequiredErrors(form) {
+    Array.prototype.forEach.call(form.querySelectorAll('.module-field.is-required'), function (node) {
+      node.classList.remove('is-required');
+      const note = node.querySelector('[data-required-error]');
+      if (note) note.remove();
+    });
+  }
+
+  function requiredIsEmpty(form, field) {
+    const controls = form.querySelectorAll('[name="' + field.key + '"]');
+    if (!controls.length) return false;
+    if (field.type === 'checks' || (field.type === 'select' && field.multiple)) {
+      return !Array.prototype.some.call(controls, function (control) { return control.checked && control.value; });
+    }
+    return !String(controls[0].value || '').trim();
+  }
+
+  function validateRequired(form, moduleKey) {
+    clearRequiredErrors(form);
+    const fields = formFields(moduleKey, form.dataset.faultScope === 'vehicle');
+    const typeField = form.querySelector('[data-station-type]');
+    const currentType = typeField ? String(typeField.value || '') : '';
+    const missing = [];
+    fields.forEach(function (field) {
+      if (!field.required) return;
+      if (!fieldVisible(field, { placeType: currentType })) return;
+      if (!requiredIsEmpty(form, field)) return;
+      missing.push(field);
+      const control = form.querySelector('[name="' + field.key + '"]');
+      const wrap = control ? control.closest('.module-field') : null;
+      if (!wrap) return;
+      wrap.classList.add('is-required');
+      const note = document.createElement('small');
+      note.className = 'module-field-required';
+      note.setAttribute('data-required-error', '');
+      note.textContent = 'فیلد مورد نظر اجباری است.';
+      wrap.appendChild(note);
+    });
+    if (!missing.length) return true;
+    const first = form.querySelector('.module-field.is-required [name]');
+    if (first) {
+      if (typeof first.focus === 'function') first.focus();
+      if (typeof first.scrollIntoView === 'function') first.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+    toast('این موارد اجباری است: ' + missing.map(function (field) { return field.label; }).join('، '));
+    return false;
+  }
+
+  document.addEventListener('input', function (event) {
+    const wrap = event.target.closest && event.target.closest('.module-field.is-required');
+    if (!wrap) return;
+    wrap.classList.remove('is-required');
+    const note = wrap.querySelector('[data-required-error]');
+    if (note) note.remove();
+  }, true);
+
+  document.addEventListener('change', function (event) {
+    const wrap = event.target.closest && event.target.closest('.module-field.is-required');
+    if (!wrap) return;
+    const filled = Array.prototype.some.call(wrap.querySelectorAll('[name]'), function (control) {
+      return control.type === 'checkbox' ? control.checked : !!String(control.value || '').trim();
+    });
+    if (!filled) return;
+    wrap.classList.remove('is-required');
+    const note = wrap.querySelector('[data-required-error]');
+    if (note) note.remove();
+  }, true);
+
   async function formValues(form, moduleKey, oldRecord) {
     const fields=formFields(moduleKey, form.dataset.faultScope==='vehicle'), data={};
     const fd=new FormData(form);
@@ -5175,6 +5310,8 @@
       const input=document.getElementById('atlasRestoreFile');if(input)input.click();
     }else if(action==='history'&&specs[moduleKey]){
       openHistory(moduleKey,button.dataset.id);
+    }else if(action==='file'&&specs[moduleKey]){
+      document.dispatchEvent(new CustomEvent('atlas-open-file',{detail:{module:moduleKey,id:button.dataset.id}}));
     }else if(action==='apply-report-range'){
       const from=section.querySelector('[data-report-from]'),to=section.querySelector('[data-report-to]');
       if((from&&from.value&&!parseJalali(from.value,false))||(to&&to.value&&!parseJalali(to.value,false))){
@@ -5418,6 +5555,7 @@
       const id=form.dataset.id||'';
       const old= id ? appData[moduleKey].find(function(item){return String(item.id)===String(id);}) : null;
       try{
+        if(!validateRequired(form,moduleKey))return;
         const values=await formValues(form,moduleKey,old);
         if(moduleKey==='faults')values.assetType='خودرو';
         if(moduleKey==='leaves'&&values.startDate&&values.endDate&&values.endDate<values.startDate)throw new Error('تاریخ پایان مرخصی نباید قبل از تاریخ شروع باشد.');
@@ -5427,7 +5565,7 @@
         if(moduleKey==='stations'){
           const normalizedName=String(values.name||'').replace(/\s+/g,' ').trim();
           const duplicate=(appData.stations||[]).filter(function(item){
-            return String(item.id)!==String(oldRecord&&oldRecord.id||'') && String(item.name||'').replace(/\s+/g,' ').trim()===normalizedName;
+            return String(item.id)!==String(old&&old.id||'') && String(item.name||'').replace(/\s+/g,' ').trim()===normalizedName;
           })[0];
           if(duplicate)throw new Error('این نام قبلاً برای «'+duplicate.name+'»'+(duplicate.placeType?' ('+duplicate.placeType+')':'')+' ثبت شده است؛ نام دیگری انتخاب کن.');
           (Array.isArray(values.branches)?values.branches:[]).forEach(function(row){
@@ -5476,6 +5614,10 @@
         refreshCurrentView();
         refreshDashboard();
         toast(old?'تغییرات ذخیره شد.':'اطلاعات جدید ثبت شد.');
+        // همگام‌سازی مخاطبان با کارکنان و به‌روزرسانی فهرست‌های وابسته در همین لحظه انجام می‌شود.
+        document.dispatchEvent(new CustomEvent('atlas-record-saved', {
+          detail: { module: moduleKey, record: record, previous: old || null, isNew: !old }
+        }));
       }catch(error){
         toast(error.message||'ثبت اطلاعات انجام نشد.');
       }
@@ -5601,6 +5743,7 @@
   let jalaliPopover = null;
   let jalaliTarget = null;
   let jalaliView = { year: 0, month: 0 };
+  let jalaliWheel = false;
 
   function splitJalaliText(value) {
     const raw = persianDigitsToLatin(String(value == null ? '' : value)).trim();
@@ -5621,9 +5764,14 @@
   }
 
   function jalaliMonthLength(jy, jm) {
-    const start = jalaliMonthStartDate(jy, jm);
-    const next = jm === 12 ? jalaliMonthStartDate(jy + 1, 1) : jalaliMonthStartDate(jy, jm + 1);
-    return Math.round((next.getTime() - start.getTime()) / 86400000);
+    try {
+      const start = jalaliMonthStartDate(jy, jm);
+      const next = jm === 12 ? jalaliMonthStartDate(jy + 1, 1) : jalaliMonthStartDate(jy, jm + 1);
+      return Math.round((next.getTime() - start.getTime()) / 86400000);
+    } catch (error) {
+      // سال/ماه خارج از دامنهٔ تقویم مرورگر: طول پیش‌فرض ماه
+      return jm <= 6 ? 31 : 30;
+    }
   }
 
   function syncJalaliField(wrap) {
@@ -5654,10 +5802,10 @@
       wrap.className = 'jalali-field';
       wrap.innerHTML =
         '<div class="jalali-segments">' +
-          '<label class="jalali-seg"><span>سال</span><input type="text" inputmode="numeric" autocomplete="off" maxlength="4" data-jalali-seg="year" value="' + esc(parts.year) + '" placeholder="۱۴۰۵"></label>' +
-          '<label class="jalali-seg"><span>ماه</span><input type="text" inputmode="numeric" autocomplete="off" maxlength="2" data-jalali-seg="month" value="' + esc(parts.month) + '" placeholder="۰۷"></label>' +
-          '<label class="jalali-seg"><span>روز</span><input type="text" inputmode="numeric" autocomplete="off" maxlength="2" data-jalali-seg="day" value="' + esc(parts.day) + '" placeholder="۲۸"></label>' +
-          (withTime ? '<label class="jalali-seg jalali-seg-time"><span>ساعت</span><input type="text" inputmode="numeric" autocomplete="off" maxlength="5" data-jalali-seg="time" value="' + esc(parts.time) + '" placeholder="۰۸:۳۰"></label>' : '') +
+          '<label class="jalali-seg"><span>سال</span><input type="text" inputmode="numeric" autocomplete="new-password" maxlength="4" data-jalali-seg="year" value="' + esc(parts.year) + '" placeholder="۱۴۰۵"></label>' +
+          '<label class="jalali-seg"><span>ماه</span><input type="text" inputmode="numeric" autocomplete="new-password" maxlength="2" data-jalali-seg="month" value="' + esc(parts.month) + '" placeholder="۰۷"></label>' +
+          '<label class="jalali-seg"><span>روز</span><input type="text" inputmode="numeric" autocomplete="new-password" maxlength="2" data-jalali-seg="day" value="' + esc(parts.day) + '" placeholder="۲۸"></label>' +
+          (withTime ? '<label class="jalali-seg jalali-seg-time"><span>ساعت</span><input type="text" inputmode="numeric" autocomplete="new-password" maxlength="5" data-jalali-seg="time" value="' + esc(parts.time) + '" placeholder="۰۸:۳۰"></label>' : '') +
         '</div>' +
         '<button type="button" class="jalali-open" data-jalali-open aria-label="باز کردن سالنامه" title="انتخاب از سالنامه"><span aria-hidden="true">▦</span></button>';
       input.parentNode.insertBefore(wrap, input);
@@ -5895,7 +6043,7 @@
 
   function enhanceSearchSelects(root) {
     if (!root || !root.querySelectorAll) return;
-    Array.prototype.forEach.call(root.querySelectorAll('select'), function (select) {
+    Array.prototype.forEach.call(root.querySelectorAll('select[data-search-select]'), function (select) {
       if (select.dataset.comboReady) return;
       if (select.multiple) return;
       select.dataset.comboReady = '1';
@@ -5903,7 +6051,7 @@
       const real = Array.prototype.filter.call(select.options, function (option) {
         return String(option.value) !== '' && String(option.value) !== 'all';
       });
-      if (real.length < COMBO_SEARCH_MIN) return;
+      if (real.length < 2) return;
       buildCombo(select);
     });
   }
@@ -5925,8 +6073,40 @@
     return jalaliPopover;
   }
 
+  // دامنهٔ مجاز تاریخ شمسی: روز تا ۳۱، ماه تا ۱۲، سال ۱۳۰۰ تا ۱۵۰۰
+  const JALALI_YEAR_MIN = 1300;
+  const JALALI_YEAR_MAX = 1500;
+
+  function clampInt(value, min, max) {
+    const num = parseInt(String(value).replace(/\D/g, ''), 10);
+    if (isNaN(num)) return null;
+    return Math.min(max, Math.max(min, num));
+  }
+
   function renderJalaliPopover() {
     const pop = jalaliPopoverEl();
+    const head =
+      '<div class="jalali-pop-head">' +
+        '<button type="button" class="jalali-nav" data-jalali-nav="prev" aria-label="ماه قبل">‹</button>' +
+        '<div class="jalali-pop-title">' +
+          '<button type="button" class="jalali-year-btn' + (jalaliWheel ? ' is-active' : '') + '" data-jalali-year aria-label="انتخاب سال" aria-expanded="' + (jalaliWheel ? 'true' : 'false') + '">' + faDigits(jalaliView.year) + '</button>' +
+          (jalaliWheel ? '<span class="jalali-pop-hint">سال را بچرخان</span>' : ' <span>' + esc(JALALI_MONTHS[jalaliView.month - 1] || '') + '</span>') +
+        '</div>' +
+        '<button type="button" class="jalali-nav" data-jalali-nav="next" aria-label="ماه بعد">›</button>' +
+      '</div>';
+    if (jalaliWheel) {
+      let items = '';
+      for (let year = JALALI_YEAR_MIN; year <= JALALI_YEAR_MAX; year += 1) {
+        items += '<button type="button" class="jalali-wheel-item' + (year === jalaliView.year ? ' is-selected' : '') + '" role="option" aria-selected="' + (year === jalaliView.year) + '" data-jalali-pick="' + year + '">' + faDigits(year) + '</button>';
+      }
+      pop.innerHTML = head +
+        '<div class="jalali-wheel" data-jalali-wheel role="listbox" aria-label="سال شمسی">' + items + '</div>' +
+        '<div class="jalali-pop-foot"><button type="button" class="secondary-btn" data-jalali-action="close">بستن</button></div>';
+      const wheel = pop.querySelector('[data-jalali-wheel]');
+      const active = wheel ? wheel.querySelector('.jalali-wheel-item.is-selected') : null;
+      if (wheel && active) wheel.scrollTop = active.offsetTop - wheel.clientHeight / 2 + active.offsetHeight / 2;
+      return;
+    }
     const length = jalaliMonthLength(jalaliView.year, jalaliView.month);
     const first = jalaliMonthStartDate(jalaliView.year, jalaliView.month);
     const leading = (first.getDay() + 1) % 7;
@@ -5940,12 +6120,7 @@
       const isSelected = Number(selected.year) === jalaliView.year && Number(selected.month) === jalaliView.month && Number(selected.day) === day;
       cells += '<button type="button" class="jalali-day' + (isToday ? ' is-today' : '') + (isSelected ? ' is-selected' : '') + '" data-jalali-day="' + day + '">' + faDigits(day) + '</button>';
     }
-    pop.innerHTML =
-      '<div class="jalali-pop-head">' +
-        '<button type="button" class="jalali-nav" data-jalali-nav="prev" aria-label="ماه قبل">‹</button>' +
-        '<div class="jalali-pop-title">' + esc(JALALI_MONTHS[jalaliView.month - 1] || '') + ' ' + faDigits(jalaliView.year) + '</div>' +
-        '<button type="button" class="jalali-nav" data-jalali-nav="next" aria-label="ماه بعد">›</button>' +
-      '</div>' +
+    pop.innerHTML = head +
       '<div class="jalali-week">' + JALALI_WEEK.map(function (label) { return '<span>' + label + '</span>'; }).join('') + '</div>' +
       '<div class="jalali-grid">' + cells + '</div>' +
       '<div class="jalali-pop-foot"><button type="button" class="secondary-btn" data-jalali-action="today">امروز</button><button type="button" class="secondary-btn" data-jalali-action="close">بستن</button></div>';
@@ -5954,10 +6129,14 @@
   function openJalaliPopover(wrap, opener) {
     if (!wrap) return;
     jalaliTarget = wrap;
+    jalaliWheel = false;
     const hidden = wrap.querySelector('input.jalali-value');
     const parts = splitJalaliText(hidden ? hidden.value : '');
     const today = intlJalaliParts(new Date());
-    jalaliView = { year: Number(parts.year) || today.year, month: Number(parts.month) || today.month };
+    jalaliView = {
+      year: Math.min(JALALI_YEAR_MAX, Math.max(JALALI_YEAR_MIN, Number(parts.year) || today.year)),
+      month: Math.min(12, Math.max(1, Number(parts.month) || today.month))
+    };
     const pop = jalaliPopoverEl();
     renderJalaliPopover();
     pop.hidden = false;
@@ -6017,12 +6196,27 @@
   document.addEventListener('blur', function (event) {
     const segment = event.target.closest && event.target.closest('[data-jalali-seg]');
     if (!segment) return;
+    const wrap = segment.closest('.jalali-field');
     const name = segment.dataset.jalaliSeg;
-    if (name === 'month' || name === 'day') {
-      const digits = persianDigitsToLatin(segment.value).replace(/\D/g, '');
-      if (digits) segment.value = digits.padStart(2, '0');
+    const digits = persianDigitsToLatin(segment.value).replace(/\D/g, '');
+    if (name === 'year') {
+      const year = digits ? clampInt(digits, JALALI_YEAR_MIN, JALALI_YEAR_MAX) : null;
+      if (year) segment.value = String(year);
+    } else if (name === 'month') {
+      const month = digits ? clampInt(digits, 1, 12) : null;
+      if (month) segment.value = String(month).padStart(2, '0');
+    } else if (name === 'day') {
+      // دامنهٔ روز: ۱ تا ۳۱ و در ماه‌های ۳۰ روزه حداکثر ۳۰
+      const monthBox = wrap ? wrap.querySelector('[data-jalali-seg="month"]') : null;
+      const yearBox = wrap ? wrap.querySelector('[data-jalali-seg="year"]') : null;
+      const monthNum = parseInt(persianDigitsToLatin(monthBox && monthBox.value).replace(/\D/g, ''), 10);
+      const yearNum = parseInt(persianDigitsToLatin(yearBox && yearBox.value).replace(/\D/g, ''), 10);
+      let max = 31;
+      if (monthNum >= 1 && monthNum <= 12) max = jalaliMonthLength(yearNum || intlJalaliParts(new Date()).year, monthNum);
+      const day = digits ? clampInt(digits, 1, Math.min(31, max)) : null;
+      if (day) segment.value = String(day).padStart(2, '0');
     }
-    syncJalaliField(segment.closest('.jalali-field'));
+    syncJalaliField(wrap);
   }, true);
 
   document.addEventListener('click', function (event) {
@@ -6033,11 +6227,28 @@
     }
     const nav = event.target.closest('[data-jalali-nav]');
     if (nav) {
+      if (jalaliWheel) return;
       let month = jalaliView.month + (nav.dataset.jalaliNav === 'next' ? 1 : -1);
       let year = jalaliView.year;
       if (month > 12) { month = 1; year += 1; }
       if (month < 1) { month = 12; year -= 1; }
+      year = Math.min(JALALI_YEAR_MAX, Math.max(JALALI_YEAR_MIN, year));
       jalaliView = { year: year, month: month };
+      renderJalaliPopover();
+      return;
+    }
+    const yearButton = event.target.closest('[data-jalali-year]');
+    if (yearButton) {
+      jalaliWheel = !jalaliWheel;
+      renderJalaliPopover();
+      return;
+    }
+    // چرخاندن سال: همان فهرست محدود ۱۳۰۰ تا ۱۵۰۰
+    const picked = event.target.closest('[data-jalali-pick]');
+    if (picked) {
+      const year = clampInt(picked.dataset.jalaliPick, JALALI_YEAR_MIN, JALALI_YEAR_MAX);
+      if (year) jalaliView = { year: year, month: jalaliView.month };
+      jalaliWheel = false;
       renderJalaliPopover();
       return;
     }
@@ -6485,80 +6696,8 @@
   }
 
   // ── مسیردهی چرخ ماوس ───────────────────────────────────────────────────────
-  // چرخ ماوس هرجا باشد، اولویت با بالاترین پنجرهٔ باز است: صفحهٔ زیرین اسکرول
-  // نمی‌شود و اگر نشانگر روی بخش غیرقابل‌اسکرول پنجره باشد، بدنهٔ همان پنجره
-  // اسکرول می‌شود.
-  function wheelLayers() {
-    const list = [];
-    Array.prototype.slice.call(document.querySelectorAll('[data-modal-backdrop]')).forEach(function (node) {
-      if (node.hidden) return;
-      const style = window.getComputedStyle(node);
-      if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return;
-      list.push(node);
-    });
-    if (document.body.classList.contains('notifications-open')) {
-      const drawer = document.getElementById('notificationDrawer');
-      if (drawer) list.push(drawer);
-    }
-    const panel = document.getElementById('settingsPanel');
-    if (panel && panel.classList.contains('open')) list.push(panel);
-    Array.prototype.slice.call(document.querySelectorAll('.calendar-panel.open, .jalali-picker')).forEach(function (node) {
-      if (node.hidden) return;
-      const rect = node.getBoundingClientRect();
-      if (rect.width > 4 && rect.height > 4) list.push(node);
-    });
-    return list;
-  }
-
-  function topWheelLayer() {
-    const layers = wheelLayers();
-    if (!layers.length) return null;
-    let top = layers[0];
-    let topZ = -Infinity;
-    layers.forEach(function (node) {
-      const z = parseInt(window.getComputedStyle(node).zIndex, 10);
-      const value = isNaN(z) ? 0 : z;
-      if (value >= topZ) { top = node; topZ = value; }
-    });
-    return top;
-  }
-
-  function scrollableAncestor(node, boundary) {
-    let current = node;
-    while (current && current !== boundary.parentElement) {
-      const overflow = window.getComputedStyle(current).overflowY;
-      if ((overflow === 'auto' || overflow === 'scroll' || overflow === 'overlay') && current.scrollHeight - current.clientHeight > 2) return current;
-      current = current.parentElement;
-    }
-    return null;
-  }
-
-  function firstScrollableInside(layer) {
-    const nodes = layer.querySelectorAll('*');
-    for (let i = 0; i < nodes.length; i += 1) {
-      const node = nodes[i];
-      const overflow = window.getComputedStyle(node).overflowY;
-      if ((overflow === 'auto' || overflow === 'scroll') && node.scrollHeight - node.clientHeight > 2) return node;
-    }
-    return null;
-  }
-
-  function routeWheelScroll(event) {
-    if (event.ctrlKey || event.defaultPrevented) return;
-    if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
-    const layer = topWheelLayer();
-    if (!layer) return;
-    const stack = document.elementsFromPoint(event.clientX, event.clientY) || [];
-    const inside = stack.filter(function (node) { return layer.contains(node); })[0];
-    const scroller = (inside && scrollableAncestor(inside, layer)) || firstScrollableInside(layer);
-    if (!scroller) { event.preventDefault(); return; }
-    const max = scroller.scrollHeight - scroller.clientHeight;
-    if (max <= 2) { event.preventDefault(); return; }
-    scroller.scrollTop = Math.max(0, Math.min(max, scroller.scrollTop + event.deltaY));
-    event.preventDefault();
-  }
-
-  document.addEventListener('wheel', routeWheelScroll, { passive: false });
+  // این رفتار یک صاحب دارد: `design/scroll-routing.js`. این‌جا هیچ شنوندهٔ چرخ
+  // دیگری ثبت نکنید؛ اگر رفتاری کم است، همان فایل واحد را اصلاح کنید.
 
   // ── تب‌های تنظیمات و اقدام‌های صفحهٔ تنظیمات ──
   document.addEventListener('keydown', function (event) {
@@ -6674,6 +6813,10 @@
 
   window.ATLAS_MODULES = {
     render: render,
+    fieldsFor: fieldsFor,
+    spec: function (moduleKey) { return specs[moduleKey] || null; },
+    displayValue: displayValue,
+    formatJalali: formatJalali,
     refreshDashboard: refreshDashboard,
     applyDashboardLayout: applyDashboardLayout,
     getData: function () { return appData; },

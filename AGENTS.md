@@ -16,6 +16,36 @@ missions, leave, vehicles, gas detectors, notes/actions, reports, settings.
 - `app.js` — dashboard, calendar, notifications, settings, internal navigation.
 - `modules.js` — operational modules (CRUD), local DB, reports, backup/restore/export.
 - `menu-manager.js`, `settings-tabs.js`, `theme-two.js`, `visual-engine.js` — menu, settings tabs, theming.
+- `design/record-file.js` + `design/record-file.css` — «مشاهدهٔ پرونده» for any record/contact: a single A4
+  sheet of every stored field plus related records, with preview-before-export (print/PDF, Word, Excel, CSV).
+  Opens via `document.dispatchEvent(new CustomEvent('atlas-open-file', {detail:{module, id}}))` or
+  `AtlasRecordFile.openContact(contact)`. It only prints data that exists; never invent fields.
+- `design/contact-sync.js` — links phonebook contacts to employees by personnel number, national ID or
+  mobile (`isSameEmployee`). A new employee creates/updates its contact; deleting the employee never
+  deletes the contact. Auto-created contacts carry `pending: true` and render with a yellow card until
+  the user completes them. Runs off `atlas-record-saved`.
+- `design/forms-validation.css` — required-field highlight (`.module-field.is-required` + `[data-required-error]`).
+- `design/scroll-routing.js` + `design/scroll-routing.css` — **تنها مرجع رفتار اسکرول/چرخ موس/لمس.** قانون: هرچه زیر
+  نشانگر اسکرول‌شونده باشد، خودش اسکرول می‌شود و هیچ‌چیز دیگری (پنجرهٔ زیرین، بدنه، صفحه) حرکت نمی‌کند؛ در لبه هم
+  سرریز نمی‌کند. هیچ فایل دیگری `wheel`/`touchmove` سراسری ثبت نکند؛ اگر رفتار اسکرول کم/غلط بود فقط همین فایل را
+  اصلاح کنید. ناحیهٔ اسکرول تازه را در `scroll-routing.css` هم اضافه کنید تا `overscroll-behavior` بگیرد.
+
+## قرارداد فایل‌ها: یک خاصیت، یک فایل
+هر «خاصیت رفتاری» یک صاحب دارد و در یک فایل متمرکز است. تغییر آن خاصیت یعنی ویرایش همان یک فایل، و نتیجه
+خودکار در همهٔ بخش‌ها اعمال می‌شود. هرگز رفتار سراسری (listener روی `document`/`window`) را به یک فایل صفحه‌ای
+اضافه نکنید.
+
+| خاصیت | صاحب |
+| --- | --- |
+| اسکرول، چرخ موس، لمس، مهار سرریز | `design/scroll-routing.js` + `.css` |
+| تاریخ شمسی (پاپ‌اور، ماه/سال، اعتبارسنجی دامنه) | `modules.js` بخش «تاریخ شمسی» |
+| فهرست‌های بازشوی جستجوپذیر | `modules.js` → `buildCombo` / `enhanceSearchSelects` + `design/settings-view.css` |
+| فیلد اجباری | `design/forms-validation.css` + `validateRequired` در `modules.js` |
+| مشاهدهٔ پرونده و خروجی A4 | `design/record-file.js` + `.css` |
+| همگام‌سازی کارمند ↔ مخاطب | `design/contact-sync.js` |
+| تم/رنگ‌ها | `design/theme-switch.js` + `design/skins/*.css` |
+| اعتبارسنجی/نرمال‌سازی داده‌ها | `design/…` یا توابع مشترک `modules.js` (بدون تکرار) |
+
 - `sw.js` + `manifest.json` — offline cache and installability.
 - `ATLAS_SHIFT_REQUIREMENTS.md` — the authoritative requirements/spec. Read it before large features.
 - `README.md` — current status in Persian; keep it updated when behaviour changes.

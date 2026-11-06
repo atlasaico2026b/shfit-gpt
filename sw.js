@@ -5,7 +5,7 @@
    - fetch: اول کش؛ شبکه فقط برای پر کردن کش چیزی که نداریم و به‌عنوان پشتیبان.
    - activate: کش‌های قدیمی پاک می‌شوند و اگر نسخهٔ قبلی وجود داشت، به صفحه اعلام می‌شود.
    افزایش CACHE_NAME در هر انتشار، نصب نسخهٔ تازه و پیش‌کش اتمی را تضمین می‌کند. */
-const CACHE_NAME = 'atlas-shift-v96-new-ui-layer';
+const CACHE_NAME = 'atlas-shift-v98-scroll';
 const APP_FILES = [
   './', './index.html',
   './design/tokens.css', './design/styles.css', './design/skins/flat.css', './design/tones.css',
@@ -13,6 +13,9 @@ const APP_FILES = [
   './design/modals-export.css', './design/print.css', './design/spectrum.css', './design/gaslogs.css',
   './design/stations.css', './design/vehicle-tabs.css', './design/settings-view.css',
   './design/new-ui.css', './design/new-ui.js',
+  './design/forms-validation.css', './design/record-file.css',
+  './design/scroll-routing.css', './design/scroll-routing.js',
+  './design/contact-sync.js', './design/record-file.js',
   './design/theme-switch.js',
   './app.js', './design/secure-store.js', './modules.js', './theme-two.js', './settings-tabs.js',
   './menu-manager.js', './visual-engine.js', './manifest.json', './icon.svg',

@@ -408,6 +408,15 @@ body > .drawer-backdrop,body > .drawer,body > .settings-popover,body > .toast{po
 .jalali-day.is-selected{background:rgba(var(--accent-rgb),.35);border-color:rgba(var(--accent-rgb),.65);font-weight:700}
 .jalali-pop-foot{display:flex;gap:6px;margin-top:10px}
 .jalali-pop-foot button{flex:1;padding:7px 10px;font-size:10.5px}
+/* انتخاب سال با چرخ محدود ۱۳۰۰ تا ۱۵۰۰ */
+.jalali-year-btn{border:1px dashed rgba(var(--accent-rgb),.5);background:rgba(var(--accent-rgb),.12);color:inherit;font:inherit;font-weight:700;padding:2px 8px;border-radius:8px;cursor:pointer}
+.jalali-year-btn:hover,.jalali-year-btn.is-active{background:rgba(var(--accent-rgb),.28);border-style:solid}
+.jalali-pop-title{display:flex;align-items:center;gap:5px}
+.jalali-pop-hint{font-size:9px;color:var(--muted)}
+.jalali-wheel{max-height:196px;overflow-y:auto;overscroll-behavior:contain;scroll-snap-type:y mandatory;display:flex;flex-direction:column;gap:2px;padding:6px 0;margin:0 -2px;border-block:1px solid var(--line)}
+.jalali-wheel-item{scroll-snap-align:center;flex:0 0 auto;padding:6px 10px;border-radius:8px;border:1px solid transparent;background:rgba(var(--c-white-rgb),.04);color:inherit;font:inherit;font-size:12px;cursor:pointer;font-variant-numeric:tabular-nums}
+.jalali-wheel-item:hover{background:rgba(var(--accent-rgb),.2)}
+.jalali-wheel-item.is-selected{background:rgba(var(--accent-rgb),.34);border-color:rgba(var(--accent-rgb),.6);font-weight:700}
 @media (max-width:520px){.jalali-segments{gap:4px}.jalali-seg:first-child{min-width:48px}.jalali-seg-time{min-width:60px}.jalali-open{width:34px;height:34px}}
 
 /* ── ثبت سریع داشبورد ── */
