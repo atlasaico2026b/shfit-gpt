@@ -724,7 +724,7 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
         const ext=String(c.extension||'').trim();
         const chip=(tone,label,value,opts)=>{
           const o=opts||{};
-          const body='<span class="atlas-pb-chip-label">'+escPb(label)+'</span><b class="atlas-pb-chip-value"'+(o.ltr?' dir="ltr"':'')+'>'+escPb(value)+'</b>';
+          const body='<span class="atlas-pb-chip-label">'+escPb(label)+'</span><b class="atlas-pb-chip-value'+(o.valueClass?' '+o.valueClass:'')+'"'+(o.ltr?' dir="ltr"':'')+'>'+escPb(value)+'</b>';
           const call=o.dial?'<a class="atlas-pb-call" href="tel:'+escPb(o.dial)+'" title="تماس" aria-label="تماس با '+escPb(value)+'">تماس</a>':'';
           const sms=o.sms?'<a class="atlas-pb-call" href="sms:'+escPb(o.sms)+'" title="پیامک" aria-label="پیامک به '+escPb(value)+'">پیامک</a>':'';
           const note=o.note?'<small class="atlas-pb-chip-note">'+escPb(o.note)+'</small>':'';
@@ -733,7 +733,7 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
         // ترتیب اولویت نمایش: داخلی چهاررقمی ← تلفن دفتر ← تلفن همراه ← سمت ← سرپرستی ← واحد
         const chips=[];
         if(ext)chips.push(chip('ext','داخلی',ext,{ltr:true}));
-        office.forEach(p=>chips.push(chip('office',phonebookPhoneLabel('office',p.label),(p.prefix?p.prefix+' ':'')+p.value,{ltr:true,dial:String((p.prefix||'')+(p.value||'')).replace(/[^\d+]/g,''),note:p.secretary?'منشی: '+p.secretary:''})));
+        office.forEach(p=>{const digits=String(p.value||'').replace(/\D/g,'');chips.push(chip('office',phonebookPhoneLabel('office',p.label),(p.prefix?p.prefix+' ':'')+p.value,{ltr:true,dial:String((p.prefix||'')+(p.value||'')).replace(/[^\d+]/g,''),note:p.secretary?'منشی: '+p.secretary:'',valueClass:digits.length===5?'is-office-5':''}));});
         mobile.forEach(p=>chips.push(chip('mobile',phonebookPhoneLabel('mobile',p.label),p.value,{ltr:true,dial:String(p.value||'').replace(/[^\d+]/g,''),sms:String(p.value||'').replace(/[^\d+]/g,'')})));
         if(c.position)chips.push(chip('pos','سمت',c.position));
         if(c.supervision)chips.push(chip('sup','سرپرستی',c.supervision));

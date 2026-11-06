@@ -1,5 +1,11 @@
 /* ATLAS SHIFT — خروجی چاپ: سفید و سیاه، بدون رنگ و بدون اجزای رابط */
 
+/* مرکب و کاغذ چاپ باید همیشه تعریف باشند؛ وگرنه رنگ و خطوط جدول چاپ بی‌اثر می‌شود. */
+:root {
+  --print-ink: #000000;
+  --print-paper: #ffffff;
+}
+
 #atlasPrintArea {
   display: none;
 }
@@ -28,16 +34,19 @@
   }
 
   #atlasPrintArea h1 {
-    margin: 0 0 4px;
-    font-size: 15pt;
+    margin: 0 0 5px;
+    font-family: "B Nazanin", "Vazirmatn", Tahoma, sans-serif;
+    font-size: 16pt;
     font-weight: 700;
+    letter-spacing: .01em;
     color: var(--print-ink);
     text-align: right;
   }
 
   #atlasPrintArea .atlas-print-meta {
-    margin: 0 0 10px;
-    font-size: 8pt;
+    margin: 0 0 12px;
+    font-family: Tahoma, "Vazirmatn", sans-serif;
+    font-size: 8.5pt;
     color: var(--print-ink);
     text-align: right;
   }
@@ -46,6 +55,7 @@
     width: 100%;
     border-collapse: collapse;
     direction: rtl;
+    font-family: Tahoma, "Vazirmatn", sans-serif;
     font-size: 8pt;
   }
 
@@ -59,18 +69,23 @@
 
   #atlasPrintArea th,
   #atlasPrintArea td {
-    padding: 4px 5px;
+    padding: 5px 7px;
     border: 0.6pt solid var(--print-ink);
     color: var(--print-ink);
     background: var(--print-paper);
     text-align: right;
     vertical-align: middle;
-    line-height: 1.6;
+    line-height: 1.75;
   }
 
   #atlasPrintArea th {
+    font-family: Tahoma, "Vazirmatn", sans-serif;
+    font-size: 8.5pt;
     font-weight: 700;
+    letter-spacing: .01em;
     border-width: 1pt;
+    border-bottom-width: 1.4pt;
+    padding: 6px 7px;
   }
 
   #atlasPrintArea a {

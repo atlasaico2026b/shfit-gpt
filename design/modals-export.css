@@ -96,6 +96,10 @@
   gap: 7px;
 }
 
+.atlas-modal .module-fields-custom {
+  gap: 7px;
+}
+
 .atlas-modal .module-field {
   gap: 3px;
 }
@@ -114,6 +118,12 @@
 /* دو کادر متنی که در یک ردیف کنار هم می‌نشینند کوتاه‌تر می‌شوند؛
    پنجره در ارتفاع ۷۲۰px هم بدون اسکرول جا می‌شود و کاربر می‌تواند خودش بزرگش کند. */
 .atlas-modal .module-fields-row .module-field textarea {
+  height: 56px;
+  min-height: 56px;
+}
+
+/* فیلد سفارشی متن بلند هم مثل «توضیحات» کادر باز و تمام‌عرض می‌گیرد. */
+.atlas-modal .module-fields-custom .module-field textarea {
   height: 56px;
   min-height: 56px;
 }

@@ -54,6 +54,8 @@ body.atlas-pb-modal-open{overflow:hidden}
 .atlas-pb-chip-ext .atlas-pb-chip-value{color:var(--c-green);font-size:16px}
 .atlas-pb-chip-office{border-color:rgba(var(--c-white-rgb),.3);background:rgba(var(--c-white-rgb),.1)}
 .atlas-pb-chip-office .atlas-pb-chip-value{color:var(--c-white)}
+/* شمارهٔ پنج‌رقمی تلفن دفتر: فونت و رنگ آبی متمایز تا در فهرست زود به چشم بیاید. */
+.atlas-pb-chip-office .atlas-pb-chip-value.is-office-5{color:#8ab8ff;font-family:"Vazirmatn",Tahoma,sans-serif;font-size:14px;font-weight:800;letter-spacing:.08em;font-variant-numeric:tabular-nums}
 .atlas-pb-chip-mobile{border-color:rgba(var(--c-green-rgb),.45);background:rgba(var(--c-green-rgb),.12)}
 .atlas-pb-chip-mobile .atlas-pb-chip-value{color:var(--c-green)}
 .atlas-pb-chip-pos{border-color:rgba(var(--c-white-rgb),.22);background:rgba(var(--c-white-rgb),.05)}

@@ -53,8 +53,8 @@
         {key:'maritalStatus',label:'وضعیت تأهل',type:'select',listKey:'maritalStatuses',options:['مجرد','متأهل']},
         {key:'childrenCount',label:'تعداد فرزند',type:'number',min:1,max:20,placeholder:'۱ تا ۲۰',dependsOn:{key:'maritalStatus',values:['متأهل']}},
         {key:'notes',label:'توضیحات',type:'textarea',wide:true},
-        {key:'status',label:'وضعیت جاری',type:'select',required:true,listKey:'employeeStatuses',options:['آماده‌کار','در حال کار','شیفت','مأموریت','مرخصی','استراحت','اضافه‌کار','غیرفعال']},
-        {key:'deploymentPoint',label:'محل استقرار',type:'select',listKey:'operationalPoints',options:['پارکینگ مرکزی','تعمیرگاه مرکزی','انبار مرکزی','محور جاده']},
+        {key:'status',label:'وضعیت جاری',type:'select',required:true,listKey:'employeeStatuses',formHidden:true,options:['آماده‌کار','در حال کار','شیفت','مأموریت','مرخصی','استراحت','اضافه‌کار','غیرفعال']},
+        {key:'deploymentPoint',label:'محل استقرار',type:'select',listKey:'operationalPoints',formHidden:true,options:['پارکینگ مرکزی','تعمیرگاه مرکزی','انبار مرکزی','محور جاده']},
         {key:'photo',label:'عکس پرسنلی',type:'file',accept:'image/*'}
       ],
       // چیدمان پنجرهٔ ثبت کارمند: هر ردیف آرایه‌ای از کلید فیلدهاست و همان‌جا و به همان ترتیب دیده می‌شود.
@@ -736,7 +736,8 @@
   const FAULT_VEHICLE_HIDDEN_FIELDS = ['gasmeterId'];
 
   function formFields(moduleKey, vehicleScope) {
-    const fields = fieldsFor(moduleKey);
+    // فیلدهایی که فقط در فهرست/فیلتر/گزارش لازم‌اند و در پنجرهٔ ثبت دیده نمی‌شوند.
+    const fields = fieldsFor(moduleKey).filter(function (field) { return !field.formHidden; });
     if (moduleKey !== 'faults' || !vehicleScope) return fields;
     return fields.filter(function (field) { return FAULT_VEHICLE_HIDDEN_FIELDS.indexOf(field.key) < 0; });
   }
@@ -1103,7 +1104,9 @@
       if (cells.length) rows.push('<div class="module-fields module-fields-row">' + cells.join('') + '</div>');
     });
     const rest = fields.filter(function (field) { return !used[field.key]; });
-    if (rest.length) rows.push('<div class="module-fields module-fields-row">' + rest.map(renderOne).join('') + '</div>');
+    // فیلدهای بیرون از چیدمان (مثل فیلدهای سفارشی کارمند) در همان شبکهٔ سه‌ستونه
+    // می‌نشینند: هر فیلد یک‌سوم ابتدایی ردیف، و فیلد متن بلند مثل «توضیحات» تمام‌عرض.
+    if (rest.length) rows.push('<div class="module-fields module-fields-custom">' + rest.map(renderOne).join('') + '</div>');
     return '<div class="module-fields-stack">' + rows.join('') + '</div>';
   }
 
@@ -4708,28 +4711,65 @@
     downloadFile('ATLAS-SHIFT-report-'+todayIso()+'.csv','\uFEFF'+rows.map(function(row){return row.map(csvEscape).join(',');}).join('\r\n'),'text/csv;charset=utf-8;');
   }
 
-  function wordParagraph(text, bold, center) {
-    return '<w:p><w:pPr><w:bidi w:val="1"/>'+(center?'<w:jc w:val="center"/>':'<w:jc w:val="right"/>')+'</w:pPr><w:r><w:rPr>'+
-      (bold?'<w:b/>':'')+'<w:rtl/><w:lang w:val="fa-IR"/></w:rPr><w:t xml:space="preserve">'+xmlEscape(text)+'</w:t></w:r></w:p>';
+  // ── تایپوگرافی خروجی ───────────────────────────────────────────────────────
+  // هر خروجی (Word، Excel، تصویر، چاپ) چند فونت و چند اندازه دارد: عنوان،
+  // زیرعنوان، سرستون و بدنه؛ فاصلهٔ سطر و ستون هم متناسب همان اندازه است.
+  const EXPORT_TYPE = {
+    headFont: 'B Nazanin',
+    bodyFont: 'Tahoma',
+    titleSize: 34,   // نیم‌پوینت در Word (۱۷pt) / پیکسل در تصویر
+    metaSize: 20,
+    tableHeadSize: 21,
+    tableBodySize: 20,
+    headerFill: 'E8EEF7',
+    headerInk: '14304F',
+    metaInk: '4B5563'
+  };
+
+  function wordRunProps(options) {
+    const o = options || {};
+    const font = o.font || EXPORT_TYPE.bodyFont;
+    const size = o.size || EXPORT_TYPE.tableBodySize;
+    const color = o.color || '';
+    return '<w:rPr>' + (o.bold ? '<w:b/><w:bCs/>' : '') +
+      '<w:rFonts w:ascii="' + font + '" w:hAnsi="' + font + '" w:cs="' + font + '"/>' +
+      (color ? '<w:color w:val="' + color + '"/>' : '') +
+      '<w:sz w:val="' + size + '"/><w:szCs w:val="' + size + '"/>' +
+      '<w:rtl/><w:lang w:val="fa-IR"/></w:rPr>';
+  }
+
+  function wordParagraph(text, bold, center, options) {
+    const o = options || {};
+    return '<w:p><w:pPr><w:bidi w:val="1"/>' + (center ? '<w:jc w:val="center"/>' : '<w:jc w:val="right"/>') +
+      '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after == null ? 90 : o.after) + '" w:line="' + (o.line || 260) + '" w:lineRule="auto"/></w:pPr><w:r>' +
+      wordRunProps({ bold: bold, size: o.size || EXPORT_TYPE.metaSize, font: o.font, color: o.color }) +
+      '<w:t xml:space="preserve">' + xmlEscape(text) + '</w:t></w:r></w:p>';
   }
 
   function wordTable(rows) {
-    const borders='<w:tblBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="A8BBD0"/><w:left w:val="single" w:sz="4" w:space="0" w:color="A8BBD0"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="A8BBD0"/><w:right w:val="single" w:sz="4" w:space="0" w:color="A8BBD0"/><w:insideH w:val="single" w:sz="4" w:space="0" w:color="D7E1EA"/><w:insideV w:val="single" w:sz="4" w:space="0" w:color="D7E1EA"/></w:tblBorders>';
-    const body=rows.map(function(row,rowIndex){
-      const header=rowIndex===0;
-      return '<w:tr>'+row.map(function(cell){
-        return '<w:tc><w:tcPr><w:tcW w:w="1800" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:bidi w:val="1"/><w:jc w:val="right"/></w:pPr><w:r><w:rPr>'+
-          (header?'<w:b/>':'')+'<w:rtl/><w:lang w:val="fa-IR"/></w:rPr><w:t xml:space="preserve">'+xmlEscape(cell)+'</w:t></w:r></w:p></w:tc>';
-      }).join('')+'</w:tr>';
+    const borders = '<w:tblBorders><w:top w:val="single" w:sz="6" w:space="0" w:color="A8BBD0"/><w:left w:val="single" w:sz="6" w:space="0" w:color="A8BBD0"/><w:bottom w:val="single" w:sz="6" w:space="0" w:color="A8BBD0"/><w:right w:val="single" w:sz="6" w:space="0" w:color="A8BBD0"/><w:insideH w:val="single" w:sz="4" w:space="0" w:color="D7E1EA"/><w:insideV w:val="single" w:sz="4" w:space="0" w:color="D7E1EA"/></w:tblBorders>';
+    const cellMargin = '<w:tblCellMar><w:top w:w="70" w:type="dxa"/><w:left w:w="120" w:type="dxa"/><w:bottom w:w="70" w:type="dxa"/><w:right w:w="120" w:type="dxa"/></w:tblCellMar>';
+    const body = rows.map(function (row, rowIndex) {
+      const header = rowIndex === 0;
+      const rowProps = '<w:trPr><w:cantSplit/>' + (header ? '<w:tblHeader/>' : '') +
+        '<w:trHeight w:val="' + (header ? 400 : 340) + '" w:hRule="atLeast"/></w:trPr>';
+      return '<w:tr>' + rowProps + row.map(function (cell) {
+        const shading = header ? '<w:shd w:val="clear" w:color="auto" w:fill="' + EXPORT_TYPE.headerFill + '"/>' : '';
+        return '<w:tc><w:tcPr><w:tcW w:w="1800" w:type="dxa"/>' + shading + '<w:vAlign w:val="center"/></w:tcPr>' +
+          '<w:p><w:pPr><w:bidi w:val="1"/><w:jc w:val="right"/>' +
+          '<w:spacing w:before="20" w:after="20" w:line="' + (header ? 240 : 260) + '" w:lineRule="auto"/></w:pPr><w:r>' +
+          wordRunProps({ bold: header, size: header ? EXPORT_TYPE.tableHeadSize : EXPORT_TYPE.tableBodySize, color: header ? EXPORT_TYPE.headerInk : '' }) +
+          '<w:t xml:space="preserve">' + xmlEscape(cell) + '</w:t></w:r></w:p></w:tc>';
+      }).join('') + '</w:tr>';
     }).join('');
-    return '<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/>'+borders+'<w:tblLayout w:type="autofit"/></w:tblPr>'+body+'</w:tbl>';
+    return '<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/>' + borders + cellMargin + '<w:tblLayout w:type="autofit"/></w:tblPr>' + body + '</w:tbl>';
   }
 
   function exportReportDocx() {
     const rows=currentReportRows();
-    const paragraphs=wordParagraph(currentReportTitle(),true,false)+
-      wordParagraph('تاریخ تهیه: '+formatJalali(new Date().toISOString(),true),false,false)+
-      wordParagraph('تعداد ردیف‌های گزارش: '+faDigits(Math.max(0,rows.length-1)),false,false);
+    const paragraphs=wordParagraph(currentReportTitle(),true,false,{size:EXPORT_TYPE.titleSize,font:EXPORT_TYPE.headFont,after:140,line:300})+
+      wordParagraph('تاریخ تهیه: '+formatJalali(new Date().toISOString(),true),false,false,{size:EXPORT_TYPE.metaSize,color:EXPORT_TYPE.metaInk,after:40})+
+      wordParagraph('تعداد ردیف‌های گزارش: '+faDigits(Math.max(0,rows.length-1)),false,false,{size:EXPORT_TYPE.metaSize,color:EXPORT_TYPE.metaInk,after:200});
     const documentXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
       '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+paragraphs+wordTable(rows)+
       '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720" w:header="360" w:footer="360" w:gutter="0"/></w:sectPr></w:body></w:document>';
@@ -4749,29 +4789,15 @@
 
   function exportReportXlsx() {
     const rows=currentReportRows();
-    const sheetRows=rows.map(function(row,rowIndex){
-      const cells=row.map(function(value,columnIndex){
-        const reference=excelColumn(columnIndex)+(rowIndex+1);
-        return '<c r="'+reference+'" t="inlineStr"><is><t xml:space="preserve">'+xmlEscape(value)+'</t></is></c>';
-      }).join('');
-      return '<row r="'+(rowIndex+1)+'">'+cells+'</row>';
-    }).join('');
-    const workbook='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="گزارش ATLAS SHIFT" sheetId="1" r:id="rId1"/></sheets></workbook>';
-    const files=[
-      {name:'[Content_Types].xml',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>'},
-      {name:'_rels/.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},
-      {name:'xl/workbook.xml',content:workbook},
-      {name:'xl/_rels/workbook.xml.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>'},
-      {name:'xl/worksheets/sheet1.xml',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:'+excelColumn(rows[0].length-1)+Math.max(1,rows.length)+'"/><sheetViews><sheetView workbookViewId="0"/></sheetViews><sheetFormatPr defaultRowHeight="18"/><sheetData>'+sheetRows+'</sheetData></worksheet>'}
-    ];
-    downloadBlob('ATLAS-SHIFT-report-'+todayIso()+'.xlsx',zipStored(files));
+    const sheet=xlsxSheetXml(rows,currentReportTitle()+'  ·  '+formatJalali(new Date().toISOString(),true));
+    downloadBlob('ATLAS-SHIFT-report-'+todayIso()+'.xlsx',zipStored(xlsxPackage('گزارش ATLAS SHIFT',sheet)));
   }
 
   function pptTextShape(id,name,x,y,cx,cy,lines,size,bold) {
     return '<p:sp><p:nvSpPr><p:cNvPr id="'+id+'" name="'+xmlEscape(name)+'"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>'+
       '<p:spPr><a:xfrm><a:off x="'+x+'" y="'+y+'"/><a:ext cx="'+cx+'" cy="'+cy+'"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></p:spPr>'+
       '<p:txBody><a:bodyPr wrap="square" rtlCol="1" anchor="t"/><a:lstStyle/>'+
-      lines.map(function(line){return '<a:p><a:pPr algn="r" rtl="1"/><a:r><a:rPr lang="fa-IR" sz="'+size+'"'+(bold?' b="1"':'')+'/><a:t xml:space="preserve">'+xmlEscape(line)+'</a:t></a:r><a:endParaRPr lang="fa-IR"/></a:p>';}).join('')+
+      lines.map(function(line){return '<a:p><a:pPr algn="r" rtl="1"><a:lnSpc><a:spcPct val="140000"/></a:lnSpc><a:spcAft><a:spcPts val="600"/></a:spcAft></a:pPr><a:r><a:rPr lang="fa-IR" sz="'+size+'"'+(bold?' b="1"':'')+'/><a:t xml:space="preserve">'+xmlEscape(line)+'</a:t></a:r><a:endParaRPr lang="fa-IR"/></a:p>';}).join('')+
       '</p:txBody></p:sp>';
   }
 
@@ -4870,7 +4896,9 @@
   }
 
   function selectedExportFields(moduleKey) {
-    const fields = fieldsFor(moduleKey);
+    // فیلدهایی که در فرم ثبت دیده نمی‌شوند (مثل «وضعیت جاری») در خروجی پیش‌فرض هم
+    // نمی‌آیند؛ وگرنه ستونی خالی و بی‌مصرف در فایل ساخته می‌شود.
+    const fields = fieldsFor(moduleKey).filter(function (field) { return !field.formHidden; });
     const chosen = exportColumnsSetting(moduleKey);
     if (!chosen) return fields;
     const picked = fields.filter(function (field) { return chosen.indexOf(field.key) >= 0; });
@@ -4878,7 +4906,7 @@
   }
 
   function exportColumnsModal(moduleKey) {
-    const fields = fieldsFor(moduleKey);
+    const fields = fieldsFor(moduleKey).filter(function (field) { return !field.formHidden; });
     const chosen = exportColumnsSetting(moduleKey) || fields.map(function (field) { return field.key; });
     return '<div class="atlas-modal-backdrop" data-modal-backdrop data-modal-kind="export-columns" data-view="' + esc(moduleKey) + '">' +
       '<div class="atlas-modal atlas-modal-narrow" role="dialog" aria-modal="true"><div class="atlas-modal-head"><div><h3>ستون‌های گزارش</h3>' +
@@ -4902,27 +4930,81 @@
     return rows;
   }
 
-  function exportRowsXlsx(rows, filename, sheetName) {
-    const sheetRows = rows.map(function (row, rowIndex) {
-      const cells = row.map(function (value, columnIndex) {
-        return '<c r="' + excelColumn(columnIndex) + (rowIndex + 1) + '" t="inlineStr"><is><t xml:space="preserve">' + xmlEscape(value) + '</t></is></c>';
+  // استایل‌های مشترک اکسل: فونت عنوان (B Nazanin)، سرستون (Tahoma پرنگ) و بدنه.
+  function xlsxStylesXml() {
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      '<fonts count="4">' +
+      '<font><sz val="11"/><color rgb="FF1F2937"/><name val="Tahoma"/><family val="2"/></font>' +
+      '<font><b/><sz val="16"/><color rgb="FF16355B"/><name val="B Nazanin"/><family val="2"/></font>' +
+      '<font><b/><sz val="11"/><color rgb="FF14304F"/><name val="Tahoma"/><family val="2"/></font>' +
+      '<font><sz val="10"/><color rgb="FF111827"/><name val="Tahoma"/><family val="2"/></font>' +
+      '</fonts>' +
+      '<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>' +
+      '<fill><patternFill patternType="solid"><fgColor rgb="FFE8EEF7"/><bgColor indexed="64"/></patternFill></fill></fills>' +
+      '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border>' +
+      '<border><left style="thin"><color rgb="FFB9C7D9"/></left><right style="thin"><color rgb="FFB9C7D9"/></right><top style="thin"><color rgb="FFB9C7D9"/></top><bottom style="thin"><color rgb="FFB9C7D9"/></bottom><diagonal/></border></borders>' +
+      '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+      '<cellXfs count="4">' +
+      '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
+      '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="right" vertical="center" wrapText="1"/></xf>' +
+      '<xf numFmtId="0" fontId="2" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' +
+      '<xf numFmtId="0" fontId="3" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center" wrapText="1"/></xf>' +
+      '</cellXfs>' +
+      '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>' +
+      '</styleSheet>';
+  }
+
+  // برگهٔ اکسل با سرستون رنگی، ارتفاع سطر متناسب، عرض ستون و سطر عنوان.
+  function xlsxSheetXml(rows, title) {
+    const columns = Math.max(1, Math.max.apply(null, rows.map(function (row) { return (row || []).length; })));
+    const titleRow = title ? 1 : 0;
+    const parts = [];
+    if (title) {
+      parts.push('<row r="1" ht="34" customHeight="1"><c r="A1" s="1" t="inlineStr"><is><t xml:space="preserve">' + xmlEscape(title) + '</t></is></c></row>');
+    }
+    rows.forEach(function (row, index) {
+      const rowNumber = index + 1 + titleRow;
+      const header = index === 0;
+      const cells = (row || []).map(function (value, columnIndex) {
+        return '<c r="' + excelColumn(columnIndex) + rowNumber + '" s="' + (header ? 2 : 3) + '" t="inlineStr"><is><t xml:space="preserve">' + xmlEscape(value) + '</t></is></c>';
       }).join('');
-      return '<row r="' + (rowIndex + 1) + '">' + cells + '</row>';
-    }).join('');
-    const files = [
-      {name:'[Content_Types].xml',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>'},
+      parts.push('<row r="' + rowNumber + '" ht="' + (header ? 28 : 22) + '" customHeight="1">' + cells + '</row>');
+    });
+    const cols = '<cols>' + Array.apply(null, Array(columns)).map(function (_, i) {
+      return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + (i === 0 ? 24 : 20) + '" customWidth="1"/>';
+    }).join('') + '</cols>';
+    const lastRow = rows.length + titleRow;
+    const split = titleRow ? 2 : 1;
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      '<dimension ref="A1:' + excelColumn(columns - 1) + Math.max(1, lastRow) + '"/>' +
+      '<sheetViews><sheetView workbookViewId="0" rightToLeft="1"><pane ySplit="' + split + '" topLeftCell="A' + (split + 1) + '" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' +
+      '<sheetFormatPr defaultRowHeight="20"/>' + cols +
+      '<sheetData>' + parts.join('') + '</sheetData>' +
+      (rows.length > 1 ? '<autoFilter ref="A' + (split + 1) + ':' + excelColumn(columns - 1) + lastRow + '"/>' : '') +
+      '</worksheet>';
+  }
+
+  function xlsxPackage(sheetName, sheetXml) {
+    return [
+      {name:'[Content_Types].xml',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'},
       {name:'_rels/.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},
       {name:'xl/workbook.xml',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="' + xmlEscape(sheetName || 'ATLAS SHIFT') + '" sheetId="1" r:id="rId1"/></sheets></workbook>'},
-      {name:'xl/_rels/workbook.xml.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>'},
-      {name:'xl/worksheets/sheet1.xml',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:' + excelColumn(Math.max(0, rows[0].length - 1)) + Math.max(1, rows.length) + '"/><sheetViews><sheetView workbookViewId="0"/></sheetViews><sheetFormatPr defaultRowHeight="18"/><sheetData>' + sheetRows + '</sheetData></worksheet>'}
+      {name:'xl/_rels/workbook.xml.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'},
+      {name:'xl/styles.xml',content:xlsxStylesXml()},
+      {name:'xl/worksheets/sheet1.xml',content:sheetXml}
     ];
-    downloadBlob(filename, zipStored(files));
+  }
+
+  function exportRowsXlsx(rows, filename, sheetName) {
+    downloadBlob(filename, zipStored(xlsxPackage(sheetName || 'ATLAS SHIFT', xlsxSheetXml(rows, ''))));
   }
 
   function exportRowsDocx(rows, title, filename) {
-    const paragraphs = wordParagraph(title, true, false) +
-      wordParagraph('تاریخ تهیه: ' + formatJalali(new Date().toISOString(), true), false, false) +
-      wordParagraph('تعداد ردیف‌ها: ' + faDigits(Math.max(0, rows.length - 1)), false, false);
+    const paragraphs = wordParagraph(title, true, false, { size: EXPORT_TYPE.titleSize, font: EXPORT_TYPE.headFont, after: 140, line: 300 }) +
+      wordParagraph('تاریخ تهیه: ' + formatJalali(new Date().toISOString(), true), false, false, { size: EXPORT_TYPE.metaSize, color: EXPORT_TYPE.metaInk, after: 40 }) +
+      wordParagraph('تعداد ردیف‌ها: ' + faDigits(Math.max(0, rows.length - 1)), false, false, { size: EXPORT_TYPE.metaSize, color: EXPORT_TYPE.metaInk, after: 200 });
     const documentXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
       '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + paragraphs + wordTable(rows) +
       '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720" w:header="360" w:footer="360" w:gutter="0"/></w:sectPr></w:body></w:document>';
@@ -4953,24 +5035,29 @@
     downloadBlob(filename, zipStored(pptxPackage(slide)));
   }
 
-  // تصویر: همان قالب جدول، سفید و سیاه (مناسب چاپ و اشتراک‌گذاری)
+  // تصویر: همان قالب جدول روی کاغذ سفید؛ عنوان، سرستون و بدنه هر سه فونت و
+  // اندازهٔ خودشان را دارند و فاصلهٔ سطر/ستون متناسب همان اندازه است.
   function exportRowsPng(rows, title, filename) {
-    const scale = 2, pad = 26, rowH = 36, fontSize = 15;
+    const scale = 2, pad = 30, rowH = 40, gutter = 40;
+    const titleSize = 22, metaSize = 12, headSize = 15, bodySize = 14;
+    const bodyFamily = 'Vazirmatn, Tahoma, sans-serif';
+    const bodyFont = '400 ' + bodySize + 'px ' + bodyFamily;
+    const headFont = '700 ' + headSize + 'px Tahoma, ' + bodyFamily;
     const measure = document.createElement('canvas').getContext('2d');
-    const font = '600 ' + fontSize + 'px Vazirmatn, Tahoma, sans-serif';
-    measure.font = font;
     const columns = Math.max.apply(null, rows.map(function (row) { return row.length; }));
     const widths = [];
-    for (let i = 0; i < columns; i += 1) widths.push(96);
-    rows.forEach(function (row) {
+    for (let i = 0; i < columns; i += 1) widths.push(110);
+    rows.forEach(function (row, rowIndex) {
+      measure.font = rowIndex === 0 ? headFont : bodyFont;
       for (let i = 0; i < columns; i += 1) {
-        const width = measure.measureText(String(row[i] == null ? '' : row[i])).width + 26;
+        const width = measure.measureText(String(row[i] == null ? '' : row[i])).width + gutter;
         if (width > widths[i]) widths[i] = width;
       }
     });
     const totalWidth = widths.reduce(function (a, b) { return a + b; }, 0);
-    const width = Math.max(720, totalWidth + pad * 2);
-    const height = pad * 2 + 52 + rows.length * rowH;
+    const width = Math.max(760, totalWidth + pad * 2);
+    const tableTop = pad + 62;
+    const height = tableTop + rows.length * rowH + pad;
     const canvas = document.createElement('canvas');
     canvas.width = Math.round(width * scale);
     canvas.height = Math.round(height * scale);
@@ -4978,43 +5065,56 @@
     ctx.scale(scale, scale);
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
-    ctx.fillStyle = '#000000';
     ctx.textBaseline = 'middle';
     ctx.direction = 'rtl';
     ctx.textAlign = 'right';
-    ctx.font = '700 19px Vazirmatn, Tahoma, sans-serif';
-    ctx.fillText(title, width - pad, pad + 16);
-    ctx.font = '400 12px Vazirmatn, Tahoma, sans-serif';
-    ctx.fillText('ATLAS SHIFT · ' + formatJalali(new Date().toISOString(), true), width - pad, pad + 38);
-    let y = pad + 52;
+
+    // عنوان و زیرعنوان
+    ctx.fillStyle = '#14304F';
+    ctx.font = '700 ' + titleSize + 'px ' + bodyFamily;
+    ctx.fillText(title, width - pad, pad + 14);
+    ctx.fillStyle = '#4B5563';
+    ctx.font = '400 ' + metaSize + 'px ' + bodyFamily;
+    ctx.fillText('ATLAS SHIFT · ' + formatJalali(new Date().toISOString(), true), width - pad, pad + 42);
+
     rows.forEach(function (row, rowIndex) {
-      ctx.font = rowIndex === 0 ? '700 ' + fontSize + 'px Vazirmatn, Tahoma, sans-serif' : '400 ' + fontSize + 'px Vazirmatn, Tahoma, sans-serif';
+      const header = rowIndex === 0;
+      const y = tableTop + rowIndex * rowH;
+      if (header) {
+        ctx.fillStyle = '#E8EEF7';
+        ctx.fillRect(pad, y, width - pad * 2, rowH);
+      } else if (rowIndex % 2 === 0) {
+        ctx.fillStyle = '#F7F9FC';
+        ctx.fillRect(pad, y, width - pad * 2, rowH);
+      }
+      ctx.font = header ? headFont : bodyFont;
+      ctx.fillStyle = header ? '#14304F' : '#111827';
       let x = width - pad;
-      ctx.strokeStyle = '#000000';
-      ctx.lineWidth = rowIndex === 0 ? 1.4 : 0.8;
-      ctx.beginPath();
-      ctx.moveTo(pad, y + rowH);
-      ctx.lineTo(width - pad, y + rowH);
-      ctx.stroke();
       for (let i = 0; i < columns; i += 1) {
         const cell = String(row[i] == null ? '' : row[i]);
         const columnWidth = widths[i];
         x -= columnWidth;
-        ctx.fillStyle = '#000000';
         const text = cell.length > 34 ? cell.slice(0, 33) + '…' : cell;
-        ctx.fillText(text, x + columnWidth - 13, y + rowH / 2);
-        ctx.strokeStyle = 'rgba(0,0,0,.35)';
+        ctx.fillText(text, x + columnWidth - 14, y + rowH / 2);
+        ctx.strokeStyle = 'rgba(17,24,39,.22)';
         ctx.lineWidth = 0.6;
         ctx.beginPath();
         ctx.moveTo(x, y);
         ctx.lineTo(x, y + rowH);
         ctx.stroke();
       }
-      y += rowH;
+      ctx.strokeStyle = header ? '#8FA8C4' : 'rgba(17,24,39,.22)';
+      ctx.lineWidth = header ? 1.2 : 0.7;
+      ctx.beginPath();
+      ctx.moveTo(pad, y + rowH);
+      ctx.lineTo(width - pad, y + rowH);
+      ctx.stroke();
     });
-    ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 1.2;
-    ctx.strokeRect(pad, pad + 52, width - pad * 2, rows.length * rowH);
+
+    // کادر بیرونی جدول
+    ctx.strokeStyle = '#14304F';
+    ctx.lineWidth = 1.3;
+    ctx.strokeRect(pad, tableTop, width - pad * 2, rows.length * rowH);
     canvas.toBlob(function (blob) { if (blob) downloadBlob(filename, blob); }, 'image/png');
   }
 
@@ -6167,6 +6267,11 @@
     select.parentNode.insertBefore(wrap, select);
     wrap.appendChild(select);
     select.classList.add('atlas-combo-native');
+    // select اصلی فقط برای نگه‌داشتن مقدار و ارسال فرم است؛ فوکوس و کلیدهای
+    // صفحه‌کلید نباید به آن برسد، وگرنه با Tab/کلیک بر چسب، یک فیلد نامرئی
+    // فوکوس می‌گیرد و کلید بالا/پایین بی‌صدا مقدار را عوض می‌کند.
+    select.tabIndex = -1;
+    select.setAttribute('aria-hidden', 'true');
 
     const btn = wrap.querySelector('.atlas-combo-btn');
     const valueEl = wrap.querySelector('.atlas-combo-value');
@@ -6245,11 +6350,77 @@
       wrap.classList.add('is-open');
       btn.setAttribute('aria-expanded', 'true');
       const selected = list.querySelector('.atlas-combo-option.is-selected');
-      if (selected) selected.scrollIntoView({ block: 'nearest' });
+      if (selected) {
+        selected.classList.add('is-active');
+        selected.scrollIntoView({ block: 'nearest' });
+      }
       if (!matchMedia('(hover: none)').matches) search.focus();
       panel.atlasPlace = placePanel;
       combinedPanel = panel;
       openCombos.add(wrap);
+    };
+
+    const optionButtons = function () {
+      return Array.prototype.slice.call(list.querySelectorAll('.atlas-combo-option'));
+    };
+
+    // جابه‌جایی بین گزینه‌ها با کلید؛ همیشه با preventDefault تا پنجرهٔ زیرین
+    // (فرم یا صفحهٔ اصلی) اسکرول نشود.
+    const moveActive = function (direction) {
+      const items = optionButtons();
+      if (!items.length) return false;
+      const active = list.querySelector('.atlas-combo-option.is-active');
+      let index = items.indexOf(active);
+      if (index < 0) index = direction > 0 ? -1 : items.length;
+      index = Math.max(0, Math.min(items.length - 1, index + direction));
+      items.forEach(function (item) { item.classList.remove('is-active'); });
+      items[index].classList.add('is-active');
+      items[index].scrollIntoView({ block: 'nearest' });
+      return true;
+    };
+
+    const jumpActive = function (toEnd) {
+      const items = optionButtons();
+      if (!items.length) return false;
+      items.forEach(function (item) { item.classList.remove('is-active'); });
+      const target = toEnd ? items[items.length - 1] : items[0];
+      target.classList.add('is-active');
+      target.scrollIntoView({ block: 'nearest' });
+      return true;
+    };
+
+    // مشترک بین کادر جستجو و خود دکمهٔ فیلد: با Tab روی فیلد می‌رسی و کلید
+    // بالا/پایین همان رفتار کلیک با موس را می‌دهد.
+    const handleComboKeys = function (event) {
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        event.stopPropagation();
+        if (panel.hidden) { open(); return true; }
+        moveActive(event.key === 'ArrowDown' ? 1 : -1);
+        return true;
+      }
+      if (event.key === 'Home' || event.key === 'End') {
+        if (panel.hidden) return false;
+        event.preventDefault();
+        jumpActive(event.key === 'End');
+        return true;
+      }
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        const active = list.querySelector('.atlas-combo-option.is-active');
+        const items = optionButtons();
+        const target = active || items[0];
+        if (target) choose(target.dataset.comboValue);
+        return true;
+      }
+      if (event.key === 'Escape') {
+        if (panel.hidden) return false;
+        event.preventDefault();
+        close();
+        btn.focus();
+        return true;
+      }
+      return false;
     };
 
     const choose = function (value) {
@@ -6266,26 +6437,16 @@
       if (panel.hidden) open(); else close();
     });
     search.addEventListener('input', paint);
-    search.addEventListener('keydown', function (event) {
-      const items = Array.prototype.slice.call(list.querySelectorAll('.atlas-combo-option'));
-      const active = list.querySelector('.atlas-combo-option.is-active');
-      let index = items.indexOf(active);
-      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    search.addEventListener('keydown', handleComboKeys);
+    btn.addEventListener('keydown', function (event) {
+      if (event.key === ' ' || event.key === 'Spacebar') {
         event.preventDefault();
-        if (!items.length) return;
-        index = event.key === 'ArrowDown' ? Math.min(items.length - 1, index + 1) : Math.max(0, index - 1);
-        items.forEach(function (item) { item.classList.remove('is-active'); });
-        items[index].classList.add('is-active');
-        items[index].scrollIntoView({ block: 'nearest' });
-      } else if (event.key === 'Enter') {
-        event.preventDefault();
-        const target = active || items[0];
-        if (target) choose(target.dataset.comboValue);
-      } else if (event.key === 'Escape') {
-        event.preventDefault();
-        close();
-        btn.focus();
+        if (panel.hidden) open(); else close();
+        return;
       }
+      if (event.key === 'Tab') { close(); return; }
+      if (event.key === 'Enter' && panel.hidden) { event.preventDefault(); open(); return; }
+      handleComboKeys(event);
     });
     list.addEventListener('click', function (event) {
       const option = event.target.closest('[data-combo-value]');
@@ -6294,6 +6455,8 @@
     });
     select.addEventListener('change', syncLabel);
     select.addEventListener('input', syncLabel);
+    // اگر جایی (مثلاً کلیک روی برچسب فیلد) فوکوس روی select نامرئی نشست، به دکمه منتقل می‌شود.
+    select.addEventListener('focus', function () { btn.focus(); });
 
     // اگر کد جای دیگری مقدار select را عوض کند، برچسب هم به‌روز بماند.
     const proto = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
