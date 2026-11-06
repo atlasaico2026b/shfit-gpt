@@ -7,6 +7,10 @@
   const toast=(msg)=>{const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2400)};
   const safeRead=(key)=>{try{return localStorage.getItem(key)}catch(e){return null}};
   const safeWrite=(key,value)=>{try{localStorage.setItem(key,value)}catch(e){}}
+  // مرورگر روی کادرهای متنی «نام/آدرس» پاپ‌آپ «Manage addresses» و پیشنهاد خودکار باز می‌کند و
+  // مقدارهای بی‌ربط (شهر، خیابان، نام) را داخل فیلد «واحد» و «سمت سازمانی» می‌نویسد.
+  // این ترکیب پیشنهاد خودکار مرورگر را خاموش می‌کند (همان الگوی فرم‌های ماژول).
+  const NO_AUTOFILL='autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other"';
   function applySavedLayout(){
     // چیدمان داشبورد از این پس در تنظیمات › «تنظیمات داشبورد» تعیین می‌شود.
     if(window.ATLAS_MODULES&&typeof window.ATLAS_MODULES.applyDashboardLayout==='function'){window.ATLAS_MODULES.applyDashboardLayout();return}
@@ -478,7 +482,7 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
     ];
     function fieldMarkup(field){
       const [key,label,type,required,dropdown]=field;
-      const input='<input id="atlasPb_'+key+'" name="'+key+'" type="'+type+'" '+(required?'required ':'')+'autocomplete="off" placeholder="'+label+'">';
+      const input='<input id="atlasPb_'+key+'" name="'+key+'" type="'+type+'" '+(required?'required ':'')+NO_AUTOFILL+' placeholder="'+label+'">';
       return '<div class="atlas-pb-field"><label for="atlasPb_'+key+'">'+label+'</label>'+(dropdown?
         '<div class="atlas-pb-combo">'+input+'<button type="button" class="atlas-pb-add-option" data-pb-add-option="'+key+'" title="افزودن مقدار تایپ‌شده به فهرست" aria-label="افزودن '+label+' به فهرست">+</button></div><datalist id="atlasPbList_'+key+'"></datalist>':
         input)+'</div>';
@@ -545,14 +549,23 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
         label.value=phonebookPhoneLabel(item.kind==='office'?'office':'mobile',item.label);
 
         const prefix=document.createElement('input');
-        prefix.type='tel';prefix.className='atlas-pb-prefix';prefix.autocomplete='off';prefix.dir='ltr';
+        prefix.type='tel';prefix.className='atlas-pb-prefix';prefix.dir='ltr';
+        prefix.setAttribute('autocomplete','new-password');
+        prefix.setAttribute('inputmode','numeric');
+        prefix.setAttribute('spellcheck','false');
+        prefix.setAttribute('data-form-type','other');
         prefix.placeholder='پیش‌شماره';prefix.value=item.prefix||'';prefix.setAttribute('aria-label','پیش‌شمارهٔ تلفن');
 
         const value=document.createElement('input');
-        value.type='tel';value.autocomplete='tel';value.placeholder='شماره تماس';value.value=item.value||'';value.setAttribute('aria-label','شماره تماس');
+        value.type='tel';value.setAttribute('autocomplete','new-password');value.setAttribute('inputmode','tel');
+        value.setAttribute('spellcheck','false');value.setAttribute('data-form-type','other');
+        value.placeholder='شماره تماس';value.value=item.value||'';value.setAttribute('aria-label','شماره تماس');
 
         const secretary=document.createElement('input');
-        secretary.type='text';secretary.className='atlas-pb-secretary';secretary.autocomplete='off';
+        secretary.type='text';secretary.className='atlas-pb-secretary';
+        secretary.setAttribute('autocomplete','new-password');
+        secretary.setAttribute('spellcheck','false');
+        secretary.setAttribute('data-form-type','other');
         secretary.placeholder='نام منشی';secretary.value=item.secretary||'';secretary.setAttribute('aria-label','نام منشی');
 
         const numbers=document.createElement('div');numbers.className='atlas-pb-phone-inputs';

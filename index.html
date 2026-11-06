@@ -229,8 +229,8 @@
   <div class="settings-tab-pane" id="settings-pane-dashboard" role="tabpanel" aria-labelledby="settings-tab-dashboard">
 <div class="settings-section"><h4>چیدمان پنجره‌ها</h4><p>حالت تنظیم را فعال کن و با کشیدن دستگیرهٔ پنجره‌ها، جای آن‌ها را در داشبورد تغییر بده.</p><div class="settings-layout-actions"><button class="primary-btn" id="layoutButton" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="m14 6 4-4 4 4-4 4"/><path d="M18 2v12a4 4 0 0 1-4 4H3"/><path d="m7 14-4 4 4 4"/></svg><span id="layoutButtonText">تنظیم چیدمان</span></button><button class="secondary-btn" id="resetLayout"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>بازنشانی چیدمان</button></div></div>
 <div class="settings-section"><h4>عنوان اتاق فرمان</h4><p>عنوان بالای داشبورد («اتاق فرمان عملیات») و توضیح زیر آن را اینجا شخصی‌سازی کن.</p>
-  <label class="settings-line" for="dashboardTitleInput"><span>عنوان</span><input id="dashboardTitleInput" type="text" placeholder="اتاق فرمان عملیات"></label>
-  <label class="settings-line" for="dashboardSubtitleInput"><span>توضیح زیر عنوان</span><input id="dashboardSubtitleInput" type="text" placeholder="نمایی یکپارچه از نیروی انسانی، مأموریت‌ها، ناوگان و وضعیت تجهیزات ایمنی"></label>
+  <label class="settings-line" for="dashboardTitleInput"><span>عنوان</span><input id="dashboardTitleInput" type="text" placeholder="اتاق فرمان عملیات" autocomplete="new-password" spellcheck="false" data-form-type="other"></label>
+  <label class="settings-line" for="dashboardSubtitleInput"><span>توضیح زیر عنوان</span><input id="dashboardSubtitleInput" type="text" placeholder="نمایی یکپارچه از نیروی انسانی، مأموریت‌ها، ناوگان و وضعیت تجهیزات ایمنی" autocomplete="new-password" spellcheck="false" data-form-type="other"></label>
   <div class="settings-layout-actions"><button class="primary-btn" type="button" id="saveDashboardHeading">ذخیره عنوان</button><button class="secondary-btn" type="button" id="resetDashboardHeading">بازگردانی پیش‌فرض</button></div>
 </div>
   </div>
@@ -276,7 +276,7 @@
       <div class="atlas-divider">
         <h4 style="margin-top:0">افزودن منو</h4>
         <label for="newMenuTitle">عنوان منو</label>
-        <input id="newMenuTitle" type="text" maxlength="40" placeholder="مثلاً پیگیری تجهیزات" class="atlas-input atlas-input--block">
+        <input id="newMenuTitle" type="text" maxlength="40" placeholder="مثلاً پیگیری تجهیزات" class="atlas-input atlas-input--block" autocomplete="new-password" spellcheck="false" data-form-type="other">
         <label for="newMenuTarget">صفحه‌ای که منو باز می‌کند</label>
         <select id="newMenuTarget" class="atlas-input atlas-input--block">
           <option value="dashboard">داشبورد</option><option value="employees">کارکنان</option><option value="missions">مأموریت‌ها</option><option value="leaves">مرخصی‌ها</option><option value="vehicles">خودروها</option><option value="gasmeters">گازسنج‌ها</option><option value="notes">یادداشت‌ها و پیگیری‌ها</option><option value="programs">برنامه‌ها و پرونده‌ها</option><option value="phonebook">دفترچه تلفن</option><option value="reports">گزارشات</option>
@@ -314,12 +314,12 @@
       <label for="pbTreeParent" style="display:block;margin-top:8px">والد / محل قرارگیری</label>
       <select id="pbTreeParent" class="atlas-input"><option value="">بدون والد (ریشه)</option></select>
       <label for="pbTreeName" style="display:block;margin-top:8px">نام مورد</label>
-      <input id="pbTreeName" type="text" placeholder="نام جدید یا نام اصلاح‌شده" class="atlas-input" style="margin-top:6px">
+      <input id="pbTreeName" type="text" placeholder="نام جدید یا نام اصلاح‌شده" class="atlas-input" style="margin-top:6px" autocomplete="new-password" spellcheck="false" data-form-type="other">
       <div style="display:flex;gap:8px;margin-top:8px"><button class="secondary-btn" id="pbTreeAdd" type="button" style="flex:1;min-width:0">+ افزودن</button><button class="secondary-btn" id="pbTreeCancelEdit" type="button" style="display:none;flex:1;min-width:0">لغو اصلاح</button></div>
     </div>
   </details>
 </div>
-<div class="phonebook-settings-subsection atlas-divider" id="phonebookSettings"><h4>فهرست‌های قابل انتخاب</h4><p>مقادیر منوهای کشویی دفترچه تلفن را اضافه، ویرایش یا حذف کن.</p><label for="phonebookOptionCategory">فیلد موردنظر</label><select id="phonebookOptionCategory" class="atlas-input" style="margin-top:8px"><option value="phoneLabel">عنوان شماره تماس</option></select><div class="atlas-pb-settings-editor"><input id="phonebookOptionValue" type="text" placeholder="مقدار جدید یا مقدار اصلاح‌شده"><button class="secondary-btn" id="phonebookOptionAdd" type="button">+ افزودن</button></div><div id="phonebookOptionList" class="atlas-pb-settings-list"></div></div></div>
+<div class="phonebook-settings-subsection atlas-divider" id="phonebookSettings"><h4>فهرست‌های قابل انتخاب</h4><p>مقادیر منوهای کشویی دفترچه تلفن را اضافه، ویرایش یا حذف کن.</p><label for="phonebookOptionCategory">فیلد موردنظر</label><select id="phonebookOptionCategory" class="atlas-input" style="margin-top:8px"><option value="phoneLabel">عنوان شماره تماس</option></select><div class="atlas-pb-settings-editor"><input id="phonebookOptionValue" type="text" placeholder="مقدار جدید یا مقدار اصلاح‌شده" autocomplete="new-password" spellcheck="false" data-form-type="other"><button class="secondary-btn" id="phonebookOptionAdd" type="button">+ افزودن</button></div><div id="phonebookOptionList" class="atlas-pb-settings-list"></div></div></div>
   </div>
 </section>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
