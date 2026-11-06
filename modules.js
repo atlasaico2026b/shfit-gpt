@@ -31,21 +31,35 @@
       title: 'کارکنان', singular: 'کارمند',
       subtitle: 'پروندهٔ پرسنلی، نوع کار، محل خدمت، شیفت و وضعیت روزانه',
       fields: [
-        {key:'personnelId',label:'شمارهٔ پرسنلی'},
-        {key:'nationalId',label:'کد ملی',placeholder:'۱۰ رقم'},
         {key:'firstName',label:'نام',required:true},
         {key:'lastName',label:'نام خانوادگی',required:true},
-        {key:'mobile',label:'شمارهٔ همراه',type:'tel'},
+        {key:'personnelId',label:'شمارهٔ پرسنلی'},
+        {key:'nationalId',label:'کد ملی',placeholder:'۱۰ رقم'},
+        {key:'mobile',label:'شمارهٔ تلفن همراه اصلی',type:'tel'},
         {key:'jobTitle',label:'عنوان شغلی',type:'select',required:true,listKey:'jobTitles',options:['اپراتور','تکنسین','سرپرست شیفت','کارشناس ایمنی','کارشناس HSE','راننده','نگهبان','انباردار','سایر']},
-        {key:'workType',label:'نوع کار',type:'select',required:true,listKey:'workTypes',options:['شیفتی','روزکار']},
         {key:'employmentType',label:'نوع استخدام',type:'select',required:true,listKey:'employmentTypes',options:['رسمی','پیمانی','قراردادی','شرکتی','سایر']},
-        {key:'workplace',label:'محل سازمانی',type:'select',required:true,listKey:'workplaces',options:['اهواز','آبادان','اندیمشک','ماهشهر','بندر امام','آغاجاری','سایر']},
+        {key:'hireDate',label:'تاریخ استخدام',type:'jalali'},
+        {key:'workplace',label:'محل سمت سازمانی',type:'select',required:true,listKey:'workplaces',options:['اهواز','آبادان','اندیمشک','ماهشهر','بندر امام','آغاجاری','سایر']},
         {key:'assignedWorkplace',label:'محل خدمت فعلی',placeholder:'ایستگاه، محدوده یا محل مأموریت'},
-        {key:'deploymentPoint',label:'محل استقرار',type:'select',listKey:'operationalPoints',options:['پارکینگ مرکزی','تعمیرگاه مرکزی','انبار مرکزی','محور جاده']},
-        {key:'shiftPattern',label:'الگوی شیفت',type:'select',listKey:'shiftPatterns',options:['۱۲ ساعته روز/شب','۲۴/۴۸','ثابت روزکار','سایر']},
+        {key:'workType',label:'نوع شیفت کاری',type:'select',required:true,listKey:'workTypes',options:['روزکار ثابت','شیفت کاری']},
+        {key:'shiftPattern',label:'الگوی شیفت',type:'select',listKey:'shiftPatterns',dependsOn:{key:'workType',values:['شیفت کاری','شیفتی']},options:['۱۲ ساعته روز/شب','۲۴/۴۸','۸ ساعته سه‌شیفت','۱۲ ساعته شب','سایر']},
+        {key:'maritalStatus',label:'وضعیت تأهل',type:'select',listKey:'maritalStatuses',options:['مجرد','متأهل']},
+        {key:'childrenCount',label:'تعداد فرزند',type:'number',min:1,max:20,placeholder:'۱ تا ۲۰',dependsOn:{key:'maritalStatus',values:['متأهل']}},
+        {key:'notes',label:'توضیحات',type:'textarea',wide:true},
         {key:'status',label:'وضعیت جاری',type:'select',required:true,listKey:'employeeStatuses',options:['آماده‌کار','در حال کار','شیفت','مأموریت','مرخصی','استراحت','اضافه‌کار','غیرفعال']},
-        {key:'photo',label:'عکس پرسنلی',type:'file',accept:'image/*'},
-        {key:'notes',label:'توضیحات',type:'textarea',wide:true}
+        {key:'deploymentPoint',label:'محل استقرار',type:'select',listKey:'operationalPoints',options:['پارکینگ مرکزی','تعمیرگاه مرکزی','انبار مرکزی','محور جاده']},
+        {key:'photo',label:'عکس پرسنلی',type:'file',accept:'image/*'}
+      ],
+      // چیدمان پنجرهٔ ثبت کارمند: هر ردیف آرایه‌ای از کلید فیلدهاست و همان‌جا و به همان ترتیب دیده می‌شود.
+      layout: [
+        ['firstName','lastName'],
+        ['personnelId','nationalId','mobile'],
+        ['jobTitle','employmentType','hireDate'],
+        ['workplace','assignedWorkplace'],
+        ['workType','shiftPattern'],
+        ['maritalStatus','childrenCount'],
+        ['notes'],
+        ['status','deploymentPoint','photo']
       ],
       columns: ['personnelId','firstName','lastName','jobTitle','workType','employmentType','workplace','assignedWorkplace','status']
     },
@@ -760,11 +774,54 @@
   }
 
   // فیلدهای وابسته به نوع محل: فقط وقتی نوع انتخاب‌شده با شرط فیلد بخواند دیده می‌شوند.
+  // فیلدهای وابستهٔ عمومی (مثل «تعداد فرزند» پس از «متأهل») هم همین‌جا بررسی می‌شوند.
   function fieldVisible(field, record) {
+    if (field && field.dependsOn) {
+      const wanted = field.dependsOn.values || [];
+      const current = record ? record[field.dependsOn.key] : '';
+      if (wanted.length && wanted.indexOf(String(current == null ? '' : current)) < 0) return false;
+    }
     const type = String((record && (record.placeType || record.stationType)) || '');
     if (Array.isArray(field.onlyFor) && field.onlyFor.length) return field.onlyFor.indexOf(type) >= 0;
     if (Array.isArray(field.hideFor) && field.hideFor.length) return field.hideFor.indexOf(type) < 0;
     return true;
+  }
+
+  // مقدار زندهٔ همهٔ کادرهای فرم؛ برای دیدن فیلدهای وابسته پیش از ذخیره لازم است.
+  function liveFormValues(form) {
+    const values = {};
+    Array.prototype.forEach.call(form.querySelectorAll('[name]'), function (control) {
+      if (!control.name) return;
+      if (control.type === 'file') return;
+      if (control.type === 'checkbox') {
+        if (!control.checked) return;
+        if (!Array.isArray(values[control.name])) values[control.name] = [];
+        values[control.name].push(control.value);
+        return;
+      }
+      if (!(control.name in values)) values[control.name] = control.value;
+    });
+    return values;
+  }
+
+  // تغییر «نوع شیفت کاری» یا «وضعیت تأهل» فوراً فیلد وابسته را نشان می‌دهد یا پنهان می‌کند.
+  function refreshDependentFields(form) {
+    const moduleKey = form.dataset.view;
+    if (!moduleKey || !specs[moduleKey]) return;
+    const fields = formFields(moduleKey, form.dataset.faultScope === 'vehicle');
+    if (!fields.some(function (field) { return field.dependsOn; })) return;
+    const values = liveFormValues(form);
+    fields.forEach(function (field) {
+      if (!field.dependsOn) return;
+      const wrapper = form.querySelector('[data-field-key="' + field.key + '"]');
+      if (!wrapper) return;
+      const shown = fieldVisible(field, values);
+      wrapper.hidden = !shown;
+      if (!shown) {
+        const control = wrapper.querySelector('[name]');
+        if (control) control.value = '';
+      }
+    });
   }
 
   function placeLists() {
@@ -971,11 +1028,38 @@
       '<h2>' + esc(title) + '</h2><p>' + esc(subtitle) + '</p></div><div class="module-page-actions">' + actions + '</div></div>';
   }
 
+  // چیدمان پنجره: هر ردیف یک شبکهٔ مستقل است تا همان ترتیب خواسته‌شده حفظ شود و
+  // فیلدی که با انتخاب کاربر پنهان می‌شود، جای خالی باقی نگذارد.
+  function renderFieldsMarkup(moduleKey, fields, draft, data) {
+    const layout = specs[moduleKey] && specs[moduleKey].layout;
+    const renderOne = function (field) { return renderField(moduleKey, field, draft, data); };
+    if (!Array.isArray(layout) || !layout.length) {
+      return '<div class="module-fields">' + fields.map(renderOne).join('') + '</div>';
+    }
+    const byKey = {};
+    fields.forEach(function (field) { byKey[field.key] = field; });
+    const used = {};
+    const rows = [];
+    layout.forEach(function (rowKeys) {
+      const cells = [];
+      (rowKeys || []).forEach(function (key) {
+        const field = byKey[key];
+        if (!field || used[key]) return;
+        used[key] = true;
+        cells.push(renderOne(field));
+      });
+      if (cells.length) rows.push('<div class="module-fields module-fields-row">' + cells.join('') + '</div>');
+    });
+    const rest = fields.filter(function (field) { return !used[field.key]; });
+    if (rest.length) rows.push('<div class="module-fields module-fields-row">' + rest.map(renderOne).join('') + '</div>');
+    return '<div class="module-fields-stack">' + rows.join('') + '</div>';
+  }
+
   function renderForm(moduleKey, data) {
     const state = formState[moduleKey];
     if (!state || !state.open) return '';
     const existing = state.id ? (data[moduleKey] || []).find(function (item) { return String(item.id) === String(state.id); }) : null;
-    const draft = existing || (state.preset || null);
+    const draft = Object.assign({}, existing || {}, state.preset || {});
     const vehicleScope = moduleKey === 'faults' && faultFormScope === 'vehicle';
     const fields = formFields(moduleKey, vehicleScope);
     const fileNotice = '<p class="module-field-hint">فایل پیوست همراه همین پرونده نگه‌داری می‌شود؛ اندازهٔ هر فایل بهتر است کمتر از ۱۰ مگابایت باشد.</p>';
@@ -998,12 +1082,13 @@
         '</section>';
     }
     return '<div class="atlas-modal-backdrop" data-modal-backdrop data-view="' + esc(moduleKey) + '">' +
-      '<div class="atlas-modal" role="dialog" aria-modal="true" aria-labelledby="atlasModalTitle">' +
+      '<div class="atlas-modal' + (moduleKey === 'employees' ? ' atlas-modal-auto' : '') + '" role="dialog" aria-modal="true" aria-labelledby="atlasModalTitle">' +
       '<div class="atlas-modal-head"><div><h3 id="atlasModalTitle">' +
       (existing ? 'ویرایش ' : 'ثبت ') + esc(specs[moduleKey].singular) + '</h3><p>پس از ذخیره، اطلاعات به فهرست، داشبورد و گزارش‌های مرتبط منتقل می‌شود.</p></div>' +
       '<button type="button" class="atlas-modal-close" data-module-action="cancel" data-view="' + esc(moduleKey) + '" aria-label="بستن پنجره">×</button></div>' +
       '<div class="atlas-modal-body"><form class="module-form" data-module-form autocomplete="off" data-view="' + esc(moduleKey) + '" data-id="' + esc(existing ? existing.id : '') + '"' + (vehicleScope ? ' data-fault-scope="vehicle"' : '') + '>' +
-      '<div class="module-fields">' + fields.map(function (field) { return renderField(moduleKey, field, draft, data); }).join('') + '</div>' +
+      renderFieldsMarkup(moduleKey, fields, draft, data) +
+      (moduleKey === 'employees' ? customFieldsEditorMarkup() : '') +
       fileNotice +
       '<div class="module-form-actions"><span class="module-required-help">موارد دارای * ضروری هستند.</span><div>' +
       '<button type="button" class="secondary-btn" data-module-action="cancel" data-view="' + esc(moduleKey) + '">انصراف</button> ' +
@@ -1459,8 +1544,8 @@
     if (shift) {
       const rows = shift.querySelectorAll('.shift-line');
       const stats = [
-        {label:'نیروی شیفتی',value:count(function(e){return e.workType === 'شیفتی';})},
-        {label:'نیروی روزکار',value:count(function(e){return e.workType === 'روزکار';})},
+        {label:'نیروی شیفتی',value:count(function(e){return e.workType === 'شیفتی' || e.workType === 'شیفت کاری';})},
+        {label:'نیروی روزکار',value:count(function(e){return e.workType === 'روزکار' || e.workType === 'روزکار ثابت';})},
         {label:'در مأموریت',value:count(function(e){return effectiveEmployeeStatus(e) === 'مأموریت';})}
       ];
       const max = Math.max(1,stats[0].value,stats[1].value,stats[2].value);
@@ -1713,7 +1798,6 @@
     { id: 'places', title: 'مکان‌های ایستگاه', icon: '⚑' },
     { id: 'dashboard', title: 'تنظیمات داشبورد', icon: '▦' },
     { id: 'quickadd', title: 'ثبت سریع داشبورد', icon: '⚡' },
-    { id: 'employees', title: 'فیلدهای کارکنان', icon: '☺' },
     { id: 'backup', title: 'پشتیبان‌گیری و ذخیره‌سازی', icon: '⤓' }
   ];
 
@@ -1726,10 +1810,18 @@
       '<div class="module-local-note" data-storage-size style="margin-top:8px">حجم ذخیره‌شده: در حال محاسبه…</div></section>';
   }
 
-  function customFieldsSectionMarkup() {
-    return '<section class="module-list-panel"><div class="module-list-head"><div><h3>فیلدهای سفارشی کارکنان</h3><p>برای هر فیلد یک عنوان و یک نوع انتخاب کن؛ نوع همان کادری را می‌سازد که هنگام ثبت پرونده می‌بینی: عدد، تاریخ شمسی، تاریخ و ساعت، متن بلند و …</p></div></div>' +
-      '<form data-custom-fields-form class="module-form"><div class="module-custom-fields" data-custom-field-rows>' + (appData.settings.employeeCustomFields || '').split(/\r?\n/).map(function (line) { return line.trim(); }).filter(Boolean).map(customFieldRowHtml).join('') + '</div>' +
-      '<div class="module-form-actions"><span class="module-required-help">حداکثر ۲۰ فیلد سفارشی.</span><div><button type="button" class="secondary-btn" data-module-action="custom-field-add">+ افزودن فیلد</button> <button type="submit" class="primary-btn">ذخیرهٔ فیلدها</button></div></div></form></section>';
+  // ویرایشگر فیلدهای سفارشی، درون خود پنجرهٔ ثبت کارمند.
+  function customFieldsEditorMarkup() {
+    const lines = String(appData.settings.employeeCustomFields || '').split(/\r?\n/)
+      .map(function (line) { return line.trim(); }).filter(Boolean);
+    return '<details class="module-custom-block" data-custom-fields-block>' +
+      '<summary><span>+ فیلدهای سفارشی</span><small>اگر فیلد پرسنلی بیشتری لازم بود اینجا اضافه یا حذف کن؛ فیلد تازه بلافاصله در همین فرم دیده می‌شود.</small></summary>' +
+      '<div class="module-custom-block-body">' +
+      '<div class="module-custom-fields" data-custom-field-rows>' + lines.map(customFieldRowHtml).join('') + '</div>' +
+      '<div class="module-form-actions"><span class="module-required-help">حداکثر ۲۰ فیلد سفارشی؛ برای هر فیلد یک عنوان و یک نوع انتخاب کن.</span><div>' +
+      '<button type="button" class="secondary-btn" data-module-action="custom-field-add">+ افزودن فیلد</button> ' +
+      '<button type="button" class="primary-btn" data-module-action="custom-field-save">ذخیرهٔ فیلدها</button></div></div>' +
+      '</div></details>';
   }
 
   function settingsPaneMarkup(id) {
@@ -1739,7 +1831,6 @@
     }
     if (id === 'dashboard') return dashboardEditorMarkup();
     if (id === 'quickadd') return quickAddEditorMarkup();
-    if (id === 'employees') return customFieldsSectionMarkup();
     return backupSectionMarkup();
   }
 
@@ -3323,6 +3414,14 @@
     });
   });
 
+  // تغییر انتخاب‌هایی که فیلد وابسته دارند، همان لحظه فیلد را نشان می‌دهد یا پنهان می‌کند.
+  document.addEventListener('change', function (event) {
+    const control = event.target;
+    if (!control || !control.closest) return;
+    const form = control.closest('[data-module-form]');
+    if (form) refreshDependentFields(form);
+  });
+
   document.addEventListener('change', async function (event) {
     const colorInput = event.target.closest('[data-line-color]');
     if (!colorInput) return;
@@ -4264,10 +4363,11 @@
     const fields = formFields(moduleKey, form.dataset.faultScope === 'vehicle');
     const typeField = form.querySelector('[data-station-type]');
     const currentType = typeField ? String(typeField.value || '') : '';
+    const visibleRecord = Object.assign({}, liveFormValues(form), { placeType: currentType });
     const missing = [];
     fields.forEach(function (field) {
       if (!field.required) return;
-      if (!fieldVisible(field, { placeType: currentType })) return;
+      if (!fieldVisible(field, visibleRecord)) return;
       if (!requiredIsEmpty(form, field)) return;
       missing.push(field);
       const control = form.querySelector('[name="' + field.key + '"]');
@@ -4315,9 +4415,10 @@
     const fd=new FormData(form);
     const typeField=form.querySelector('[data-station-type]');
     const currentType=typeField?String(typeField.value||''):'';
+    const visibleRecord=Object.assign({},liveFormValues(form),{placeType:currentType});
     for(let i=0;i<fields.length;i+=1){
       const field=fields[i];
-      if(!fieldVisible(field,{placeType:currentType})){
+      if(!fieldVisible(field,visibleRecord)){
         data[field.key]=oldRecord&&oldRecord[field.key]!=null?oldRecord[field.key]:(field.type==='rows'?[]:'');
         continue;
       }
@@ -5221,8 +5322,8 @@
       return;
     }
     if(action==='custom-field-add'||action==='custom-field-remove'){
-      const form=button.closest('[data-custom-fields-form]');
-      const rows=form&&form.querySelector('[data-custom-field-rows]');
+      const block=button.closest('[data-custom-fields-block]');
+      const rows=block&&block.querySelector('[data-custom-field-rows]');
       if(!rows)return;
       if(action==='custom-field-add'){
         if(rows.querySelectorAll('[data-custom-field-row]').length>=20){toast('حداکثر ۲۰ فیلد سفارشی تعریف کن.');return;}
@@ -5233,6 +5334,32 @@
         const row=button.closest('[data-custom-field-row]');
         if(row)row.remove();
       }
+      return;
+    }
+    if(action==='custom-field-save'){
+      const block=button.closest('[data-custom-fields-block]');
+      if(!block)return;
+      const lines=Array.from(block.querySelectorAll('[data-custom-field-row]')).map(function(row){
+        const label=String((row.querySelector('[data-cf-label]')||{}).value||'').trim();
+        const type=String((row.querySelector('[data-cf-type]')||{}).value||'text').trim();
+        return label?label+'|'+(CUSTOM_FIELD_TYPES[type]?type:'text'):'';
+      }).filter(Boolean);
+      if(lines.length>20){toast('حداکثر ۲۰ فیلد سفارشی تعریف کن.');return;}
+      const previous=String(appData.settings.employeeCustomFields||'');
+      appData.settings.employeeCustomFields=lines.join('\n');
+      if(!(await saveState()))return;
+      if(previous!==appData.settings.employeeCustomFields && formState.employees && formState.employees.open){
+        // مقدارهای تایپ‌شده در همین فرم حفظ می‌شود و فرم با فیلدهای تازه دوباره ساخته می‌شود.
+        const liveForm=block.closest('[data-module-form]');
+        if(liveForm){
+          formState.employees.preset=Object.assign({}, formState.employees.preset||{}, liveFormValues(liveForm));
+          const backdrop=liveForm.closest('[data-modal-backdrop]');
+          if(backdrop)backdrop.remove();
+          document.body.insertAdjacentHTML('beforeend',renderForm('employees',appData));
+          enhanceJalaliInputs(document.body);
+        }
+      }
+      toast('فیلدهای سفارشی ذخیره شدند.');
       return;
     }
     const section=document.getElementById('sectionView');
@@ -5559,6 +5686,17 @@
         const values=await formValues(form,moduleKey,old);
         if(moduleKey==='faults')values.assetType='خودرو';
         if(moduleKey==='leaves'&&values.startDate&&values.endDate&&values.endDate<values.startDate)throw new Error('تاریخ پایان مرخصی نباید قبل از تاریخ شروع باشد.');
+        if(moduleKey==='employees'){
+          const childText=persianDigitsToLatin(String(values.childrenCount||'')).trim();
+          if(values.maritalStatus==='متأهل'){
+            if(!childText)throw new Error('برای کارمند متأهل، تعداد فرزند را بین ۱ تا ۲۰ وارد کن.');
+            if(!/^\d+$/.test(childText)||Number(childText)<1||Number(childText)>20)throw new Error('تعداد فرزند باید عددی طبیعی بین ۱ تا ۲۰ باشد.');
+            values.childrenCount=String(Number(childText));
+          }else{
+            values.childrenCount='';
+          }
+          if(values.workType!=='شیفت کاری'&&values.workType!=='شیفتی')values.shiftPattern='';
+        }
         if(moduleKey==='missions'&&values.startAt&&values.endAt&&values.endAt<values.startAt)throw new Error('زمان پایان مأموریت نباید قبل از زمان شروع باشد.');
         if(moduleKey==='programs'&&values.finalReportSent&&values.finalReportDue&&values.finalReportSent<values.finalReportDue&&values.status!=='تکمیل‌شده')throw new Error('تاریخ ارسال گزارش نهایی قبل از مهلت ثبت شده؛ وضعیت پرونده را بررسی کن.');
         if(moduleKey==='gasmeters'&&values.calibrationStart&&values.calibrationEnd&&values.calibrationEnd<values.calibrationStart)throw new Error('پایان اعتبار کالیبراسیون نباید قبل از شروع باشد.');
@@ -5622,18 +5760,6 @@
         toast(error.message||'ثبت اطلاعات انجام نشد.');
       }
       return;
-    }
-    const customForm=event.target.closest('[data-custom-fields-form]');
-    if(customForm){
-      event.preventDefault();
-      const lines=Array.from(customForm.querySelectorAll('[data-custom-field-row]')).map(function(row){
-        const label=String((row.querySelector('[data-cf-label]')||{}).value||'').trim();
-        const type=String((row.querySelector('[data-cf-type]')||{}).value||'text').trim();
-        return label?label+'|'+(CUSTOM_FIELD_TYPES[type]?type:'text'):'';
-      }).filter(Boolean);
-      if(lines.length>20){toast('حداکثر ۲۰ فیلد سفارشی تعریف کن.');return;}
-      appData.settings.employeeCustomFields=lines.join('\n');
-      if(await saveState()){renderSettings(document.getElementById('sectionView'));toast('فیلدهای سفارشی ذخیره شدند.');}
     }
   });
 

@@ -77,6 +77,41 @@
   gap: 14px;
 }
 
+/* پنجرهٔ ثبت/ویرایش کارمند: پهن‌تر و متناسب با اطلاعات، بدون اسکرول داخلی.
+   اگر ارتفاع از پنجرهٔ مرورگر بیشتر شود، خود پس‌زمینه اسکرول می‌شود. */
+.atlas-modal.atlas-modal-auto {
+  width: min(1080px, 100%);
+  max-height: none;
+  height: auto;
+}
+
+.atlas-modal-auto .atlas-modal-body {
+  overflow: visible;
+}
+
+.atlas-modal-auto .module-form {
+  gap: 10px;
+}
+
+.atlas-modal-auto .module-field {
+  gap: 5px;
+}
+
+.atlas-modal-auto .module-field input,
+.atlas-modal-auto .module-field select,
+.atlas-modal-auto .module-field textarea {
+  padding: 7px 10px;
+  border-radius: 9px;
+}
+
+.atlas-modal-auto .module-field textarea {
+  min-height: 64px;
+}
+
+.atlas-modal-auto .module-field-hint {
+  line-height: 1.6;
+}
+
 .atlas-modal .module-form-actions {
   position: sticky;
   bottom: 0;
