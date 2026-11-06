@@ -293,7 +293,7 @@ body > .drawer-backdrop,body > .drawer,body > .settings-popover,body > .toast{po
 .module-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 /* ردیف‌های فرم: هر ردیف شبکهٔ مستقل خودش را دارد تا چیدمان خواسته‌شده دقیقاً حفظ شود. */
 .module-fields-stack{display:flex;flex-direction:column;gap:12px;min-width:0}
-.module-fields-row{grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);grid-template-columns:none;align-items:end}
+.module-fields-row{grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);grid-template-columns:none;align-items:start}
 /* ویرایشگر فیلدهای سفارشی، داخل پنجرهٔ ثبت کارمند. */
 .module-custom-block{border:1px solid var(--line);border-radius:13px;background:rgba(var(--c-white-rgb),.025);padding:10px 12px}
 .module-custom-block>summary{cursor:pointer;display:flex;flex-direction:column;gap:4px;color:var(--text);font-weight:700;list-style:none}
@@ -361,6 +361,8 @@ body > .drawer-backdrop,body > .drawer,body > .settings-popover,body > .toast{po
 .module-check-options{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-height:38px}
 .module-check-options label{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid var(--line);border-radius:10px;background:rgba(var(--c-white-rgb),.04);font-size:11px}
 .module-check-options input{width:15px!important;height:15px;accent-color:var(--accent)}
+/* وقتی هنوز کارمندی ثبت نشده، جای فهرست تیک‌ها راهنما نشان داده می‌شود. */
+.module-check-empty{min-height:52px;padding:9px 12px;font-size:10.5px;text-align:right;line-height:1.9}
 .module-report-range{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-top:12px}
 .module-report-range .module-field{flex:1 1 220px}
 .module-report-range>[data-module-action]{flex:0 0 auto}

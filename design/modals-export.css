@@ -111,6 +111,13 @@
   min-height: 40px;
 }
 
+/* دو کادر متنی که در یک ردیف کنار هم می‌نشینند کوتاه‌تر می‌شوند؛
+   پنجره در ارتفاع ۷۲۰px هم بدون اسکرول جا می‌شود و کاربر می‌تواند خودش بزرگش کند. */
+.atlas-modal .module-fields-row .module-field textarea {
+  height: 56px;
+  min-height: 56px;
+}
+
 .atlas-modal .module-custom-block {
   padding: 8px 9px;
 }

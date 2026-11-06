@@ -77,16 +77,29 @@
         {key:'stops',label:'توقف‌ها و نقاط مسیر',type:'textarea',wide:true,placeholder:'هر نقطه را در یک خط وارد کن'},
         {key:'pipelineSize',label:'قطر خط (اینچ)',type:'select',listKey:'pipelineSizes',options:['۴','۶','۸','۱۰','۱۲','۱۴','۱۶','۲۰','۲۴','۳۰','۳۶']},
         {key:'productType',label:'نوع فرآورده',type:'select',listKey:'products',options:['نفت خام','نفت گاز','بنزین','نفت سفید','گاز مایع','آب آلوده','سایر']},
-        {key:'operationalRange',label:'محدوده عملیاتی / کیلومتر خط',placeholder:'مثلاً روستای سویسه، روستای الهایی، کیلومتر ۹۶ تا ۱۰۲'},
-        {key:'rangeOption',label:'محدودهٔ عملیاتی (فهرست)',type:'select',listKey:'operationalRanges',options:['روستای سویسه','روستای الهایی','کیلومتر ۹۶ تا ۱۰۲','کیلومتر ۱۲۰ تا ۱۳۵','محور اهواز – آبادان']},
+        // محدودهٔ عملیاتی یک کادر است، نه دو: فهرست پیشنهادها کنار نوشتن آزاد.
+        {key:'operationalRange',label:'محدودهٔ عملیاتی / کیلومتر خط',type:'combo-text',listKey:'operationalRanges',placeholder:'مثلاً روستای سویسه یا کیلومتر ۹۶ تا ۱۰۲',options:['روستای سویسه','روستای الهایی','کیلومتر ۹۶ تا ۱۰۲','کیلومتر ۱۲۰ تا ۱۳۵','محور اهواز – آبادان']},
         {key:'lineNotes',label:'شرح خط و نقطه عملیات',type:'textarea',wide:true},
         {key:'crewIds',label:'افراد اعزامی',type:'select',source:'employees',multiple:true,wide:true},
         {key:'crewText',label:'شرح گروه یا افراد خارج از فهرست',type:'textarea',wide:true},
         {key:'driverId',label:'راننده',type:'select',source:'employees'},
         {key:'vehicleId',label:'خودرو',type:'select',source:'vehicles'},
         {key:'status',label:'وضعیت مأموریت',type:'select',required:true,listKey:'missionStatuses',options:['برنامه‌ریزی‌شده','در جریان','انجام‌شده','لغو‌شده']},
-        {key:'result',label:'شرح کار و نتیجه',type:'textarea',wide:true},
+        // مأموریت انجام‌شده بدون شرح نتیجه بسته نمی‌شود.
+        {key:'result',label:'شرح کار و نتیجه',type:'textarea',wide:true,requiredWhen:{key:'status',values:['انجام‌شده']}},
         {key:'attachments',label:'پیوست گزارش',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx'}
+      ],
+      // چیدمان پنجرهٔ ثبت مأموریت: هر ردیف یک شبکهٔ مستقل و به همان ترتیب منطقی کار.
+      layout: [
+        ['title','missionType','status'],
+        ['startAt','endAt','city'],
+        ['origin','destination','pipelineSize'],
+        ['productType','driverId','vehicleId'],
+        ['operationalRange'],
+        ['stops','lineNotes'],
+        ['crewIds','crewText'],
+        ['result'],
+        ['attachments']
       ],
       columns: ['title','missionType','startAt','city','crewIds','vehicleId','status']
     },
@@ -922,9 +935,11 @@
       const options = getSelectOptions(field, data);
       const chosenList = Array.isArray(value) ? value.map(String) : String(value || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean);
       if (field.multiple && field.source === 'employees') {
-        control = '<div class="module-check-options module-check-people">' + options.map(function (option) {
-          return '<label><input type="checkbox" name="' + esc(field.key) + '" value="' + esc(option.value) + '"' + (chosenList.includes(String(option.value)) ? ' checked' : '') + '><span>' + esc(option.label) + '</span></label>';
-        }).join('') + '</div><small class="module-field-hint">هر نفر را با تیک انتخاب کن؛ نیازی به کلید کمکی نیست.</small>';
+        control = !options.length
+          ? '<div class="module-empty module-check-empty">هنوز کارمندی ثبت نشده است. اول از بخش «کارکنان» کارمند اضافه کن یا نام افراد را در کادر زیر بنویس.</div>'
+          : '<div class="module-check-options module-check-people">' + options.map(function (option) {
+            return '<label><input type="checkbox" name="' + esc(field.key) + '" value="' + esc(option.value) + '"' + (chosenList.includes(String(option.value)) ? ' checked' : '') + '><span>' + esc(option.label) + '</span></label>';
+          }).join('') + '</div><small class="module-field-hint">هر نفر را با تیک انتخاب کن؛ نیازی به کلید کمکی نیست.</small>';
       } else {
         if (!field.multiple && value != null && value !== '' && !options.some(function (option) { return String(option.value) === String(value); })) {
           options.unshift({value:String(value),label:String(value)});
@@ -938,6 +953,14 @@
           (field.listKey && !field.multiple ? '<button type="button" class="module-select-add" data-add-list-option="' + esc(field.listKey) + '" data-view="' + esc(moduleKey) + '" aria-label="افزودن گزینه به ' + esc(field.label) + '" title="افزودن گزینه جدید">+</button>' : '') +
           (field.multiple ? '<small class="module-field-hint">برای انتخاب چند مورد، کلید Ctrl را نگه‌دار.</small>' : '');
       }
+    } else if (field.type === 'combo-text') {
+      // نوشتن آزاد + پیشنهاد از فهرست مشترک: برای محدوده‌های عملیاتی که هم ثابت‌اند هم تازه.
+      const suggestions = getSelectOptions(field, data);
+      control = '<input id="' + esc(id) + '" name="' + esc(field.key) + '" type="text" list="' + esc(id) + '-suggestions"' +
+        ' value="' + esc(value) + '" placeholder="' + esc(field.placeholder || '') + '"' + required + NO_AUTOFILL + '>' +
+        '<datalist id="' + esc(id) + '-suggestions">' + suggestions.map(function (option) {
+          return '<option value="' + esc(option.value || option.label) + '"></option>';
+        }).join('') + '</datalist>';
     } else if (field.type === 'place') {
       const type = record && (record.placeType || record.stationType);
       const options = allPlaceNames();
@@ -1052,11 +1075,13 @@
     const rows = [];
     layout.forEach(function (rowKeys) {
       const cells = [];
+      const rowFieldCount = (rowKeys || []).filter(function (key) { return byKey[key] && !used[key]; }).length;
       (rowKeys || []).forEach(function (key) {
         const field = byKey[key];
         if (!field || used[key]) return;
         used[key] = true;
-        cells.push(renderOne(field));
+        // در ردیفی که چند فیلد دارد، «wide» معنا ندارد؛ عرض همان خانهٔ شبکه است.
+        cells.push(renderOne(rowFieldCount > 1 ? Object.assign({}, field, { wide: false }) : field));
       });
       if (cells.length) rows.push('<div class="module-fields module-fields-row">' + cells.join('') + '</div>');
     });
@@ -4397,6 +4422,16 @@
     return !String(controls[0].value || '').trim();
   }
 
+  // فیلدی که فقط در برخی وضعیت‌ها اجباری می‌شود (مثلاً «شرح نتیجه» برای مأموریت انجام‌شده).
+  function fieldRequired(field, record) {
+    if (field.required) return true;
+    const rule = field.requiredWhen;
+    if (!rule) return false;
+    const wanted = rule.values || [];
+    const current = record ? String(record[rule.key] == null ? '' : record[rule.key]) : '';
+    return !wanted.length || wanted.indexOf(current) >= 0;
+  }
+
   function validateRequired(form, moduleKey) {
     clearRequiredErrors(form);
     const fields = formFields(moduleKey, form.dataset.faultScope === 'vehicle');
@@ -4405,7 +4440,7 @@
     const visibleRecord = Object.assign({}, liveFormValues(form), { placeType: currentType });
     const missing = [];
     fields.forEach(function (field) {
-      if (!field.required) return;
+      if (!fieldRequired(field, visibleRecord)) return;
       if (!fieldVisible(field, visibleRecord)) return;
       if (!requiredIsEmpty(form, field)) return;
       missing.push(field);
@@ -4498,7 +4533,7 @@
       }else{
         data[field.key]=String(fd.get(field.key)||'').trim();
       }
-      if(field.required && (data[field.key] == null || data[field.key] === '' || (Array.isArray(data[field.key])&&!data[field.key].length))){
+      if(fieldRequired(field,visibleRecord) && (data[field.key] == null || data[field.key] === '' || (Array.isArray(data[field.key])&&!data[field.key].length))){
         throw new Error('فیلد «'+field.label+'» ضروری است.');
       }
     }
