@@ -26,34 +26,45 @@ body{
 body:before{display:none!important}
 
 /* ---------- right icon rail ---------- */
+/* دوازده آیتم منو باید بدون اسکرول در ارتفاع پنجره جا شوند. هر آیتم یک‌خطی است
+   (عرض ریلی ۹۲px اندازهٔ بلندترین برچسب را می‌دهد) و ارتفاعش ۴۶px است؛
+   ۱۲×۴۶ + ۱۱×۳ فاصله + ۲۶ پدینگ پنل ≈ ۶۱۱px، یعنی روی نمایشگر ۷۲۰px و ۶۴۰px.
+   برای نمایشگرهای کوتاه‌تر، پرس‌وجوی max-height پایین همین بخش جمع‌ترش می‌کند. */
 body > .app-menu{
   grid-column:1;grid-row:1 / span 2;
   position:sticky;top:0;align-self:start;
   width:var(--rail-w);height:100vh;min-height:0;
   display:flex;flex-direction:column;gap:6px;
-  margin:0;padding:14px 8px 12px;
+  margin:0;padding:13px 8px 11px;
   border:0;border-inline-start:1px solid var(--line);border-radius:0;
   background:var(--rail-bg);box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;
   overflow-y:auto;overflow-x:hidden;scrollbar-width:none;z-index:30;
 }
 body > .app-menu::-webkit-scrollbar{display:none}
 .app-menu-head,.app-menu-label,.app-menu-bottom{display:none!important}
-.app-menu-nav{display:flex;flex-direction:column;gap:4px;margin:0;padding:0;width:100%}
+.app-menu-nav{display:flex;flex-direction:column;gap:3px;margin:0;padding:0;width:100%}
 .app-menu-item{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
-  min-height:56px;padding:8px 4px;border-radius:14px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-height:46px;padding:4px 4px;border-radius:12px;
   color:var(--muted);font-size:10px;font-weight:600;line-height:1.3;text-align:center;
+  white-space:nowrap;
   text-decoration:none;background:transparent;border:1px solid transparent;
   transition:background .18s,color .18s,border-color .18s;
 }
-.app-menu-item svg{
-  width:20px;height:20px;flex-shrink:0;
+.app-menu-item .atlas-ico{
   fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;
 }
 .app-menu-item:hover{color:var(--text);background:rgba(var(--c-white-rgb),.045)}
 .app-menu-item.active{
   color:var(--text-bright);background:rgba(var(--accent-rgb),.12);border-color:rgba(var(--accent-rgb),.28);
   box-shadow:inset -2px 0 0 0 var(--accent);
+}
+
+/* نمایشگر کوتاه: همان دوازده آیتم باید بازهم جا شوند (۱۲×۳۸ + ۲۲ ≈ ۴۷۸px). */
+@media(max-height:620px){
+  body > .app-menu{padding:10px 8px}
+  .app-menu-nav{gap:2px}
+  .app-menu-item{min-height:38px;padding:3px 3px;gap:2px;font-size:9.5px;line-height:1.25}
 }
 
 /* ---------- topbar ---------- */
@@ -156,9 +167,11 @@ h1{font-size:clamp(20px,2.2vw,25px);font-weight:800;letter-spacing:-.3px;line-he
 .calendar-grid button.is-selected,.calendar-grid button[aria-selected="true"]{background:var(--accent);color:var(--panel);font-weight:800}
 
 /* ---------- widget dock ---------- */
+/* همهٔ میان‌برهای صفحهٔ اصلی باید بی‌اسکرول دیده شوند؛ به‌جای نوار افقی، ردیف‌ها
+   می‌شکنند (flex-wrap) تا نوار اسکرول بومی وسط داشبورد ظاهر نشود. */
 .widget-dock{
   gap:8px;padding:0 0 12px;margin:0 0 12px;
-  display:flex;grid-template-columns:none;overflow-x:auto;scrollbar-width:thin;
+  display:flex;flex-wrap:wrap;grid-template-columns:none;overflow:visible;
 }
 .widget-dock-item{
   min-width:0;width:auto;min-height:0;flex:0 0 auto;
@@ -318,19 +331,20 @@ h1{font-size:clamp(20px,2.2vw,25px);font-weight:800;letter-spacing:-.3px;line-he
   body{display:flex!important;flex-direction:column!important;gap:0!important;padding:0!important;align-items:stretch!important}
   body > .app-menu{
     position:fixed!important;top:auto!important;bottom:0!important;left:0!important;right:0!important;
-    width:100%!important;height:auto!important;min-height:0!important;max-height:74px;
+    width:100%!important;height:auto!important;min-height:0!important;max-height:none;
     flex-direction:row!important;align-items:center;
     padding:5px 6px calc(5px + env(safe-area-inset-bottom))!important;
     border:0!important;border-top:1px solid var(--line)!important;border-radius:0!important;
     background:rgba(var(--rail-bg-rgb),.97)!important;backdrop-filter:blur(16px);
-    overflow-x:auto;overflow-y:hidden;z-index:40;order:0!important;
+    overflow:hidden;z-index:40;order:0!important;
   }
-  .app-menu-nav{flex-direction:row!important;gap:2px;padding-top:0!important}
-  .app-menu-item{min-width:64px;min-height:48px;padding:5px 4px!important;font-size:9px;border-radius:12px;white-space:nowrap!important}
-  .app-menu-item svg{width:18px;height:18px}
+  /* دوازده آیتم در دو ردیف شش‌تایی: هیچ آیتمی بیرون از کادر و پشت اسکرول نمی‌ماند. */
+  .app-menu-nav{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr));gap:2px;padding-top:0!important;width:100%}
+  .app-menu-item{min-width:0!important;min-height:34px;padding:3px 2px!important;gap:2px;font-size:8.5px;line-height:1.15;border-radius:10px;white-space:nowrap!important}
+  .app-menu-item svg{width:15px;height:15px}
   .app-menu-item.active{box-shadow:none;background:rgba(var(--accent-rgb),.14)}
   body > header.topbar{position:sticky;top:0;order:1;padding:9px 12px;border-radius:0}
-  body > .shell{order:2;padding:14px 12px calc(88px + env(safe-area-inset-bottom))}
+  body > .shell{order:2;padding:14px 12px calc(96px + env(safe-area-inset-bottom))}
   .brandtext span{display:none}
   .clock-pill{padding:6px 10px;font-size:10px;gap:6px;flex-shrink:0}
   .clock-pill span:not(.live){display:none}
@@ -345,6 +359,7 @@ h1{font-size:clamp(20px,2.2vw,25px);font-weight:800;letter-spacing:-.3px;line-he
   .settings-popover{left:8px;right:8px;width:auto;top:64px;max-height:calc(100vh - 150px)}
 }
 @media(max-width:480px){
+  .app-menu-item{font-size:8px;padding:3px 1px!important}
   .widget{padding:13px}
   .mini-stat{padding:9px 7px}
   .mini-stat .value{font-size:17px}
