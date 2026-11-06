@@ -163,6 +163,11 @@
     const types=['area','city','complex','transferCenter','station','building','supervision','unit','unitHead','position'];
     types.forEach(type=>{phonebookOptionData[type]=[...new Set(pbTreeNodes.filter(n=>n.type===type).map(n=>n.name))].sort((a,b)=>a.localeCompare(b,'fa'));});
     savePhonebookOptionData();
+    // واحدهای «ساختار سازمانی» همان واحدهای شغلی‌اند و به فهرست مشترک «واحدهای شغلی» هم می‌روند
+    // تا در فرم کارمند قابل انتخاب باشند.
+    if(window.ATLAS_MODULES&&typeof window.ATLAS_MODULES.addReferenceValue==='function'){
+      pbTreeNodes.filter(n=>n.type==='unit').forEach(n=>{if(n.name)window.ATLAS_MODULES.addReferenceValue('jobUnits',n.name);});
+    }
   }
   function pbTreeRefresh(){
     const type=pbTreeType.value,allowed=pbTreeParents[type]||[],previous=pbTreeParent.value;
