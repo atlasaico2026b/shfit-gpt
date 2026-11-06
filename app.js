@@ -676,8 +676,12 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
       if(key==='station'){
         return clean((data.stations||[]).map(st=>st.name||st.title||st.code));
       }
-      if(key==='complex'||key==='unit'){
+      if(key==='complex'){
         return clean([...(refs.deploymentLocations||[]),...(refs.maneuverLocations||[])]);
+      }
+      if(key==='unit'){
+        // «واحد» واحد شغلی است؛ گزینه‌هایش از فهرست واحدهای شغلی و واحدهای ثبت‌شدهٔ کارکنان می‌آید.
+        return clean([...(refs.jobUnits||[]),...(data.employees||[]).map(e=>e.unit)]);
       }
       return [];
     }
