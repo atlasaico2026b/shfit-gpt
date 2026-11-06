@@ -1,0 +1,46 @@
+/* ── اعتبارسنجی فرم‌ها ─────────────────────────────────────────────
+   فیلد اجباریِ خالی، کادر کمرنگ قرمز و پیام «فیلد مورد نظر اجباری است» می‌گیرد.
+   رنگ‌ها فقط از توکن‌های design/tokens.css گرفته می‌شوند. */
+
+.module-field.is-required > span {
+  color: var(--danger);
+}
+
+.module-field.is-required input:not([type="checkbox"]):not([type="radio"]),
+.module-field.is-required select,
+.module-field.is-required textarea,
+.module-field.is-required .atlas-combo-btn,
+.module-field.is-required .jalali-segments {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+  box-shadow: 0 0 0 1px var(--danger-line) inset;
+}
+
+.module-field .module-field-required {
+  display: block;
+  margin-top: 6px;
+  padding: 4px 9px;
+  border-inline-start: 3px solid var(--danger);
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+  color: var(--text);
+  font-size: .76rem;
+  line-height: 1.6;
+}
+
+.module-field .module-field-required::before {
+  content: "⚠ ";
+  color: var(--danger);
+}
+
+@keyframes atlas-required-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px var(--danger-line) inset; }
+  50% { box-shadow: 0 0 0 3px var(--danger-line) inset; }
+}
+
+.module-field.is-required input:focus,
+.module-field.is-required select:focus,
+.module-field.is-required textarea:focus {
+  animation: atlas-required-pulse 1.6s ease-in-out 2;
+  outline: none;
+}

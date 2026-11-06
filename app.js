@@ -431,7 +431,14 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
       oldNumbers.filter(p=>p.value).forEach(p=>phoneNumbers.push({kind:'office',label:p.label,value:p.value}));
       if(!oldNumbers.length&&x.phones)phoneNumbers.push({kind:'office',label:'سایر',value:String(x.phones)});
     }
-    return {name:String(x.name||x.person||x.fullName||''),phoneNumbers,extension:String(x.extension||x.shortNumber||x.fourDigitNumber||''),area:String(x.area||x.region||''),city:String(x.city||''),complex:String(x.complex||x.site||''),transferCenter:String(x.transferCenter||x.oilTransferCenter||''),station:String(x.station||''),building:String(x.building||''),unit:String(x.unit||''),position:String(x.position||x.jobTitle||''),supervision:String(x.supervision||x.management||''),numbers:[]};
+    const normalized = {name:String(x.name||x.person||x.fullName||''),phoneNumbers,extension:String(x.extension||x.shortNumber||x.fourDigitNumber||''),area:String(x.area||x.region||''),city:String(x.city||''),complex:String(x.complex||x.site||''),transferCenter:String(x.transferCenter||x.oilTransferCenter||''),station:String(x.station||''),building:String(x.building||''),unit:String(x.unit||''),position:String(x.position||x.jobTitle||''),supervision:String(x.supervision||x.management||''),numbers:[]};
+    // پیوند با کارمند و وضعیت «در انتظار تکمیل» باید در همهٔ بازخوانی‌ها حفظ شود.
+    normalized.personnelId=String(x.personnelId||'');
+    normalized.nationalId=String(x.nationalId||'');
+    normalized.sourceEmployeeId=String(x.sourceEmployeeId||'');
+    normalized.origin=String(x.origin||'');
+    normalized.pending=!!x.pending;
+    return normalized;
   }
   function phonebookLoad(){
     try{
@@ -456,6 +463,8 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
     const escPb=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const fields=[
       ['name','نام و نام خانوادگی','text',true,false],
+      ['personnelId','شمارهٔ پرسنلی (برای لینک با کارمند)','text',false,false],
+      ['nationalId','کد ملی (برای لینک با کارمند)','text',false,false],
       ['extension','شماره داخلی چهاررقمی','tel',false,false],
       ['area','حوزه','text',false,true],['city','شهر','text',false,true],
       ['complex','مجتمع','text',false,true],['transferCenter','نام مرکز انتقال نفت','text',false,true],
@@ -684,7 +693,10 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
         const name=norm(c.name);
         const phones=(c.phoneNumbers||[]).map(p=>digits(p.value)).filter(Boolean);
         const employees=data.employees||[];
-        const emp=(name?employees.find(e=>norm((e.firstName||'')+' '+(e.lastName||''))===name):null)||
+        const emp=(c.sourceEmployeeId?employees.find(e=>String(e.id)===String(c.sourceEmployeeId)):null)||
+          (norm(c.personnelId)?employees.find(e=>norm(e.personnelId)&&norm(e.personnelId)===norm(c.personnelId)):null)||
+          (norm(c.nationalId)?employees.find(e=>norm(e.nationalId)&&norm(e.nationalId)===norm(c.nationalId)):null)||
+          (name?employees.find(e=>norm((e.firstName||'')+' '+(e.lastName||''))===name):null)||
           employees.find(e=>digits(e.mobile)&&phones.includes(digits(e.mobile)));
         const out=[];
         if(emp)out.push({tone:'ok',label:'کارمند',value:[emp.jobTitle,emp.workplace,emp.status].filter(Boolean).join(' · '),href:'./index.html?view=employees'});
@@ -726,12 +738,13 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
         if(c.position)chips.push(chip('pos','سمت',c.position));
         if(c.supervision)chips.push(chip('sup','سرپرستی',c.supervision));
         if(c.unit)chips.push(chip('unit','واحد',c.unit));
+        if(c.pending)chips.push('<span class="atlas-pb-chip atlas-pb-chip-source" title="این مخاطب با ایجاد کارمند ساخته شده و هنوز تکمیل نشده است">از کارمند · در انتظار تکمیل</span>');
         if(!ext&&!office.length&&!mobile.length)chips.push('<span class="atlas-pb-chip atlas-pb-chip-missing">بدون شماره تماس</span>');
         const pathParts=[['حوزه',c.area],['شهر',c.city],['مجتمع',c.complex],['مرکز انتقال نفت',c.transferCenter],['ایستگاه',c.station],['ساختمان',c.building]].filter(p=>p[1]);
         const path=pathParts.map(p=>'<span class="atlas-pb-path-item"><i>'+escPb(p[0])+'</i>'+escPb(p[1])+'</span>').join('');
         const pathTitle=pathParts.map(p=>p[0]+': '+p[1]).join(' · ');
         const links=crossLinks(c).map(l=>'<a class="atlas-pb-link atlas-pb-link-'+l.tone+'" href="'+escPb(l.href)+'"><b>'+escPb(l.label)+'</b>'+(l.value?'<span>'+escPb(l.value)+'</span>':'')+'</a>').join('');
-        return '<article class="atlas-pb-card"><h3 class="atlas-pb-name" title="'+escPb(c.name||'بدون نام')+'">'+escPb(c.name||'بدون نام')+'</h3><div class="atlas-pb-line">'+chips.join('')+(path?'<span class="atlas-pb-path" title="'+escPb(pathTitle)+'">'+path+'</span>':'')+(links?'<span class="atlas-pb-links">'+links+'</span>':'')+'</div><div class="atlas-pb-card-actions"><button type="button" class="secondary-btn" data-pb-edit="'+i+'">ویرایش</button><button type="button" class="secondary-btn atlas-pb-delete" data-pb-delete="'+i+'">حذف</button></div></article>';
+        return '<article class="atlas-pb-card'+(c.pending?' is-from-employee':'')+'"><h3 class="atlas-pb-name" title="'+escPb(c.name||'بدون نام')+'">'+escPb(c.name||'بدون نام')+'</h3><div class="atlas-pb-line">'+chips.join('')+(path?'<span class="atlas-pb-path" title="'+escPb(pathTitle)+'">'+path+'</span>':'')+(links?'<span class="atlas-pb-links">'+links+'</span>':'')+'</div><div class="atlas-pb-card-actions"><button type="button" class="secondary-btn" data-pb-file="'+i+'">مشاهدهٔ پرونده</button><button type="button" class="secondary-btn" data-pb-edit="'+i+'">ویرایش</button><button type="button" class="secondary-btn atlas-pb-delete" data-pb-delete="'+i+'">حذف</button></div></article>';
       };
       if(!found.length){section.querySelector('#atlasPbResults').innerHTML='<div class="atlas-pb-empty">موردی با این مشخصات پیدا نشد.</div>';return;}
       if(sortKey==='normal'||sortKey==='name'){section.querySelector('#atlasPbResults').innerHTML=found.map(renderCard).join('');return;}
@@ -772,7 +785,15 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
         return;
       }
       const previousRecord=editIndex>=0?contacts[editIndex]:null;
-      if(editIndex>=0)contacts[editIndex]=record;else contacts.push(record);
+      // اطلاعات پیوند با کارمند (شمارهٔ پرسنلی/کد ملی/منبع) با ویرایش دستی حفظ می‌شود و
+      // به‌محض اصلاح و تکمیل، رنگ زرد «در انتظار تکمیل» برداشته می‌شود.
+      const merged=Object.assign({},previousRecord||{},record);
+      merged.personnelId=String(record.personnelId||(previousRecord&&previousRecord.personnelId)||'');
+      merged.nationalId=String(record.nationalId||(previousRecord&&previousRecord.nationalId)||'');
+      merged.sourceEmployeeId=String((previousRecord&&previousRecord.sourceEmployeeId)||'');
+      merged.origin=String((previousRecord&&previousRecord.origin)||'');
+      merged.pending=false;
+      if(editIndex>=0)contacts[editIndex]=merged;else contacts.push(merged);
       if(!persist()){
         if(editIndex>=0)contacts[editIndex]=previousRecord;else contacts.pop();
         return;
@@ -780,8 +801,11 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
       refillFilters();draw();reset();
     };
     section.querySelector('#atlasPbResults').onclick=async event=>{
-      const edit=event.target.closest('[data-pb-edit]'),del=event.target.closest('[data-pb-delete]');
-      if(edit){
+      const edit=event.target.closest('[data-pb-edit]'),del=event.target.closest('[data-pb-delete]'),file=event.target.closest('[data-pb-file]');
+      if(file){
+        const i=Number(file.dataset.pbFile);if(!Number.isInteger(i)||!contacts[i])return;
+        document.dispatchEvent(new CustomEvent('atlas-open-file',{detail:{contact:contacts[i]}}));
+      }else if(edit){
         editIndex=Number(edit.dataset.pbEdit);const c=contacts[editIndex];if(!c)return;
         fields.forEach(([key])=>form.elements[key].value=c[key]||'');
         renderPhoneRows(c.phoneNumbers||[]);

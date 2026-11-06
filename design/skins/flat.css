@@ -310,8 +310,7 @@ h1{font-size:clamp(20px,2.2vw,25px);font-weight:800;letter-spacing:-.3px;line-he
 #settingsPanel .settings-tab.is-active{background:rgba(var(--accent-rgb),.16);border-color:rgba(var(--accent-rgb),.35);color:var(--text-bright);box-shadow:none}
 #settingsPanel .settings-section{border-top-color:var(--line)}
 #settingsPanel .pb-structure-accordion{background:rgba(var(--c-white-rgb),.03);border-color:var(--line);border-radius:12px}
-/* the flat console theme is fixed: legacy theme + cloud-gradient pickers are retired */
-#settingsPanel .settings-section:has(.theme-choice-grid),
+/* the flat console theme is fixed for the dashboard; the cloud-gradient picker stays retired */
 #settingsPanel .settings-section.cloud-settings{display:none!important}
 
 /* ---------- mobile: rail becomes a bottom tab bar ---------- */

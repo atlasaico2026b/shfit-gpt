@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="./design/tokens.css">
   <link rel="stylesheet" href="./design/styles.css">
   <link rel="stylesheet" href="./design/skins/flat.css">
+  <link rel="stylesheet" href="./design/skins/theme-two.css">
   <link rel="stylesheet" href="./design/tones.css">
   <link rel="stylesheet" href="./design/table-fix.css">
   <link rel="stylesheet" href="./design/settings-tabs.css">
@@ -33,7 +34,10 @@
   <link rel="stylesheet" href="./design/vehicle-tabs.css">
   <link rel="stylesheet" href="./design/settings-view.css">
   <link rel="stylesheet" href="./design/atlas-icons.css">
+  <link rel="stylesheet" href="./design/forms-validation.css">
+  <link rel="stylesheet" href="./design/record-file.css">
   <!-- لایهٔ ظاهری تازه (بر پایهٔ کدهای پیوست) — آخرین لینک تا بر همهٔ فایل‌ها سوار شود -->
+  <link rel="stylesheet" href="./design/scroll-routing.css">
   <link rel="stylesheet" href="./design/new-ui.css">
 </head>
 <body>
@@ -233,14 +237,14 @@
   <div class="settings-tab-pane" id="settings-pane-appearance" role="tabpanel" aria-labelledby="settings-tab-appearance" hidden>
 <div class="settings-section">
     <h4>پوستهٔ برنامه</h4>
-    <p>برنامه دو جایگاه تم دارد. تم اول از تصویر مرجع شیشه‌ای ابروبادی پیروی می‌کند؛ تم دوم پس از دریافت طرح شما ساخته می‌شود.</p>
+    <p>برنامه دو تم دارد. تم اول تخت و روشن است؛ تم دوم «مرکز فرمان آینده‌نگر» با منوی کناری و پالت تیره است. انتخاب هر تم بلافاصله اعمال و ذخیره می‌شود.</p>
     <div class="theme-choice-grid">
       <button class="theme-option active" type="button" data-app-theme="cloud-glass" aria-pressed="true">
         <span class="theme-preview theme-preview-cloud" aria-hidden="true"><i></i><i></i><i></i><b>ATLAS</b></span>
         <span class="theme-option-copy"><strong>تم اول · شیشه‌ای ابروبادی</strong><small>تم مرجع فعلی</small></span>
         <span class="theme-option-state">فعال</span>
       </button>
-      <button class="theme-option pending" type="button" data-app-theme="theme-two" aria-pressed="false">
+      <button class="theme-option" type="button" data-app-theme="theme-two" aria-pressed="false">
         <span class="theme-preview theme-preview-pending" aria-hidden="true"><i></i><i></i><b>۲</b></span>
         <span class="theme-option-copy"><strong>تم دوم</strong><small>تم دوم · مرکز فرمان آینده‌نگر</small></span>
         <span class="theme-option-state">انتخاب</span>
@@ -322,6 +326,7 @@
 
 <script src="./design/theme-switch.js" defer></script>
 <script src="./design/secure-store.js" defer></script>
+<script src="./design/scroll-routing.js" defer></script>
 <script src="./modules.js" defer></script>
 <script src="./design/icons/atlas-icons.js"></script>
 <script src="./app.js" defer></script>
@@ -329,6 +334,8 @@
 <script src="./settings-tabs.js" defer></script>
 <script src="./menu-manager.js" defer></script>
 <script src="./design/new-ui.js" defer></script>
+<script src="./design/contact-sync.js" defer></script>
+<script src="./design/record-file.js" defer></script>
 <script>
   (function () {
     // حافظهٔ پایدار: بدون این، مرورگر می‌تواند زیر فشار فضا داده‌های محلی را پاک کند.

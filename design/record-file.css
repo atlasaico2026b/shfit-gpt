@@ -1,0 +1,329 @@
+/* ── مشاهدهٔ پرونده و خروجی A4 ─────────────────────────────────────
+   یک صفحهٔ کامل برای هر رکورد: همهٔ اطلاعات ثبت‌شده + سوابق مرتبط، با
+   پیش‌نمایش پیش از هر خروجی. رنگ‌ها از design/tokens.css. */
+
+.rf-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 260;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px 16px 40px;
+  background: rgba(var(--c-black-rgb), .62);
+  backdrop-filter: blur(6px);
+  overflow: auto;
+}
+
+.rf-modal {
+  width: min(980px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+
+.rf-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-mid);
+}
+
+.rf-head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--text-bright);
+}
+
+.rf-head p {
+  margin: 4px 0 0;
+  font-size: .78rem;
+  color: var(--muted);
+}
+
+.rf-close {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.rf-body {
+  padding: 16px 18px;
+  overflow: auto;
+  max-height: calc(100vh - 220px);
+}
+
+.rf-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 18px;
+  border-top: 1px solid var(--line);
+  background: var(--bg-mid);
+}
+
+.rf-toolbar small {
+  color: var(--muted);
+  font-size: .74rem;
+  margin-inline-start: auto;
+}
+
+/* ── برگهٔ A4 ── */
+.rf-sheet {
+  width: 210mm;
+  max-width: 100%;
+  min-height: 297mm;
+  margin: 0 auto;
+  padding: 12mm 12mm 14mm;
+  background: #ffffff;
+  color: #16203a;
+  border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(var(--c-black-rgb), .35);
+  font-size: 10.5pt;
+  line-height: 1.9;
+}
+
+.rf-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 6mm;
+  margin-bottom: 5mm;
+  border-bottom: 1.4px solid #16203a;
+}
+
+.rf-sheet-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+
+.rf-sheet-title {
+  text-align: left;
+  font-size: 9pt;
+  line-height: 1.7;
+  color: #3c4660;
+}
+
+.rf-sheet h2 {
+  margin: 0 0 2mm;
+  font-size: 15pt;
+}
+
+.rf-sheet h3 {
+  margin: 5mm 0 2mm;
+  padding-bottom: 1mm;
+  font-size: 10.5pt;
+  border-bottom: 1px solid #c7cede;
+  color: #16203a;
+}
+
+.rf-sheet-sub {
+  margin: 0 0 4mm;
+  font-size: 9pt;
+  color: #4a5573;
+}
+
+.rf-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1mm 6mm;
+}
+
+.rf-fact {
+  display: flex;
+  gap: 4px;
+  align-items: baseline;
+  border-bottom: 1px dotted #cfd6e4;
+  padding-bottom: .8mm;
+  min-width: 0;
+}
+
+.rf-fact b {
+  flex: 0 0 42%;
+  font-weight: 600;
+  color: #46506b;
+  font-size: 9pt;
+}
+
+.rf-fact span {
+  flex: 1 1 auto;
+  word-break: break-word;
+}
+
+.rf-fact.is-wide {
+  grid-column: 1 / -1;
+}
+
+.rf-fact.is-wide b {
+  flex-basis: 21%;
+}
+
+.rf-sheet table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9pt;
+  margin-top: 1mm;
+}
+
+.rf-sheet th,
+.rf-sheet td {
+  border: 1px solid #c7cede;
+  padding: 1mm 2mm;
+  text-align: right;
+  vertical-align: top;
+}
+
+.rf-sheet th {
+  background: #eef1f8;
+  font-weight: 600;
+}
+
+.rf-sheet-foot {
+  margin-top: 6mm;
+  padding-top: 3mm;
+  border-top: 1px solid #c7cede;
+  display: flex;
+  justify-content: space-between;
+  font-size: 8pt;
+  color: #5b6580;
+}
+
+.rf-empty {
+  color: #6c768f;
+  font-size: 9pt;
+}
+
+.rf-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--warn-line);
+  font-size: .74rem;
+}
+
+/* ── پیش‌نمایش خروجی ── */
+.rf-preview-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  background: rgba(var(--c-black-rgb), .78);
+  backdrop-filter: blur(4px);
+}
+
+.rf-preview-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 18px;
+  background: var(--bg-mid);
+  border-bottom: 1px solid var(--line);
+}
+
+.rf-preview-head strong {
+  color: var(--text-bright);
+  font-size: .95rem;
+}
+
+.rf-preview-head small {
+  color: var(--muted);
+  font-size: .76rem;
+}
+
+.rf-preview-head .rf-preview-actions {
+  margin-inline-start: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.rf-preview-body {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 18px 12px 40px;
+}
+
+.rf-preview-body .rf-sheet {
+  box-shadow: 0 14px 40px rgba(var(--c-black-rgb), .5);
+}
+
+/* چاپ: فقط برگهٔ خروجی دیده می‌شود */
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  body.rf-printing > *:not(#rfPrintArea) {
+    display: none !important;
+  }
+
+  body.rf-printing #rfPrintArea {
+    display: block !important;
+  }
+
+  body.rf-printing #rfPrintArea .rf-sheet {
+    width: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    border-radius: 0;
+    font-size: 10pt;
+  }
+
+  #rfPrintArea {
+    display: none;
+  }
+
+  .rf-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rf-sheet tr,
+  .rf-fact {
+    break-inside: avoid;
+  }
+
+  .rf-sheet h3 {
+    break-after: avoid;
+  }
+}
+
+@media screen and (max-width: 720px) {
+  .rf-sheet {
+    width: 100%;
+    min-height: 0;
+    padding: 14px;
+    font-size: 11px;
+  }
+
+  .rf-facts {
+    grid-template-columns: 1fr;
+  }
+
+  .rf-fact b {
+    flex-basis: 46%;
+  }
+}
