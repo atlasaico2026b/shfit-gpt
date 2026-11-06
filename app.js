@@ -489,7 +489,7 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
         '<div class="atlas-pb-combo">'+input+'<button type="button" class="atlas-pb-add-option" data-pb-add-option="'+key+'" title="افزودن مقدار تایپ‌شده به فهرست" aria-label="افزودن '+label+' به فهرست">+</button></div><datalist id="atlasPbList_'+key+'"></datalist>':
         input)+'</div>';
     }
-    const formMarkup='<form class="atlas-pb-form" id="atlasPbForm">'+fields.map(fieldMarkup).join('')+'<div class="atlas-pb-phone-editor"><div class="atlas-pb-phone-head"><strong>شماره‌های تماس</strong><button type="button" class="secondary-btn" id="atlasPbAddPhone">+ افزودن شماره</button></div><div id="atlasPbPhoneRows"></div></div><p class="atlas-pb-form-error" id="atlasPbFormError" role="alert" hidden></p><div class="atlas-pb-actions"><button class="primary-btn" type="submit">ذخیره اطلاعات</button><button class="secondary-btn" type="button" id="atlasPbCancel">انصراف</button></div></form>';
+    const formMarkup='<form class="atlas-pb-form" id="atlasPbForm" autocomplete="off" data-form-type="other" data-lpignore="true">'+fields.map(fieldMarkup).join('')+'<div class="atlas-pb-phone-editor"><div class="atlas-pb-phone-head"><strong>شماره‌های تماس</strong><button type="button" class="secondary-btn" id="atlasPbAddPhone">+ افزودن شماره</button></div><div id="atlasPbPhoneRows"></div></div><p class="atlas-pb-form-error" id="atlasPbFormError" role="alert" hidden></p><div class="atlas-pb-actions"><button class="primary-btn" type="submit">ذخیره اطلاعات</button><button class="secondary-btn" type="button" id="atlasPbCancel">انصراف</button></div></form>';
         section.innerHTML='<div class="module-root"><header class="module-page-head"><div><h2>دفترچه تلفن سازمانی</h2><p>حوزه ← شهر ← مجتمع ← مرکز انتقال نفت ← ایستگاه ← ساختمان ← واحد ← سمت ← شخص</p></div></header><section class="module-list-panel"><div class="module-list-head"><div><h3>جست‌وجو و فیلتر</h3><p>فهرست‌ها از تنظیمات دفترچه تلفن مدیریت می‌شوند.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="primary-btn" id="atlasPbNew">+ ثبت شخص</button></div></div><div class="atlas-pb-toolbar"><input id="atlasPbSearch" type="search" placeholder="جست‌وجوی نام، شماره یا مشخصات"><select id="atlasPbCityFilter"><option value="">همه شهرها</option></select><select id="atlasPbSiteFilter"><option value="">همه مجتمع‌ها</option></select><select id="atlasPbStationFilter"><option value="">همه ایستگاه‌ها</option></select><select id="atlasPbSortBy" aria-label="مرتب‌سازی بر اساس"><option value="normal">حالت عادی — بدون گروه‌بندی</option><option value="name">نام و نام خانوادگی</option><option value="officePhone">شماره تلفن‌های ثابت</option><option value="extension">شماره داخلی چهاررقمی</option><option value="mobilePhone">موبایل</option><option value="position">سمت سازمانی</option><option value="supervision">سرپرستی</option><option value="unit">واحد</option><option value="area">حوزه</option><option value="city">شهر</option><option value="complex">مجتمع</option><option value="transferCenter">مرکز انتقال نفت</option><option value="station">ایستگاه</option><option value="building">ساختمان</option></select><select id="atlasPbSortDirection" aria-label="جهت مرتب‌سازی"><option value="asc">صعودی: الف تا ی / کم به زیاد</option><option value="desc">نزولی: ی تا الف / زیاد به کم</option></select></div><div class="atlas-pb-results" id="atlasPbResults"></div></section></div>';
     // پنجرهٔ ثبت/ویرایش مخاطب: پاپ‌آپ روی کل صفحه، مستقل از رندر بخش
     closePhonebookModal();
@@ -509,8 +509,10 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
       if(submit)submit.textContent=submitLabel||'ذخیره اطلاعات';
       modal.hidden=false;
       document.body.classList.add('atlas-pb-modal-open');
-      const first=modal.querySelector('#atlasPbForm [name=name]');
-      if(first)first.focus();
+      // فوکوس خودکار روی کادر «نام» همان لحظه پاپ‌آپ پیشنهاد آدرس مرورگر را باز می‌کرد؛
+      // به‌جای آن خود پنجره فوکوس می‌گیرد تا کاربر خودش کادر مورد نظر را انتخاب کند.
+      const dialog=modal.querySelector('.atlas-modal');
+      if(dialog){dialog.setAttribute('tabindex','-1');dialog.focus({preventScroll:true});}
     }
     function closeForm(){
       modal.hidden=true;
