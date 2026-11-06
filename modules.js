@@ -1091,8 +1091,8 @@
           }).join('') + '</tbody></table></div>' : '<div class="module-empty">برای این خودرو هنوز مأموریتی ثبت نشده است.</div>') +
         '</section>';
     }
-    return '<div class="atlas-modal-backdrop' + (moduleKey === 'employees' ? ' atlas-modal-backdrop-auto' : '') + '" data-modal-backdrop data-view="' + esc(moduleKey) + '">' +
-      '<div class="atlas-modal' + (moduleKey === 'employees' ? ' atlas-modal-auto' : '') + '" role="dialog" aria-modal="true" aria-labelledby="atlasModalTitle">' +
+    return '<div class="atlas-modal-backdrop" data-modal-backdrop data-view="' + esc(moduleKey) + '">' +
+      '<div class="atlas-modal atlas-modal-form" role="dialog" aria-modal="true" aria-labelledby="atlasModalTitle">' +
       '<div class="atlas-modal-head"><div><h3 id="atlasModalTitle">' +
       (existing ? 'ویرایش ' : 'ثبت ') + esc(specs[moduleKey].singular) + '</h3><p>پس از ذخیره، اطلاعات به فهرست، داشبورد و گزارش‌های مرتبط منتقل می‌شود.</p></div>' +
       '<button type="button" class="atlas-modal-close" data-module-action="cancel" data-view="' + esc(moduleKey) + '" aria-label="بستن پنجره">×</button></div>' +
@@ -1305,7 +1305,7 @@
     const startValue = current.startAt ? jalaliInputValue(current.startAt, true) : jalaliInputValue('', true);
     const endValue = current.endAt ? jalaliInputValue(current.endAt, true) : '';
     return '<div class="atlas-modal-backdrop" data-modal-backdrop data-modal-kind="shift" data-view="employees">' +
-      '<div class="atlas-modal" role="dialog" aria-modal="true" aria-labelledby="atlasShiftModalTitle"><div class="atlas-modal-head"><div><h3 id="atlasShiftModalTitle">' +
+      '<div class="atlas-modal atlas-modal-form" role="dialog" aria-modal="true" aria-labelledby="atlasShiftModalTitle"><div class="atlas-modal-head"><div><h3 id="atlasShiftModalTitle">' +
       (existing ? 'ویرایش برنامهٔ شیفت' : 'ثبت برنامهٔ شیفت') +
       '</h3><p>نوع روز/شب و زمان شروع و پایان را مشخص کن. برای شیفت شب، تاریخ پایان روز بعد را وارد کن.</p></div>' +
       '<button type="button" class="atlas-modal-close" data-shift-action="cancel" aria-label="بستن پنجره">×</button></div>' +
@@ -4815,7 +4815,7 @@
     const fields = fieldsFor(moduleKey);
     const chosen = exportColumnsSetting(moduleKey) || fields.map(function (field) { return field.key; });
     return '<div class="atlas-modal-backdrop" data-modal-backdrop data-modal-kind="export-columns" data-view="' + esc(moduleKey) + '">' +
-      '<div class="atlas-modal" role="dialog" aria-modal="true"><div class="atlas-modal-head"><div><h3>ستون‌های گزارش</h3>' +
+      '<div class="atlas-modal atlas-modal-narrow" role="dialog" aria-modal="true"><div class="atlas-modal-head"><div><h3>ستون‌های گزارش</h3>' +
       '<p>هر ستونی را که در خروجی لازم داری تیک بزن؛ بقیه در فایل نمی‌آید تا گزارش شلوغ نشود.</p></div>' +
       '<button type="button" class="atlas-modal-close" data-module-action="export-columns-cancel" data-view="' + esc(moduleKey) + '" aria-label="بستن">×</button></div>' +
       '<div class="atlas-modal-body"><div class="module-check-options module-check-people" data-export-columns>' +

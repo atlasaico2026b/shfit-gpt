@@ -1,6 +1,8 @@
 /* ATLAS SHIFT — پنجرهٔ فرم روی زمین، اکشن‌های تماس و منوی خروجی */
 
 /* 1 · MODAL ───────────────────────────────────────────────────────────── */
+/* الگوی مشترک همهٔ پنجره‌ها: ارتفاع آزاد و متناسب با محتوا، بدون اسکرول داخلی؛
+   اگر محتوا از نمایشگر بلندتر شد، خود پس‌زمینه اسکرول می‌شود. */
 .atlas-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -8,14 +10,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 18px;
+  padding: 14px 12px;
   background: var(--scrim);
   overflow-y: auto;
 }
 
+/* در نمایشگرهای کوتاه، فاصلهٔ دور پنجره کمتر می‌شود تا کامل جا شود. */
+@media (max-height: 780px) {
+  .atlas-modal-backdrop {
+    padding: 8px 12px;
+  }
+}
+
 .atlas-modal {
-  width: min(720px, 100%);
-  max-height: min(88vh, 900px);
+  width: min(980px, 100%);
+  max-height: none;
+  height: auto;
   display: flex;
   flex-direction: column;
   border: 1px solid var(--line-hi);
@@ -30,7 +40,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding: 16px 18px;
+  padding: 8px 13px;
   border-bottom: 1px solid var(--line);
   background: var(--panel-2);
 }
@@ -66,88 +76,52 @@
 }
 
 .atlas-modal-body {
-  padding: 16px 18px 18px;
-  overflow-y: auto;
+  padding: 9px 13px 8px;
+  overflow: visible;
   min-height: 0;
 }
 
+/* فرم‌ها: فشرده و متناسب با محتوا (همان الگوی پنجرهٔ ثبت کارمند). */
 .atlas-modal .module-form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-}
-
-/* پنجرهٔ ثبت/ویرایش کارمند: فشرده‌تر (پدینگ‌های عمودی ۲۰٪ و افقی ۳۰٪ کمتر) و بدون اسکرول داخلی.
-   اگر ارتفاع از پنجرهٔ مرورگر بیشتر شود، خود پس‌زمینه اسکرول می‌شود. */
-.atlas-modal-backdrop.atlas-modal-backdrop-auto {
-  padding: 14px 12px;
-}
-
-/* در نمایشگرهای کوتاه، فاصلهٔ دور پنجره کمتر می‌شود تا کامل جا شود. */
-@media (max-height: 780px) {
-  .atlas-modal-backdrop.atlas-modal-backdrop-auto {
-    padding: 8px 12px;
-  }
-}
-
-.atlas-modal.atlas-modal-auto {
-  width: min(980px, 100%);
-  max-height: none;
-  height: auto;
-}
-
-.atlas-modal-auto .atlas-modal-head {
-  padding: 10px 13px;
-}
-
-/* توضیح سرصفحه در این پنجره حذف می‌شود تا ارتفاع کوتاه بماند. */
-.atlas-modal-auto .atlas-modal-head p {
-  display: none;
-}
-
-.atlas-modal-auto .atlas-modal-body {
-  padding: 11px 13px 10px;
-  overflow: visible;
-}
-
-.atlas-modal-auto .module-form {
   gap: 7px;
 }
 
-.atlas-modal-auto .module-fields-stack {
+.atlas-modal .module-fields-stack {
+  gap: 6px;
+}
+
+.atlas-modal .module-fields-row {
   gap: 7px;
 }
 
-.atlas-modal-auto .module-fields-row {
-  gap: 8px;
+.atlas-modal .module-field {
+  gap: 3px;
 }
 
-.atlas-modal-auto .module-field {
-  gap: 4px;
-}
-
-.atlas-modal-auto .module-field input,
-.atlas-modal-auto .module-field select,
-.atlas-modal-auto .module-field textarea {
+.atlas-modal .module-field input,
+.atlas-modal .module-field select,
+.atlas-modal .module-field textarea {
   padding: 6px 8px;
   border-radius: 9px;
 }
 
-.atlas-modal-auto .module-field textarea {
+.atlas-modal .module-field textarea {
   min-height: 40px;
 }
 
-/* در این پنجره توضیح‌های زیر فیلد حذف می‌شوند تا ارتفاع کوتاه بماند. */
-.atlas-modal-auto .module-field-hint {
+.atlas-modal .module-custom-block {
+  padding: 8px 9px;
+}
+
+/* پنجرهٔ فرم: توضیح سرصفحه و توضیح‌های زیر فیلد حذف می‌شوند تا ارتفاع کوتاه بماند. */
+.atlas-modal-form .atlas-modal-head p {
   display: none;
 }
 
-.atlas-modal.atlas-modal-auto .module-form-actions {
-  padding: 6px 0 0;
-}
-
-.atlas-modal-auto .module-custom-block {
-  padding: 8px 9px;
+.atlas-modal-form .module-field-hint {
+  display: none;
 }
 
 .atlas-modal .module-form-actions {
@@ -158,24 +132,26 @@
   justify-content: space-between;
   gap: 10px;
   flex-wrap: wrap;
-  padding: 12px 0 2px;
+  padding: 6px 0 0;
   background: var(--panel);
 }
 
 @media (max-width: 640px) {
   .atlas-modal-backdrop {
     align-items: flex-start;
-    padding: 10px;
+    padding: 8px;
   }
 
   .atlas-modal {
-    max-height: 94vh;
     border-radius: var(--radius-sm);
   }
 
-  .atlas-modal-head,
+  .atlas-modal-head {
+    padding: 9px 11px;
+  }
+
   .atlas-modal-body {
-    padding: 13px 13px;
+    padding: 10px 11px 9px;
   }
 }
 
@@ -293,6 +269,11 @@
 }
 
 /* 6 · ASK DIALOGS ─────────────────────────────────────────────────────── */
+/* پنجره‌های فهرستی (مثل انتخاب ستون‌های گزارش) کمی باریک‌تر از فرم‌ها هستند. */
+.atlas-modal-narrow {
+  width: min(760px, 100%);
+}
+
 /* پنجره‌های تأیید و ویرایش مقدار که جای confirm()/prompt() مرورگر را گرفته‌اند. */
 .atlas-dialog {
   width: min(460px, 100%);

@@ -30,9 +30,9 @@
 .atlas-pb-form .atlas-pb-actions{grid-column:1/-1}
 /* پاپ‌آپ ثبت/ویرایش مخاطب ─────────────────────────────────────────────── */
 .atlas-pb-modal[hidden]{display:none!important}
-.atlas-pb-modal.atlas-modal-backdrop{z-index:9400;padding:12px}
-.atlas-pb-modal .atlas-modal{width:min(760px,100%);max-height:min(92vh,900px)}
-.atlas-pb-modal .atlas-modal-body{padding:16px 18px 20px}
+.atlas-pb-modal.atlas-modal-backdrop{z-index:9400}
+.atlas-pb-modal .atlas-modal{width:min(980px,100%);max-height:none}
+.atlas-pb-modal .atlas-modal-body{padding:9px 13px 8px}
 .atlas-pb-modal .atlas-pb-form{display:grid;margin:0;padding:0;border:0;background:transparent;gap:12px}
 body.atlas-pb-modal-open{overflow:hidden}
 .atlas-pb-actions,.atlas-pb-card-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -104,7 +104,7 @@ html[data-atlas-theme="atlas-flat"] .atlas-pb-toolbar select,html[data-atlas-the
 .atlas-pb-path,.atlas-pb-links{flex:1 1 100%;flex-wrap:wrap;white-space:normal;overflow:visible;-webkit-mask-image:none;mask-image:none}
 .atlas-pb-card-actions{width:auto}
 .atlas-pb-card-actions .secondary-btn{flex:0 0 auto}
-.atlas-pb-modal .atlas-modal{max-height:calc(100vh - 96px)}
+.atlas-pb-modal .atlas-modal{max-height:none}
 }
 
 
