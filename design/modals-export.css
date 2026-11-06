@@ -40,7 +40,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding: 8px 13px;
+  padding: 7px 13px;
   border-bottom: 1px solid var(--line);
   background: var(--panel-2);
 }
@@ -89,7 +89,7 @@
 }
 
 .atlas-modal .module-fields-stack {
-  gap: 6px;
+  gap: 5px;
 }
 
 .atlas-modal .module-fields-row {
