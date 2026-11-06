@@ -306,6 +306,14 @@ body > .drawer-backdrop,body > .drawer,body > .settings-popover,body > .toast{po
 .module-field input,.module-field select,.module-field textarea{width:100%}
 .module-field textarea{resize:vertical;min-height:84px;line-height:1.8}
 .module-field-wide{grid-column:1/-1}
+/* کادر عددی: دو دکمهٔ کم/زیاد در چپ و راست خود کادر، بزرگ‌تر از فلش‌های پیش‌فرض و کاملاً گرد. */
+.module-number{display:flex;align-items:center;gap:8px;width:100%}
+.module-number input{flex:1 1 auto;min-width:0;text-align:center;appearance:textfield;-moz-appearance:textfield}
+.module-number input::-webkit-outer-spin-button,
+.module-number input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.module-number-step{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:40px;height:38px;padding:0;border:1px solid var(--line-hi);border-radius:var(--radius-pill);background:var(--white-a04);color:var(--text);font-size:19px;line-height:1;cursor:pointer;transition:background .15s ease,transform .15s ease}
+.module-number-step:hover{background:var(--white-a10)}
+.module-number-step:active{transform:scale(.94)}
 .module-form-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--line)}
 .module-required-help{font-size:10px;color:var(--muted)}
 .module-local-note{padding:12px 15px;border:1px solid var(--line);border-right:3px solid var(--c-cyan);border-radius:12px;color:var(--muted);font-size:11px;line-height:1.9;background:rgba(var(--accent-rgb),.045)}

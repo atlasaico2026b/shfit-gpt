@@ -991,9 +991,19 @@
         '<small class="module-field-hint">تاریخ شمسی؛ نمونه: ' + dateInputHint(field.type) + '</small>';
     } else {
       const type = field.type || 'text';
-      control = '<input id="' + esc(id) + '" name="' + esc(field.key) + '" type="' + esc(type) + '"' +
-        (field.min != null ? ' min="' + esc(field.min) + '"' : '') + required + NO_AUTOFILL +
+      const input = '<input id="' + esc(id) + '" name="' + esc(field.key) + '" type="' + esc(type) + '"' +
+        (field.min != null ? ' min="' + esc(field.min) + '"' : '') +
+        (field.max != null ? ' max="' + esc(field.max) + '"' : '') +
+        (field.step != null ? ' step="' + esc(field.step) + '"' : '') + required + NO_AUTOFILL +
         ' value="' + esc(value) + '" placeholder="' + esc(field.placeholder || '') + '">';
+      // کادر عددی: کم و زیادکردن با دو دکمهٔ گرد در چپ و راست خود کادر.
+      control = type === 'number'
+        ? '<span class="module-number">' +
+          '<button type="button" class="module-number-step" data-number-step="-1" aria-label="کاهش ' + esc(field.label) + '">−</button>' +
+          input +
+          '<button type="button" class="module-number-step" data-number-step="1" aria-label="افزایش ' + esc(field.label) + '">+</button>' +
+          '</span>'
+        : input;
     }
     if (field.type === 'select' && field.listKey && !field.multiple) control = '<span class="module-select-with-add">' + control + '</span>';
     const shown = fieldVisible(field, record || {});
@@ -1081,7 +1091,7 @@
           }).join('') + '</tbody></table></div>' : '<div class="module-empty">برای این خودرو هنوز مأموریتی ثبت نشده است.</div>') +
         '</section>';
     }
-    return '<div class="atlas-modal-backdrop" data-modal-backdrop data-view="' + esc(moduleKey) + '">' +
+    return '<div class="atlas-modal-backdrop' + (moduleKey === 'employees' ? ' atlas-modal-backdrop-auto' : '') + '" data-modal-backdrop data-view="' + esc(moduleKey) + '">' +
       '<div class="atlas-modal' + (moduleKey === 'employees' ? ' atlas-modal-auto' : '') + '" role="dialog" aria-modal="true" aria-labelledby="atlasModalTitle">' +
       '<div class="atlas-modal-head"><div><h3 id="atlasModalTitle">' +
       (existing ? 'ویرایش ' : 'ثبت ') + esc(specs[moduleKey].singular) + '</h3><p>پس از ذخیره، اطلاعات به فهرست، داشبورد و گزارش‌های مرتبط منتقل می‌شود.</p></div>' +
@@ -3420,6 +3430,35 @@
     if (!control || !control.closest) return;
     const form = control.closest('[data-module-form]');
     if (form) refreshDependentFields(form);
+  });
+
+  // دکمه‌های کم/زیاد کنار کادرهای عددی؛ بازهٔ مجاز همان min و max خود کادر است.
+  function stepNumberInput(input, direction) {
+    const min = input.min === '' ? null : Number(input.min);
+    const max = input.max === '' ? null : Number(input.max);
+    const size = Number(input.step) || 1;
+    const typed = persianDigitsToLatin(String(input.value || '')).trim();
+    let current = typed === '' ? null : Number(typed);
+    if (current == null || !Number.isFinite(current)) {
+      current = min == null ? 0 : (direction > 0 ? min - size : min);
+    }
+    let next = current + direction * size;
+    if (min != null && next < min) next = min;
+    if (max != null && next > max) next = max;
+    next = Math.round(next * 1000) / 1000;
+    input.value = String(next);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  document.addEventListener('click', function (event) {
+    const button = event.target.closest && event.target.closest('[data-number-step]');
+    if (!button) return;
+    event.preventDefault();
+    const box = button.closest('.module-number');
+    const input = box && box.querySelector('input');
+    if (!input) return;
+    stepNumberInput(input, Number(button.dataset.numberStep) > 0 ? 1 : -1);
   });
 
   document.addEventListener('change', async function (event) {

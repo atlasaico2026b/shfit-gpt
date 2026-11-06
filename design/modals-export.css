@@ -77,39 +77,77 @@
   gap: 14px;
 }
 
-/* پنجرهٔ ثبت/ویرایش کارمند: پهن‌تر و متناسب با اطلاعات، بدون اسکرول داخلی.
+/* پنجرهٔ ثبت/ویرایش کارمند: فشرده‌تر (پدینگ‌های عمودی ۲۰٪ و افقی ۳۰٪ کمتر) و بدون اسکرول داخلی.
    اگر ارتفاع از پنجرهٔ مرورگر بیشتر شود، خود پس‌زمینه اسکرول می‌شود. */
+.atlas-modal-backdrop.atlas-modal-backdrop-auto {
+  padding: 14px 12px;
+}
+
+/* در نمایشگرهای کوتاه، فاصلهٔ دور پنجره کمتر می‌شود تا کامل جا شود. */
+@media (max-height: 780px) {
+  .atlas-modal-backdrop.atlas-modal-backdrop-auto {
+    padding: 8px 12px;
+  }
+}
+
 .atlas-modal.atlas-modal-auto {
-  width: min(1080px, 100%);
+  width: min(980px, 100%);
   max-height: none;
   height: auto;
 }
 
+.atlas-modal-auto .atlas-modal-head {
+  padding: 10px 13px;
+}
+
+/* توضیح سرصفحه در این پنجره حذف می‌شود تا ارتفاع کوتاه بماند. */
+.atlas-modal-auto .atlas-modal-head p {
+  display: none;
+}
+
 .atlas-modal-auto .atlas-modal-body {
+  padding: 11px 13px 10px;
   overflow: visible;
 }
 
 .atlas-modal-auto .module-form {
-  gap: 10px;
+  gap: 7px;
+}
+
+.atlas-modal-auto .module-fields-stack {
+  gap: 7px;
+}
+
+.atlas-modal-auto .module-fields-row {
+  gap: 8px;
 }
 
 .atlas-modal-auto .module-field {
-  gap: 5px;
+  gap: 4px;
 }
 
 .atlas-modal-auto .module-field input,
 .atlas-modal-auto .module-field select,
 .atlas-modal-auto .module-field textarea {
-  padding: 7px 10px;
+  padding: 6px 8px;
   border-radius: 9px;
 }
 
 .atlas-modal-auto .module-field textarea {
-  min-height: 64px;
+  min-height: 40px;
 }
 
+/* در این پنجره توضیح‌های زیر فیلد حذف می‌شوند تا ارتفاع کوتاه بماند. */
 .atlas-modal-auto .module-field-hint {
-  line-height: 1.6;
+  display: none;
+}
+
+.atlas-modal.atlas-modal-auto .module-form-actions {
+  padding: 6px 0 0;
+}
+
+.atlas-modal-auto .module-custom-block {
+  padding: 8px 9px;
 }
 
 .atlas-modal .module-form-actions {
