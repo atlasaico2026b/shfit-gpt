@@ -148,14 +148,69 @@
     event.preventDefault();
   }
 
+  // ── سمت نوار پیمایش: همیشه لبهٔ چپِ برنامه ────────────────────────────────
+  // نوار عمودی در لبهٔ «پایان» خط جاری کشیده می‌شود؛ پس ظرف اسکرول ltr و
+  // محتوایش rtl می‌شود (قاعده‌اش در design/scroll-routing.css است). ظرف‌هایی
+  // که با تغییر جهت، چیدمانشان می‌ریزد (flex افقی و grid) و ظرف‌هایی که متن
+  // مستقیم دارند دست‌نخورده می‌مانند.
+  const SCROLLBAR_CLASS = 'atlas-scroll-left';
+
+  function hasDirectText(el) {
+    for (let i = 0; i < el.childNodes.length; i += 1) {
+      const node = el.childNodes[i];
+      if (node.nodeType === 3 && node.nodeValue.trim()) return true;
+    }
+    return false;
+  }
+
+  function markScrollbarSide(el) {
+    if (!el || el.nodeType !== 1 || el.classList.contains(SCROLLBAR_CLASS)) return;
+    const style = styleOf(el);
+    if (!SCROLL_OVERFLOW.test(style.overflowY)) return;
+    if (style.display.indexOf('flex') === 0 && /row/.test(style.flexDirection)) return;
+    if (style.display === 'grid' || style.display === 'inline-grid') return;
+    if (hasDirectText(el)) return;
+    el.classList.add(SCROLLBAR_CLASS);
+  }
+
+  function refreshScrollbars() {
+    if (!document.body) return;
+    const nodes = document.body.querySelectorAll('*');
+    for (let i = 0; i < nodes.length; i += 1) {
+      const el = nodes[i];
+      if (el.classList.contains(SCROLLBAR_CLASS)) continue;
+      if (el.scrollHeight - el.clientHeight < 3) continue;
+      markScrollbarSide(el);
+    }
+  }
+
+  let sweepTimer = 0;
+  function scheduleSweep() {
+    if (sweepTimer) return;
+    sweepTimer = window.setTimeout(function () {
+      sweepTimer = 0;
+      refreshScrollbars();
+    }, 150);
+  }
+
   // capture تا قبل از هر شنوندهٔ دیگری تصمیم بگیرد و از دوباره‌کاری جلوگیری کند.
   document.addEventListener('wheel', onWheel, { passive: false, capture: true });
+
+  document.addEventListener('DOMContentLoaded', scheduleSweep);
+  window.addEventListener('load', scheduleSweep);
+  window.addEventListener('resize', scheduleSweep);
+  if (document.readyState !== 'loading') scheduleSweep();
+  if (window.MutationObserver && document.body) {
+    new MutationObserver(scheduleSweep).observe(document.body, { childList: true, subtree: true });
+    document.body.addEventListener('transitionend', scheduleSweep, true);
+  }
 
   window.AtlasScroll = {
     scrollerAt: scrollerAt,
     scrollerIn: scrollerIn,
     isScrollable: function (el) { return !!scrollAxis(el); },
     overlayOf: overlayOf,
+    refreshScrollbars: refreshScrollbars,
     contain: function (el) {
       if (!el || !el.style) return el;
       el.style.overscrollBehavior = 'contain';

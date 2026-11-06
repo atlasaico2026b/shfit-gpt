@@ -33,6 +33,37 @@
   scrollbar-gutter: stable;
 }
 
+/* ── سمت نوار پیمایش: همیشه لبهٔ چپ ─────────────────────────────────────────
+   هر ناحیهٔ اسکرول‌شونده‌ای که design/scroll-routing.js علامت می‌زند، نوارش را
+   لبهٔ چپ نگه می‌دارد؛ محتوا راست‌به‌چپ می‌ماند و فقط جای نوار عوض می‌شود. */
+.atlas-scroll-left {
+  direction: ltr;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--c-blue-rgb, 96, 150, 224), .45) transparent;
+}
+
+.atlas-scroll-left > * {
+  direction: rtl;
+}
+
+.atlas-scroll-left::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+.atlas-scroll-left::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.atlas-scroll-left::-webkit-scrollbar-thumb {
+  border-radius: 99px;
+  background: rgba(var(--c-blue-rgb, 96, 150, 224), .34);
+}
+
+.atlas-scroll-left::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--c-blue-rgb, 96, 150, 224), .58);
+}
+
 /* بدنهٔ برنامه: کشیدن صفحه در موبایل نباید نوار آدرس/رفرش را حرکت دهد. */
 body {
   overscroll-behavior-y: none;
