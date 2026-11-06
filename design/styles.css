@@ -180,8 +180,8 @@ body.notifications-open .drawer-backdrop{opacity:1;visibility:visible}body.notif
 
 /* Preserve the current app's primary menu while keeping the previously-approved dashboard UI. */
 body{display:grid;grid-template-columns:242px minmax(0,1fr);grid-template-rows:auto 1fr;gap:0 14px;padding:12px;overflow-x:hidden;align-items:start}
-body > .app-menu{grid-column:1;grid-row:1 / span 2;position:sticky;top:12px;align-self:start;height:calc(100vh - 24px);min-height:530px;overflow:auto;padding:17px 12px;border:1px solid var(--line);border-radius:23px;background:linear-gradient(150deg,rgba(var(--navy-rgb),.74),rgba(var(--navy-rgb),.78));backdrop-filter:blur(25px) saturate(140%);-webkit-backdrop-filter:blur(25px) saturate(140%);box-shadow:0 22px 60px rgba(var(--c-black-rgb),.18);z-index:10}
-.app-menu-head{display:flex;align-items:center;gap:10px;padding:4px 7px 17px;border-bottom:1px solid var(--line)}.app-menu-mark{display:grid;place-items:center;width:36px;height:36px;border-radius:12px;color:var(--c-cyan);font-size:20px;background:linear-gradient(135deg,rgba(var(--accent-rgb),.25),rgba(var(--c-cyan-rgb),.1));border:1px solid var(--line-hi)}.app-menu-head strong{display:block;font-size:12px}.app-menu-head small,.app-menu-bottom small{display:block;font-size:9px;color:var(--muted);margin-top:5px;line-height:1.6}.app-menu-label{font-size:9px;color:var(--muted);padding:18px 9px 9px;letter-spacing:.4px}.app-menu-nav{display:flex;flex-direction:column;gap:5px}.app-menu-item{display:flex;align-items:center;gap:10px;min-height:42px;padding:9px 11px;border:1px solid transparent;border-radius:12px;color:var(--text);text-decoration:none;font-size:11px;transition:background .18s,border-color .18s,transform .18s}.app-menu-item>span{display:grid;place-items:center;width:26px;height:26px;border-radius:9px;background:rgba(var(--c-white-rgb),.03);color:var(--text);font-size:15px;flex:none}.app-menu-item:hover,.app-menu-item.active{background:linear-gradient(120deg,rgba(var(--accent-rgb),.19),rgba(var(--c-cyan-rgb),.055));border-color:rgba(var(--accent-rgb),.23);color:var(--c-white);transform:translateX(-1px)}.app-menu-item.active>span{color:var(--c-cyan);background:rgba(var(--accent-rgb),.15)}.app-menu-bottom{display:flex;align-items:center;gap:9px;margin-top:22px;padding:12px 9px;border-top:1px solid var(--line)}.app-menu-bottom strong{font-size:10px}.app-menu-live{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 11px var(--ok);flex:none}
+body > .app-menu{grid-column:1;grid-row:1 / span 2;position:sticky;top:12px;align-self:start;height:calc(100vh - 24px);min-height:530px;overflow:auto;padding:12px 10px;border:1px solid var(--line);border-radius:23px;background:linear-gradient(150deg,rgba(var(--navy-rgb),.74),rgba(var(--navy-rgb),.78));backdrop-filter:blur(25px) saturate(140%);-webkit-backdrop-filter:blur(25px) saturate(140%);box-shadow:0 22px 60px rgba(var(--c-black-rgb),.18);z-index:10}
+.app-menu-head{display:flex;align-items:center;gap:10px;padding:4px 7px 17px;border-bottom:1px solid var(--line)}.app-menu-mark{display:grid;place-items:center;width:36px;height:36px;border-radius:12px;color:var(--c-cyan);font-size:20px;background:linear-gradient(135deg,rgba(var(--accent-rgb),.25),rgba(var(--c-cyan-rgb),.1));border:1px solid var(--line-hi)}.app-menu-head strong{display:block;font-size:12px}.app-menu-head small,.app-menu-bottom small{display:block;font-size:9px;color:var(--muted);margin-top:5px;line-height:1.6}.app-menu-label{font-size:9px;color:var(--muted);padding:18px 9px 9px;letter-spacing:.4px}.app-menu-nav{display:flex;flex-direction:column;gap:4px}.app-menu-item{display:flex;align-items:center;gap:8px;min-height:36px;padding:6px 9px;border:1px solid transparent;border-radius:12px;color:var(--text);text-decoration:none;font-size:11px;transition:background .18s,border-color .18s,transform .18s}.app-menu-item>span{display:grid;place-items:center;width:24px;height:24px;border-radius:8px;background:rgba(var(--c-white-rgb),.03);color:var(--text);font-size:15px;flex:none}.app-menu-item:hover,.app-menu-item.active{background:linear-gradient(120deg,rgba(var(--accent-rgb),.19),rgba(var(--c-cyan-rgb),.055));border-color:rgba(var(--accent-rgb),.23);color:var(--c-white);transform:translateX(-1px)}.app-menu-item.active>span{color:var(--c-cyan);background:rgba(var(--accent-rgb),.15)}.app-menu-bottom{display:flex;align-items:center;gap:9px;margin-top:22px;padding:12px 9px;border-top:1px solid var(--line)}.app-menu-bottom strong{font-size:10px}.app-menu-live{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 11px var(--ok);flex:none}
 body > header.topbar{grid-column:2;grid-row:1;min-width:0;width:100%;margin:0;border-radius:17px 17px 0 0}
 body > main.shell{grid-column:2;grid-row:2;width:100%;max-width:none;min-width:0;margin:0;padding:23px clamp(12px,1.7vw,25px) 34px}
 body > .drawer-backdrop,body > .drawer,body > .settings-popover,body > .toast{position:fixed}
@@ -532,4 +532,22 @@ body > .drawer-backdrop,body > .drawer,body > .settings-popover,body > .toast{po
 }
 @media(max-width:650px){
   .module-fields-row{grid-template-columns:1fr}
+}
+
+/* ── منوی کنارِ صفحه: بدون نیاز به اسکرول ───────────────────────────────────
+   دوازده آیتم منو باید در ارتفاع پنجره جا شوند؛ فاصله‌ها و ارتفاع هر آیتم به
+   اندازه‌ای کم شده که مجموعشان (≈۴۹۰px با حاشیهٔ پنل) زیر ارتفاع مفید همهٔ
+   نمایشگرها بماند. اگر آیتمی اضافه شد، همان مقدارها دوباره کم می‌شوند. */
+@media(max-height:700px){
+  body > .app-menu{padding:10px 9px;min-height:0}
+  .app-menu-nav{gap:3px}
+  .app-menu-item{min-height:32px;padding:4px 9px;font-size:10.5px;line-height:1.5}
+  .app-menu-item>span{width:22px;height:22px}
+}
+
+@media(max-height:560px){
+  body > .app-menu{padding:8px}
+  .app-menu-nav{gap:2px}
+  .app-menu-item{min-height:28px;padding:3px 8px;font-size:10px;line-height:1.4}
+  .app-menu-item>span{width:20px;height:20px}
 }
