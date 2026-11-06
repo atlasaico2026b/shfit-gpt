@@ -4,8 +4,15 @@
   const DB_NAME = 'ATLAS_SHIFT_LOCAL';
   const DB_VERSION = 1;
   const STORE_NAME = 'records';
-  const STORE_KEY = 'main';
-  const LEGACY_KEY = 'atlasShiftOperationalDataV1';
+  // دو فضای ذخیره‌سازی کاملاً جدا: دادهٔ اصلی و دادهٔ آزمایشی.
+  // هر چیزی که در حالت آزمایشی ثبت شود فقط در فضای آزمایشی می‌ماند و هیچ‌وقت
+  // روی دادهٔ اصلی نوشته نمی‌شود؛ پس دادهٔ اصلی خام و دست‌نخورده باقی می‌ماند.
+  const STORAGE_MODE_KEY = 'atlasShiftStorageMode';
+  const TEST_MODE = (function () {
+    try { return localStorage.getItem(STORAGE_MODE_KEY) === 'test'; } catch (error) { return false; }
+  })();
+  const STORE_KEY = TEST_MODE ? 'sandbox' : 'main';
+  const LEGACY_KEY = TEST_MODE ? 'atlasShiftOperationalDataSandboxV1' : 'atlasShiftOperationalDataV1';
   // آستانهٔ هشدار کالیبراسیون گازسنج‌ها: ۲۰ روز مانده به پایان اعتبار
   const GAS_CALIBRATION_WARN_DAYS = 20;
   const MODULES = ['employees', 'missions', 'leaves', 'vehicles', 'stations', 'gasmeters', 'notes', 'programs', 'faults', 'maintenance', 'gaslogs'];
@@ -459,6 +466,16 @@
       tx.oncomplete = function () { resolve(true); };
       tx.onerror = function () { reject(tx.error || new Error('Write failed')); };
       tx.onabort = function () { reject(tx.error || new Error('Write aborted')); };
+    });
+  }
+
+  async function deleteFromDb(database, key) {
+    return new Promise(function (resolve, reject) {
+      const tx = database.transaction(STORE_NAME, 'readwrite');
+      tx.objectStore(STORE_NAME).delete(key);
+      tx.oncomplete = function () { resolve(true); };
+      tx.onerror = function () { reject(tx.error || new Error('Delete failed')); };
+      tx.onabort = function () { reject(tx.error || new Error('Delete aborted')); };
     });
   }
 
@@ -1836,8 +1853,22 @@
     { id: 'backup', title: 'پشتیبان‌گیری و ذخیره‌سازی', icon: '⤓' }
   ];
 
+  function testModeCardMarkup() {
+    return '<div class="module-local-note" data-tone="' + (TEST_MODE ? 'warn' : 'info') + '" style="margin-bottom:10px">' +
+      (TEST_MODE
+        ? 'الان در <strong>حالت آزمایشی</strong> هستی: هر کارمند، مرخصی یا آیتمی که ثبت کنی فقط در فضای آزمایشی ذخیره می‌شود و به دادهٔ اصلی دست نمی‌زند.'
+        : 'دادهٔ اصلی خام و دست‌نخورده است. برای آزمودن برنامه، حالت آزمایشی را روشن کن تا اطلاعات تست در فضایی جدا از دادهٔ اصلی ذخیره شود.') +
+      '</div><div class="settings-layout-actions">' +
+      '<button type="button" class="' + (TEST_MODE ? 'secondary-btn' : 'primary-btn') + '" data-module-action="toggle-test-mode">' +
+      (TEST_MODE ? 'خروج از حالت آزمایشی' : 'روشن کردن حالت آزمایشی') + '</button>' +
+      (TEST_MODE ? ' <button type="button" class="secondary-btn" data-module-action="clear-test-data">پاک کردن اطلاعات آزمایشی</button>' : '') +
+      '</div>';
+  }
+
   function backupSectionMarkup() {
-    return '<section class="module-list-panel"><div class="module-list-head"><div><h3>پشتیبان‌گیری و بازیابی</h3><p>نسخهٔ پشتیبان تمام پرونده‌ها، تاریخچه، تنظیمات و پیوست‌های محلی را دربر می‌گیرد.</p></div></div>' +
+    return '<section class="module-list-panel"><div class="module-list-head"><div><h3>حالت آزمایشی و دادهٔ اصلی</h3><p>اطلاعات تست هرگز با دادهٔ اصلی قاطی نمی‌شود؛ دو فضای ذخیره‌سازی مستقل روی همین دستگاه.</p></div></div>' +
+      testModeCardMarkup() + '</section>' +
+      '<section class="module-list-panel"><div class="module-list-head"><div><h3>پشتیبان‌گیری و بازیابی</h3><p>نسخهٔ پشتیبان تمام پرونده‌ها، تاریخچه، تنظیمات و پیوست‌های محلی را دربر می‌گیرد.</p></div></div>' +
       '<div class="module-backup-grid"><div class="module-backup-card"><strong>ساخت نسخهٔ پشتیبان</strong><p>یک فایل JSON از تمام داده‌های موجود در این دستگاه دریافت می‌کنی.</p><button type="button" class="primary-btn" data-module-action="backup">دریافت فایل پشتیبان</button></div>' +
       '<div class="module-backup-card"><strong>بازیابی نسخهٔ پشتیبان</strong><p>بازیابی، داده‌های فعلی را جایگزین اطلاعات درون فایل انتخاب‌شده می‌کند.</p><button type="button" class="secondary-btn" data-module-action="restore-select">انتخاب فایل پشتیبان</button><input type="file" id="atlasRestoreFile" accept=".json,application/json" hidden></div></div></section>' +
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>ذخیره‌سازی</h3><p>هر تغییر بی‌درنگ در همین دستگاه ذخیره و رمزنگاری می‌شود.</p></div></div>' +
@@ -5088,6 +5119,36 @@
     try { return localStorage.getItem(key); } catch (error) { return null; }
   }
 
+  // ── حالت آزمایشی: دادهٔ تست در فضایی کاملاً جدا از دادهٔ اصلی ─────────────
+  async function toggleTestMode() {
+    const goingToTest = !TEST_MODE;
+    const ok = await askConfirm({
+      title: goingToTest ? 'روشن کردن حالت آزمایشی' : 'خروج از حالت آزمایشی',
+      message: goingToTest
+        ? 'برنامه به یک فضای ذخیره‌سازی جداگانه می‌رود؛ هر کارمند، مرخصی یا آیتمی که اینجا ثبت کنی داخل دادهٔ اصلی نمی‌رود. برنامه یک‌بار بازخوانی می‌شود. ادامه می‌دهی؟'
+        : 'به دادهٔ اصلی برمی‌گردی؛ اطلاعاتی که در حالت آزمایشی ثبت کرده‌ای به دادهٔ اصلی منتقل نمی‌شود. برنامه یک‌بار بازخوانی می‌شود. ادامه می‌دهی؟',
+      confirmLabel: goingToTest ? 'روشن کن' : 'بازگشت'
+    });
+    if (!ok) return;
+    try { localStorage.setItem(STORAGE_MODE_KEY, goingToTest ? 'test' : 'main'); }
+    catch (error) { toast('تغییر حالت ذخیره‌سازی ممکن نشد؛ فضای مرورگر را بررسی کن.'); return; }
+    window.location.reload();
+  }
+
+  async function clearTestData() {
+    if (!TEST_MODE) return;
+    const ok = await askConfirm({
+      title: 'پاک کردن اطلاعات آزمایشی',
+      message: 'همهٔ اطلاعاتی که در حالت آزمایشی ثبت شده پاک می‌شود. دادهٔ اصلی دست‌نخورده می‌ماند. ادامه می‌دهی؟',
+      confirmLabel: 'پاک کن'
+    });
+    if (!ok) return;
+    try { localStorage.removeItem(LEGACY_KEY); } catch (error) {}
+    try { await deleteFromDb(db || await openDb(), STORE_KEY); } catch (error) {}
+    toast('اطلاعات آزمایشی پاک شد؛ دادهٔ اصلی تغییری نکرد.');
+    window.setTimeout(function () { window.location.reload(); }, 400);
+  }
+
   function exportBackup() {
     const payload={
       app:'ATLAS SHIFT',
@@ -5507,6 +5568,10 @@
       else window.print();
     }else if(action==='backup'){
       exportBackup();
+    }else if(action==='toggle-test-mode'){
+      toggleTestMode();
+    }else if(action==='clear-test-data'){
+      clearTestData();
     }else if(action==='restore-select'){
       const input=document.getElementById('atlasRestoreFile');if(input)input.click();
     }else if(action==='history'&&specs[moduleKey]){
