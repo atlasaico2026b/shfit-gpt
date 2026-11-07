@@ -182,17 +182,22 @@
         ? table.rows.map(row => '<tr>' + row.map(cell => '<td>' + esc(cell || '—') + '</td>').join('') + '</tr>').join('')
         : '<tr><td colspan="' + table.headers.length + '">موردی ثبت نشده است.</td></tr>') +
       '</tbody></table>').join('');
-    // عکس پرسنلی: کادر ۱.۵×۲ اینچ (۳۸.۱×۵۰.۸ میلی‌متر) بالا و سمت چپ برگه؛
-    // اندازه با اینچ و هم در style و هم در width/height نوشته می‌شود تا Word
-    // دقیقاً همان کادر را بسازد و به میلی‌متر گرد نکند.
+    // عکس پرسنلی: کادر ۱.۵×۲ اینچ (۳۸.۱×۵۰.۸ میلی‌متر) در گوشهٔ بالا-چپ برگه.
+    // ترازِ خانه‌ها هم با CSS و هم با صفت‌های align/valign نوشته می‌شود؛ Word
+    // در واردکردن HTML صفت‌های خانه را جدی می‌گیرد و CSS ترازِ td را نادیده
+    // می‌گیرد، پس بدون align عکس وسط صفحه می‌افتاد.
     const photoCell = model.photo
-      ? '<td class="rf-photo"><img src="' + esc(model.photo) + '" alt="عکس پرسنلی" width="144" height="192"></td>'
+      ? '<td class="rf-photo" width="144" valign="top" align="left">' +
+          '<div class="rf-photo-box" align="left" style="margin:0;padding:0;text-align:left;line-height:0">' +
+            '<img src="' + esc(model.photo) + '" alt="عکس پرسنلی" width="144" height="192" style="width:1.5in;height:2in">' +
+          '</div>' +
+        '</td>'
       : '';
     const mainCell = '<td class="rf-sheet-main">' +
         '<div class="rf-sheet-head">' +
           '<table class="rf-brandrow" dir="rtl" border="0" cellspacing="0" cellpadding="0"><tbody><tr>' +
-            '<td class="rf-sheet-brand"><span>ATLAS SHIFT</span></td>' +
-            '<td class="rf-sheet-title">' + esc(model.kind) + '<br>' + esc(model.stamp) + '</td>' +
+            '<td class="rf-sheet-brand" align="right"><span>ATLAS SHIFT</span></td>' +
+            '<td class="rf-sheet-title" align="left">' + esc(model.kind) + '<br>' + esc(model.stamp) + '</td>' +
           '</tr></tbody></table>' +
         '</div>' +
         '<h2>' + esc(model.title) + '</h2>' +
@@ -203,8 +208,8 @@
       factsTableHtml(model.facts) +
       tables +
       '<table class="rf-sheet-foot" dir="rtl" border="0" cellspacing="0" cellpadding="0"><tbody><tr>' +
-        '<td class="rf-foot-note">' + esc(model.footNote) + '</td>' +
-        '<td class="rf-foot-stamp">' + esc(model.stamp) + '</td>' +
+        '<td class="rf-foot-note" align="right">' + esc(model.footNote) + '</td>' +
+        '<td class="rf-foot-stamp" align="left">' + esc(model.stamp) + '</td>' +
       '</tr></tbody></table>' +
       '</section>';
   }
@@ -351,6 +356,7 @@
       '.rf-sheet .rf-sheet-main{padding:0 0 0 6mm}' +
       '.rf-sheet .rf-sheet-sub{margin:0 0 4mm;font-size:9pt;line-height:1.7;color:#4a5573}' +
       '.rf-sheet .rf-photo{width:1.5in;text-align:left}' +
+      '.rf-sheet .rf-photo-box{margin:0;padding:0;line-height:0;text-align:left}' +
       '.rf-sheet .rf-photo img{display:block;width:1.5in;height:2in;border:1.2px solid #16203a}' +
       '.rf-sheet .rf-facts{table-layout:fixed}' +
       '.rf-sheet .rf-facts td{padding:0 0 1mm;border-bottom:1px dotted #cfd6e4;vertical-align:baseline}' +

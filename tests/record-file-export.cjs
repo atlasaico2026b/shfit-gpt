@@ -76,6 +76,9 @@ check('کادر عکس ۱.۵×۲ اینچ در Word', /\.rf-photo img\{display:b
 check('کادر عکس با width/height صریح', /width="144" height="192"/.test(html));
 check('ستون عکس ۱.۵ اینچ', /\.rf-photo\{width:1\.5in/.test(doc));
 
+check('عکس در گوشهٔ بالا-چپ (align/valign برای Word)', /<td class="rf-photo" width="144" valign="top" align="left">/.test(html));
+check('کادر عکس با استایل درون‌خطی', /style="width:1\.5in;height:2in"/.test(html));
+
 const factsRows = (html.match(/<tr>/g) || []).length;
 check('همهٔ فکت‌ها در جدول آمده‌اند', (html.match(/rf-fact-lbl/g) || []).length + 2 >= model.facts.length, 'rows=' + factsRows);
 
