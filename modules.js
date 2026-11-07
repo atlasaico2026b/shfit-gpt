@@ -2874,7 +2874,7 @@
     health: { label: 'وضعیت سلامت', numeric: false, value: function (r) { return String(r.healthStatus || ''); } }
   };
 
-  const EXPORT_FORMATS = [['csv', 'CSV (صفحه‌گسترده)'], ['xlsx', 'Excel (.xlsx)'], ['docx', 'Word (.docx)'], ['pptx', 'PowerPoint (.pptx)'], ['png', 'تصویر PNG'], ['print', 'چاپ کم‌مصرف']];
+  const EXPORT_FORMATS = [['csv', 'CSV (صفحه‌گسترده)'], ['xlsx', 'Excel (.xlsx)'], ['docx', 'Word (.docx)'], ['pptx', 'PowerPoint (.pptx)'], ['png', 'تصویر PNG'], ['print', 'چاپ / PDF (A4 افقی)']];
 
   function sortedGasMeters() {
     const spec = GAS_LOG_SORTS[gasLogSort] || GAS_LOG_SORTS.calibration;
@@ -5461,7 +5461,8 @@
     canvas.toBlob(function (blob) { if (blob) downloadBlob(filename, blob); }, 'image/png');
   }
 
-  // چاپ کم‌مصرف: پس‌زمینه سفید، خطوط و متن سیاه
+  // خروجی چاپ فهرست‌ها: برگهٔ A4 افقی با عنوان موضوع، سرستون درشت و جدول شبکه‌دار.
+  // ظاهر برگه در design/print.css و ساخت HTML آن در design/print-sheet.js است.
   function printRows(rows, title) {
     let host = document.getElementById('atlasPrintArea');
     if (!host) {
@@ -5469,11 +5470,17 @@
       host.id = 'atlasPrintArea';
       document.body.appendChild(host);
     }
-    host.innerHTML = '<h1>' + esc(title) + '</h1><p class="atlas-print-meta">ATLAS SHIFT · ' + formatJalali(new Date().toISOString(), true) + '</p>' +
-      '<table><thead><tr>' + (rows[0] || []).map(function (cell) { return '<th>' + esc(cell) + '</th>'; }).join('') + '</tr></thead><tbody>' +
-      rows.slice(1).map(function (row) {
-        return '<tr>' + row.map(function (cell) { return '<td>' + esc(cell) + '</td>'; }).join('') + '</tr>';
-      }).join('') + '</tbody></table>';
+    const stamp = formatJalali(new Date().toISOString(), true);
+    if (window.AtlasPrintSheet) {
+      window.AtlasPrintSheet.render(host, rows, { title: title, stamp: stamp });
+    } else {
+      // پشتیبان: اگر فایل برگهٔ چاپ بارگذاری نشده بود، ساده‌ترین جدول ساخته می‌شود.
+      host.innerHTML = '<h1>' + esc(title) + '</h1><p class="atlas-print-meta">ATLAS SHIFT · ' + stamp + '</p>' +
+        '<table class="atlas-print-table"><thead><tr>' + (rows[0] || []).map(function (cell) { return '<th>' + esc(cell) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+        rows.slice(1).map(function (row) {
+          return '<tr>' + row.map(function (cell) { return '<td>' + esc(cell) + '</td>'; }).join('') + '</tr>';
+        }).join('') + '</tbody></table>';
+    }
     document.body.classList.add('atlas-printing');
     const cleanup = function () { document.body.classList.remove('atlas-printing'); window.removeEventListener('afterprint', cleanup); };
     window.addEventListener('afterprint', cleanup);
@@ -5513,7 +5520,7 @@
       '<button type="button" data-module-action="export" data-format="docx" data-view="' + esc(moduleKey) + '">Word (.docx)</button>' +
       '<button type="button" data-module-action="export" data-format="pptx" data-view="' + esc(moduleKey) + '">PowerPoint (.pptx)</button>' +
       '<button type="button" data-module-action="export" data-format="png" data-view="' + esc(moduleKey) + '">تصویر PNG</button>' +
-      '<button type="button" data-module-action="export" data-format="print" data-view="' + esc(moduleKey) + '">چاپ کم‌مصرف</button>' +
+      '<button type="button" data-module-action="export" data-format="print" data-view="' + esc(moduleKey) + '">چاپ / PDF (A4 افقی)</button>' +
       '<button type="button" class="module-export-columns" data-module-action="export-columns" data-view="' + esc(moduleKey) + '">⚙ انتخاب ستون‌های گزارش</button>' +
       '</div></div>';
   }
