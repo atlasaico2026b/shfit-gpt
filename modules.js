@@ -5779,9 +5779,22 @@
 
   // اگر بخشی سربرگ استاندارد نداشت، همین دکمه بالای همان بخش تزریق می‌شود تا
   // «پشتیبان‌گیری» در همهٔ منوها در دسترس باشد.
+  function effectiveBackupView(view) {
+    // خودرو و گازسنج هرکدام زیرتب دارند؛ پشتیبان‌گیری باید همان زیرتبِ باز را بگیرد.
+    if (view === 'vehicles') {
+      if (vehicleTab === 'service') return 'maintenance';
+      if (vehicleTab === 'history' || vehicleTab === 'board') return 'faults';
+      return 'vehicles';
+    }
+    if (view === 'gasmeters') return gasTab === 'logs' ? 'gaslogs' : 'gasmeters';
+    return view;
+  }
+
   function mountSectionBackup(view, section) {
-    if (!section || !sectionBackupScope(view)) return;
-    const markup = sectionBackupButton(view);
+    if (!section) return;
+    const target = effectiveBackupView(view);
+    if (!sectionBackupScope(target)) return;
+    const markup = sectionBackupButton(target);
     const slot = section.querySelector('.module-page-actions');
     if (slot) {
       if (!slot.querySelector('[data-module-action="backup-section"]')) slot.insertAdjacentHTML('afterbegin', markup);
