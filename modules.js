@@ -40,7 +40,8 @@
       fields: [
         {key:'firstName',label:'نام',required:true},
         {key:'lastName',label:'نام خانوادگی',required:true},
-        {key:'personnelId',label:'شمارهٔ پرسنلی'},
+        // شمارهٔ پرسنلی فقط رقم می‌پذیرد؛ حروف و علائم هنگام تایپ حذف می‌شوند و در ذخیره هم دوباره پاک‌سازی می‌شود.
+        {key:'personnelId',label:'شمارهٔ پرسنلی',digits:true,placeholder:'مثلاً ۱۰۲۳'},
         {key:'nationalId',label:'کد ملی',placeholder:'۱۰ رقم'},
         {key:'mobile',label:'شمارهٔ تلفن همراه اصلی',type:'tel'},
         {key:'jobTitle',label:'عنوان شغلی',type:'select',required:true,listKey:'jobTitles',options:['اپراتور','تکنسین','سرپرست شیفت','کارشناس ایمنی','کارشناس HSE','راننده','نگهبان','انباردار','سایر']},
@@ -1166,7 +1167,9 @@
         '<small class="module-field-hint">تاریخ شمسی؛ نمونه: ' + dateInputHint(field.type) + '</small>';
     } else {
       const type = field.type || 'text';
+      const digits = field.digits === true;
       const input = '<input id="' + esc(id) + '" name="' + esc(field.key) + '" type="' + esc(type) + '"' +
+        (digits ? ' inputmode="numeric" data-digits-only="1"' : '') +
         (field.min != null ? ' min="' + esc(field.min) + '"' : '') +
         (field.max != null ? ' max="' + esc(field.max) + '"' : '') +
         (field.step != null ? ' step="' + esc(field.step) + '"' : '') + required + NO_AUTOFILL +
@@ -4866,7 +4869,9 @@
         if(raw&&!normalized)throw new Error('تاریخ «'+field.label+'» را با قالب شمسی ۱۴۰۵/۰۷/۲۸ وارد کن.');
         data[field.key]=normalized||'';
       }else{
-        data[field.key]=String(fd.get(field.key)||'').trim();
+        const raw=String(fd.get(field.key)||'').trim();
+        // فیلدهای رقمی (مثل شمارهٔ پرسنلی): هر علامت غیررقم در ذخیره هم حذف می‌شود.
+        data[field.key]=field.digits===true?persianDigitsToLatin(raw).replace(/\D/g,''):raw;
       }
       if(fieldRequired(field,visibleRecord) && (data[field.key] == null || data[field.key] === '' || (Array.isArray(data[field.key])&&!data[field.key].length))){
         throw new Error('فیلد «'+field.label+'» ضروری است.');
@@ -6455,6 +6460,8 @@
   let jalaliTarget = null;
   let jalaliView = { year: 0, month: 0 };
   let jalaliWheel = false;
+  let jalaliOpener = null;
+  let jalaliFocusDay = null;
 
   function splitJalaliText(value) {
     const raw = persianDigitsToLatin(String(value == null ? '' : value)).trim();
@@ -6842,10 +6849,143 @@
       jalaliPopover.hidden = true;
       jalaliPopover.setAttribute('role', 'dialog');
       jalaliPopover.setAttribute('aria-label', 'سالنامه');
+      jalaliPopover.setAttribute('tabindex', '-1');
+      // کلیدها فقط داخل خود سالنامه کار می‌کنند و به منوی اصلی/صفحهٔ زیرین نمی‌رسند.
+      jalaliPopover.addEventListener('keydown', handleJalaliKeys);
       document.body.appendChild(jalaliPopover);
     }
     return jalaliPopover;
   }
+
+  // روزی که کلیدها روی آن حرکت می‌کنند: آخرین روزِ فوکوس‌شده، وگرنه روز انتخاب‌شده یا امروز.
+  function jalaliActiveDay() {
+    if (jalaliFocusDay) return jalaliFocusDay;
+    const selected = jalaliPopover ? jalaliPopover.querySelector('.jalali-day.is-selected') : null;
+    if (selected) return Number(selected.dataset.jalaliDay);
+    const today = intlJalaliParts(new Date());
+    if (today.year === jalaliView.year && today.month === jalaliView.month) return today.day;
+    return 1;
+  }
+
+  function focusJalaliDay(day) {
+    if (!jalaliPopover) return;
+    const safeDay = Math.min(Math.max(1, day || 1), jalaliMonthLength(jalaliView.year, jalaliView.month));
+    jalaliFocusDay = safeDay;
+    const button = jalaliPopover.querySelector('[data-jalali-day="' + safeDay + '"]');
+    if (button) button.focus();
+  }
+
+  function focusJalaliYearItem() {
+    if (!jalaliPopover) return;
+    const item = jalaliPopover.querySelector('.jalali-wheel-item.is-selected');
+    if (item) item.focus();
+  }
+
+  // جابه‌جایی روز با کلید: delta بر حسب روز (۱ = روز بعد)
+  function shiftJalaliDay(delta) {
+    try {
+      const start = jalaliMonthStartDate(jalaliView.year, jalaliView.month);
+      const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + (jalaliActiveDay() - 1) + delta, 12, 0, 0, 0);
+      const parts = intlJalaliParts(date);
+      if (parts.year < JALALI_YEAR_MIN || parts.year > JALALI_YEAR_MAX) return;
+      jalaliView = { year: parts.year, month: parts.month };
+      renderJalaliPopover();
+      focusJalaliDay(parts.day);
+    } catch (error) { /* سال خارج از دامنهٔ تقویم */ }
+  }
+
+  function shiftJalaliMonth(delta) {
+    let year = jalaliView.year;
+    let month = jalaliView.month + delta;
+    while (month > 12) { month -= 12; year += 1; }
+    while (month < 1) { month += 12; year -= 1; }
+    year = Math.min(JALALI_YEAR_MAX, Math.max(JALALI_YEAR_MIN, year));
+    const day = Math.min(jalaliActiveDay(), jalaliMonthLength(year, month));
+    jalaliView = { year: year, month: month };
+    renderJalaliPopover();
+    focusJalaliDay(day);
+  }
+
+  function shiftJalaliYear(delta) {
+    const year = Math.min(JALALI_YEAR_MAX, Math.max(JALALI_YEAR_MIN, jalaliView.year + delta));
+    if (year === jalaliView.year) return;
+    const day = Math.min(jalaliActiveDay(), jalaliMonthLength(year, jalaliView.month));
+    jalaliView = { year: year, month: jalaliView.month };
+    renderJalaliPopover();
+    focusJalaliDay(day);
+  }
+
+  // در «لیست انتخاب سال» بالا/پایین سال را عوض می‌کند و لیست را همراه خود می‌برد.
+  function shiftJalaliWheelYear(delta) {
+    const year = Math.min(JALALI_YEAR_MAX, Math.max(JALALI_YEAR_MIN, jalaliView.year + delta));
+    if (year === jalaliView.year) return;
+    jalaliView = { year: year, month: jalaliView.month };
+    renderJalaliPopover();
+    focusJalaliYearItem();
+  }
+
+  function jumpJalaliWheelTo(year) {
+    jalaliView = { year: year, month: jalaliView.month };
+    renderJalaliPopover();
+    focusJalaliYearItem();
+  }
+
+  const JALALI_NAV_KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', 'Enter', ' ', 'Spacebar', 'Escape'];
+
+  // کلیدهای سالنامه: هیچ‌کدام به منوی اصلی یا اسکرول صفحه نمی‌رسند.
+  function handleJalaliKeys(event) {
+    if (!jalaliPopover || jalaliPopover.hidden) return;
+    const key = event.key;
+    if (JALALI_NAV_KEYS.indexOf(key) < 0) return;
+    const swallow = function () { event.preventDefault(); event.stopPropagation(); };
+
+    if (key === 'Escape') {
+      swallow();
+      closeJalaliPopover();
+      if (jalaliOpener && document.contains(jalaliOpener)) jalaliOpener.focus();
+      return;
+    }
+
+    if (jalaliWheel) {
+      if (key === 'ArrowDown' || key === 'ArrowUp') { swallow(); shiftJalaliWheelYear(key === 'ArrowDown' ? 1 : -1); return; }
+      if (key === 'PageDown' || key === 'PageUp') { swallow(); shiftJalaliWheelYear(key === 'PageDown' ? 10 : -10); return; }
+      if (key === 'Home' || key === 'End') { swallow(); jumpJalaliWheelTo(key === 'Home' ? JALALI_YEAR_MIN : JALALI_YEAR_MAX); return; }
+      if (key === 'Enter' || key === ' ' || key === 'Spacebar') {
+        swallow();
+        jalaliWheel = false;
+        renderJalaliPopover();
+        focusJalaliDay(jalaliActiveDay());
+        return;
+      }
+      return;
+    }
+
+    if (key === 'Enter' || key === ' ' || key === 'Spacebar') { swallow(); pickJalaliDay(jalaliActiveDay()); return; }
+    // چیدمان راست‌به‌چپ است: «چپ» یعنی روز بعد و «راست» یعنی روز قبل.
+    if (key === 'ArrowLeft') { swallow(); shiftJalaliDay(1); return; }
+    if (key === 'ArrowRight') { swallow(); shiftJalaliDay(-1); return; }
+    if (key === 'ArrowUp') { swallow(); shiftJalaliDay(-7); return; }
+    if (key === 'ArrowDown') { swallow(); shiftJalaliDay(7); return; }
+    if (key === 'PageUp' || key === 'PageDown') {
+      swallow();
+      const direction = key === 'PageDown' ? 1 : -1;
+      if (event.shiftKey) shiftJalaliYear(direction); else shiftJalaliMonth(direction);
+      return;
+    }
+    if (key === 'Home') { swallow(); focusJalaliDay(1); return; }
+    if (key === 'End') { swallow(); focusJalaliDay(jalaliMonthLength(jalaliView.year, jalaliView.month)); return; }
+  }
+
+  // اگر فوکوس بیرون از سالنامهٔ باز بماند، کلیدهای ناوبری باید باز هم فقط به
+  // سالنامه برسند، نه به منوی اصلی.
+  document.addEventListener('keydown', function (event) {
+    if (!jalaliPopover || jalaliPopover.hidden) return;
+    if (jalaliPopover.contains(event.target)) return;
+    if (JALALI_NAV_KEYS.indexOf(event.key) < 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    handleJalaliKeys(event);
+  }, true);
 
   // دامنهٔ مجاز تاریخ شمسی: روز تا ۳۱، ماه تا ۱۲، سال ۱۳۰۰ تا ۱۵۰۰
   const JALALI_YEAR_MIN = 1300;
@@ -6903,7 +7043,9 @@
   function openJalaliPopover(wrap, opener) {
     if (!wrap) return;
     jalaliTarget = wrap;
+    jalaliOpener = opener || null;
     jalaliWheel = false;
+    jalaliFocusDay = null;
     const hidden = wrap.querySelector('input.jalali-value');
     const parts = splitJalaliText(hidden ? hidden.value : '');
     const today = intlJalaliParts(new Date());
@@ -6924,6 +7066,10 @@
     pop.style.left = left + 'px';
     pop.style.top = top + 'px';
     pop.style.width = width + 'px';
+    // فوکوس به داخل سالنامه می‌رود؛ همین کار باعث می‌شود کلیدهای جهت‌دار روی
+    // سالنامه اثر بگذارند و منوی اصلی/صفحه جابه‌جا نشود.
+    const startDay = pop.querySelector('.jalali-day.is-selected') || pop.querySelector('.jalali-day.is-today') || pop.querySelector('[data-jalali-day]');
+    if (startDay) startDay.focus({ preventScroll: true }); else pop.focus({ preventScroll: true });
   }
 
   function closeJalaliPopover() {
@@ -6943,7 +7089,9 @@
     const timeBox = wrap.querySelector('[data-jalali-seg="time"]');
     if (timeBox && !timeBox.value) timeBox.value = '08:30';
     syncJalaliField(wrap);
+    jalaliFocusDay = null;
     closeJalaliPopover();
+    if (jalaliOpener && document.contains(jalaliOpener)) jalaliOpener.focus();
     const hidden = wrap.querySelector('input.jalali-value');
     if (hidden) hidden.dispatchEvent(new Event('change', { bubbles: true }));
   }
@@ -6951,6 +7099,15 @@
   document.addEventListener('focusin', function (event) {
     const segment = event.target.closest && event.target.closest('[data-jalali-seg]');
     if (segment) segment.select();
+  });
+
+  // فیلدهای «فقط رقم» (مثل شمارهٔ پرسنلی): هر حرف یا علامتی همان لحظه حذف می‌شود
+  // و رقم فارسی به لاتین تبدیل می‌گردد.
+  document.addEventListener('input', function (event) {
+    const box = event.target && event.target.closest ? event.target.closest('[data-digits-only]') : null;
+    if (!box) return;
+    const clean = persianDigitsToLatin(box.value).replace(/\D/g, '');
+    if (clean !== box.value) box.value = clean;
   });
 
   document.addEventListener('input', function (event) {
@@ -7008,13 +7165,18 @@
       if (month < 1) { month = 12; year -= 1; }
       year = Math.min(JALALI_YEAR_MAX, Math.max(JALALI_YEAR_MIN, year));
       jalaliView = { year: year, month: month };
+      jalaliFocusDay = null;
       renderJalaliPopover();
+      const again = jalaliPopover && jalaliPopover.querySelector('[data-jalali-nav="' + nav.dataset.jalaliNav + '"]');
+      if (again) again.focus();
       return;
     }
     const yearButton = event.target.closest('[data-jalali-year]');
     if (yearButton) {
       jalaliWheel = !jalaliWheel;
       renderJalaliPopover();
+      if (jalaliWheel) focusJalaliYearItem();
+      else if (jalaliPopover && jalaliPopover.querySelector('[data-jalali-year]')) jalaliPopover.querySelector('[data-jalali-year]').focus();
       return;
     }
     // چرخاندن سال: همان فهرست محدود ۱۳۰۰ تا ۱۵۰۰
@@ -7024,6 +7186,8 @@
       if (year) jalaliView = { year: year, month: jalaliView.month };
       jalaliWheel = false;
       renderJalaliPopover();
+      const again = jalaliPopover && jalaliPopover.querySelector('[data-jalali-year]');
+      if (again) again.focus();
       return;
     }
     const dayButton = event.target.closest('[data-jalali-day]');
@@ -7039,6 +7203,7 @@
         pickJalaliDay(today.day);
       } else {
         closeJalaliPopover();
+        if (jalaliOpener && document.contains(jalaliOpener)) jalaliOpener.focus();
       }
       return;
     }

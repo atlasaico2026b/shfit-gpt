@@ -154,13 +154,22 @@
         ? table.rows.map(row => '<tr>' + row.map(cell => '<td>' + esc(cell || '—') + '</td>').join('') + '</tr>').join('')
         : '<tr><td colspan="' + table.headers.length + '">موردی ثبت نشده است.</td></tr>') +
       '</tbody></table>').join('');
-    return '<section class="rf-sheet" dir="rtl">' +
-      '<header class="rf-sheet-head">' +
-        '<div class="rf-sheet-brand"><span>ATLAS SHIFT</span></div>' +
-        '<div class="rf-sheet-title">' + esc(model.kind) + '<br>' + esc(model.stamp) + '</div>' +
-      '</header>' +
-      '<h2>' + esc(model.title) + '</h2>' +
-      '<p class="rf-sheet-sub">' + esc(model.subtitle) + '</p>' +
+    // عکس پرسنلی: کادر بالا و سمت چپ برگه؛ همان برگه در چاپ/PDF و Word هم می‌آید.
+    const photo = model.photo
+      ? '<div class="rf-sheet-photo"><img src="' + esc(model.photo) + '" alt="عکس پرسنلی"></div>'
+      : '';
+    return '<section class="rf-sheet' + (photo ? ' has-photo' : '') + '" dir="rtl">' +
+      '<div class="rf-sheet-top">' +
+        '<div class="rf-sheet-main">' +
+          '<header class="rf-sheet-head">' +
+            '<div class="rf-sheet-brand"><span>ATLAS SHIFT</span></div>' +
+            '<div class="rf-sheet-title">' + esc(model.kind) + '<br>' + esc(model.stamp) + '</div>' +
+          '</header>' +
+          '<h2>' + esc(model.title) + '</h2>' +
+          '<p class="rf-sheet-sub">' + esc(model.subtitle) + '</p>' +
+        '</div>' +
+        photo +
+      '</div>' +
       '<div class="rf-facts">' + facts + '</div>' +
       tables +
       '<footer class="rf-sheet-foot"><span>' + esc(model.footNote) + '</span><span>' + esc(model.stamp) + '</span></footer>' +
@@ -172,8 +181,22 @@
     const spec = api.spec ? api.spec(moduleKey) : null;
     const fields = api.fieldsFor ? api.fieldsFor(moduleKey) : [];
     const facts = [];
+    // عکس (پروندهٔ پرسنلی، خودرو، …): تصویر در کادر بالای برگه می‌آید، نه به‌صورت «۱ پیوست».
+    let photo = '';
+    let photoFieldKey = '';
+    const photoField = fields.find(field => (field.type === 'file' || field.type === 'file-multiple') &&
+      /image\//i.test(String(field.accept || '')) && record[field.key]);
+    if (photoField) {
+      const raw = record[photoField.key];
+      const first = Array.isArray(raw) ? raw[0] : raw;
+      if (typeof first === 'string' && /^data:image\//i.test(first)) {
+        photo = first;
+        photoFieldKey = photoField.key;
+      }
+    }
     fields.forEach(field => {
       if (field.type === 'rows') return;
+      if (photo && field.key === photoFieldKey) return;
       const value = plainValue(moduleKey, field, record, data);
       // فقط اطلاعات ثبت‌شده در برگه می‌آید تا خروجی کوتاه و تک‌صفحه‌ای بماند.
       if (!String(value).trim()) return;
@@ -188,6 +211,7 @@
       kind: (spec ? spec.title + ' · پرونده' : 'پرونده'),
       title: recordTitle(moduleKey, record, data),
       subtitle: (spec ? spec.subtitle : ''),
+      photo: photo,
       stamp: 'تاریخ تهیه: ' + jalali(new Date().toISOString(), true),
       footNote: 'این برگه فقط شامل اطلاعات ثبت‌شده در همین پرونده است.',
       facts: facts,
@@ -279,7 +303,9 @@
       '.rf-facts{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px}.rf-fact{display:flex;gap:4px;border-bottom:1px dotted #cfd6e4}' +
       '.rf-fact b{flex:0 0 42%;color:#46506b}.rf-fact.is-wide{grid-column:1/-1}.rf-fact.is-wide b{flex-basis:22%}' +
       'table{width:100%;border-collapse:collapse;font-size:9pt}th,td{border:1px solid #c7cede;padding:3px 5px;text-align:right}th{background:#eef1f8}' +
-      '.rf-sheet-foot{display:flex;justify-content:space-between;border-top:1px solid #c7cede;padding-top:6px;margin-top:12px;font-size:8pt;color:#5b6580}</style></head><body>' +
+      '.rf-sheet-foot{display:flex;justify-content:space-between;border-top:1px solid #c7cede;padding-top:6px;margin-top:12px;font-size:8pt;color:#5b6580}' +
+      '.rf-sheet-top{display:flex;gap:8px;align-items:flex-start}.rf-sheet-main{flex:1 1 auto}.rf-sheet-photo{order:2;flex:0 0 auto;width:80px;height:100px;padding:2px;border:1px solid #16203a;text-align:center}' +
+      '.rf-sheet-photo img{width:100%;height:100%;object-fit:cover;display:block}</style></head><body>' +
       html + '</body></html>';
   }
 
