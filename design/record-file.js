@@ -144,35 +144,66 @@
     return out;
   }
 
-  // برگهٔ پرونده: مدل داده، سپس HTML مشترک پیش‌نمایش/چاپ/فایل‌ها
+  // برگهٔ پرونده: مدل داده، سپس HTML مشترک پیش‌نمایش/چاپ/فایل‌ها.
+  // چیدمان فقط با جدول ساخته می‌شود (بدون flex و grid)؛ موتور HTML ورد نه flex
+  // را می‌شناسد نه grid را، پس همین جدول‌بندی تنها راهی است که ستون‌ها،
+  // چیدمان و اندازهٔ فونت‌ها در فایل Word هم عیناً مثل پیش‌نمایش بماند.
+  function factsTableHtml(facts) {
+    const rows = [];
+    let pair = [];
+    function flushPair() {
+      if (!pair.length) return;
+      const cells = pair.map(fact =>
+        '<td class="rf-fact-lbl" width="21%">' + esc(fact.label) + '</td>' +
+        '<td class="rf-fact-val" width="29%">' + (fact.value ? esc(fact.value) : '—') + '</td>').join('');
+      rows.push('<tr>' + cells + (pair.length === 1 ? '<td class="rf-fact-void" colspan="2" width="50%"></td>' : '') + '</tr>');
+      pair = [];
+    }
+    (facts || []).forEach(fact => {
+      if (fact.wide) {
+        flushPair();
+        rows.push('<tr><td class="rf-fact-lbl rf-fact-lbl-wide" width="21%">' + esc(fact.label) + '</td>' +
+          '<td class="rf-fact-val" colspan="3" width="79%">' + (fact.value ? esc(fact.value) : '—') + '</td></tr>');
+        return;
+      }
+      pair.push(fact);
+      if (pair.length === 2) flushPair();
+    });
+    flushPair();
+    if (!rows.length) return '';
+    return '<table class="rf-facts" dir="rtl" border="0" cellspacing="0" cellpadding="0"><tbody>' + rows.join('') + '</tbody></table>';
+  }
+
   function buildSheet(model) {
-    const facts = model.facts.map(fact => '<div class="rf-fact' + (fact.wide ? ' is-wide' : '') + '"><b>' + esc(fact.label) + '</b><span>' + (fact.value ? esc(fact.value) : '—') + '</span></div>').join('');
     const tables = (model.tables || []).map(table =>
       '<h3>' + esc(table.title) + '</h3>' +
-      '<table><thead><tr>' + table.headers.map(head => '<th>' + esc(head) + '</th>').join('') + '</tr></thead><tbody>' +
+      '<table class="rf-table" dir="rtl"><thead><tr>' + table.headers.map(headCell => '<th>' + esc(headCell) + '</th>').join('') + '</tr></thead><tbody>' +
       (table.rows.length
         ? table.rows.map(row => '<tr>' + row.map(cell => '<td>' + esc(cell || '—') + '</td>').join('') + '</tr>').join('')
         : '<tr><td colspan="' + table.headers.length + '">موردی ثبت نشده است.</td></tr>') +
       '</tbody></table>').join('');
     // عکس پرسنلی: کادر بالا و سمت چپ برگه؛ همان برگه در چاپ/PDF و Word هم می‌آید.
-    const photo = model.photo
-      ? '<div class="rf-sheet-photo"><img src="' + esc(model.photo) + '" alt="عکس پرسنلی"></div>'
+    const photoCell = model.photo
+      ? '<td class="rf-photo"><img src="' + esc(model.photo) + '" alt="عکس پرسنلی"></td>'
       : '';
-    return '<section class="rf-sheet' + (photo ? ' has-photo' : '') + '" dir="rtl">' +
-      '<div class="rf-sheet-top">' +
-        '<div class="rf-sheet-main">' +
-          '<header class="rf-sheet-head">' +
-            '<div class="rf-sheet-brand"><span>ATLAS SHIFT</span></div>' +
-            '<div class="rf-sheet-title">' + esc(model.kind) + '<br>' + esc(model.stamp) + '</div>' +
-          '</header>' +
-          '<h2>' + esc(model.title) + '</h2>' +
-          '<p class="rf-sheet-sub">' + esc(model.subtitle) + '</p>' +
+    const mainCell = '<td class="rf-sheet-main">' +
+        '<div class="rf-sheet-head">' +
+          '<table class="rf-brandrow" dir="rtl" border="0" cellspacing="0" cellpadding="0"><tbody><tr>' +
+            '<td class="rf-sheet-brand"><span>ATLAS SHIFT</span></td>' +
+            '<td class="rf-sheet-title">' + esc(model.kind) + '<br>' + esc(model.stamp) + '</td>' +
+          '</tr></tbody></table>' +
         '</div>' +
-        photo +
-      '</div>' +
-      '<div class="rf-facts">' + facts + '</div>' +
+        '<h2>' + esc(model.title) + '</h2>' +
+        '<p class="rf-sheet-sub">' + esc(model.subtitle) + '</p>' +
+      '</td>';
+    return '<section class="rf-sheet" dir="rtl">' +
+      '<table class="rf-top" dir="rtl" border="0" cellspacing="0" cellpadding="0"><tbody><tr>' + mainCell + photoCell + '</tr></tbody></table>' +
+      factsTableHtml(model.facts) +
       tables +
-      '<footer class="rf-sheet-foot"><span>' + esc(model.footNote) + '</span><span>' + esc(model.stamp) + '</span></footer>' +
+      '<table class="rf-sheet-foot" dir="rtl" border="0" cellspacing="0" cellpadding="0"><tbody><tr>' +
+        '<td class="rf-foot-note">' + esc(model.footNote) + '</td>' +
+        '<td class="rf-foot-stamp">' + esc(model.stamp) + '</td>' +
+      '</tr></tbody></table>' +
       '</section>';
   }
 
@@ -296,17 +327,55 @@
     setTimeout(cleanup, 60000);
   }
 
-  function wordDocument(html, title) {
-    return '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>' + esc(title) + '</title>' +
-      '<style>@page{size:A4;margin:10mm}body{font-family:Tahoma,"Segoe UI",sans-serif;direction:rtl;font-size:10pt;line-height:1.8;color:#16203a}' +
-      '.rf-sheet{width:auto;padding:0;box-shadow:none}.rf-sheet-head{display:flex;justify-content:space-between;border-bottom:1.4px solid #16203a;padding-bottom:6px;margin-bottom:10px}' +
-      '.rf-facts{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px}.rf-fact{display:flex;gap:4px;border-bottom:1px dotted #cfd6e4}' +
-      '.rf-fact b{flex:0 0 42%;color:#46506b}.rf-fact.is-wide{grid-column:1/-1}.rf-fact.is-wide b{flex-basis:22%}' +
-      'table{width:100%;border-collapse:collapse;font-size:9pt}th,td{border:1px solid #c7cede;padding:3px 5px;text-align:right}th{background:#eef1f8}' +
-      '.rf-sheet-foot{display:flex;justify-content:space-between;border-top:1px solid #c7cede;padding-top:6px;margin-top:12px;font-size:8pt;color:#5b6580}' +
-      '.rf-sheet-top{display:flex;gap:8px;align-items:flex-start}.rf-sheet-main{flex:1 1 auto}.rf-sheet-photo{order:2;flex:0 0 auto;width:80px;height:100px;padding:2px;border:1px solid #16203a;text-align:center}' +
-      '.rf-sheet-photo img{width:100%;height:100%;object-fit:cover;display:block}</style></head><body>' +
-      html + '</body></html>';
+  // استایل برگهٔ خروجی؛ همین CSS هم داخل فایل Word و هم در پیش‌نمایش همان فایل
+  // استفاده می‌شود تا اندازه‌ها و فونت‌ها دو جای مختلف تعریف نشوند.
+  const SHEET_FONT = 'Tahoma, "Segoe UI", sans-serif';
+  function sheetCss() {
+    return '@page WordSection1{size:210mm 297mm;margin:12mm 12mm 14mm}' +
+      'div.WordSection1{page:WordSection1}' +
+      // حاشیهٔ صفحهٔ Word از @page می‌آید؛ مرورگر (پیش‌نمایش) آن را در نمایش
+      // رومیزی اعمال نمی‌کند، پس همان حاشیه با @media screen به body داده می‌شود.
+      '@media screen{body{padding:12mm 12mm 14mm;box-sizing:border-box}}' +
+      'body{margin:0;direction:rtl;text-align:right;background:#fff;color:#16203a;' +
+        'font-family:' + SHEET_FONT + ';font-size:10.5pt;line-height:1.9;mso-line-height-rule:exactly}' +
+      'td,th,div,p,h2,h3,span{font-family:' + SHEET_FONT + '}' +
+      'p{margin:0}' +
+      'h2{margin:0 0 2mm;font-size:15pt;line-height:1.4;font-weight:700}' +
+      'h3{margin:5mm 0 2mm;padding-bottom:1mm;font-size:10.5pt;line-height:1.7;border-bottom:1px solid #c7cede}' +
+      'table{width:100%;border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt}' +
+      'td,th{padding:0;vertical-align:top}' +
+      '.rf-sheet{width:100%;margin:0;padding:0}' +
+      '.rf-sheet-head{border-bottom:1.4px solid #16203a;padding-bottom:6mm;margin-bottom:5mm}' +
+      '.rf-brandrow{width:100%}' +
+      '.rf-sheet-brand{font-size:10.5pt;line-height:1.8;font-weight:700;letter-spacing:.5pt;text-align:right}' +
+      '.rf-sheet-title{font-size:9pt;line-height:1.7;color:#3c4660;text-align:left}' +
+      '.rf-sheet-main{padding:0 0 0 6mm}' +
+      '.rf-sheet-sub{margin:0 0 4mm;font-size:9pt;line-height:1.7;color:#4a5573}' +
+      '.rf-photo{width:27mm;text-align:left}' +
+      '.rf-photo img{display:block;width:27mm;height:34mm;border:1.2px solid #16203a}' +
+      '.rf-facts{table-layout:fixed}' +
+      '.rf-facts td{padding:0 0 1mm;border-bottom:1px dotted #cfd6e4;vertical-align:baseline}' +
+      '.rf-facts .rf-fact-lbl{width:21%;font-size:9pt;line-height:1.8;font-weight:600;color:#46506b;padding-left:4pt}' +
+      '.rf-facts .rf-fact-val{width:29%;font-size:10.5pt;line-height:1.8}' +
+      '.rf-facts .rf-fact-void{border:0}' +
+      '.rf-table{margin-top:1mm}' +
+      '.rf-table th,.rf-table td{border:1px solid #c7cede;padding:1mm 2mm;font-size:9pt;line-height:1.7;text-align:right;vertical-align:top}' +
+      '.rf-table th{background:#eef1f8;font-weight:600}' +
+      '.rf-sheet tr{page-break-inside:avoid}' +
+      '.rf-sheet-foot{margin-top:6mm;border-top:1px solid #c7cede;padding-top:3mm}' +
+      '.rf-sheet-foot td{border:0;padding:0;font-size:8pt;line-height:1.7;color:#5b6580;vertical-align:top}' +
+      '.rf-foot-note{text-align:right}' +
+      '.rf-foot-stamp{text-align:left}';
+  }
+
+  // فایل Word از همان مارک‌آپ برگه ساخته می‌شود؛ فقط با تنظیم صفحهٔ A4 و
+  // استایل جدولی بالا. BOM جلوی خراب‌شدن حروف فارسی در Word را می‌گیرد.
+  function wordDocument(model) {
+    return '\ufeff<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40" dir="rtl">' +
+      '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>' + esc(model.title) + '</title>' +
+      '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->' +
+      '<style>' + sheetCss() + '</style></head>' +
+      '<body dir="rtl"><div class="WordSection1">' + buildSheet(model) + '</div></body></html>';
   }
 
   function xlsDocument(html) {
@@ -357,7 +426,7 @@
   function runExport(format, model, sheetHtml) {
     const name = 'ATLAS-SHIFT-' + slug(model.title) + '-' + fileStamp();
     if (format === 'print') { printSheet(sheetHtml); return; }
-    if (format === 'doc') { download(name + '.doc', wordDocument(sheetHtml, model.title), 'application/msword'); return; }
+    if (format === 'doc') { download(name + '.doc', wordDocument(model), 'application/msword'); return; }
     if (format === 'xls') { download(name + '.xls', xlsDocument(xlsSheetHtml(model)), 'application/vnd.ms-excel'); return; }
     download(name + '.csv', csvDocument(model), 'text/csv;charset=utf-8');
   }
@@ -378,6 +447,13 @@
     const label = EXPORT_FORMATS[format].label;
     const overlay = document.createElement('div');
     overlay.className = 'rf-preview-backdrop';
+    // Word: خودِ همان فایلی که تحویل داده می‌شود در قاب پیش‌نمایش نشان داده
+    // می‌شود، پس آنچه می‌بینی و آنچه ذخیره می‌شود یک سند و یک استایل است.
+    const isDoc = format === 'doc';
+    let docUrl = '';
+    if (isDoc) {
+      docUrl = URL.createObjectURL(new Blob([wordDocument(model)], { type: 'text/html;charset=utf-8' }));
+    }
     overlay.innerHTML =
       '<div class="rf-preview-head"><strong>پیش‌نمایش خروجی — ' + esc(label) + '</strong>' +
       '<small>' + esc(EXPORT_FORMATS[format].hint) + ' این پیش‌نمایش همان چیزی است که در فایل/چاپ می‌آید.</small>' +
@@ -385,9 +461,14 @@
         '<button type="button" class="secondary-btn" data-rf-preview-cancel>انصراف</button>' +
         '<button type="button" class="primary-btn" data-rf-preview-ok>تأیید و دریافت خروجی</button>' +
       '</div></div>' +
-      '<div class="rf-preview-body">' + sheetHtml + '</div>';
+      (isDoc
+        ? '<div class="rf-preview-body is-frame"><iframe class="rf-preview-frame" title="' + esc(label) + '" src="' + esc(docUrl) + '"></iframe></div>'
+        : '<div class="rf-preview-body">' + sheetHtml + '</div>');
     document.body.appendChild(overlay);
-    const close = () => overlay.remove();
+    const close = () => {
+      overlay.remove();
+      if (docUrl) setTimeout(() => URL.revokeObjectURL(docUrl), 1000);
+    };
     overlay.querySelector('[data-rf-preview-cancel]').addEventListener('click', close);
     overlay.addEventListener('click', event => { if (event.target === overlay) close(); });
     overlay.querySelector('[data-rf-preview-ok]').addEventListener('click', () => {
@@ -446,6 +527,7 @@
   window.AtlasRecordFile = {
     openModule: openModuleRecord,
     openContact: contact => open(contactSheet(contact)),
-    buildSheet: model => buildSheet(model)
+    buildSheet: model => buildSheet(model),
+    buildWord: model => wordDocument(model)
   };
 })();

@@ -97,56 +97,52 @@
   line-height: 1.9;
 }
 
+/* سربرگ برگه: چیدمان با جدول (نه flex/grid) تا فایل Word همان ساختار را بدهد */
 .rf-sheet-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  border-bottom: 1.4px solid #16203a;
   padding-bottom: 6mm;
   margin-bottom: 5mm;
-  border-bottom: 1.4px solid #16203a;
 }
 
-/* سربرگ برگه + کادر عکس: عکس بالا و سمت چپ می‌نشیند، متن پرونده در سمت راست. */
-.rf-sheet-top {
-  display: flex;
-  align-items: flex-start;
-  gap: 6mm;
+.rf-brandrow,
+.rf-top,
+.rf-facts,
+.rf-sheet-foot {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rf-brandrow td,
+.rf-top td,
+.rf-sheet-foot td {
+  padding: 0;
+  vertical-align: top;
+  border: 0;
 }
 
 .rf-sheet-main {
-  flex: 1 1 auto;
-  min-width: 0;
+  padding-left: 6mm;
 }
 
-.rf-sheet-photo {
-  order: 2;
-  flex: 0 0 auto;
+.rf-photo {
+  width: 27mm;
+  text-align: left;
+}
+
+.rf-photo img {
   width: 27mm;
   height: 34mm;
-  padding: 1.2mm;
   border: 1.2px solid #16203a;
   border-radius: 3px;
   background: #f2f5fb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.rf-sheet-photo img {
-  width: 100%;
-  height: 100%;
   object-fit: cover;
   display: block;
 }
 
 .rf-sheet-brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   font-weight: 700;
   letter-spacing: .04em;
+  text-align: right;
 }
 
 .rf-sheet-title {
@@ -176,68 +172,69 @@
 }
 
 .rf-facts {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1mm 6mm;
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
 }
 
-.rf-fact {
-  display: flex;
-  gap: 4px;
-  align-items: baseline;
+.rf-facts td {
+  border: 0;
   border-bottom: 1px dotted #cfd6e4;
-  padding-bottom: .8mm;
-  min-width: 0;
+  padding: 0 0 1mm;
+  vertical-align: baseline;
 }
 
-.rf-fact b {
-  flex: 0 0 42%;
+.rf-facts .rf-fact-lbl {
+  width: 21%;
   font-weight: 600;
   color: #46506b;
   font-size: 9pt;
+  padding-left: 4px;
 }
 
-.rf-fact span {
-  flex: 1 1 auto;
+.rf-facts .rf-fact-val {
+  width: 29%;
   word-break: break-word;
 }
 
-.rf-fact.is-wide {
-  grid-column: 1 / -1;
+.rf-facts .rf-fact-void {
+  border-bottom: 0;
 }
 
-.rf-fact.is-wide b {
-  flex-basis: 21%;
-}
-
-.rf-sheet table {
+.rf-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 9pt;
   margin-top: 1mm;
 }
 
-.rf-sheet th,
-.rf-sheet td {
+.rf-table th,
+.rf-table td {
   border: 1px solid #c7cede;
   padding: 1mm 2mm;
   text-align: right;
   vertical-align: top;
 }
 
-.rf-sheet th {
+.rf-table th {
   background: #eef1f8;
   font-weight: 600;
 }
 
 .rf-sheet-foot {
   margin-top: 6mm;
-  padding-top: 3mm;
   border-top: 1px solid #c7cede;
-  display: flex;
-  justify-content: space-between;
+  padding-top: 3mm;
   font-size: 8pt;
   color: #5b6580;
+}
+
+.rf-sheet-foot .rf-foot-note {
+  text-align: right;
+}
+
+.rf-sheet-foot .rf-foot-stamp {
+  text-align: left;
 }
 
 .rf-empty {
@@ -298,6 +295,22 @@
   padding: 18px 12px 40px;
 }
 
+/* پیش‌نمایش Word: همان فایل خروجی داخل قاب نمایش داده می‌شود */
+.rf-preview-body.is-frame {
+  display: flex;
+  padding: 0;
+  overflow: hidden;
+  background: #5b6580;
+}
+
+.rf-preview-frame {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+
 .rf-preview-body .rf-sheet {
   box-shadow: 0 14px 40px rgba(var(--c-black-rgb), .5);
 }
@@ -332,11 +345,11 @@
   }
 
   .rf-facts {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    table-layout: fixed;
   }
 
-  .rf-sheet tr,
-  .rf-fact {
+  .rf-sheet tr {
     break-inside: avoid;
   }
 
@@ -353,16 +366,26 @@
     font-size: 11px;
   }
 
-  .rf-sheet-photo {
+  .rf-photo {
+    width: 64px;
+  }
+
+  .rf-photo img {
     width: 64px;
     height: 80px;
   }
 
-  .rf-facts {
-    grid-template-columns: 1fr;
+  .rf-facts .rf-fact-lbl {
+    font-size: 8.5px;
   }
 
-  .rf-fact b {
-    flex-basis: 46%;
+  .rf-facts .rf-fact-val {
+    word-break: break-word;
+  }
+
+  .rf-table th,
+  .rf-table td {
+    font-size: 8.5px;
+    padding: 2px 4px;
   }
 }
