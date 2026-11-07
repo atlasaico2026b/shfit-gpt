@@ -56,8 +56,7 @@ html[data-atlas-theme="theme-two"] .primary-btn{background:linear-gradient(135de
 html[data-atlas-theme="theme-two"] .secondary-btn{background:rgba(17,45,91,.52);border-color:rgba(75,180,255,.20);color:#cfe2fa}
 html[data-atlas-theme="theme-two"] .drawer{background:linear-gradient(180deg,rgba(4,13,39,.98),rgba(3,8,27,.99));border-color:rgba(77,190,255,.35);box-shadow:-25px 0 80px rgba(0,0,0,.55),0 0 35px rgba(28,151,255,.15)}
 html[data-atlas-theme="theme-two"] .drawer-head{border-bottom-color:rgba(73,184,255,.18)}
-html[data-atlas-theme="theme-two"] .notice-card{background:linear-gradient(135deg,rgba(13,38,86,.82),rgba(5,17,47,.72));border-color:rgba(74,181,255,.16)}
-html[data-atlas-theme="theme-two"] .notice-card:hover{border-color:rgba(82,195,255,.34);box-shadow:0 0 25px rgba(28,155,255,.10)}
+/* کارت اعلان در این پوسته هم روشن می‌ماند؛ ظاهرش فقط در design/notices.css تعریف می‌شود. */
 html[data-atlas-theme="theme-two"] .settings-popover{background:linear-gradient(160deg,rgba(5,18,50,.98),rgba(3,10,31,.98));border-color:rgba(70,183,255,.26);box-shadow:0 24px 70px rgba(0,0,0,.52),0 0 30px rgba(29,154,255,.13)}
 html[data-atlas-theme="theme-two"] .settings-section{border-top-color:rgba(73,183,255,.15)}
 html[data-atlas-theme="theme-two"] .theme-option{background:rgba(9,31,72,.58);border-color:rgba(71,178,255,.16)}

@@ -79,11 +79,14 @@
   align-items: center;
   gap: 6px;
   min-width: 0;
+  /* با چند فیلتر (مکان/شهر/فرد/نوع/وضعیت) یک خط کافی نیست؛ ردیف می‌پیچد و
+     فقط در نمایشگر باریک می‌لغزد. */
+  flex-wrap: wrap;
+  row-gap: 6px;
   overflow-x: auto;
   overflow-y: hidden;
   padding-bottom: 2px;
   scrollbar-width: thin;
-  flex-wrap: nowrap;
 }
 
 .list-filter-row::-webkit-scrollbar { height: 4px; }
