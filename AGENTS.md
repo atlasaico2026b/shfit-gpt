@@ -54,6 +54,10 @@ missions, leave, vehicles, gas detectors, notes/actions, reports, settings.
 | تم/رنگ‌ها | `design/theme-switch.js` + `design/skins/*.css` |
 | اعتبارسنجی/نرمال‌سازی داده‌ها | `design/…` یا توابع مشترک `modules.js` (بدون تکرار) |
 
+- `demo/atlas-shift-demo-10.json` + `demo/README.md` — test-only sample data as a restorable ATLAS SHIFT
+  backup (10 items in every section). **Never** referenced by `index.html`, `sw.js`, `modules.js` or the preview
+  build: the app stays clean and the data loads only when someone picks the file in
+  تنظیمات → پشتیبان‌گیری و بازیابی. Validate with `node tests/demo-data.cjs`.
 - `sw.js` + `manifest.json` — offline cache and installability.
 - `ATLAS_SHIFT_REQUIREMENTS.md` — the authoritative requirements/spec. Read it before large features.
 - `README.md` — current status in Persian; keep it updated when behaviour changes.
