@@ -88,8 +88,10 @@
         {key:'title',label:'عنوان مأموریت',type:'select',required:true,listKey:'missionTitles',options:['بازدید دوره‌ای خط','رفع نشتی','نظارت بر جوشکاری','بررسی انشعاب','پایش ایمنی','سرویس تجهیزات','مأموریت اضطراری','سایر']},
         {key:'missionType',label:'نوع مأموریت',type:'select',required:true,listKey:'missionTypes',options:['نظارت بر جوشکاری','بررسی انشعاب یا نشتی','بررسی آلودگی خاک یا آب','بازدید ایستگاه','سرویس تجهیزات','بازدید ایمنی','سایر']},
         {key:'status',label:'وضعیت مأموریت',type:'select',required:true,listKey:'missionStatuses',options:['برنامه‌ریزی‌شده','در جریان','انجام‌شده','لغو‌شده']},
-        {key:'origin',label:'مبدأ',type:'place'},
-        {key:'destination',label:'مقصد',type:'place'},
+        // مبدأ و مقصد فقط از فهرست مشترک مکان‌ها انتخاب می‌شوند («لیست»، نه نوشتن آزاد)؛
+        // همان فهرستی که شهر، محل خدمت و محدودهٔ عملیاتی از آن می‌آیند و با «+» بزرگ می‌شود.
+        {key:'origin',label:'مبدأ',type:'select',listKey:'places'},
+        {key:'destination',label:'مقصد',type:'select',listKey:'places'},
         // محدودهٔ عملیاتی یک فهرست مدیریت‌شدنی است: شهر، روستا، ایستگاه مخابراتی، ایستگاه برق،
         // رکتیفایر، مرکز انتقال نفت و هر چیز دیگر؛ با «+» اضافه و در تنظیمات فهرست‌ها کم می‌شود.
         {key:'operationalRange',label:'محدودهٔ عملیاتی',type:'select',listKey:'operationalRanges',
