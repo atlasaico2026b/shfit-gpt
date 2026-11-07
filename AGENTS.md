@@ -69,6 +69,8 @@ missions, leave, vehicles, gas detectors, notes/actions, reports, settings.
 | خروجی چاپ/PDF فهرست‌ها (A4 افقی) | `design/print-sheet.js` + `design/print.css` |
 | خروجی Word / CSV (همهٔ برنامه) | `design/export-docs.js` |
 | نوار جست‌وجو/فیلتر/مرتب‌سازی و پشتیبان‌گیری بخش | `design/toolbars.css` + `renderListToolbar` / `exportSectionBackup` در `modules.js` |
+| ظاهر کارت اعلان (کشوی اعلان) | `design/notices.css` (+ `openNoticeDialog` در `modules.js`) |
+| فیلترهای فهرست هر بخش | `LIST_FILTERS` + `recordMatchesFilters` در `modules.js` |
 | لایه‌بندی منوی «خروجی و چاپ» بالای پنل‌ها | `design/modals-export.css` |
 | همگام‌سازی کارمند ↔ مخاطب | `design/contact-sync.js` |
 | تم/رنگ‌ها | `design/theme-switch.js` + `design/skins/*.css` |

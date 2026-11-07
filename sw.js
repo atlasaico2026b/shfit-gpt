@@ -5,7 +5,7 @@
    - fetch: اول کش؛ شبکه فقط برای پر کردن کش چیزی که نداریم و به‌عنوان پشتیبان.
    - activate: کش‌های قدیمی پاک می‌شوند و اگر نسخهٔ قبلی وجود داشت، به صفحه اعلام می‌شود.
    افزایش CACHE_NAME در هر انتشار، نصب نسخهٔ تازه و پیش‌کش اتمی را تضمین می‌کند. */
-const CACHE_NAME = 'atlas-shift-v118-scoped-backup-toolbars';
+const CACHE_NAME = 'atlas-shift-v119-notices-filters-range-report';
 const APP_FILES = [
   './', './index.html',
   './design/tokens.css', './design/styles.css', './design/skins/flat.css', './design/skins/theme-two.css', './design/tones.css',
@@ -13,7 +13,7 @@ const APP_FILES = [
   './design/table-fix.css', './design/settings-tabs.css', './design/phonebook.css', './design/option-manager.css',
   './design/modals-export.css', './design/print.css', './design/spectrum.css', './design/gaslogs.css',
   './design/stations.css', './design/vehicle-tabs.css', './design/settings-view.css',
-  './design/new-ui.css', './design/new-ui.js',
+  './design/new-ui.css', './design/new-ui.js', './design/notices.css',
   './design/forms-validation.css', './design/record-file.css',
   './design/scroll-routing.css', './design/scroll-routing.js', './design/print-sheet.js', './design/toolbars.css',
   './design/export-docs.js',

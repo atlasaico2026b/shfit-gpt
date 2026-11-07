@@ -379,47 +379,8 @@ input[type="checkbox"]:not(.nu-keep-native):disabled {
   transform: rotate(45deg);
 }
 
-/* ── ردیف ۸ · آیتم‌های لیست و اعلان‌ها ────────────────────────────────── */
-.notice-card {
-  position: relative;
-  border-radius: 12px !important;
-  border: 1px solid var(--line) !important;
-  border-inline-start: 4px solid rgba(var(--accent-rgb), .75) !important;
-  background: linear-gradient(90deg, rgba(var(--accent-rgb), .10), rgba(var(--c-white-rgb), .02)) !important;
-  transition: transform var(--nu-ease), background-color var(--nu-ease), box-shadow var(--nu-ease);
-}
-
-.notice-card:hover {
-  transform: scale(1.02) translateY(-1px);
-  box-shadow: 0 12px 26px -16px rgba(var(--c-black-rgb), .9);
-}
-
-.notice-card[data-notice="calibration"] {
-  border-inline-start-color: rgba(var(--c-yellow-rgb), .85) !important;
-  background: linear-gradient(90deg, rgba(var(--c-yellow-rgb), .12), rgba(var(--c-white-rgb), .02)) !important;
-}
-
-.notice-card[data-notice="maintenance"] {
-  border-inline-start-color: rgba(var(--c-cyan-rgb), .85) !important;
-  background: linear-gradient(90deg, rgba(var(--c-cyan-rgb), .12), rgba(var(--c-white-rgb), .02)) !important;
-}
-
-.notice-card[data-notice="mission"] {
-  border-inline-start-color: rgba(var(--c-green-rgb), .85) !important;
-  background: linear-gradient(90deg, rgba(var(--c-green-rgb), .12), rgba(var(--c-white-rgb), .02)) !important;
-}
-
-.notice-card.unread::after {
-  content: "";
-  position: absolute;
-  inset-inline-end: 10px;
-  top: 10px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--c-red);
-  box-shadow: 0 0 10px rgba(var(--c-red-rgb), .8);
-}
+/* ── ردیف ۸ · آیتم‌های لیست ──────────────────────────────────────────────
+   ظاهر کارت اعلان یک صاحب دارد: design/notices.css */
 
 .atlas-pb-option-row,
 .atlas-pb-tree-row {

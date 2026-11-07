@@ -42,9 +42,10 @@
     employees: [['name', 'نام و نام خانوادگی'], ['personnelId', 'شمارهٔ پرسنلی'], ['jobTitle', 'عنوان شغلی'],
       ['employmentType', 'نوع استخدام'], ['workplace', 'محل سازمانی'], ['assignedWorkplace', 'محل خدمت فعلی'],
       ['workType', 'نوع شیفت کاری'], ['hireDate', 'تاریخ استخدام'], ['status', 'وضعیت'], ['updatedAt', 'آخرین به‌روزرسانی']],
-    missions: [['startAt', 'تاریخ آغاز'], ['endAt', 'تاریخ پایان'], ['title', 'عنوان مأموریت'], ['missionType', 'نوع مأموریت'],
-      ['destination', 'مقصد'], ['status', 'وضعیت'], ['updatedAt', 'آخرین به‌روزرسانی']],
-    leaves: [['startDate', 'تاریخ شروع'], ['endDate', 'تاریخ پایان'], ['leaveType', 'نوع مرخصی'], ['status', 'وضعیت'],
+    missions: [['startAt', 'تاریخ آغاز'], ['endAt', 'تاریخ پایان'], ['name', 'نام فرد مأمور'], ['title', 'عنوان مأموریت'],
+      ['missionType', 'نوع مأموریت'], ['origin', 'مبدأ'], ['destination', 'مقصد'], ['operationalRange', 'محدودهٔ عملیاتی'],
+      ['status', 'وضعیت'], ['updatedAt', 'آخرین به‌روزرسانی']],
+    leaves: [['startDate', 'تاریخ شروع'], ['endDate', 'تاریخ پایان'], ['name', 'نام کارمند'], ['leaveType', 'نوع مرخصی'], ['status', 'وضعیت'],
       ['employeeId', 'کارمند'], ['updatedAt', 'آخرین به‌روزرسانی']],
     vehicles: [['name', 'نام خودرو'], ['companyPlate', 'پلاک شرکت'], ['policePlate', 'پلاک پلیس'], ['status', 'وضعیت'],
       ['currentKm', 'کارکرد (کیلومتر)'], ['updatedAt', 'آخرین به‌روزرسانی']],
@@ -85,6 +86,10 @@
   function listSortValue(moduleKey, record, key) {
     if (key === 'name') {
       if (moduleKey === 'employees') return employeeName(record);
+      if (moduleKey === 'missions' || moduleKey === 'leaves') {
+        const person = (appData.employees || []).find(function (item) { return String(item.id) === String(record.employeeId); });
+        if (person) return employeeName(person);
+      }
       return String(record.name || record.title || '');
     }
     if (key === 'employeeId') {
@@ -109,6 +114,142 @@
       const compared = String(left).localeCompare(String(right), 'fa', { numeric: true, sensitivity: 'base' });
       if (compared) return factor * compared;
       return String(b.updatedAt || b.createdAt || '').localeCompare(String(a.updatedAt || a.createdAt || ''));
+    });
+  }
+
+  // ── فیلترهای فهرست هر بخش ────────────────────────────────────────────────
+  // هر بخش فیلترهای واقعی خودش را دارد (نه فقط وضعیت): مکان/شهر، فرد، نوع و …
+  // هر فیلتر سه چیز دارد: کلید، برچسب و دو تابع:
+  //   options()  → گزینه‌های فهرست، که از داده‌های همین دستگاه ساخته می‌شوند
+  //   match()    → آیا این رکورد با مقدار انتخاب‌شده می‌خواند؟
+  // فیلتر «مکان» و «شهر یا محل» به هم وابسته‌اند: با انتخاب مبدأ/مقصد، فهرست
+  // شهرها هم فقط از همان ستون ساخته می‌شود.
+  const PLACE_PARTS = { origin: 'مبدأ', destination: 'مقصد', operationalRange: 'محدودهٔ عملیاتی' };
+
+  function uniqueOptionsFrom(moduleKey, keys) {
+    const seen = Object.create(null);
+    const values = [];
+    (appData[moduleKey] || []).forEach(function (record) {
+      keys.forEach(function (key) {
+        const value = String(record[key] == null ? '' : record[key]).trim();
+        if (value && !seen[value]) { seen[value] = 1; values.push(value); }
+      });
+    });
+    values.sort(function (a, b) { return a.localeCompare(b, 'fa'); });
+    return values.map(function (value) { return [value, value]; });
+  }
+
+  function statusFilterOptions(moduleKey) {
+    return (statusOptions(moduleKey) || []).map(function (item) { return [item, item]; });
+  }
+
+  function employeeFilterOptions() {
+    return (appData.employees || []).map(function (person) {
+      return [String(person.id), employeeName(person) || person.personnelId || 'کارمند'];
+    }).sort(function (a, b) { return String(a[1]).localeCompare(String(b[1]), 'fa'); });
+  }
+
+  const LIST_FILTERS = {
+    missions: [
+      { key: 'placeField', label: 'مکان', control: true, options: function () {
+          return [['all', 'همهٔ مکان‌ها'], ['origin', 'مبدأ'], ['destination', 'مقصد'], ['operationalRange', 'محدودهٔ عملیاتی']];
+        } },
+      { key: 'place', label: 'شهر یا محل',
+        options: function (moduleKey, state) {
+          const parts = state.placeField && state.placeField !== 'all' ? [state.placeField] : Object.keys(PLACE_PARTS);
+          return uniqueOptionsFrom('missions', parts);
+        },
+        match: function (record, value, state) {
+          const parts = state.placeField && state.placeField !== 'all' ? [state.placeField] : Object.keys(PLACE_PARTS);
+          return parts.some(function (part) { return String(record[part] || '') === String(value); });
+        } },
+      { key: 'employeeId', label: 'فرد', options: employeeFilterOptions,
+        match: function (record, value) {
+          if (String(record.employeeId || '') === String(value)) return true;
+          const crew = Array.isArray(record.crewIds) ? record.crewIds.map(String) : [];
+          return crew.indexOf(String(value)) >= 0;
+        } },
+      { key: 'missionType', label: 'نوع مأموریت', options: function () { return uniqueOptionsFrom('missions', ['missionType']); } },
+      { key: 'status', label: 'وضعیت', options: function () { return statusFilterOptions('missions'); } }
+    ],
+    leaves: [
+      { key: 'employeeId', label: 'فرد', options: employeeFilterOptions },
+      { key: 'leaveType', label: 'نوع مرخصی', options: function () { return uniqueOptionsFrom('leaves', ['leaveType']); } },
+      { key: 'status', label: 'وضعیت', options: function () { return statusFilterOptions('leaves'); } }
+    ],
+    employees: [
+      { key: 'workplace', label: 'محل سازمانی', options: function () { return uniqueOptionsFrom('employees', ['workplace']); } },
+      { key: 'assignedWorkplace', label: 'محل خدمت', options: function () { return uniqueOptionsFrom('employees', ['assignedWorkplace']); } },
+      { key: 'workType', label: 'نوع شیفت', options: function () { return uniqueOptionsFrom('employees', ['workType']); } },
+      { key: 'status', label: 'وضعیت', options: function () { return statusFilterOptions('employees'); } }
+    ],
+    vehicles: [
+      { key: 'currentCity', label: 'شهر', options: function () { return uniqueOptionsFrom('vehicles', ['currentCity']); } },
+      { key: 'status', label: 'وضعیت', options: function () { return statusFilterOptions('vehicles'); } }
+    ],
+    stations: [
+      { key: 'city', label: 'شهر', options: function () { return uniqueOptionsFrom('stations', ['city']); } },
+      { key: 'placeType', label: 'نوع محل', options: function () { return uniqueOptionsFrom('stations', ['placeType']); } },
+      { key: 'status', label: 'وضعیت', options: function () { return statusFilterOptions('stations'); } }
+    ],
+    gasmeters: [
+      { key: 'location', label: 'محل استقرار', options: function () { return uniqueOptionsFrom('gasmeters', ['location']); } },
+      { key: 'healthStatus', label: 'وضعیت سلامت', options: function () { return uniqueOptionsFrom('gasmeters', ['healthStatus']); } }
+    ],
+    notes: [
+      { key: 'actionType', label: 'نوع اقدام', options: function () { return uniqueOptionsFrom('notes', ['actionType']); } },
+      { key: 'status', label: 'وضعیت', options: function () { return statusFilterOptions('notes'); } }
+    ],
+    programs: [
+      { key: 'category', label: 'دسته', options: function () { return uniqueOptionsFrom('programs', ['category']); } },
+      { key: 'programType', label: 'نوع برنامه', options: function () { return uniqueOptionsFrom('programs', ['programType']); } },
+      { key: 'status', label: 'وضعیت', options: function () { return statusFilterOptions('programs'); } }
+    ],
+    faults: [
+      { key: 'priority', label: 'اولویت', options: function () { return uniqueOptionsFrom('faults', ['priority']); } },
+      { key: 'status', label: 'وضعیت', options: function () { return statusFilterOptions('faults'); } }
+    ],
+    maintenance: [
+      { key: 'serviceType', label: 'نوع سرویس', options: function () { return uniqueOptionsFrom('maintenance', ['serviceType']); } },
+      { key: 'status', label: 'وضعیت', options: function () { return statusFilterOptions('maintenance'); } }
+    ]
+  };
+
+  function moduleFilterState(moduleKey) {
+    const state = filterState[moduleKey];
+    if (state && typeof state === 'object') return state;
+    // سازگاری با مقدار قدیمی (فقط وضعیت به‌صورت رشته) که در حافظه مانده باشد.
+    if (typeof state === 'string' && state && state !== 'all') return { status: state };
+    return Object.create(null);
+  }
+
+  function setModuleFilter(moduleKey, key, value) {
+    const state = Object.assign(Object.create(null), moduleFilterState(moduleKey));
+    if (!value || value === 'all') delete state[key];
+    else state[key] = value;
+    // فهرست شهرها به «مکان» وابسته است؛ با تغییر آن، شهر انتخاب‌شده پاک می‌شود.
+    if (key === 'placeField') delete state.place;
+    filterState[moduleKey] = state;
+    return state;
+  }
+
+  function clearModuleFilters(moduleKey) {
+    filterState[moduleKey] = Object.create(null);
+  }
+
+  function hasActiveFilters(moduleKey) {
+    return Object.keys(moduleFilterState(moduleKey)).length > 0;
+  }
+
+  function recordMatchesFilters(moduleKey, record, data) {
+    const state = moduleFilterState(moduleKey);
+    const filters = LIST_FILTERS[moduleKey] || [];
+    return filters.every(function (filter) {
+      if (filter.control) return true; // کنترل کمکی (مثل «مکان») خودش داده را فیلتر نمی‌کند
+      const value = state[filter.key];
+      if (value == null || value === '' || value === 'all') return true;
+      if (filter.match) return filter.match(record, value, state, data);
+      return String(record[filter.key] == null ? '' : record[filter.key]) === String(value);
     });
   }
 
@@ -1433,8 +1574,7 @@
 
   function searchMatch(moduleKey, record, data) {
     const term = String(searchState[moduleKey] || '').trim().toLocaleLowerCase();
-    const wantedStatus = filterState[moduleKey] || 'all';
-    if (wantedStatus !== 'all' && String(record.status || '') !== wantedStatus) return false;
+    if (!recordMatchesFilters(moduleKey, record, data)) return false;
     if (!term) return true;
     const values = fieldsFor(moduleKey).filter(function(field){return field.type!=='file'&&field.type!=='file-multiple';}).map(function (field) {
       let value = field.custom && record.customFields ? record.customFields[field.key] : record[field.key];
@@ -1457,15 +1597,21 @@
   // دو ردیف ثابت: ردیف جست‌وجو، و درست زیر آن یک ردیف فشردهٔ فیلتر و مرتب‌سازی.
   // همهٔ کنترل‌ها «قرص»های کوچک‌اند تا در یک خط جا شوند و فضا نگیرند؛ در
   // نمایشگر باریک، همان یک خط به‌آرامی افقی می‌لغزد (شکسته نمی‌شود).
-  function renderStatusFilter(moduleKey) {
-    if (!statusOptions(moduleKey).length) return '';
-    const selected = filterState[moduleKey] || 'all';
-    return '<label class="list-chip list-chip-filter is-status"><span class="list-chip-label">وضعیت</span>' +
-      '<select data-module-filter data-view="' + esc(moduleKey) + '" aria-label="فیلتر وضعیت"><option value="all"' +
-      (selected === 'all' ? ' selected' : '') + '>همه</option>' +
-      statusOptions(moduleKey).map(function (item) {
-        return '<option value="' + esc(item) + '"' + (selected === item ? ' selected' : '') + '>' + esc(item) + '</option>';
-      }).join('') + '</select></label>';
+  function renderFilterControls(moduleKey) {
+    const filters = LIST_FILTERS[moduleKey] || [];
+    if (!filters.length) return '';
+    const state = moduleFilterState(moduleKey);
+    return filters.map(function (filter) {
+      const selected = state[filter.key] || 'all';
+      const options = filter.options ? filter.options(moduleKey, state) : [];
+      return '<label class="list-chip list-chip-filter is-' + esc(filter.key) + '">' +
+        '<span class="list-chip-label">' + esc(filter.label) + '</span>' +
+        '<select data-module-filter data-filter-key="' + esc(filter.key) + '" data-view="' + esc(moduleKey) + '" aria-label="فیلتر ' + esc(filter.label) + '">' +
+        '<option value="all"' + (selected === 'all' || !selected ? ' selected' : '') + '>همه</option>' +
+        options.map(function (option) {
+          return '<option value="' + esc(option[0]) + '"' + (String(selected) === String(option[0]) ? ' selected' : '') + '>' + esc(option[1]) + '</option>';
+        }).join('') + '</select></label>';
+    }).join('');
   }
 
   function renderSortControls(moduleKey) {
@@ -1483,14 +1629,14 @@
   }
 
   function renderListToolbar(moduleKey) {
-    const active = (filterState[moduleKey] && filterState[moduleKey] !== 'all') || !!String(searchState[moduleKey] || '').trim();
+    const active = hasActiveFilters(moduleKey) || !!String(searchState[moduleKey] || '').trim();
     return '<div class="module-list-tools">' +
         '<div class="list-search-row"><span class="list-search-icon" aria-hidden="true">⌕</span>' +
           '<input type="search" data-module-search data-view="' + esc(moduleKey) + '" value="' + esc(searchState[moduleKey] || '') + '" placeholder="جست‌وجو در ' + esc(specs[moduleKey].title) + '" aria-label="جست‌وجو">' +
         '</div>' +
         '<div class="list-filter-row" role="group" aria-label="فیلتر و مرتب‌سازی">' +
           renderSortControls(moduleKey) +
-          renderStatusFilter(moduleKey) +
+          renderFilterControls(moduleKey) +
           '<button type="button" class="list-chip list-chip-reset' + (active ? ' is-active' : '') + '" data-module-reset data-view="' + esc(moduleKey) + '"' + (active ? '' : ' hidden') + '>پاک‌کردن فیلترها</button>' +
           '<span class="list-filter-count" data-module-result-count>' + faDigits(recordsForView(moduleKey, appData).length) + ' مورد</span>' +
         '</div>' +
@@ -1894,15 +2040,85 @@
 
   function noticeCardHtml(a) {
     const state = alertStateMeta(a);
+    const when = a.at ? formatJalali(a.at, false) : '';
     return '<div class="notice-card notice-kind-' + esc(a.kind || 'other') + (a.critical ? ' unread' : '') + (a.done ? ' is-done' : '') +
-      '" data-kind="' + esc(a.kind || 'other') + '" data-state="' + esc(a.state || 'active') + '">' +
+      '" data-kind="' + esc(a.kind || 'other') + '" data-state="' + esc(a.state || 'active') + '"' +
+      ' data-alert-key="' + esc(a.key || '') + '" tabindex="0" role="button" aria-label="' + esc((a.title || '') + ' — ' + (a.detail || '')) + '">' +
       '<span class="notice-state-bar" data-tone="' + state.tone + '" aria-hidden="true"></span>' +
       '<div class="notice-mark">' + alertKindIcon(a.kind) + '</div>' +
       '<div class="notice-body"><b>' + esc(a.title) + '</b><p>' + esc(a.detail) + '</p>' +
       '<div class="notice-meta"><span class="notice-state-chip" data-tone="' + state.tone + '">' + esc(state.label) + '</span>' +
-      '<small>' + esc((ALERT_KIND_META[a.kind] || { label: 'پیگیری' }).label) + '</small></div>' +
-      alertCommentButton(a) + '</div>' +
+      '<small>' + esc((ALERT_KIND_META[a.kind] || { label: 'پیگیری' }).label) + (when ? ' · ' + esc(when) : '') + '</small></div></div>' +
       '<span class="notice-unread"></span></div>';
+  }
+
+  // پنجرهٔ جزئیات یک اعلان: تمام اطلاعات همان اعلان + کامنت روی رکورد مرتبط.
+  // کلید اعلان از data-alert-key کارت می‌آید و در noticeAlertIndex نگه‌داری می‌شود.
+  let noticeAlertIndex = Object.create(null);
+
+  function openNoticeDialog(alert) {
+    if (!alert) return;
+    const state = alertStateMeta(alert);
+    const kindMeta = ALERT_KIND_META[alert.kind] || { label: 'پیگیری' };
+    const moduleKey = alert.module || '';
+    const record = moduleKey ? (appData[moduleKey] || []).find(function (item) { return String(item.id) === String(alert.recordId); }) : null;
+    const rows = [
+      ['دستهٔ اعلان', kindMeta.label],
+      ['وضعیت', state.label],
+      ['تاریخ', alert.at ? formatJalali(alert.at, true) : 'ثبت نشده']
+    ];
+    if (record) rows.push(['مورد مرتبط', recordLabel(moduleKey, record)]);
+    const canComment = !!(moduleKey && alert.recordId && recordCommentField(moduleKey) && record);
+    const canOpenFile = !!(moduleKey && alert.recordId && record && window.AtlasRecordFile);
+    const backdrop = document.createElement('div');
+    backdrop.className = 'atlas-modal-backdrop atlas-dialog-backdrop';
+    backdrop.setAttribute('data-modal-backdrop', '');
+    backdrop.setAttribute('data-modal-kind', 'notice');
+    backdrop.innerHTML =
+      '<div class="atlas-modal atlas-dialog" role="dialog" aria-modal="true" aria-labelledby="atlasNoticeTitle">' +
+        '<div class="atlas-modal-head"><div><h3 id="atlasNoticeTitle">جزئیات اعلان</h3>' +
+          '<p>' + esc((specs[moduleKey] && specs[moduleKey].title) || 'مرکز اعلان‌ها') + '</p></div>' +
+          '<button type="button" class="atlas-modal-close" data-notice-close aria-label="بستن پنجره">×</button></div>' +
+        '<div class="atlas-modal-body"><div class="notice-detail" data-kind="' + esc(alert.kind || 'other') + '">' +
+          '<div class="notice-detail-head"><div class="notice-mark">' + alertKindIcon(alert.kind) + '</div>' +
+            '<div><b>' + esc(alert.title || 'اعلان') + '</b><small>' + esc(state.label) + ' · ' + esc(kindMeta.label) + '</small></div></div>' +
+          '<p class="notice-detail-text">' + esc(alert.detail || 'توضیحی برای این اعلان ثبت نشده است.') + '</p>' +
+          '<div class="notice-detail-rows">' + rows.map(function (row) {
+            return '<div class="notice-detail-row"><span>' + esc(row[0]) + '</span><b>' + esc(row[1]) + '</b></div>';
+          }).join('') + '</div>' +
+          '<div class="notice-detail-actions">' +
+            (canComment ? '<button type="button" class="primary-btn" data-notice-comment>ثبت کامنت</button>' : '') +
+            (canOpenFile ? '<button type="button" class="secondary-btn" data-notice-file>مشاهدهٔ پرونده</button>' : '') +
+            '<button type="button" class="secondary-btn" data-notice-close>بستن</button>' +
+          '</div>' +
+          (canComment ? '<p class="notice-detail-note">کامنت با تاریخ شمسی در سوابق همین مورد ثبت می‌شود و در «کامنت» همان بخش هم دیده می‌شود.</p>'
+            : '<p class="notice-detail-note">برای این اعلان رکورد کامنت‌پذیری وجود ندارد.</p>') +
+        '</div></div></div>';
+    document.body.appendChild(backdrop);
+    let closed = false;
+    function closeNotice() {
+      if (closed) return;
+      closed = true;
+      backdrop.remove();
+    }
+    backdrop.querySelectorAll('[data-notice-close]').forEach(function (btn) { btn.addEventListener('click', closeNotice); });
+    backdrop.addEventListener('click', function (event) { if (event.target === backdrop) closeNotice(); });
+    backdrop.addEventListener('keydown', function (event) { if (event.key === 'Escape') closeNotice(); });
+    const commentButton = backdrop.querySelector('[data-notice-comment]');
+    if (commentButton) {
+      commentButton.addEventListener('click', function () {
+        openCommentDialog(moduleKey, alert.recordId);
+      });
+    }
+    const fileButton = backdrop.querySelector('[data-notice-file]');
+    if (fileButton) {
+      fileButton.addEventListener('click', function () {
+        closeNotice();
+        document.dispatchEvent(new CustomEvent('atlas-open-file', { detail: { module: moduleKey, id: alert.recordId } }));
+      });
+    }
+    const closeButton = backdrop.querySelector('[data-notice-close]');
+    if (closeButton) closeButton.focus();
   }
 
   function refreshDashboard() {
@@ -2060,6 +2276,8 @@
     if(notificationBadge)notificationBadge.textContent=faDigits(alerts.length);
     const notificationList=document.getElementById('noticeList');
     if(notificationList){
+      noticeAlertIndex=Object.create(null);
+      alerts.forEach(function(a){if(a.key)noticeAlertIndex[a.key]=a;});
       notificationList.innerHTML=alerts.length?noticeGroupsHtml(alerts):'<div class="module-empty">اعلان تازه‌ای وجود ندارد.</div>';
     }
     const operations=document.querySelector('[data-widget="operations"]');
@@ -6147,6 +6365,167 @@
     if (closeButton) closeButton.focus();
   }
 
+  // ── گزارش افراد در بازهٔ داشبورد ──────────────────────────────────────────
+  // برای همان بازه‌ای که بالای داشبورد انتخاب شده، تعداد مأموریت و مرخصی هر فرد
+  // شمرده می‌شود، فهرست ریز هرکدام نشان داده می‌شود و خروجی (CSV/Excel/Word/
+  // تصویر/چاپ) گرفته می‌شود.
+  function rangeReportData() {
+    const start = dashboardRange.start || todayIso();
+    const end = dashboardRange.end || start;
+    const dayOf = function (value) { return String(value || '').slice(0, 10); };
+    const inRange = function (value) {
+      const day = dayOf(value);
+      return !!day && day >= start && day <= end;
+    };
+    const overlaps = function (from, to) {
+      const a = dayOf(from);
+      const b = dayOf(to || from);
+      return !!a && !!b && a <= end && b >= start;
+    };
+    const staff = appData.employees || [];
+    const personOf = function (id) {
+      return staff.find(function (person) { return String(person.id) === String(id); }) || null;
+    };
+    const summary = Object.create(null);
+    const detail = [];
+    const bucket = function (id) {
+      const key = String(id || '');
+      if (!summary[key]) {
+        const person = personOf(id);
+        summary[key] = {
+          id: key,
+          name: person ? employeeName(person) : (key ? 'کارمند حذف‌شده' : 'بدون کارمند'),
+          personnelId: person ? String(person.personnelId || '') : '',
+          workplace: person ? String(person.assignedWorkplace || person.workplace || '') : '',
+          missions: 0, leaves: 0, leaveDays: 0
+        };
+      }
+      return summary[key];
+    };
+    (appData.missions || []).forEach(function (mission) {
+      if (mission.status === 'لغو‌شده') return;
+      if (!inRange(mission.startAt)) return;
+      const people = [];
+      if (mission.employeeId) people.push(String(mission.employeeId));
+      if (Array.isArray(mission.crewIds)) mission.crewIds.forEach(function (id) {
+        if (id && people.indexOf(String(id)) < 0) people.push(String(id));
+      });
+      people.forEach(function (id) {
+        const entry = bucket(id);
+        entry.missions += 1;
+        detail.push({
+          type: 'مأموریت', person: entry.name, title: mission.title || 'مأموریت',
+          from: dayOf(mission.startAt), to: dayOf(mission.endAt),
+          status: mission.status || '', place: [mission.origin, mission.destination].filter(Boolean).join(' ← ') || String(mission.operationalRange || '')
+        });
+      });
+    });
+    (appData.leaves || []).forEach(function (leave) {
+      if (leave.status === 'ردشده') return;
+      if (!overlaps(leave.startDate, leave.endDate)) return;
+      const entry = bucket(leave.employeeId);
+      entry.leaves += 1;
+      const from = dayOf(leave.startDate);
+      const to = dayOf(leave.endDate || leave.startDate);
+      const days = from && to ? Math.max(1, Math.round((new Date(to) - new Date(from)) / 86400000) + 1) : 0;
+      entry.leaveDays += days;
+      detail.push({
+        type: 'مرخصی', person: entry.name, title: leave.leaveType || 'مرخصی',
+        from: from, to: to, status: leave.status || '', place: leave.reason ? String(leave.reason).split('\n')[0].slice(0, 60) : ''
+      });
+    });
+    const people = Object.keys(summary).map(function (key) { return summary[key]; })
+      .filter(function (row) { return row.missions + row.leaves > 0; })
+      .sort(function (a, b) {
+        return (b.missions + b.leaves) - (a.missions + a.leaves) || String(a.name).localeCompare(String(b.name), 'fa');
+      });
+    detail.sort(function (a, b) {
+      return String(a.from).localeCompare(String(b.from)) || String(a.person).localeCompare(String(b.person), 'fa');
+    });
+    return { start: start, end: end, people: people, detail: detail };
+  }
+
+  function openRangeReport() {
+    const report = rangeReportData();
+    const rangeLabel = formatJalali(report.start, false) + ' تا ' + formatJalali(report.end, false);
+    const summaryRows = [['کارمند', 'شمارهٔ پرسنلی', 'محل خدمت', 'تعداد مأموریت', 'تعداد مرخصی', 'مجموع روز مرخصی']];
+    report.people.forEach(function (row) {
+      summaryRows.push([row.name, row.personnelId, row.workplace,
+        faDigits(row.missions), faDigits(row.leaves), faDigits(row.leaveDays)]);
+    });
+    const detailRows = [['نوع', 'کارمند', 'عنوان', 'از تاریخ', 'تا تاریخ', 'وضعیت', 'محل / مقصد']];
+    report.detail.forEach(function (row) {
+      detailRows.push([row.type, row.person, row.title,
+        formatJalali(row.from, false), row.to ? formatJalali(row.to, false) : '',
+        row.status, row.place]);
+    });
+    const summaryTable = report.people.length
+      ? '<div class="module-table-wrap" style="width:100%;min-width:0"><table class="module-table"><thead><tr>' +
+        ['کارمند', 'شمارهٔ پرسنلی', 'محل خدمت', 'مأموریت', 'مرخصی', 'روز مرخصی'].map(function (label) { return '<th>' + esc(label) + '</th>'; }).join('') +
+        '</tr></thead><tbody>' + report.people.map(function (row) {
+          return '<tr><td>' + esc(row.name) + '</td><td>' + esc(row.personnelId || '—') + '</td><td>' + esc(row.workplace || '—') + '</td>' +
+            '<td>' + faDigits(row.missions) + '</td><td>' + faDigits(row.leaves) + '</td><td>' + faDigits(row.leaveDays) + '</td></tr>';
+        }).join('') + '</tbody></table></div>'
+      : '<div class="module-empty">در بازهٔ ' + esc(rangeLabel) + ' برای هیچ کارمندی مأموریت یا مرخصی ثبت نشده است.</div>';
+    const detailTable = report.detail.length
+      ? '<div class="module-table-wrap" style="width:100%;min-width:0"><table class="module-table"><thead><tr>' +
+        ['نوع', 'کارمند', 'عنوان', 'از تاریخ', 'تا تاریخ', 'وضعیت'].map(function (label) { return '<th>' + esc(label) + '</th>'; }).join('') +
+        '</tr></thead><tbody>' + report.detail.map(function (row) {
+          return '<tr><td>' + esc(row.type) + '</td><td>' + esc(row.person) + '</td><td>' + esc(row.title) + '</td>' +
+            '<td>' + esc(formatJalali(row.from, false)) + '</td><td>' + esc(row.to ? formatJalali(row.to, false) : '—') + '</td><td>' + esc(row.status || '—') + '</td></tr>';
+        }).join('') + '</tbody></table></div>'
+      : '<div class="module-empty">جزئیاتی برای نمایش نیست.</div>';
+    const backdrop = document.createElement('div');
+    backdrop.className = 'atlas-modal-backdrop';
+    backdrop.setAttribute('data-modal-backdrop', '');
+    backdrop.setAttribute('data-modal-kind', 'range-report');
+    backdrop.innerHTML =
+      '<div class="atlas-modal atlas-modal-form" role="dialog" aria-modal="true" aria-labelledby="atlasRangeReportTitle">' +
+        '<div class="atlas-modal-head"><div><h3 id="atlasRangeReportTitle">گزارش افراد در بازه</h3>' +
+          '<p>' + esc(rangeLabel) + ' · ' + faDigits(report.people.length) + ' نفر · ' + faDigits(report.detail.length) + ' مورد</p></div>' +
+          '<button type="button" class="atlas-modal-close" data-range-close aria-label="بستن پنجره">×</button></div>' +
+        '<div class="atlas-modal-body">' +
+          '<div class="module-list-head"><div><h3>خلاصهٔ هر فرد</h3><p>تعداد مأموریت‌ها و مرخصی‌های ثبت‌شده در همین بازه.</p></div></div>' +
+          summaryTable +
+          '<div class="module-list-head" style="margin-top:14px"><div><h3>فهرست ریز موارد</h3><p>هر مأموریت و مرخصی این بازه با تاریخ و وضعیت.</p></div></div>' +
+          detailTable +
+          '<div class="module-form-actions" style="margin-top:14px"><span class="module-required-help">خروجی از همین داده‌ها ساخته می‌شود.</span><div>' +
+            '<select id="rangeReportScope" class="module-report-export" aria-label="دامنهٔ خروجی">' +
+              '<option value="summary">خلاصهٔ افراد</option><option value="detail">فهرست ریز</option></select> ' +
+            '<button type="button" class="secondary-btn" data-range-export="csv">CSV</button> ' +
+            '<button type="button" class="secondary-btn" data-range-export="xlsx">Excel</button> ' +
+            '<button type="button" class="secondary-btn" data-range-export="docx">Word</button> ' +
+            '<button type="button" class="secondary-btn" data-range-export="png">تصویر PNG</button> ' +
+            '<button type="button" class="secondary-btn" data-range-export="print">چاپ / PDF</button> ' +
+            '<button type="button" class="primary-btn" data-range-close>بستن</button>' +
+          '</div></div>' +
+        '</div></div>';
+    document.body.appendChild(backdrop);
+    let closed = false;
+    function closeReport() {
+      if (closed) return;
+      closed = true;
+      backdrop.remove();
+    }
+    backdrop.querySelectorAll('[data-range-close]').forEach(function (button) { button.addEventListener('click', closeReport); });
+    backdrop.addEventListener('click', function (event) { if (event.target === backdrop) closeReport(); });
+    backdrop.addEventListener('keydown', function (event) { if (event.key === 'Escape') closeReport(); });
+    const scopeSelect = backdrop.querySelector('#rangeReportScope');
+    backdrop.querySelectorAll('[data-range-export]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        const scope = scopeSelect ? scopeSelect.value : 'summary';
+        const rows = scope === 'detail' ? detailRows : summaryRows;
+        if (rows.length < 2) { toast('برای این بازه داده‌ای برای خروجی وجود ندارد.'); return; }
+        const title = (scope === 'detail' ? 'فهرست ریز مأموریت و مرخصی' : 'خلاصهٔ افراد') + ' · ' + rangeLabel + ' · ATLAS SHIFT';
+        const base = 'ATLAS-SHIFT-range-' + (scope === 'detail' ? 'detail' : 'summary') + '-' + report.start + '_' + report.end;
+        runExport(rows, title, base, button.dataset.rangeExport || 'csv');
+        toast('خروجی گزارش بازه آماده شد.');
+      });
+    });
+    const closeButton = backdrop.querySelector('[data-range-close]');
+    if (closeButton) closeButton.focus();
+  }
+
   function openHistory(moduleKey, id) {
     const record=appData[moduleKey].find(function(item){return String(item.id)===String(id);});
     const rows=appData.history.filter(function(item){return item.module===moduleKey&&item.recordId===String(id);})
@@ -6422,6 +6801,8 @@
       clearTestData();
     }else if(action==='restore-select'){
       const input=document.getElementById('atlasRestoreFile');if(input)input.click();
+    }else if(action==='range-report'){
+      openRangeReport();
     }else if(action==='history'&&specs[moduleKey]){
       openHistory(moduleKey,button.dataset.id);
     }else if(action==='leave-history'){
@@ -6630,7 +7011,7 @@
     if (resetButton) {
       const moduleKey = resetButton.dataset.view;
       searchState[moduleKey] = '';
-      filterState[moduleKey] = 'all';
+      clearModuleFilters(moduleKey);
       render(moduleKey, document.getElementById('sectionView'));
     }
   });
@@ -6642,6 +7023,19 @@
     card.classList.remove('unread');
     const count = document.getElementById('notificationCount');
     if (count) count.textContent = faDigits(document.querySelectorAll('.notice-card.unread').length);
+    const key = card.dataset.alertKey || '';
+    if (key && noticeAlertIndex[key]) openNoticeDialog(noticeAlertIndex[key]);
+  });
+  // کارت اعلان با صفحه‌کلید هم باز می‌شود (Enter / Space).
+  document.addEventListener('keydown', function(event) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const card = event.target.closest && event.target.closest('.notice-card');
+    if (!card || event.target.closest('.notice-quick-comment')) return;
+    const key = card.dataset.alertKey || '';
+    if (!key || !noticeAlertIndex[key]) return;
+    event.preventDefault();
+    card.classList.remove('unread');
+    openNoticeDialog(noticeAlertIndex[key]);
   });
 
   document.addEventListener('submit', async function(event) {
@@ -6789,7 +7183,7 @@
   document.addEventListener('change', function(event) {
     const target=event.target;
     if(target.matches('[data-module-filter]')){
-      filterState[target.dataset.view]=target.value;
+      setModuleFilter(target.dataset.view, target.dataset.filterKey || 'status', target.value);
       render(target.dataset.view,document.getElementById('sectionView'));
     }else if(target.matches('[data-module-sort]')){
       setListSort(target.dataset.view,{key:target.value});

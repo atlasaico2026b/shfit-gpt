@@ -1,0 +1,70 @@
+// بررسی ساختاری اعلان‌ها، فیلترهای فهرست و گزارش بازه.
+// این آزمون کد اجرا نمی‌کند؛ فقط تضمین می‌کند صاحب‌های هر ویژگی سر جایشان بمانند
+// و قواعدی که در README/AGENTS ثبت شده‌اند در فایل‌ها موجود باشند.
+const fs = require('fs');
+const path = require('path');
+
+const root = path.resolve(__dirname, '..');
+const read = p => fs.readFileSync(path.join(root, p), 'utf8');
+const modules = read('modules.js');
+const app = read('app.js');
+const index = read('index.html');
+const sw = read('sw.js');
+const noticesCss = read('design/notices.css');
+const toolbarsCss = read('design/toolbars.css');
+const themeTwo = read('design/skins/theme-two.css');
+const settingsView = read('design/settings-view.css');
+const newUi = read('design/new-ui.css');
+const tokens = read('design/tokens.css');
+
+const checks = [];
+const check = (name, ok) => checks.push({ name, ok: !!ok });
+
+// ── اعلان‌ها: یک صاحب CSS و رنگ روشن در همهٔ پوسته‌ها ──
+check('notices.css ساخته و در index.html بارگذاری شده', index.includes('./design/notices.css'));
+check('notices.css آخرین شیت ظاهری است', index.indexOf('./design/notices.css') > index.indexOf('./design/new-ui.css'));
+check('notices.css کارت را روشن و پرتضاد نگه می‌دارد', /--notice-paper/.test(noticesCss) && /color:\s*var\(--notice-ink\)/.test(noticesCss));
+check('کارت اعلان جهت راست‌به‌چپ صریح دارد', /direction:\s*rtl/.test(noticesCss));
+check('پوستهٔ دوم دیگر کارت اعلان را تیره نمی‌کند', !/\.notice-card\{background:linear-gradient\(135deg,rgba\(13,38,86/.test(themeTwo));
+check('کارت اعلان در settings-view.css رنگ‌آمیزی نمی‌شود', !/\.notice-card\[data-kind\]\s*\{/.test(settingsView));
+check('new-ui.css رنگ کارت اعلان را با !important عوض نمی‌کند', !/\.notice-card\s*\{[\s\S]{0,200}background:[^;]*!important/.test(newUi));
+check('توکن‌های سطح اعلان تعریف شده‌اند', ['--notice-paper', '--notice-ink', '--notice-ink-soft', '--notice-line'].every(t => tokens.includes(t)));
+
+// ── اعلان‌ها: کارت فشرده + پنجرهٔ جزئیات + کامنت ──
+check('کارت اعلان کلید اعلان را حمل می‌کند', /data-alert-key=/.test(modules));
+check('کلیک روی کارت پنجرهٔ جزئیات را باز می‌کند', /function openNoticeDialog/.test(modules) && /openNoticeDialog\(noticeAlertIndex\[key\]\)/.test(modules));
+check('پنجرهٔ جزئیات دکمهٔ کامنت دارد', /data-notice-comment/.test(modules) && /openCommentDialog\(moduleKey, alert\.recordId\)/.test(modules));
+check('اعلان‌های خوانده‌نشده گروه خالی جا نمی‌گذارند', /notice-group/.test(app) && /notice-card/.test(app));
+check('کارت اعلان با صفحه‌کلید هم باز می‌شود', /event\.key !== 'Enter'/.test(modules) && /notice-card/.test(modules));
+
+// ── فیلترها: هر بخش فیلتر خودش را دارد، نه فقط وضعیت ──
+check('جدول فیلترهای هر بخش وجود دارد', /const LIST_FILTERS = \{/.test(modules));
+check('مأموریت‌ها فیلتر مکان/شهر و فرد دارند', /key: 'placeField'/.test(modules) && /key: 'place'/.test(modules) && /key: 'employeeId'/.test(modules));
+check('مرخصی‌ها فیلتر فرد و نوع دارند', /leaves: \[\s*\{ key: 'employeeId'/.test(modules));
+check('فیلترها روی رکورد اعمال می‌شوند', /function recordMatchesFilters/.test(modules) && /recordMatchesFilters\(moduleKey, record, data\)/.test(modules));
+check('کنترل کمکی (مکان) خودش داده را فیلتر نمی‌کند', /filter\.control/.test(modules));
+check('تغییر «مکان» شهر انتخاب‌شده را پاک می‌کند', /if \(key === 'placeField'\) delete state\.place/.test(modules));
+check('پاک‌کردن فیلترها همهٔ فیلترها را برمی‌دارد', /clearModuleFilters\(moduleKey\)/.test(modules));
+check('ردیف فیلترها با چند فیلتر می‌پیچد', /flex-wrap: wrap/.test(toolbarsCss));
+
+// ── مرتب‌سازی مأموریت‌ها ──
+check('مرتب‌سازی با نام فرد مأمور موجود است', /\['name', 'نام فرد مأمور'\]/.test(modules));
+check('نام فرد برای مأموریت/مرخصی از پروندهٔ کارمند خوانده می‌شود', /moduleKey === 'missions' \|\| moduleKey === 'leaves'/.test(modules));
+check('مرتب‌سازی با مبدأ و محدودهٔ عملیاتی هست', /\['origin', 'مبدأ'\]/.test(modules) && /\['operationalRange', 'محدودهٔ عملیاتی'\]/.test(modules));
+
+// ── گزارش افراد در بازه ──
+check('محاسبهٔ گزارش بازه وجود دارد', /function rangeReportData/.test(modules) && /function openRangeReport/.test(modules));
+check('دکمهٔ گزارش در بالای داشبورد هست', index.includes('data-module-action="range-report"'));
+check('گزارش از بازهٔ انتخاب‌شدهٔ داشبورد استفاده می‌کند', /dashboardRange\.start/.test(modules) && /dashboardRange\.end/.test(modules));
+check('همراهان مأموریت هم شمرده می‌شوند', /mission\.crewIds\.forEach/.test(modules));
+check('مرخصی ردشده در گزارش نمی‌آید', /leave\.status === 'ردشده'/.test(modules));
+check('خروجی گزارش با runExport ساخته می‌شود', /runExport\(rows, title, base/.test(modules));
+check('دکمهٔ گزارش به handler وصل است', /openRangeReport\(\)/.test(modules));
+
+// ── کش آفلاین ──
+check('notices.css در فهرست پیش‌کش سرویس‌ورکر است', sw.includes('./design/notices.css'));
+
+const failed = checks.filter(c => !c.ok);
+checks.forEach(c => console.log((c.ok ? 'PASS ' : 'FAIL ') + c.name));
+console.log('\n' + (checks.length - failed.length) + '/' + checks.length + ' بررسی موفق');
+process.exit(failed.length ? 1 : 0);
