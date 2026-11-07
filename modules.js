@@ -102,9 +102,15 @@
         {key:'productType',label:'نوع فرآورده',type:'select',listKey:'products',options:['نفت خام','نفت گاز','بنزین','نفت سفید','گاز مایع','آب آلوده','سایر']},
         {key:'hasPollution',label:'آلودگی',type:'select',options:['ندارد','دارد']},
         // ردیف‌های آلودگی فقط وقتی «آلودگی: دارد» انتخاب شود باز می‌شوند.
+        // آلودگی خاکی و آبی، هر کدام «میزان» خودش را روبروی همان کادر می‌گیرد:
+        // خاکی بر حسب متر مکعب و آبی بر حسب لیتر. هر میزان فقط وقتی باز می‌شود که
+        // همان نوع آلودگی «دارد» باشد (و در کل هم «آلودگی: دارد»).
         {key:'soilPollution',label:'آلودگی خاکی',type:'select',options:['دارد','ندارد'],dependsOn:{key:'hasPollution',values:['دارد']}},
+        {key:'soilPollutionAmount',label:'میزان آلودگی خاکی (متر مکعب)',type:'number',min:0,step:'0.01',
+          dependsOn:[{key:'hasPollution',values:['دارد']},{key:'soilPollution',values:['دارد']}]},
         {key:'waterPollution',label:'آلودگی آبی',type:'select',options:['دارد','ندارد'],dependsOn:{key:'hasPollution',values:['دارد']}},
-        {key:'pollutionAmount',label:'میزان آلودگی',type:'text',placeholder:'یک خط توضیح',dependsOn:{key:'hasPollution',values:['دارد']}},
+        {key:'waterPollutionAmount',label:'میزان آلودگی آبی (لیتر)',type:'number',min:0,step:'0.01',
+          dependsOn:[{key:'hasPollution',values:['دارد']},{key:'waterPollution',values:['دارد']}]},
         {key:'pollutionCleared',label:'در پایان عملیات رفع آلودگی انجام شد؟',type:'select',options:['انجام شد','انجام نشد'],dependsOn:{key:'hasPollution',values:['دارد']}},
         {key:'attachments',label:'پیوست‌های گزارش',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx'},
         {key:'result',label:'شرح کار و نتیجه',type:'textarea',wide:true,placeholder:'کار انجام‌شده و نتیجهٔ نهایی مأموریت'}
@@ -118,7 +124,7 @@
         ['origin','destination','operationalRange'],
         ['startAt','endAt'],
         ['pipelineSize','productType','hasPollution'],
-        ['soilPollution','waterPollution','pollutionAmount'],
+        ['soilPollution','soilPollutionAmount','waterPollution','waterPollutionAmount'],
         ['pollutionCleared'],
         ['attachments'],
         ['result']
@@ -821,11 +827,34 @@
 
   // فیلدهای وابسته به نوع محل: فقط وقتی نوع انتخاب‌شده با شرط فیلد بخواند دیده می‌شوند.
   // فیلدهای وابستهٔ عمومی (مثل «تعداد فرزند» پس از «متأهل») هم همین‌جا بررسی می‌شوند.
+  // شرط دیده‌شدن یک فیلد می‌تواند یک شرط یا چند شرط هم‌زمان باشد
+  // (مثلاً «میزان آلودگی آبی» هم به «آلودگی: دارد» و هم به «آلودگی آبی: دارد» بند است).
+  function dependsOnList(field) {
+    if (!field || !field.dependsOn) return [];
+    return Array.isArray(field.dependsOn) ? field.dependsOn : [field.dependsOn];
+  }
+
+  // آیا این فیلد فقط به‌خاطر برقرارنبودن شرط‌هایش پنهان شده است؟ (نه به‌خاطر نوع محل)
+  function hiddenByDepends(field, record) {
+    const conditions = dependsOnList(field);
+    for (let i = 0; i < conditions.length; i += 1) {
+      const condition = conditions[i];
+      const wanted = (condition && condition.values) || [];
+      if (!wanted.length) continue;
+      const current = record ? record[condition.key] : '';
+      if (wanted.indexOf(String(current == null ? '' : current)) < 0) return true;
+    }
+    return false;
+  }
+
   function fieldVisible(field, record) {
-    if (field && field.dependsOn) {
-      const wanted = field.dependsOn.values || [];
-      const current = record ? record[field.dependsOn.key] : '';
-      if (wanted.length && wanted.indexOf(String(current == null ? '' : current)) < 0) return false;
+    const conditions = dependsOnList(field);
+    for (let i = 0; i < conditions.length; i += 1) {
+      const condition = conditions[i];
+      const wanted = (condition && condition.values) || [];
+      if (!wanted.length) continue; // شرط بدون مقدار (مثل dependsOn:'placeType') فقط برای تازه‌سازی است
+      const current = record ? record[condition.key] : '';
+      if (wanted.indexOf(String(current == null ? '' : current)) < 0) return false;
     }
     const type = String((record && (record.placeType || record.stationType)) || '');
     if (Array.isArray(field.onlyFor) && field.onlyFor.length) return field.onlyFor.indexOf(type) >= 0;
@@ -851,23 +880,30 @@
   }
 
   // تغییر «نوع شیفت کاری» یا «وضعیت تأهل» فوراً فیلد وابسته را نشان می‌دهد یا پنهان می‌کند.
+  // چند گذر لازم است، چون پنهان‌شدن یک فیلد می‌تواند فیلد وابستهٔ بعدی را هم پنهان کند
+  // (آلودگی: ندارد → آلودگی آبی پنهان و خالی → میزان آلودگی آبی هم پنهان).
   function refreshDependentFields(form) {
     const moduleKey = form.dataset.view;
     if (!moduleKey || !specs[moduleKey]) return;
     const fields = formFields(moduleKey, form.dataset.faultScope === 'vehicle');
     if (!fields.some(function (field) { return field.dependsOn; })) return;
-    const values = liveFormValues(form);
-    fields.forEach(function (field) {
-      if (!field.dependsOn) return;
-      const wrapper = form.querySelector('[data-field-key="' + field.key + '"]');
-      if (!wrapper) return;
-      const shown = fieldVisible(field, values);
-      wrapper.hidden = !shown;
-      if (!shown) {
-        const control = wrapper.querySelector('[name]');
-        if (control) control.value = '';
-      }
-    });
+    for (let pass = 0; pass < 4; pass += 1) {
+      const values = liveFormValues(form);
+      let changed = false;
+      fields.forEach(function (field) {
+        if (!field.dependsOn) return;
+        const wrapper = form.querySelector('[data-field-key="' + field.key + '"]');
+        if (!wrapper) return;
+        const shown = fieldVisible(field, values);
+        if (wrapper.hidden !== !shown) changed = true;
+        wrapper.hidden = !shown;
+        if (!shown) {
+          const control = wrapper.querySelector('[name]');
+          if (control && control.value) { control.value = ''; changed = true; }
+        }
+      });
+      if (!changed) break;
+    }
   }
 
   function placeLists() {
@@ -4786,7 +4822,13 @@
     for(let i=0;i<fields.length;i+=1){
       const field=fields[i];
       if(!fieldVisible(field,visibleRecord)){
-        data[field.key]=oldRecord&&oldRecord[field.key]!=null?oldRecord[field.key]:(field.type==='rows'?[]:'');
+        // فیلد پنهان: اگر به‌خاطر برقرارنبودن شرطش پنهان شده، مقدارش خالی ذخیره می‌شود
+        // (وگرنه با انتخاب «آلودگی: ندارد» مقادیر قبلی برمی‌گشتند و پاک نمی‌شدند).
+        // پیوست‌ها و فیلدهای پنهان‌شده با «نوع محل» مقدار قبلی را نگه می‌دارند.
+        const keepOld=!hiddenByDepends(field,visibleRecord);
+        const fallback=field.type==='rows'?[]:((field.type==='file'||field.type==='file-multiple')
+          ?(oldRecord&&oldRecord[field.key]!=null?oldRecord[field.key]:[]):'');
+        data[field.key]=keepOld&&oldRecord&&oldRecord[field.key]!=null?oldRecord[field.key]:fallback;
         continue;
       }
       if(field.type==='rows'){
