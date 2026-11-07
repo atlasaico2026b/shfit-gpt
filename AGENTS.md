@@ -20,6 +20,15 @@ missions, leave, vehicles, gas detectors, notes/actions, reports, settings.
   sheet of every stored field plus related records, with preview-before-export (print/PDF, Word, Excel, CSV).
   Opens via `document.dispatchEvent(new CustomEvent('atlas-open-file', {detail:{module, id}}))` or
   `AtlasRecordFile.openContact(contact)`. It only prints data that exists; never invent fields.
+  پیش‌نمایش هر قالب با `buildPreviewOverlay(model, format)` ساخته می‌شود (بدون iframe، همان برگهٔ A4) و
+  نام فایل خروجی با `exportFileName(model)` همیشه ASCII است؛ نام فارسی باعث می‌شد مرورگر فایل را با نام
+  «download» ذخیره کند و خروجی Word به دست کاربر نرسد.
+- `design/toolbars.css` — نوار ابزار فهرست‌ها (ردیف جست‌وجو + یک ردیف فشردهٔ فیلتر/مرتب‌سازی با قرص‌های
+  `.list-chip`)، دکمهٔ «پشتیبان‌گیری این بخش» و رنگ‌بندی اعلان‌ها (گروه‌های `.notice-group` + نوار وضعیت
+  `.notice-state-bar`: سبز = انجام شد، زرد = در حال انجام، آبی = برنامه‌ریزی‌شده، قرمز = نیازمند اقدام).
+  مرتب‌سازی هر بخش در `LIST_SORTS` (`modules.js`) تعریف می‌شود و انتخاب کاربر در localStorage می‌ماند.
+  پشتیبان‌گیری بخش‌به‌بخش: `SECTION_BACKUP` + `exportSectionBackup(view)`؛ فایل فقط همان بخش را دارد
+  (`scope`) و بازیابی، به‌جای جایگزینی همه‌چیز، همان بخش را بر اساس شناسه ادغام می‌کند.
 - `design/print-sheet.js` + `design/print.css` — «خروجی چاپ/PDF» of every list section (employees, leaves,
   missions, vehicles, gas meters, stations, logs, shifts, reports). One owner for the list sheet: `printRows()`
   in `modules.js` only calls `AtlasPrintSheet.render(host, rows, {title, stamp})`. Sheet = A4 **landscape**,
@@ -27,13 +36,12 @@ missions, leave, vehicles, gas detectors, notes/actions, reports, settings.
   borders, larger/bolder column headers, content-proportional column widths (`<colgroup>`), numeric cells
   kept on one line, and a font/padding step that shrinks as the column count grows (`data-density`).
   Tests: `node tests/print-sheet.cjs`.
-- `design/export-docs.js` + `design/pptx-base.js` — **تنها مرجع ساخت فایل‌های Word (.docx)، PowerPoint
-  (.pptx) و CSV** (اکسل/PNG/چاپ صاحبان خودشان را دارند). هر خروجی سندی از این دو تابع می‌آید:
-  `AtlasExportDocs.docx(sheet)`، `AtlasExportDocs.pptx(sheet)`، `AtlasExportDocs.csv(rows, opts)`.
+- `design/export-docs.js` — **تنها مرجع ساخت فایل‌های Word (.docx) و CSV** (اکسل/PNG/چاپ صاحبان
+  خودشان را دارند). هر خروجی سندی از این دو تابع می‌آید:
+  `AtlasExportDocs.docx(sheet)`، `AtlasExportDocs.csv(rows, opts)`. خروجی PowerPoint حذف شده است.
   قاعده‌ها: برگهٔ **فهرست** همیشه A4 افقی و برگهٔ **پرونده** همیشه عمودی؛ جدول Word راست‌به‌چپ
   (`w:bidiVisual`) و راست‌چین با خط کامل بین خانه‌ها، پهنای ستون متناسب محتوا، سرستون تکرارشونده در
-  هر صفحه و ردیف‌های بلند که به صفحهٔ بعد می‌روند (نه قیچی‌شده). فایل pptx بدنهٔ سالم PowerPoint را از
-  `pptx-base.js` می‌گیرد و فقط اسلایدها را می‌سازد (ردیف‌های زیاد روی چند اسلاید). CSV با BOM و
+  هر صفحه و ردیف‌های بلند که به صفحهٔ بعد می‌روند (نه قیچی‌شده). CSV با BOM و
   نشانهٔ راست‌به‌چپ در هر خانه تا کلمات فارسی در Excel به‌هم نریزند.
   Tests: `node tests/export-docs.cjs`.
 - `design/contact-sync.js` — links phonebook contacts to employees by personnel number, national ID or
@@ -59,7 +67,8 @@ missions, leave, vehicles, gas detectors, notes/actions, reports, settings.
 | فیلد اجباری | `design/forms-validation.css` + `validateRequired` در `modules.js` |
 | مشاهدهٔ پرونده و خروجی A4 | `design/record-file.js` + `.css` |
 | خروجی چاپ/PDF فهرست‌ها (A4 افقی) | `design/print-sheet.js` + `design/print.css` |
-| خروجی Word / PowerPoint / CSV (همهٔ برنامه) | `design/export-docs.js` + `design/pptx-base.js` |
+| خروجی Word / CSV (همهٔ برنامه) | `design/export-docs.js` |
+| نوار جست‌وجو/فیلتر/مرتب‌سازی و پشتیبان‌گیری بخش | `design/toolbars.css` + `renderListToolbar` / `exportSectionBackup` در `modules.js` |
 | لایه‌بندی منوی «خروجی و چاپ» بالای پنل‌ها | `design/modals-export.css` |
 | همگام‌سازی کارمند ↔ مخاطب | `design/contact-sync.js` |
 | تم/رنگ‌ها | `design/theme-switch.js` + `design/skins/*.css` |

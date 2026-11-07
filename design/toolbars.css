@@ -1,0 +1,391 @@
+/* ============================================================================
+   ATLAS SHIFT · LIST TOOLBARS, SECTION BACKUP & COLOURED NOTIFICATIONS
+   ----------------------------------------------------------------------------
+   • نوار ابزار هر فهرست در دو ردیف: ردیف جست‌وجو، و درست زیر آن یک ردیف
+     فشردهٔ فیلتر/مرتب‌سازی با «قرص»های کوچک تا فضا نگیرد.
+   • دکمهٔ «پشتیبان‌گیری این بخش» در سربرگ هر منو.
+   • اعلان‌ها: گروه‌بندی رنگی بر اساس دسته + نوار رنگی وضعیت
+     (سبز = انجام شد، زرد = در حال انجام، آبی = برنامه‌ریزی‌شده، قرمز = نیازمند اقدام).
+   ========================================================================== */
+
+/* ── 1 · نوار ابزار فهرست ────────────────────────────────────────────────── */
+.module-list-tools,
+.list-toolbar {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 7px;
+  width: 100%;
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+
+.module-list-tools-slot {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  flex: 1 1 100%;
+}
+
+.list-search-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 0 10px 0 4px;
+  border: 1px solid var(--line-hi);
+  border-radius: 12px;
+  background: rgba(var(--navy-rgb), 0.28);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.list-search-row:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12);
+}
+
+.list-search-row .list-search-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.12);
+}
+
+.module-list-tools .list-search-row input,
+.atlas-pb-toolbar .list-search-row input {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 9px 4px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12.5px;
+  outline: none;
+  box-shadow: none;
+}
+
+.list-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+  flex-wrap: nowrap;
+}
+
+.list-filter-row::-webkit-scrollbar { height: 4px; }
+.list-filter-row::-webkit-scrollbar-thumb { background: rgba(var(--accent-rgb), 0.35); border-radius: 99px; }
+
+.list-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  height: 30px;
+  padding: 0 9px;
+  border: 1px solid var(--line-hi);
+  border-radius: 999px;
+  background: rgba(var(--navy-rgb), 0.32);
+  color: var(--text);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+}
+
+.list-chip:hover {
+  border-color: rgba(var(--accent-rgb), 0.5);
+  background: rgba(var(--accent-rgb), 0.1);
+}
+
+.list-chip:focus-within,
+.list-chip:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.18);
+}
+
+.list-chip-label {
+  flex: none;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.list-chip select {
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 0 2px;
+  max-width: 148px;
+  outline: none;
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+
+.list-chip select option {
+  color: var(--bg2);
+  background: var(--c-white);
+  font-size: 12px;
+}
+
+.list-chip-dir {
+  gap: 5px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.list-chip-dir b {
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.list-chip-caret {
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.list-chip-dir.is-asc .list-chip-caret { color: var(--ok); }
+
+.list-chip-reset {
+  border-style: dashed;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.list-chip-reset.is-active {
+  color: var(--danger);
+  border-color: rgba(var(--danger-rgb), 0.45);
+  background: rgba(var(--danger-rgb), 0.1);
+}
+
+.list-chip-reset[hidden] { display: none; }
+
+.list-filter-count {
+  flex: none;
+  margin-inline-start: auto;
+  padding-inline-start: 8px;
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* نوار ابزارهای ویژه (گازسنج، سوابق، سرویس، اشکالات) هم همان یک ردیف می‌شوند */
+.module-list-tools > select,
+.module-list-tools > label {
+  flex: none;
+}
+
+/* نوارهای قدیمی که فقط چند select دارند (بدون ردیف جست‌وجو) در همان یک خط
+   می‌مانند و افقی می‌لغزند؛ ظاهرشان هم قرصی و فشرده می‌شود. */
+.module-list-tools:not(:has(.list-search-row)) {
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.module-list-tools:not(:has(.list-search-row)) select {
+  flex: none;
+  height: 30px;
+  border-radius: 999px;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(var(--navy-rgb), 0.32);
+}
+
+/* ── 2 · دکمهٔ پشتیبان‌گیری هر بخش ───────────────────────────────────────── */
+.module-page-actions .module-backup-btn,
+.module-section-backup-bar .module-backup-btn,
+.module-list-actions .module-backup-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-style: dashed;
+  border-color: rgba(var(--accent-rgb), 0.45);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.module-page-actions .module-backup-btn:hover,
+.module-list-actions .module-backup-btn:hover {
+  border-color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.12);
+}
+
+.module-backup-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.module-section-backup-bar {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.module-list-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+/* ── 3 · اعلان‌های رنگی و گروه‌بندی‌شده ──────────────────────────────────── */
+.notice-group {
+  margin-bottom: 14px;
+}
+
+.notice-group-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 2px 7px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid rgba(var(--kind-rgb), 0.4);
+  color: rgb(var(--kind-rgb));
+  font-size: 11px;
+}
+
+.notice-group-head b {
+  font-size: 12px;
+  font-weight: 800;
+  color: rgb(var(--kind-rgb));
+}
+
+.notice-group-head small {
+  margin-inline-start: auto;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.notice-group-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgb(var(--kind-rgb));
+  box-shadow: 0 0 9px rgba(var(--kind-rgb), 0.75);
+}
+
+.notice-group-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* نوار رنگی وضعیت: سبز انجام شد، زرد در حال انجام، آبی برنامه‌ریزی‌شده، قرمز نیازمند اقدام */
+.notice-state-bar,
+.alert-state-bar {
+  flex: none;
+  width: 5px;
+  align-self: stretch;
+  min-height: 34px;
+  border-radius: 99px;
+  background: var(--tone);
+  box-shadow: 0 0 10px rgba(var(--tone-rgb), 0.55);
+}
+
+.notice-state-chip,
+.alert-state-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--tone-rgb), 0.5);
+  background: rgba(var(--tone-rgb), 0.16);
+  color: var(--tone);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.notice-card .notice-state-chip[data-tone],
+.alert-item .alert-state-chip[data-tone] {
+  color: color-mix(in srgb, var(--tone) 62%, #05070c);
+  border-color: rgba(var(--tone-rgb), 0.75);
+  background: rgba(var(--tone-rgb), 0.28);
+}
+
+.notice-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 7px;
+}
+
+.notice-meta small {
+  margin-top: 0;
+}
+
+.notice-card.is-done {
+  opacity: 0.92;
+}
+
+.notice-card.is-done .notice-body b {
+  text-decoration-color: rgba(5, 7, 12, 0.35);
+}
+
+/* نوار وضعیت در کارت اعلان کمی پهن‌تر و چسبیده به لبه دیده شود */
+.notice-card[data-kind] .notice-state-bar {
+  margin-inline-start: 0;
+  width: 5px;
+  min-height: 100%;
+  border-radius: 99px;
+}
+
+.notice-card[data-kind] {
+  align-items: stretch;
+}
+
+/* ── 4 · نمایشگرهای باریک ───────────────────────────────────────────────── */
+@media (max-width: 650px) {
+  .module-list-tools-slot { width: 100%; }
+  .module-list-tools .list-search-row input { width: 100%; }
+  .list-chip { height: 28px; padding: 0 8px; }
+  .list-chip select { max-width: 118px; }
+  .list-filter-count { display: none; }
+  .module-page-actions .module-backup-btn { width: 100%; justify-content: center; }
+}
+
+@media print {
+  .module-list-tools,
+  .module-backup-btn,
+  .hero-actions { display: none !important; }
+}

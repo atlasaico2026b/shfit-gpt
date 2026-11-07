@@ -83,3 +83,30 @@ Important: the prototype contains implementation choices and fields/cards that w
 - Drag-and-drop reordering is supported on dashboard cards with a drag handle; up/down controls are also provided in settings for accessible and touch-friendly alternative movement.
 - Dashboard layout is stored locally in browser localStorage. No cloud sync is implied.
 - Responsive styles were added for desktop and mobile screen widths. The app has not yet been verified in a real browser/device; check the published preview and report any visual or interaction issues before connecting real data.
+
+## Checkpoint — 2026-11-07 (per-menu backup, list toolbars, notifications, Word export)
+
+- **Word export fixed.** «مشاهدهٔ پرونده» → خروجی Word failed because the preview called an
+  undefined `wordDocument()`. Preview now uses `buildPreviewOverlay()` (the same A4 sheet for every
+  format) and the downloaded file name is ASCII (`exportFileName()`); a Persian file name made the
+  browser save it as “download” with no extension. Tests: `node tests/record-file-export.cjs`
+  (covers all four preview formats + the ASCII file name).
+- **PowerPoint export removed** everywhere: report format menu, module export menu, leave-history
+  export, `design/pptx-base.js` (deleted), `design/export-docs.js#pptx`, its tests and the service
+  worker entry. Exports left: CSV, Excel (xlsx/xls), Word (docx), PNG image, print/PDF.
+- **Per-menu backup.** Every menu has «پشتیبانگیری این بخش» (dashboard hero, every module page head,
+  phonebook header, settings) which asks for confirmation first and writes a file containing only
+  that section (+ the dropdown lists it uses) — other sections are not included. Restoring such a
+  file merges that section by id instead of replacing the whole database; full backups still replace.
+  Phonebook has its own scoped file (`window.ATLAS_PHONEBOOK.snapshot/merge`).
+- **List toolbars redesigned** in `design/toolbars.css`: a full-width search row with one compact
+  row of filter/sort pills underneath (sort field, direction, status filter, reset, result count).
+  Every module has a professional sort list (`LIST_SORTS`); the choice per section is remembered in
+  localStorage. Specialised toolbars (gas meters, logs, faults, service, phonebook) share the same
+  one-row compact look.
+- **Notifications** are grouped by category (`notice-group`, each with its own colour) and every card
+  carries a colour state bar + chip: green = انجام شد, amber = در حال انجام, blue = برنامهریزیشده,
+  red = نیازمند اقدام. Today's finished missions/resolved faults appear in the drawer as «انجام شد»;
+  the dashboard widget keeps showing only items that need attention.
+- Verified in headless Chromium: toolbar layout desktop/mobile, sort asc/desc, status filter, reset,
+  Word download (valid .docx), scoped backup files per menu, scoped restore merge, full restore.

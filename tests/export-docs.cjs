@@ -1,7 +1,6 @@
-/* آزمون خروجی‌های سندی (Word، PowerPoint، CSV) بدون مرورگر.
+/* آزمون خروجی‌های سندی (Word، CSV) بدون مرورگر.
    اجرا: node tests/export-docs.cjs
-   ساخت با همان فایل‌های برنامه، سپس اعتبارسنجی بستهٔ ZIP و XML؛ برای PowerPoint
-   اگر python-pptx موجود باشد فایل واقعاً باز و خوانده می‌شود. */
+   ساخت با همان فایل‌های برنامه، سپس اعتبارسنجی بستهٔ ZIP و XML. */
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -15,7 +14,7 @@ fs.mkdirSync(outDir, { recursive: true });
 const sandbox = { console, TextEncoder, Blob, Date, Math, JSON, setTimeout, clearTimeout };
 sandbox.window = sandbox;
 vm.createContext(sandbox);
-for (const file of ['design/pptx-base.js', 'design/export-docs.js']) {
+for (const file of ['design/export-docs.js']) {
   vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), sandbox, { filename: file });
 }
 const docs = sandbox.window.AtlasExportDocs;
@@ -37,11 +36,6 @@ const employeeRows = [
   ['علی', 'رضایی', '۱۰۲۴', 'پالایشگاه آبادان', 'شاغل', '۰۹۱۲۳۴۵۶۷۸۹'],
   ['مریم', 'کریمی', '۱۰۲۵', 'مرکز مخابرات', 'مرخصی', '۰۹۱۲۳۴۵۶۷۹۰'],
 ];
-const longRows = [['ردیف', 'شرح اقدام', 'مسئول', 'تاریخ', 'وضعیت']];
-for (let i = 1; i <= 40; i += 1) {
-  longRows.push([String(i), 'بازدید دوره‌ای تجهیزات و ثبت گزارش شمارهٔ ' + i, 'کارشناس ' + (i % 5), '۱۴۰۵/۰۸/۱۲', 'باز']);
-}
-
 (async () => {
   // ── Word: فهرست (افقی) ──
   const docxBytes = await write('list.docx', docs.docx({
@@ -62,10 +56,6 @@ for (let i = 1; i <= 40; i += 1) {
     facts: [['کد پرسنلی', '۱۰۲۴'], ['محل خدمت', 'پالایشگاه آبادان']],
     tables: [{ heading: 'مرخصی‌ها', rows: [['نوع', 'از', 'تا'], ['استحقاقی', '۱۴۰۵/۰۱/۰۲', '۱۴۰۵/۰۱/۰۴']] }],
   }));
-
-  // ── PowerPoint: فهرست بلند (چند اسلاید) ──
-  const pptxBytes = await write('list.pptx', docs.pptx({ title: 'گزارش عملیاتی · ATLAS SHIFT', rows: longRows }));
-  check('pptx اندازهٔ معقول', pptxBytes > 5000, pptxBytes + ' بایت');
 
   // ── CSV ──
   const csvText = docs.csv(employeeRows, { title: 'کارکنان · ATLAS SHIFT', stamp: '۱۴۰۵/۰۸/۱۲' });
@@ -142,25 +132,6 @@ if z:
     doc = z.read('word/document.xml').decode('utf-8')
     if 'w:orient="landscape"' in doc: fail.append('docx پرونده: باید عمودی باشد')
 
-# PowerPoint — باز شدن واقعی با python-pptx
-z = parts('${path.join(outDir, 'list.pptx').replace(/\\/g, '/')}')
-if z:
-    check_xml(z, 'list.pptx')
-    if 'ppt/slides/slide2.xml' not in z.namelist(): fail.append('pptx: ردیف‌های زیاد روی اسلاید دوم نرفته‌اند')
-    try:
-        from pptx import Presentation
-        p = Presentation('${path.join(outDir, 'list.pptx').replace(/\\/g, '/')}')
-        texts = []
-        for s in p.slides:
-            for sh in s.shapes:
-                if sh.has_text_frame: texts.append(sh.text_frame.text)
-        if len(p.slides) < 2: fail.append('pptx: تعداد اسلاید کم است')
-        joined = ' '.join(texts)
-        if 'بازدید دوره‌ای' not in joined: fail.append('pptx: متن ردیف‌ها در اسلاید نیست')
-        if 'ردیف' in joined and 'کارشناس' not in joined: fail.append('pptx: ستون‌ها ناقص‌اند')
-    except Exception as e:
-        fail.append('pptx: python-pptx باز نکرد — %s' % e)
-
 for f in fail: print('FAIL:', f)
 sys.exit(1 if fail else 0)
 `;
@@ -180,5 +151,5 @@ sys.exit(1 if fail else 0)
     process.exit(1);
   }
   fs.rmSync(outDir, { recursive: true, force: true });
-  console.log('✓ خروجی‌های Word، PowerPoint و CSV سالم‌اند.');
+  console.log('✓ خروجی‌های Word و CSV سالم‌اند.');
 })();

@@ -490,7 +490,7 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
         input)+'</div>';
     }
     const formMarkup='<form class="atlas-pb-form" id="atlasPbForm" autocomplete="off" data-form-type="other" data-lpignore="true">'+fields.map(fieldMarkup).join('')+'<div class="atlas-pb-phone-editor"><div class="atlas-pb-phone-head"><strong>شماره‌های تماس</strong><button type="button" class="secondary-btn" id="atlasPbAddPhone">+ افزودن شماره</button></div><div id="atlasPbPhoneRows"></div></div><p class="atlas-pb-form-error" id="atlasPbFormError" role="alert" hidden></p><div class="atlas-pb-actions"><button class="primary-btn" type="submit">ذخیره اطلاعات</button><button class="secondary-btn" type="button" id="atlasPbCancel">انصراف</button></div></form>';
-        section.innerHTML='<div class="module-root"><header class="module-page-head"><div><h2>دفترچه تلفن سازمانی</h2><p>حوزه ← شهر ← مجتمع ← مرکز انتقال نفت ← ایستگاه ← ساختمان ← واحد ← سمت ← شخص</p></div></header><section class="module-list-panel"><div class="module-list-head"><div><h3>جست‌وجو و فیلتر</h3><p>فهرست‌ها از تنظیمات دفترچه تلفن مدیریت می‌شوند.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="primary-btn" id="atlasPbNew">+ ثبت شخص</button></div></div><div class="atlas-pb-toolbar"><input id="atlasPbSearch" type="search" placeholder="جست‌وجوی نام، شماره یا مشخصات"><select id="atlasPbCityFilter"><option value="">همه شهرها</option></select><select id="atlasPbSiteFilter"><option value="">همه مجتمع‌ها</option></select><select id="atlasPbStationFilter"><option value="">همه ایستگاه‌ها</option></select><select id="atlasPbSortBy" aria-label="مرتب‌سازی بر اساس"><option value="normal">حالت عادی — بدون گروه‌بندی</option><option value="name">نام و نام خانوادگی</option><option value="officePhone">شماره تلفن‌های ثابت</option><option value="extension">شماره داخلی چهاررقمی</option><option value="mobilePhone">موبایل</option><option value="position">سمت سازمانی</option><option value="supervision">سرپرستی</option><option value="unit">واحد</option><option value="area">حوزه</option><option value="city">شهر</option><option value="complex">مجتمع</option><option value="transferCenter">مرکز انتقال نفت</option><option value="station">ایستگاه</option><option value="building">ساختمان</option></select><select id="atlasPbSortDirection" aria-label="جهت مرتب‌سازی"><option value="asc">صعودی: الف تا ی / کم به زیاد</option><option value="desc">نزولی: ی تا الف / زیاد به کم</option></select></div><div class="atlas-pb-results" id="atlasPbResults"></div></section></div>';
+        section.innerHTML='<div class="module-root"><header class="module-page-head"><div><h2>دفترچه تلفن سازمانی</h2><p>حوزه ← شهر ← مجتمع ← مرکز انتقال نفت ← ایستگاه ← ساختمان ← واحد ← سمت ← شخص</p></div><div class="module-page-actions"><button type="button" class="secondary-btn module-backup-btn" data-module-action="backup-section" data-view="phonebook" title="پشتیبان‌گیری فقط از دفترچه تلفن"><span class="module-backup-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></span> پشتیبان‌گیری این بخش</button></div></header><section class="module-list-panel"><div class="module-list-head"><div><h3>جست‌وجو و فیلتر</h3><p>فهرست‌ها از تنظیمات دفترچه تلفن مدیریت می‌شوند.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="primary-btn" id="atlasPbNew">+ ثبت شخص</button></div></div><div class="atlas-pb-toolbar module-list-tools"><div class="list-search-row"><span class="list-search-icon" aria-hidden="true">⌕</span><input id="atlasPbSearch" type="search" placeholder="جست‌وجوی نام، شماره یا مشخصات" aria-label="جست‌وجو در دفترچه تلفن"></div><div class="list-filter-row" role="group" aria-label="فیلتر و مرتب‌سازی"><label class="list-chip list-chip-filter"><span class="list-chip-label">شهر</span><select id="atlasPbCityFilter"><option value="">همه</option></select></label><label class="list-chip list-chip-filter"><span class="list-chip-label">مجتمع</span><select id="atlasPbSiteFilter"><option value="">همه</option></select></label><label class="list-chip list-chip-filter"><span class="list-chip-label">ایستگاه</span><select id="atlasPbStationFilter"><option value="">همه</option></select></label><label class="list-chip list-chip-sort"><span class="list-chip-label">مرتب‌سازی</span><select id="atlasPbSortBy" aria-label="مرتب‌سازی بر اساس"><option value="normal">حالت عادی — بدون گروه‌بندی</option><option value="name">نام و نام خانوادگی</option><option value="officePhone">شماره تلفن‌های ثابت</option><option value="extension">شماره داخلی چهاررقمی</option><option value="mobilePhone">موبایل</option><option value="position">سمت سازمانی</option><option value="supervision">سرپرستی</option><option value="unit">واحد</option><option value="area">حوزه</option><option value="city">شهر</option><option value="complex">مجتمع</option><option value="transferCenter">مرکز انتقال نفت</option><option value="station">ایستگاه</option><option value="building">ساختمان</option></select></label><label class="list-chip list-chip-dir"><span class="list-chip-label">جهت</span><select id="atlasPbSortDirection" aria-label="جهت مرتب‌سازی"><option value="asc">صعودی ↑</option><option value="desc">نزولی ↓</option></select></label></div></div><div class="atlas-pb-results" id="atlasPbResults"></div></section></div>';
     // پنجرهٔ ثبت/ویرایش مخاطب: پاپ‌آپ روی کل صفحه، مستقل از رندر بخش
     closePhonebookModal();
     const modal=document.createElement('div');
@@ -848,6 +848,33 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
       }
     };
     [search,cityFilter,siteFilter,stationFilter,sortBy,sortDirection].forEach(el=>{el.addEventListener('input',draw);el.addEventListener('change',draw);});
+    // پل دفترچه تلفن برای پشتیبان‌گیری/بازیابی بخش‌به‌بخش: فقط مخاطبان همین بخش
+    // خوانده یا ادغام می‌شوند و هیچ بخش دیگری دست نمی‌خورد.
+    window.ATLAS_PHONEBOOK={
+      snapshot:()=>({contacts:JSON.parse(JSON.stringify(contacts)),options:JSON.parse(JSON.stringify(options))}),
+      merge:(incoming,incomingOptions)=>{
+        const keyOf=c=>String(c&&c.id||'').trim()||((c&&c.name||'')+'|'+((c&&c.phoneNumbers||[]).map(p=>p.value).join(',')));
+        const byKey={};contacts.forEach(c=>{byKey[keyOf(c)]=c;});
+        let added=0,updated=0;
+        (Array.isArray(incoming)?incoming:[]).forEach(raw=>{
+          if(!raw||typeof raw!=='object')return;
+          const record=Object.assign({},raw);if(!record.phoneNumbers)record.phoneNumbers=[];
+          const key=keyOf(record);
+          if(byKey[key]){Object.assign(byKey[key],record);updated+=1;}else{contacts.push(record);byKey[key]=record;added+=1;}
+        });
+        if(incomingOptions&&typeof incomingOptions==='object'){
+          Object.keys(incomingOptions).forEach(key=>{
+            if(!Array.isArray(incomingOptions[key]))return;
+            const merged=[...new Set([...(options[key]||[]),...incomingOptions[key].map(v=>String(v).trim()).filter(Boolean)])];
+            options[key]=merged.sort((a,b)=>a.localeCompare(b,'fa'));
+          });
+          phonebookOptionsSave(options);
+        }
+        if(!persist())return {added:0,updated:0};
+        refillFilters();draw();
+        return {added:added,updated:updated};
+      }
+    };
     document.addEventListener('atlas-phonebook-options-updated',()=>{options=phonebookOptionsLoad();fillDatalists();renderPhoneRows(readPhoneRows());});
     renderPhoneRows([]);fillDatalists();refillFilters();draw();
   }

@@ -25,7 +25,7 @@ const sandbox = {
 };
 sandbox.window = sandbox;
 vm.createContext(sandbox);
-for (const file of ['design/pptx-base.js', 'design/export-docs.js']) {
+for (const file of ['design/export-docs.js']) {
   vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), sandbox, { filename: file });
 }
 vm.runInContext(fs.readFileSync(path.join(root, 'design/record-file.js'), 'utf8'), sandbox, { filename: 'record-file.js' });
@@ -77,6 +77,21 @@ check('CSV با BOM شروع می‌شود', csv.charCodeAt(0) === 0xfeff);
 check('CSV عنوان برگه را دارد', csv.indexOf('علی رضایی') >= 0);
 check('CSV هر دو جدول را دارد', csv.indexOf('مرخصی‌ها') >= 0 && csv.indexOf('پیگیری‌ها') >= 0);
 check('CSV پیام جدول خالی را دارد', csv.indexOf('موردی ثبت نشده است') >= 0);
+
+// نام فایل خروجی باید ASCII باشد؛ نام فارسی باعث ذخیره با نام «download» و
+// از دست رفتن خروجی Word می‌شد.
+const fileName = api.exportFileName(model);
+check('نام فایل خروجی ASCII است', /^[A-Za-z0-9._-]+$/.test(fileName), fileName);
+check('نام فایل خروجی پسوندپذیر است', fileName.indexOf('ATLAS-SHIFT-') === 0, fileName);
+
+// پیش‌نمایش هر چهار قالب باید ساخته شود؛ پیش‌تر مسیر Word به تابع تعریف‌نشده
+// «wordDocument» اشاره می‌کرد و خروجی Word هرگز گرفته نمی‌شد.
+['print', 'doc', 'xls', 'csv'].forEach(format => {
+  let overlay = null;
+  try { overlay = api.buildPreviewOverlay(model, format); } catch (error) { overlay = null; }
+  check('پیش‌نمایش «' + format + '» بدون خطا ساخته می‌شود', !!overlay);
+  check('پیش‌نمایش «' + format + '» برگهٔ A4 را نشان می‌دهد', !!overlay && /class="rf-sheet/.test(overlay.innerHTML));
+});
 
 (async () => {
   const bytes = Buffer.from(await api.buildWord(model).arrayBuffer());

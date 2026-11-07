@@ -305,8 +305,17 @@
     setTimeout(() => URL.revokeObjectURL(url), 4000);
   }
 
+  // نام فایل باید ASCII بماند؛ نام فارسی یا ارقام فارسی باعث می‌شود مرورگر فایل
+  // را با نام خالی/«download» ذخیره کند و خروجی Word به‌دست کاربر نرسد.
   function slug(text) {
-    return String(text || 'atlas').replace(/[\s/\\:*?"<>|]+/g, '-').replace(/-+/g, '-').slice(0, 60) || 'atlas';
+    const latin = String(text == null ? '' : text)
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/[\u06F0-\u06F9]/g, d => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
+      .replace(/[^\w-]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 60);
+    return latin.length > 1 ? latin : 'record';
   }
 
   function fileStamp() {
@@ -458,8 +467,12 @@
       '<tr><td colspan="2">' + esc(model.stamp) + '</td></tr>' + rows + tables + '</table>';
   }
 
+  function exportFileName(model) {
+    return 'ATLAS-SHIFT-' + slug(model.title) + '-' + fileStamp();
+  }
+
   function runExport(format, model, sheetHtml) {
-    const name = 'ATLAS-SHIFT-' + slug(model.title) + '-' + fileStamp();
+    const name = exportFileName(model);
     if (format === 'print') { printSheet(sheetHtml); return; }
     if (format === 'doc') { download(name + '.docx', window.AtlasExportDocs.docx(wordSheet(model)), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'); return; }
     if (format === 'xls') { download(name + '.xls', xlsDocument(xlsSheetHtml(model)), 'application/vnd.ms-excel'); return; }
@@ -475,20 +488,15 @@
     current = null;
   }
 
-  function openPreview(format) {
-    if (!current) return;
-    const model = current.model;
-    const sheetHtml = buildSheet(model);
+  // ساخت لایهٔ پیش‌نمایش، جدا از چسباندنش به صفحه، تا آزمون بدون مرورگر هم
+  // بتواند همین مسیر را اجرا کند.
+  function buildPreviewOverlay(model, format) {
     const label = EXPORT_FORMATS[format].label;
+    const sheetHtml = buildSheet(model);
     const overlay = document.createElement('div');
     overlay.className = 'rf-preview-backdrop';
-    // Word: خودِ همان فایلی که تحویل داده می‌شود در قاب پیش‌نمایش نشان داده
-    // می‌شود، پس آنچه می‌بینی و آنچه ذخیره می‌شود یک سند و یک استایل است.
-    const isDoc = format === 'doc';
-    let docUrl = '';
-    if (isDoc) {
-      docUrl = URL.createObjectURL(new Blob([wordDocument(model)], { type: 'text/html;charset=utf-8' }));
-    }
+    // پیش‌نمایش همهٔ قالب‌ها همان برگهٔ A4 است؛ فایل Word هم با همین چیدمان
+    // ساخته می‌شود، پس آنچه دیده می‌شود و آنچه ذخیره می‌شود یکی است.
     overlay.innerHTML =
       '<div class="rf-preview-head"><strong>پیش‌نمایش خروجی — ' + esc(label) + '</strong>' +
       '<small>' + esc(EXPORT_FORMATS[format].hint) + ' این پیش‌نمایش همان چیزی است که در فایل/چاپ می‌آید.</small>' +
@@ -496,13 +504,18 @@
         '<button type="button" class="secondary-btn" data-rf-preview-cancel>انصراف</button>' +
         '<button type="button" class="primary-btn" data-rf-preview-ok>تأیید و دریافت خروجی</button>' +
       '</div></div>' +
-      (isDoc
-        ? '<div class="rf-preview-body is-frame"><iframe class="rf-preview-frame" title="' + esc(label) + '" src="' + esc(docUrl) + '"></iframe></div>'
-        : '<div class="rf-preview-body">' + sheetPreviewHtml(sheetHtml) + '</div>');
+      '<div class="rf-preview-body">' + sheetPreviewHtml(sheetHtml) + '</div>';
+    return overlay;
+  }
+
+  function openPreview(format) {
+    if (!current) return;
+    const model = current.model;
+    const sheetHtml = buildSheet(model);
+    const overlay = buildPreviewOverlay(model, format);
     document.body.appendChild(overlay);
     const close = () => {
       overlay.remove();
-      if (docUrl) setTimeout(() => URL.revokeObjectURL(docUrl), 1000);
     };
     overlay.querySelector('[data-rf-preview-cancel]').addEventListener('click', close);
     overlay.addEventListener('click', event => { if (event.target === overlay) close(); });
@@ -564,6 +577,8 @@
     openContact: contact => open(contactSheet(contact)),
     buildSheet: model => buildSheet(model),
     buildWord: model => window.AtlasExportDocs.docx(wordSheet(model)),
+    exportFileName: model => exportFileName(model),
+    buildPreviewOverlay: (model, format) => buildPreviewOverlay(model, format),
     buildCsv: model => csvDocument(model),
     buildPreview: model => sheetPreviewHtml(buildSheet(model))
   };

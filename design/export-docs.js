@@ -1,5 +1,5 @@
-/* ── خروجی‌های سندی: Word (.docx)، PowerPoint (.pptx)، CSV ────────────────────
-   تنها مرجع ساخت این سه خروجی در کل برنامه. هر بخشی که فهرست یا برگه دارد
+/* ── خروجی‌های سندی: Word (.docx) و CSV ───────────────────────────────────────
+   تنها مرجع ساخت این دو خروجی در کل برنامه. هر بخشی که فهرست یا برگه دارد
    (کارکنان، مرخصی‌ها، مأموریت‌ها، خودروها، سوابق، گزارش‌ها، پرونده‌ها) از همین
    توابع استفاده می‌کند؛ پس ظاهر همهٔ خروجی‌ها یکدست است.
 
@@ -9,8 +9,6 @@
    • جدول Word: راست‌چین و راست‌به‌چپ (bidiVisual)، خط کامل بین همهٔ خانه‌ها،
      پهنای ستون‌ها متناسب با محتوا و همیشه داخل عرض کاغذ؛ ردیف سرستون در هر
      صفحه تکرار می‌شود و ردیف‌های بلند به‌جای «قیچی‌شدن» به صفحهٔ بعد می‌روند.
-   • PowerPoint: بدنهٔ سالم PowerPoint (design/pptx-base.js) + اسلایدهای ساخته‌شده
-     این‌جا؛ ردیف‌های زیاد روی چند اسلاید پخش می‌شوند تا هیچ ردیفی جا نیفتد.
    • CSV: همان ردیف‌های برگه، با UTF-8 BOM و نشانهٔ راست‌به‌چپ در هر خانه تا
      کلمات فارسی در Excel به‌هم نریزند.
 
@@ -339,125 +337,6 @@
     return zip(entries);
   }
 
-  // ── PowerPoint (.pptx) ────────────────────────────────────────────────────
-  function slideText(slideId, name, x, y, cx, cy, lines, size, bold) {
-    return '<p:sp><p:nvSpPr><p:cNvPr id="' + slideId + '" name="' + xmlEscape(name) + '"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>' +
-      '<p:spPr><a:xfrm><a:off x="' + x + '" y="' + y + '"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
-      '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></p:spPr>' +
-      '<p:txBody><a:bodyPr wrap="square" rtlCol="1" anchor="t"><a:normAutofit/></a:bodyPr><a:lstStyle/>' +
-      lines.map(function (line) {
-        return '<a:p><a:pPr algn="r" rtl="1"><a:lnSpc><a:spcPct val="130000"/></a:lnSpc>' +
-          '<a:spcAft><a:spcPts val="400"/></a:spcAft><a:buNone/></a:pPr>' +
-          '<a:r><a:rPr lang="fa-IR" sz="' + size + '"' + (bold ? ' b="1"' : '') + ' dirty="0">' +
-          '<a:solidFill><a:srgbClr val="' + (bold ? HEAD_INK : '111827') + '"/></a:solidFill>' +
-          '<a:latin typeface="Tahoma"/><a:cs typeface="Tahoma"/></a:rPr>' +
-          '<a:t>' + xmlEscape(line) + '</a:t></a:r></a:p>';
-      }).join('') + '</p:txBody></p:sp>';
-  }
-
-  function pptxSlide(title, lines, columns) {
-    var type = density(columns);
-    var size = Math.max(900, type.body * 100);
-    var groupTree = '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>' +
-      '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>';
-    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-      '<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
-      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
-      'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">' +
-      '<p:cSld><p:spTree>' + groupTree +
-      slideText(2, 'عنوان', 457200, 320000, 11277600, 800000, [title], 2600, true) +
-      slideText(3, 'محتوا', 457200, 1250000, 11277600, 5100000, lines, size, false) +
-      '</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>';
-  }
-
-  function slideLines(rows, start) {
-    var header = rows[0] || [];
-    var lines = [];
-    for (var r = start; r < rows.length; r += 1) {
-      var row = rows[r];
-      var cells = row.map(function (cell) { return text(cell); }).filter(function (cell) { return cell.length; });
-      if (!cells.length) continue;
-      lines.push(cells.join('  ·  '));
-    }
-    return lines;
-  }
-
-  function pptx(sheet) {
-    var model = sheet || {};
-    var rows = normalizeRows(model.rows && model.rows.length ? model.rows : (model.tables && model.tables[0] ? model.tables[0].rows : []));
-    var base = window.AtlasPptxBase;
-    if (!base) throw new Error('بدنهٔ PowerPoint بارگذاری نشده است.');
-    var title = subject(model.title || 'ATLAS SHIFT');
-    var columns = rows.length ? rows[0].length : 1;
-
-    // هر اسلاید ۱۲ ردیف؛ ردیف‌های بیشتر روی اسلاید بعدی می‌روند (هیچ ردیفی جا نمی‌افتد).
-    var body = rows.slice(1);
-    var perSlide = columns > 8 ? 9 : 12;
-    var slides = [];
-    if (!body.length) {
-      slides.push(pptxSlide(title, ['موردی برای نمایش ثبت نشده است.'], columns));
-    } else {
-      for (var start = 0; start < body.length; start += perSlide) {
-        var chunk = body.slice(start, start + perSlide);
-        var lines = slideLines([rows[0]].concat(chunk), 1);
-        var suffix = body.length > perSlide ? ' · ' + (Math.floor(start / perSlide) + 1) : '';
-        slides.push(pptxSlide(title + suffix, lines, columns));
-      }
-    }
-
-    var entries = [];
-    var contentTypes = ['<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
-      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
-      '<Default Extension="xml" ContentType="application/xml"/>' +
-      '<Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>' +
-      '<Override PartName="/ppt/presProps.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presProps+xml"/>' +
-      '<Override PartName="/ppt/viewProps.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.viewProps+xml"/>' +
-      '<Override PartName="/ppt/tableStyles.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.tableStyles+xml"/>' +
-      '<Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>' +
-      '<Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/>' +
-      '<Override PartName="/ppt/slideLayouts/slideLayout7.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>'];
-    var presRels = ['<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
-      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>' +
-      '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/presProps" Target="presProps.xml"/>' +
-      '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/viewProps" Target="viewProps.xml"/>' +
-      '<Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml"/>' +
-      '<Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles" Target="tableStyles.xml"/>'];
-    var slideIds = [];
-
-    slides.forEach(function (xml, index) {
-      var number = index + 1;
-      var rid = 'rIdS' + number;
-      slideIds.push('<p:sldId id="' + (256 + index) + '" r:id="' + rid + '"/>');
-      contentTypes.push('<Override PartName="/ppt/slides/slide' + number + '.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>');
-      presRels.push('<Relationship Id="' + rid + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide' + number + '.xml"/>');
-      entries.push({ name: 'ppt/slides/slide' + number + '.xml', content: xml });
-      entries.push({
-        name: 'ppt/slides/_rels/slide' + number + '.xml.rels',
-        content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-          '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
-          '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout7.xml"/>' +
-          '</Relationships>'
-      });
-    });
-
-    contentTypes.push('</Types>');
-    presRels.push('</Relationships>');
-
-    var presentation = base['ppt/presentation.xml']
-      .replace(/<p:sldIdLst>[\s\S]*?<\/p:sldIdLst>/, '<p:sldIdLst>' + slideIds.join('') + '</p:sldIdLst>');
-
-    Object.keys(base).forEach(function (name) {
-      if (name === 'ppt/presentation.xml' || name.indexOf('ppt/slides/') === 0) return;
-      entries.push({ name: name, content: base[name] });
-    });
-    entries.push({ name: 'ppt/presentation.xml', content: presentation });
-    entries.push({ name: 'ppt/_rels/presentation.xml.rels', content: presRels.join('') });
-    entries.push({ name: '[Content_Types].xml', content: contentTypes.join('') });
-    return zip(entries);
-  }
-
   // ── CSV ───────────────────────────────────────────────────────────────────
   // CSV نقشی جز متن خام ندارد؛ برای اینکه کلمات فارسی در Excel به‌هم نریزند،
   // هر خانه با نشانهٔ راست‌به‌چپ (RLM) شروع می‌شود و خانه‌های عددی دست‌نخورده
@@ -492,7 +371,6 @@
   window.AtlasExportDocs = {
     csv: csv,
     docx: docx,
-    pptx: pptx,
     zip: zip,
     normalizeRows: normalizeRows,
     columnWidths: columnWidths,

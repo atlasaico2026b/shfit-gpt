@@ -33,6 +33,85 @@
   let reportTo = '';
   let saveQueue = Promise.resolve();
 
+  // ── مرتب‌سازی فهرست هر بخش ────────────────────────────────────────────────
+  // هر بخش مجموعهٔ کامل و تخصصی گزینه‌های مرتب‌سازی خودش را دارد. انتخاب کاربر
+  // (کلید و جهت) در همین دستگاه ذخیره می‌شود تا بعد از بازکردن دوبارهٔ برنامه،
+  // فهرست همان‌طور که مرتب شده بود دیده شود.
+  const LIST_SORT_KEY = 'atlasShiftListSortV1';
+  const LIST_SORTS = {
+    employees: [['name', 'نام و نام خانوادگی'], ['personnelId', 'شمارهٔ پرسنلی'], ['jobTitle', 'عنوان شغلی'],
+      ['employmentType', 'نوع استخدام'], ['workplace', 'محل سازمانی'], ['assignedWorkplace', 'محل خدمت فعلی'],
+      ['workType', 'نوع شیفت کاری'], ['hireDate', 'تاریخ استخدام'], ['status', 'وضعیت'], ['updatedAt', 'آخرین به‌روزرسانی']],
+    missions: [['startAt', 'تاریخ آغاز'], ['endAt', 'تاریخ پایان'], ['title', 'عنوان مأموریت'], ['missionType', 'نوع مأموریت'],
+      ['destination', 'مقصد'], ['status', 'وضعیت'], ['updatedAt', 'آخرین به‌روزرسانی']],
+    leaves: [['startDate', 'تاریخ شروع'], ['endDate', 'تاریخ پایان'], ['leaveType', 'نوع مرخصی'], ['status', 'وضعیت'],
+      ['employeeId', 'کارمند'], ['updatedAt', 'آخرین به‌روزرسانی']],
+    vehicles: [['name', 'نام خودرو'], ['companyPlate', 'پلاک شرکت'], ['policePlate', 'پلاک پلیس'], ['status', 'وضعیت'],
+      ['currentKm', 'کارکرد (کیلومتر)'], ['updatedAt', 'آخرین به‌روزرسانی']],
+    stations: [['name', 'نام ایستگاه'], ['placeType', 'نوع محل'], ['city', 'شهر'], ['status', 'وضعیت'],
+      ['personInCharge', 'مسئول ایستگاه'], ['updatedAt', 'آخرین به‌روزرسانی']],
+    gasmeters: [['code', 'کد دستگاه'], ['serial', 'شمارهٔ سری'], ['model', 'مدل'], ['location', 'محل استقرار'],
+      ['healthStatus', 'وضعیت سلامت'], ['calibrationEnd', 'پایان اعتبار کالیبراسیون'], ['updatedAt', 'آخرین به‌روزرسانی']],
+    notes: [['dueDate', 'موعد پیگیری'], ['title', 'عنوان'], ['actionType', 'نوع اقدام'], ['status', 'وضعیت'],
+      ['updatedAt', 'آخرین به‌روزرسانی']],
+    programs: [['dueDate', 'مهلت'], ['title', 'عنوان برنامه'], ['programType', 'نوع برنامه'], ['status', 'وضعیت'],
+      ['category', 'دسته'], ['updatedAt', 'آخرین به‌روزرسانی']],
+    faults: [['reportedAt', 'تاریخ گزارش'], ['priority', 'اولویت'], ['status', 'وضعیت رفع'], ['title', 'عنوان'],
+      ['updatedAt', 'آخرین به‌روزرسانی']],
+    maintenance: [['date', 'تاریخ سرویس'], ['serviceType', 'نوع سرویس'], ['status', 'وضعیت'], ['cost', 'هزینه'],
+      ['updatedAt', 'آخرین به‌روزرسانی']],
+    gaslogs: [['date', 'تاریخ سابقه'], ['logType', 'نوع سابقه'], ['updatedAt', 'آخرین به‌روزرسانی']]
+  };
+  const listSorts = (function () {
+    try {
+      const saved = JSON.parse(localStorage.getItem(LIST_SORT_KEY) || '{}');
+      return saved && typeof saved === 'object' ? saved : {};
+    } catch (error) { return {}; }
+  })();
+  function listSortFor(moduleKey) {
+    const options = LIST_SORTS[moduleKey] || [];
+    const saved = listSorts[moduleKey] || {};
+    const key = options.some(function (option) { return option[0] === saved.key; }) ? saved.key : (options[0] ? options[0][0] : 'updatedAt');
+    return { key: key, direction: saved.direction === 'asc' ? 'asc' : 'desc' };
+  }
+  function setListSort(moduleKey, patch) {
+    const next = listSortFor(moduleKey);
+    if (patch && patch.key) next.key = patch.key;
+    if (patch && patch.direction) next.direction = patch.direction;
+    listSorts[moduleKey] = next;
+    try { localStorage.setItem(LIST_SORT_KEY, JSON.stringify(listSorts)); } catch (error) {}
+    return next;
+  }
+  function listSortValue(moduleKey, record, key) {
+    if (key === 'name') {
+      if (moduleKey === 'employees') return employeeName(record);
+      return String(record.name || record.title || '');
+    }
+    if (key === 'employeeId') {
+      const person = (appData.employees || []).find(function (item) { return String(item.id) === String(record.employeeId); });
+      return person ? employeeName(person) : '';
+    }
+    if (key === 'currentKm' || key === 'cost' || key === 'personnelId') {
+      const numeric = Number(String(record[key] == null ? '' : record[key]).replace(/[^\d.-]/g, ''));
+      return Number.isFinite(numeric) && String(record[key] || '').trim() !== '' ? numeric : -Infinity;
+    }
+    return String(record[key] == null ? '' : record[key]);
+  }
+  function sortRecords(moduleKey, records) {
+    const sort = listSortFor(moduleKey);
+    const factor = sort.direction === 'asc' ? 1 : -1;
+    return records.slice().sort(function (a, b) {
+      const left = listSortValue(moduleKey, a, sort.key);
+      const right = listSortValue(moduleKey, b, sort.key);
+      if (typeof left === 'number' || typeof right === 'number') {
+        return factor * ((left === right ? 0 : (left < right ? -1 : 1)));
+      }
+      const compared = String(left).localeCompare(String(right), 'fa', { numeric: true, sensitivity: 'base' });
+      if (compared) return factor * compared;
+      return String(b.updatedAt || b.createdAt || '').localeCompare(String(a.updatedAt || a.createdAt || ''));
+    });
+  }
+
   const specs = {
     employees: {
       title: 'کارکنان', singular: 'کارمند',
@@ -1366,11 +1445,7 @@
   }
 
   function recordsForView(moduleKey, data) {
-    return (data[moduleKey] || []).filter(function (record) { return searchMatch(moduleKey, record, data); }).slice().sort(function (a, b) {
-      return String(b.updatedAt || b.createdAt || b.startAt || b.startDate || b.date || '').localeCompare(
-        String(a.updatedAt || a.createdAt || a.startAt || a.startDate || a.date || '')
-      );
-    });
+    return sortRecords(moduleKey, (data[moduleKey] || []).filter(function (record) { return searchMatch(moduleKey, record, data); }));
   }
 
   function statusOptions(moduleKey) {
@@ -1378,14 +1453,48 @@
     return field ? field.options : [];
   }
 
+  // ── نوار ابزار فهرست ──────────────────────────────────────────────────────
+  // دو ردیف ثابت: ردیف جست‌وجو، و درست زیر آن یک ردیف فشردهٔ فیلتر و مرتب‌سازی.
+  // همهٔ کنترل‌ها «قرص»های کوچک‌اند تا در یک خط جا شوند و فضا نگیرند؛ در
+  // نمایشگر باریک، همان یک خط به‌آرامی افقی می‌لغزد (شکسته نمی‌شود).
   function renderStatusFilter(moduleKey) {
     if (!statusOptions(moduleKey).length) return '';
     const selected = filterState[moduleKey] || 'all';
-    return '<select data-module-filter data-view="' + esc(moduleKey) + '" aria-label="فیلتر وضعیت"><option value="all"' +
-      (selected === 'all' ? ' selected' : '') + '>همه وضعیت‌ها</option>' +
+    return '<label class="list-chip list-chip-filter is-status"><span class="list-chip-label">وضعیت</span>' +
+      '<select data-module-filter data-view="' + esc(moduleKey) + '" aria-label="فیلتر وضعیت"><option value="all"' +
+      (selected === 'all' ? ' selected' : '') + '>همه</option>' +
       statusOptions(moduleKey).map(function (item) {
         return '<option value="' + esc(item) + '"' + (selected === item ? ' selected' : '') + '>' + esc(item) + '</option>';
-      }).join('') + '</select>';
+      }).join('') + '</select></label>';
+  }
+
+  function renderSortControls(moduleKey) {
+    const options = LIST_SORTS[moduleKey] || [];
+    if (!options.length) return '';
+    const sort = listSortFor(moduleKey);
+    const ascending = sort.direction === 'asc';
+    return '<label class="list-chip list-chip-sort"><span class="list-chip-label">مرتب‌سازی</span>' +
+      '<select data-module-sort data-view="' + esc(moduleKey) + '" aria-label="مرتب‌سازی فهرست">' +
+      options.map(function (option) {
+        return '<option value="' + esc(option[0]) + '"' + (sort.key === option[0] ? ' selected' : '') + '>' + esc(option[1]) + '</option>';
+      }).join('') + '</select></label>' +
+      '<button type="button" class="list-chip list-chip-dir' + (ascending ? ' is-asc' : '') + '" data-module-sort-dir data-view="' + esc(moduleKey) + '" aria-label="تغییر جهت مرتب‌سازی" title="' + (ascending ? 'صعودی — برای نزولی بزن' : 'نزولی — برای صعودی بزن') + '">' +
+      '<span class="list-chip-label">جهت</span><b>' + (ascending ? 'صعودی' : 'نزولی') + '</b><span class="list-chip-caret">' + (ascending ? '↑' : '↓') + '</span></button>';
+  }
+
+  function renderListToolbar(moduleKey) {
+    const active = (filterState[moduleKey] && filterState[moduleKey] !== 'all') || !!String(searchState[moduleKey] || '').trim();
+    return '<div class="module-list-tools">' +
+        '<div class="list-search-row"><span class="list-search-icon" aria-hidden="true">⌕</span>' +
+          '<input type="search" data-module-search data-view="' + esc(moduleKey) + '" value="' + esc(searchState[moduleKey] || '') + '" placeholder="جست‌وجو در ' + esc(specs[moduleKey].title) + '" aria-label="جست‌وجو">' +
+        '</div>' +
+        '<div class="list-filter-row" role="group" aria-label="فیلتر و مرتب‌سازی">' +
+          renderSortControls(moduleKey) +
+          renderStatusFilter(moduleKey) +
+          '<button type="button" class="list-chip list-chip-reset' + (active ? ' is-active' : '') + '" data-module-reset data-view="' + esc(moduleKey) + '"' + (active ? '' : ' hidden') + '>پاک‌کردن فیلترها</button>' +
+          '<span class="list-filter-count" data-module-result-count>' + faDigits(recordsForView(moduleKey, appData).length) + ' مورد</span>' +
+        '</div>' +
+      '</div>';
   }
 
   function renderHistoryButton(moduleKey, record) {
@@ -1558,9 +1667,9 @@
       '<div data-tone="ok"><span>امروز ثبت‌شده</span><strong>' + faDigits(records.filter(function(item){return String(item.createdAt||'').slice(0,10)===todayIso();}).length) + '</strong></div><div data-tone="special"><span>آخرین به‌روزرسانی</span><strong>' + (data.updatedAt ? displayDateTime(data.updatedAt) : '—') + '</strong></div></div>' +
       renderForm(moduleKey, data) +
       '<section class="module-list-panel" style="width:100%;min-width:0"><div class="module-list-head"><div><h3>فهرست ' + esc(specs[moduleKey].title) + '</h3><p>جست‌وجو، فیلتر، انتخاب چند ردیف و ویرایش از همین بخش انجام می‌شود.</p></div>' +
-      '<div class="module-list-tools"><input type="search" data-module-search data-view="' + esc(moduleKey) + '" value="' + esc(searchState[moduleKey] || '') + '" placeholder="جست‌وجو در فهرست" aria-label="جست‌وجو">' + renderStatusFilter(moduleKey) + '</div></div>' +
+      '<div class="module-list-tools-slot">' + renderListToolbar(moduleKey) + '</div></div>' +
       '<div class="module-bulk-tools"><label><input type="checkbox" data-module-select-all> انتخاب همه</label><button type="button" class="module-delete-btn" data-module-action="bulk-delete" data-view="' + esc(moduleKey) + '">حذف انتخاب‌شده‌ها</button>' +
-      '<span data-module-result-count>' + faDigits(recordsForView(moduleKey, data).length) + ' مورد از ' + faDigits(existing) + '</span></div>' +
+      '<span>' + faDigits(recordsForView(moduleKey, data).length) + ' مورد از ' + faDigits(existing) + '</span></div>' +
       '<div data-module-list-region>' + renderTable(moduleKey, data) + '</div></section>' +
       (moduleKey === 'employees' ? renderShiftSchedule(data) : '')
     );
@@ -1611,7 +1720,7 @@
       const name = meter.code || meter.serial || 'دستگاه';
       if (gasMeterInCalibration(meter)) {
         alerts.push({
-          key:'meter-cal-' + meter.id, kind:'gasmeter', critical:true,
+          key:'meter-cal-' + meter.id, kind:'gasmeter', critical:true, state:'active', stateLabel:'در حال کالیبراسیون',
           title:'گازسنج در کالیبراسیون',
           detail:name + ' · ارسال ' + (meter.calibrationDispatch ? formatJalali(meter.calibrationDispatch, false) : 'ثبت‌شده') + ' · در انتظار دریافت',
           at:meter.calibrationDispatch || meter.updatedAt,
@@ -1622,7 +1731,8 @@
       const left = dueInDays(meter.calibrationEnd);
       if (Number.isFinite(left) && left <= GAS_CALIBRATION_WARN_DAYS) {
         alerts.push({
-          key:'meter-' + meter.id, kind:'gasmeter', critical:left <= 7,
+          key:'meter-' + meter.id, kind:'gasmeter', critical:left <= 7, state:left <= 7 ? 'late' : 'active',
+          stateLabel:left < 0 ? 'مهلت گذشته' : (left <= 7 ? 'نیازمند اقدام' : 'در حال انجام'),
           title:'موعد کالیبراسیون گازسنج',
           detail:name + ' · ' + (left < 0 ? 'مهلت گذشته' : 'تا ' + faDigits(left) + ' روز دیگر'),
           at:meter.calibrationEnd,
@@ -1632,11 +1742,11 @@
     });
     (appData.vehicles || []).forEach(function (vehicle) {
       if (['در تعمیر','خارج از سرویس'].includes(vehicle.status) || vehicle.healthStatus === 'دارای نقص') {
-        alerts.push({ key:'vehicle-' + vehicle.id, kind:'vehicle', critical:true, title:'خودرو نیازمند رسیدگی', detail:(vehicle.name || 'خودرو') + ' · ' + (vehicle.status || vehicle.healthStatus || ''), at:vehicle.updatedAt, module:'vehicles', recordId:vehicle.id });
+        alerts.push({ key:'vehicle-' + vehicle.id, kind:'vehicle', critical:true, state:'late', stateLabel:'نیازمند رسیدگی', title:'خودرو نیازمند رسیدگی', detail:(vehicle.name || 'خودرو') + ' · ' + (vehicle.status || vehicle.healthStatus || ''), at:vehicle.updatedAt, module:'vehicles', recordId:vehicle.id });
       }
       const km = Number(vehicle.currentKm), next = Number(vehicle.nextOilKm);
       if (Number.isFinite(km) && Number.isFinite(next) && next > 0 && next - km <= 500) {
-        alerts.push({ key:'oil-' + vehicle.id, kind:'vehicle', critical:next <= km, title:'سررسید سرویس روغن', detail:(vehicle.name || 'خودرو') + ' · ' + (next <= km ? 'موعد گذشته' : faDigits(next - km) + ' کیلومتر مانده'), at:vehicle.updatedAt, module:'vehicles', recordId:vehicle.id });
+        alerts.push({ key:'oil-' + vehicle.id, kind:'vehicle', critical:next <= km, state:next <= km ? 'late' : 'active', stateLabel:next <= km ? 'مهلت گذشته' : 'در حال انجام', title:'سررسید سرویس روغن', detail:(vehicle.name || 'خودرو') + ' · ' + (next <= km ? 'موعد گذشته' : faDigits(next - km) + ' کیلومتر مانده'), at:vehicle.updatedAt, module:'vehicles', recordId:vehicle.id });
       }
     });
     (appData.faults || []).forEach(function (fault) {
@@ -1645,6 +1755,7 @@
       alerts.push({
         key:'fault-' + fault.id, kind:'fault',
         critical:fault.priority === 'بحرانی' || fault.priority === 'زیاد',
+        state:'active', stateLabel:'در حال انجام',
         title:'اشکال باز: ' + (fault.title || 'بدون عنوان'),
         detail:(faultAssetLabel(fault) || '') + ' · ' + (fault.status || 'ثبت‌شده') + ' · ' + faDigits(faultProgress(fault)) + '٪ رفع',
         at:fault.reportedAt, view:'faults',
@@ -1654,7 +1765,7 @@
     (appData.notes || []).forEach(function (note) {
       const left = dueInDays(note.dueDate);
       if (note.dueDate && left < 0 && !['تکمیل‌شده','لغوشده'].includes(note.status)) {
-        alerts.push({ key:'note-' + note.id, kind:'note', critical:false, title:'پیگیری با موعد گذشته', detail:note.title || 'پیگیری', at:note.dueDate, module:'notes', recordId:note.id });
+        alerts.push({ key:'note-' + note.id, kind:'note', critical:false, state:'late', stateLabel:'موعد گذشته', title:'پیگیری با موعد گذشته', detail:note.title || 'پیگیری', at:note.dueDate, module:'notes', recordId:note.id });
       }
     });
     (appData.programs || []).forEach(function (program) {
@@ -1662,7 +1773,8 @@
       const left = dueInDays(program.dueDate);
       if (!program.dueDate || !Number.isFinite(left) || left > 3) return;
       alerts.push({
-        key:'program-' + program.id, kind:'program', critical:left < 0,
+        key:'program-' + program.id, kind:'program', critical:left < 0, state:left < 0 ? 'late' : 'active',
+        stateLabel:left < 0 ? 'عقب‌افتاده' : 'در حال انجام',
         title:left < 0 ? 'برنامه با مهلت گذشته' : 'مهلت برنامه نزدیک است',
         detail:(program.title || 'برنامه') + ' · ' + (left < 0 ? faDigits(Math.abs(left)) + ' روز گذشته' : 'تا ' + faDigits(left) + ' روز دیگر'),
         at:program.dueDate, module:'programs', recordId:program.id
@@ -1673,7 +1785,7 @@
       if (['انجام‌شده','لغو‌شده'].includes(mission.status)) return;
       if (String(mission.startAt || '').slice(0, 10) !== today) return;
       alerts.push({
-        key:'mission-' + mission.id, kind:'mission', critical:false,
+        key:'mission-' + mission.id, kind:'mission', critical:false, state:'waiting', stateLabel:'برنامه‌ریزی‌شده',
         title:'مأموریت امروز',
         detail:(mission.title || 'مأموریت') + ' · ' + (mission.status || 'برنامه‌ریزی‌شده'),
         at:mission.startAt, module:'missions', recordId:mission.id
@@ -1683,13 +1795,52 @@
       if (leave.status !== 'در انتظار تأیید') return;
       const person = (appData.employees || []).find(function (item) { return String(item.id) === String(leave.employeeId); });
       alerts.push({
-        key:'leave-' + leave.id, kind:'leave', critical:false,
+        key:'leave-' + leave.id, kind:'leave', critical:false, state:'waiting', stateLabel:'در انتظار تأیید',
         title:'مرخصی در انتظار تأیید',
         detail:(person ? employeeName(person) : 'کارمند') + ' · ' + (leave.startDate ? formatJalali(leave.startDate, false) : ''),
         at:leave.startDate, module:'leaves', recordId:leave.id
       });
     });
+    // موارد «انجام‌شدهٔ امروز» هم در مرکز اعلان‌ها می‌آیند تا نوار سبز «انجام شد»
+    // معنای واقعی داشته باشد؛ این موارد در ویجت «نیازمند توجه» داشبورد نمی‌آیند.
+    (appData.missions || []).forEach(function (mission) {
+      if (mission.status !== 'انجام‌شده') return;
+      const at = String(mission.endAt || mission.updatedAt || '');
+      if (at.slice(0, 10) !== today) return;
+      alerts.push({
+        key:'mission-done-' + mission.id, kind:'mission', critical:false, done:true,
+        state:'done', stateLabel:'انجام شد',
+        title:'مأموریت انجام شد',
+        detail:(mission.title || 'مأموریت') + (mission.result ? ' · ' + String(mission.result).slice(0, 60) : ''),
+        at:at, module:'missions', recordId:mission.id
+      });
+    });
+    (appData.faults || []).forEach(function (fault) {
+      if (fault.status !== 'رفع شد' && fault.status !== 'بسته‌شده') return;
+      const at = String(fault.fixedAt || fault.updatedAt || '');
+      if (at.slice(0, 10) !== today) return;
+      alerts.push({
+        key:'fault-done-' + fault.id, kind:'fault', critical:false, done:true,
+        state:'done', stateLabel:'رفع شد',
+        title:'اشکال رفع شد',
+        detail:(fault.title || 'بدون عنوان') + (faultAssetLabel(fault) ? ' · ' + faultAssetLabel(fault) : ''),
+        at:at, module:'faults', recordId:fault.id
+      });
+    });
     return alerts.sort(function (a,b) { return Number(b.critical)-Number(a.critical); });
+  }
+
+  // وضعیت هر اعلان با یک نوار رنگی نشان داده می‌شود: سبز انجام شد، زرد در حال
+  // انجام، آبی برنامه‌ریزی‌شده، قرمز عقب‌افتاده.
+  const ALERT_STATE_META = {
+    done: { tone: 'ok', label: 'انجام شد' },
+    active: { tone: 'warn', label: 'در حال انجام' },
+    waiting: { tone: 'info', label: 'برنامه‌ریزی‌شده' },
+    late: { tone: 'danger', label: 'نیازمند اقدام' }
+  };
+  function alertStateMeta(alert) {
+    const meta = ALERT_STATE_META[(alert && alert.state) || 'active'] || ALERT_STATE_META.active;
+    return { tone: meta.tone, label: (alert && alert.stateLabel) || meta.label };
   }
 
   function effectiveEmployeeStatus(employee) {
@@ -1716,6 +1867,42 @@
     });
     if (activeShift) return activeShift.status === 'جایگزینی روزکار' || activeShift.shiftType === 'روزکار' ? 'در حال کار' : 'شیفت';
     return employee.status || 'ثبت نشده';
+  }
+
+  // اعلان‌ها بر اساس دسته گروه می‌شوند؛ هر دسته رنگ خودش را دارد و ترتیب
+  // گروه‌ها همان ترتیب اهمیت (اول موارد بحرانی) است.
+  function noticeGroupsHtml(alerts) {
+    const groups = [];
+    const index = {};
+    alerts.forEach(function (alert) {
+      const kind = alert.kind || 'other';
+      if (!index[kind]) {
+        index[kind] = { kind: kind, items: [] };
+        groups.push(index[kind]);
+      }
+      index[kind].items.push(alert);
+    });
+    return groups.map(function (group) {
+      const meta = ALERT_KIND_META[group.kind] || { label: 'پیگیری' };
+      const open = group.items.filter(function (item) { return !item.done; }).length;
+      return '<section class="notice-group" data-kind="' + esc(group.kind) + '">' +
+        '<header class="notice-group-head"><span class="notice-group-dot" aria-hidden="true"></span>' +
+        '<b>' + esc(meta.label) + '</b><small>' + faDigits(group.items.length) + ' مورد' + (open && open !== group.items.length ? ' · ' + faDigits(open) + ' باز' : '') + '</small></header>' +
+        '<div class="notice-group-items">' + group.items.map(noticeCardHtml).join('') + '</div></section>';
+    }).join('');
+  }
+
+  function noticeCardHtml(a) {
+    const state = alertStateMeta(a);
+    return '<div class="notice-card notice-kind-' + esc(a.kind || 'other') + (a.critical ? ' unread' : '') + (a.done ? ' is-done' : '') +
+      '" data-kind="' + esc(a.kind || 'other') + '" data-state="' + esc(a.state || 'active') + '">' +
+      '<span class="notice-state-bar" data-tone="' + state.tone + '" aria-hidden="true"></span>' +
+      '<div class="notice-mark">' + alertKindIcon(a.kind) + '</div>' +
+      '<div class="notice-body"><b>' + esc(a.title) + '</b><p>' + esc(a.detail) + '</p>' +
+      '<div class="notice-meta"><span class="notice-state-chip" data-tone="' + state.tone + '">' + esc(state.label) + '</span>' +
+      '<small>' + esc((ALERT_KIND_META[a.kind] || { label: 'پیگیری' }).label) + '</small></div>' +
+      alertCommentButton(a) + '</div>' +
+      '<span class="notice-unread"></span></div>';
   }
 
   function refreshDashboard() {
@@ -1850,30 +2037,30 @@
     }
 
     const alerts=alertsForData();
+    // ویجت داشبورد فقط موارد نیازمند توجه را نشان می‌دهد؛ موارد «انجام‌شده» در
+    // مرکز اعلان‌ها می‌مانند.
+    const openAlerts=alerts.filter(function(a){return !a.done;});
     const alertsWidget=document.querySelector('[data-widget="alerts"]'),alertList=alertsWidget&&alertsWidget.querySelector('.alert-list');
     if(alertList){
       const existingButton=document.getElementById('seeAllAlerts');
-      alertList.innerHTML=alerts.length?alerts.slice(0,5).map(function(a){
-        return '<div class="alert-item alert-kind-'+esc(a.kind||'other')+(a.critical?' critical':'')+'" data-kind="'+esc(a.kind||'other')+'">'+
+      alertList.innerHTML=openAlerts.length?openAlerts.slice(0,5).map(function(a){
+        const state=alertStateMeta(a);
+        return '<div class="alert-item alert-kind-'+esc(a.kind||'other')+(a.critical?' critical':'')+'" data-kind="'+esc(a.kind||'other')+'" data-state="'+esc(a.state||'active')+'">'+
+          '<span class="alert-state-bar" data-tone="'+state.tone+'" aria-hidden="true"></span>'+
           '<div class="alert-symbol">'+alertKindIcon(a.kind)+'</div>'+
-          '<div class="alert-copy"><b>'+esc(a.title)+'</b><p>'+esc(a.detail)+'</p></div>'+
+          '<div class="alert-copy"><b>'+esc(a.title)+'</b><p>'+esc(a.detail)+'</p>'+
+            '<span class="alert-state-chip" data-tone="'+state.tone+'">'+esc(state.label)+'</span></div>'+
           alertCommentButton(a)+
           '<span class="alert-age">'+esc((ALERT_KIND_META[a.kind]||{label:'پیگیری'}).label)+'</span></div>';
       }).join(''):'<div class="module-empty">هشدار عملیاتی ثبت‌شده‌ای وجود ندارد.</div>';
       if(existingButton)alertList.appendChild(existingButton);
-      const count=document.getElementById('notificationCount');if(count)count.textContent=faDigits(alerts.length);
     }
+    // شمارندهٔ زنگ = مجموع اعلان‌ها (باز و انجام‌شدهٔ امروز).
+    const notificationBadge=document.getElementById('notificationCount');
+    if(notificationBadge)notificationBadge.textContent=faDigits(alerts.length);
     const notificationList=document.getElementById('noticeList');
     if(notificationList){
-      const drawerButton=document.getElementById('seeAllAlerts');
-      notificationList.innerHTML=alerts.length?alerts.map(function(a){
-        return '<div class="notice-card notice-kind-'+esc(a.kind||'other')+(a.critical?' unread':'')+'" data-kind="'+esc(a.kind||'other')+'">'+
-          '<div class="notice-mark">'+alertKindIcon(a.kind)+'</div>'+
-          '<div class="notice-body"><b>'+esc(a.title)+'</b><p>'+esc(a.detail)+'</p>'+
-          '<small>'+esc((ALERT_KIND_META[a.kind]||{label:'پیگیری'}).label)+'</small>'+
-          alertCommentButton(a)+'</div>'+
-          '<span class="notice-unread"></span></div>';
-      }).join(''):'<div class="module-empty">اعلان تازه‌ای وجود ندارد.</div>';
+      notificationList.innerHTML=alerts.length?noticeGroupsHtml(alerts):'<div class="module-empty">اعلان تازه‌ای وجود ندارد.</div>';
     }
     const operations=document.querySelector('[data-widget="operations"]');
     if(operations){
@@ -1949,7 +2136,7 @@
       ['today','امروز'],['yesterday','دیروز'],['threeDays','۳ روز اخیر'],['week','هفته'],['tenDays','۱۰ روز اخیر'],
       ['month','ماه جاری'],['threeMonths','۳ ماه اخیر'],['sixMonths','۶ ماه اخیر'],['year','سال جاری'],['all','همهٔ اطلاعات'],['custom','بازهٔ دلخواه']
     ];
-    const actions = '<select id="reportExportFormat" class="module-report-export" aria-label="قالب خروجی گزارش"><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option><option value="docx">Word (.docx)</option><option value="pptx">PowerPoint (.pptx)</option><option value="png">تصویر PNG</option></select><button class="primary-btn" type="button" data-module-action="export-report">دریافت گزارش</button><button class="secondary-btn" type="button" data-module-action="print">چاپ / ذخیرهٔ PDF</button><button class="secondary-btn" type="button" data-module-action="export-all">CSV همهٔ اطلاعات</button>';
+    const actions = '<select id="reportExportFormat" class="module-report-export" aria-label="قالب خروجی گزارش"><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option><option value="docx">Word (.docx)</option><option value="png">تصویر PNG</option></select><button class="primary-btn" type="button" data-module-action="export-report">دریافت گزارش</button><button class="secondary-btn" type="button" data-module-action="print">چاپ / ذخیرهٔ PDF</button><button class="secondary-btn" type="button" data-module-action="export-all">CSV همهٔ اطلاعات</button>';
     const cards = MODULES.map(function (key) {
       const total=appData[key].filter(function(record){return isInRange(key,record,reportPeriod);}).length;
       return '<a class="module-report-card" href="./index.html?view='+esc(key)+'"><span>'+esc(specs[key].title)+'</span><strong>'+faDigits(total)+'</strong><small>مشاهدهٔ فهرست ←</small></a>';
@@ -2873,7 +3060,7 @@
     health: { label: 'وضعیت سلامت', numeric: false, value: function (r) { return String(r.healthStatus || ''); } }
   };
 
-  const EXPORT_FORMATS = [['csv', 'CSV (صفحه‌گسترده)'], ['xlsx', 'Excel (.xlsx)'], ['docx', 'Word (.docx)'], ['pptx', 'PowerPoint (.pptx)'], ['png', 'تصویر PNG'], ['print', 'چاپ / PDF (A4 افقی)']];
+  const EXPORT_FORMATS = [['csv', 'CSV (صفحه‌گسترده)'], ['xlsx', 'Excel (.xlsx)'], ['docx', 'Word (.docx)'], ['png', 'تصویر PNG'], ['print', 'چاپ / PDF (A4 افقی)']];
 
   function sortedGasMeters() {
     const spec = GAS_LOG_SORTS[gasLogSort] || GAS_LOG_SORTS.calibration;
@@ -4722,6 +4909,7 @@
     else{section.hidden=true;section.innerHTML='';}
     enhanceJalaliInputs(section);
     initMultiChecks(section);
+    mountSectionBackup(view, section);
     if(view==='dashboard')applyDashboardLayout();
   }
 
@@ -5078,15 +5266,8 @@
     downloadBlob('ATLAS-SHIFT-report-'+todayIso()+'.xlsx',zipStored(xlsxPackage('گزارش ATLAS SHIFT',sheet)));
   }
 
-  function exportReportPptx() {
-    const rows=currentReportRows();
-    downloadBlob('ATLAS-SHIFT-report-'+todayIso()+'.pptx', window.AtlasExportDocs.pptx({
-      title: currentReportTitle(),
-      rows: rows
-    }));
-  }
 
-  // ── خروجی یکپارچه: CSV، اکسل، ورد، پاورپوینت، تصویر و چاپ ─────────────────
+  // ── خروجی یکپارچه: CSV، اکسل، ورد، تصویر و چاپ ────────────────────────────
   // متن سادهٔ هر فیلد برای خروجی؛ نام افراد و خودرو جای شناسه‌ها نوشته می‌شود.
   function exportValue(moduleKey, field, record, data) {
     const value = field.custom && record.customFields ? record.customFields[field.key] : record[field.key];
@@ -5246,9 +5427,6 @@
     }));
   }
 
-  function exportRowsPptx(rows, title, filename) {
-    downloadBlob(filename, window.AtlasExportDocs.pptx({ title: title, rows: rows }));
-  }
 
   // تصویر: همان قالب جدول روی کاغذ سفید؛ عنوان، سرستون و بدنه هر سه فونت و
   // اندازهٔ خودشان را دارند و فاصلهٔ سطر/ستون متناسب همان اندازه است.
@@ -5372,7 +5550,6 @@
   function runExport(rows, title, base, format) {
     if (format === 'xlsx') exportRowsXlsx(rows, base + '.xlsx', title);
     else if (format === 'docx') exportRowsDocx(rows, title, base + '.docx');
-    else if (format === 'pptx') exportRowsPptx(rows, title, base + '.pptx');
     else if (format === 'png') exportRowsPng(rows, title, base + '.png');
     else if (format === 'print') printRows(rows, title);
     else downloadFile(base + '.csv', window.AtlasExportDocs.csv(rows, {
@@ -5393,7 +5570,6 @@
       '<button type="button" data-module-action="export" data-format="csv" data-view="' + esc(moduleKey) + '">CSV (صفحه‌گسترده)</button>' +
       '<button type="button" data-module-action="export" data-format="xlsx" data-view="' + esc(moduleKey) + '">Excel (.xlsx)</button>' +
       '<button type="button" data-module-action="export" data-format="docx" data-view="' + esc(moduleKey) + '">Word (.docx)</button>' +
-      '<button type="button" data-module-action="export" data-format="pptx" data-view="' + esc(moduleKey) + '">PowerPoint (.pptx)</button>' +
       '<button type="button" data-module-action="export" data-format="png" data-view="' + esc(moduleKey) + '">تصویر PNG</button>' +
       '<button type="button" data-module-action="export" data-format="print" data-view="' + esc(moduleKey) + '">چاپ / PDF (A4 افقی)</button>' +
       '<button type="button" class="module-export-columns" data-module-action="export-columns" data-view="' + esc(moduleKey) + '">⚙ انتخاب ستون‌های گزارش</button>' +
@@ -5488,12 +5664,194 @@
     toast('نسخهٔ پشتیبان شامل اطلاعات، تاریخچه و تنظیمات رابط آماده شد.');
   }
 
+  // ── پشتیبان‌گیری بخش‌به‌بخش ─────────────────────────────────────────────────
+  // در هر منو یک گزینه هست که فقط اطلاعات همان منو را پشتیبان می‌گیرد تا بشود
+  // آن را به شخص دیگری داد؛ بقیهٔ بخش‌ها در فایل نمی‌آیند. پیش از ساخت فایل،
+  // همان چیزی که داخل فایل می‌رود در یک پنجرهٔ تأیید نشان داده می‌شود.
+  const SECTION_BACKUP = {
+    employees: { kind: 'module', key: 'employees', title: 'کارکنان' },
+    missions: { kind: 'module', key: 'missions', title: 'مأموریت‌ها' },
+    leaves: { kind: 'module', key: 'leaves', title: 'مرخصی‌ها' },
+    vehicles: { kind: 'module', key: 'vehicles', title: 'خودروها' },
+    stations: { kind: 'module', key: 'stations', title: 'ایستگاه‌ها و مراکز' },
+    gasmeters: { kind: 'module', key: 'gasmeters', title: 'گازسنج‌ها' },
+    notes: { kind: 'module', key: 'notes', title: 'یادداشت‌ها و پیگیری‌ها' },
+    programs: { kind: 'module', key: 'programs', title: 'برنامه‌ها و پرونده‌ها' },
+    faults: { kind: 'module', key: 'faults', title: 'اشکالات و رفع اشکال' },
+    maintenance: { kind: 'module', key: 'maintenance', title: 'سرویس و نگهداری خودرو' },
+    gaslogs: { kind: 'module', key: 'gaslogs', title: 'سوابق گازسنج‌ها' },
+    shifts: { kind: 'module', key: 'shifts', title: 'برنامهٔ شیفت‌ها' },
+    phonebook: { kind: 'phonebook', title: 'دفترچه تلفن' },
+    settings: { kind: 'config', title: 'تنظیمات و فهرست‌های کشویی' },
+    dashboard: { kind: 'all', title: 'همهٔ بخش‌ها (داشبورد نمای کلی است)' },
+    reports: { kind: 'all', title: 'همهٔ بخش‌ها (گزارش از همهٔ بخش‌ها ساخته می‌شود)' }
+  };
+
+  function sectionBackupScope(view) {
+    return SECTION_BACKUP[view] || null;
+  }
+
+  function backupReferenceKeys(moduleKey) {
+    const keys = [];
+    (specs[moduleKey] ? specs[moduleKey].fields : []).forEach(function (field) {
+      if (field.listKey) keys.push(referenceBaseKey(field.listKey));
+    });
+    return keys.filter(function (key, index) { return keys.indexOf(key) === index; });
+  }
+
+  function buildScopedBackupData(scope) {
+    const state = createEmptyState();
+    if (scope.kind === 'config') {
+      state.references = JSON.parse(JSON.stringify(appData.references || state.references));
+      state.settings = JSON.parse(JSON.stringify(appData.settings || state.settings));
+      state.history = [];
+      return state;
+    }
+    if (scope.kind === 'module') {
+      const listKeys = backupReferenceKeys(scope.key);
+      listKeys.forEach(function (key) {
+        if (Array.isArray(appData.references[key])) state.references[key] = appData.references[key].slice();
+      });
+      state[scope.key] = JSON.parse(JSON.stringify(appData[scope.key] || []));
+      state.history = (appData.history || []).filter(function (item) { return item.module === scope.key; });
+      return state;
+    }
+    return appData;
+  }
+
+  async function exportSectionBackup(view) {
+    const scope = sectionBackupScope(view);
+    if (!scope) { toast('برای این بخش پشتیبان‌گیری تعریف نشده است.'); return; }
+    if (scope.kind === 'phonebook') {
+      const bridge = window.ATLAS_PHONEBOOK;
+      if (!bridge || typeof bridge.snapshot !== 'function') { toast('دفترچه تلفن هنوز آماده نیست.'); return; }
+      const phonebook = bridge.snapshot();
+      const ok = await askConfirm({
+        title: 'پشتیبان‌گیری از دفترچه تلفن',
+        message: 'در این فایل فقط ' + faDigits(phonebook.contacts.length) + ' مخاطب دفترچه تلفن و فهرست‌های همان بخش می‌آید؛ کارکنان، مأموریت‌ها، مرخصی‌ها و بقیهٔ بخش‌ها پشتیبان‌گیری نمی‌شوند. ادامه می‌دهی؟',
+        confirmLabel: 'ساخت فایل پشتیبان'
+      });
+      if (!ok) return;
+      const payload = {
+        app: 'ATLAS SHIFT',
+        schemaVersion: 2,
+        exportedAt: new Date().toISOString(),
+        scope: { kind: 'phonebook', key: 'phonebook', title: 'دفترچه تلفن' },
+        data: { contacts: phonebook.contacts, options: phonebook.options }
+      };
+      downloadFile('ATLAS-SHIFT-backup-phonebook-' + todayIso() + '.json', JSON.stringify(payload, null, 2), 'application/json;charset=utf-8');
+      toast('نسخهٔ پشتیبان دفترچه تلفن آماده شد.');
+      return;
+    }
+    const data = buildScopedBackupData(scope);
+    const recordCount = scope.kind === 'module' ? (appData[scope.key] || []).length : null;
+    const detail = scope.kind === 'module'
+      ? 'در این فایل فقط ' + faDigits(recordCount) + ' مورد از «' + scope.title + '» و فهرست‌های کشویی همان بخش می‌آید.'
+      : scope.kind === 'config'
+        ? 'در این فایل فقط تنظیمات و فهرست‌های کشویی می‌آید؛ هیچ پرونده، مرخصی یا مأموریتی داخل آن نیست.'
+        : 'این بخش نمای کلی است؛ فایل پشتیبان همهٔ بخش‌ها را دربر می‌گیرد.';
+    const ok = await askConfirm({
+      title: 'پشتیبان‌گیری از «' + scope.title + '»',
+      message: detail + ' سایر بخش‌ها پشتیبان‌گیری نمی‌شوند. ادامه می‌دهی؟',
+      confirmLabel: 'ساخت فایل پشتیبان'
+    });
+    if (!ok) return;
+    const payload = {
+      app: 'ATLAS SHIFT',
+      schemaVersion: 2,
+      exportedAt: new Date().toISOString(),
+      scope: { kind: scope.kind, key: scope.key || null, title: scope.title },
+      data: data
+    };
+    const suffix = scope.kind === 'all' ? 'all' : (scope.key || scope.kind);
+    downloadFile('ATLAS-SHIFT-backup-' + suffix + '-' + todayIso() + '.json', JSON.stringify(payload, null, 2), 'application/json;charset=utf-8');
+    toast('نسخهٔ پشتیبان «' + scope.title + '» آماده شد.');
+  }
+
+  // دکمهٔ پشتیبان‌گیری هر بخش؛ در سربرگ همان منو کنار بقیهٔ دکمه‌ها می‌نشیند.
+  function sectionBackupButton(view) {
+    if (!sectionBackupScope(view)) return '';
+    return '<button type="button" class="secondary-btn module-backup-btn" data-module-action="backup-section" data-view="' + esc(view) + '" title="پشتیبان‌گیری فقط از همین بخش">' +
+      '<span class="module-backup-ico" aria-hidden="true">' +
+        '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>' +
+      '</span> پشتیبان‌گیری این بخش</button>';
+  }
+
+  // اگر بخشی سربرگ استاندارد نداشت، همین دکمه بالای همان بخش تزریق می‌شود تا
+  // «پشتیبان‌گیری» در همهٔ منوها در دسترس باشد.
+  function mountSectionBackup(view, section) {
+    if (!section || !sectionBackupScope(view)) return;
+    const markup = sectionBackupButton(view);
+    const slot = section.querySelector('.module-page-actions');
+    if (slot) {
+      if (!slot.querySelector('[data-module-action="backup-section"]')) slot.insertAdjacentHTML('afterbegin', markup);
+      return;
+    }
+    if (section.querySelector('[data-module-action="backup-section"]')) return;
+    const host = section.querySelector('.module-list-head');
+    if (host) { host.insertAdjacentHTML('beforeend', '<div class="module-list-actions">' + markup + '</div>'); return; }
+    const bar = document.createElement('div');
+    bar.className = 'module-section-backup-bar';
+    bar.innerHTML = markup;
+    section.insertBefore(bar, section.firstChild);
+  }
+
   async function restoreBackup(file) {
     if(!file)return;
     try {
       const raw=await file.text();
       const parsed=JSON.parse(raw);
       const candidate=parsed&&parsed.data?parsed.data:parsed;
+      const scope=parsed&&parsed.scope&&typeof parsed.scope==='object'?parsed.scope:null;
+      // پشتیبان‌های بخش‌به‌بخش فقط همان بخش را برمی‌گردانند و بقیهٔ اطلاعات
+      // دست‌نخورده می‌ماند؛ پشتیبان کامل مثل قبل همه‌چیز را جایگزین می‌کند.
+      if(scope&&(scope.kind==='module'||scope.kind==='config'||scope.kind==='phonebook')){
+        if(scope.kind==='phonebook'){
+          const contacts=Array.isArray(candidate&&candidate.contacts)?candidate.contacts:[];
+          if(!contacts.length)throw new Error('فایل پشتیبان دفترچه تلفن معتبر نیست.');
+          const okPhonebook=await askConfirm({title:'بازیابی دفترچه تلفن',message:'در این فایل '+faDigits(contacts.length)+' مخاطب است و فقط دفترچه تلفن اضافه یا به‌روز می‌شود؛ بقیهٔ بخش‌ها تغییر نمی‌کند. ادامه می‌دهی؟',confirmLabel:'بازیابی'});
+          if(!okPhonebook)return;
+          const bridge=window.ATLAS_PHONEBOOK;
+          if(!bridge||typeof bridge.merge!=='function')throw new Error('دفترچه تلفن آماده نیست.');
+          const result=bridge.merge(contacts,candidate&&candidate.options);
+          refreshCurrentView();
+          toast('دفترچه تلفن بازیابی شد: '+faDigits(result.added)+' مخاطب تازه و '+faDigits(result.updated)+' به‌روزرسانی.');
+          return;
+        }
+        if(scope.kind==='config'){
+          const okConfig=await askConfirm({title:'بازیابی تنظیمات',message:'فقط تنظیمات و فهرست‌های کشویی از فایل جایگزین می‌شود؛ پرونده‌ها، مرخصی‌ها و سایر اطلاعات دست‌نخورده می‌مانند. ادامه می‌دهی؟',confirmLabel:'بازیابی'});
+          if(!okConfig)return;
+          const incoming=normalizeState(candidate);
+          appData.references=incoming.references;
+          appData.settings=Object.assign({},appData.settings,incoming.settings);
+          const okSaveConfig=await saveState();
+          if(!okSaveConfig)return;
+          refreshDashboard();refreshCurrentView();
+          toast('تنظیمات و فهرست‌های کشویی بازیابی شد.');
+          return;
+        }
+        const moduleKey=String(scope.key||'');
+        if(!specs[moduleKey]&&moduleKey!=='shifts')throw new Error('بخش این فایل پشتیبان شناخته نشد.');
+        const incomingRecords=Array.isArray(candidate&&candidate[moduleKey])?candidate[moduleKey]:[];
+        const title=(SECTION_BACKUP[moduleKey]||{}).title||moduleKey;
+        const okModule=await askConfirm({title:'بازیابی «'+title+'»',message:'در این فایل '+faDigits(incomingRecords.length)+' مورد از «'+title+'» است. موارد هم‌شناسه به‌روز و موارد تازه اضافه می‌شوند؛ هیچ بخش دیگری تغییر نمی‌کند و چیزی حذف نمی‌شود. ادامه می‌دهی؟',confirmLabel:'بازیابی'});
+        if(!okModule)return;
+        const incoming=normalizeState(candidate);
+        const byId={};
+        (appData[moduleKey]||[]).forEach(function(item){byId[String(item.id)]=item;});
+        let added=0,updated=0;
+        incoming[moduleKey].forEach(function(item){
+          const key=String(item.id);
+          if(byId[key]){updated+=1;}else{added+=1;}
+          byId[key]=item;
+        });
+        appData[moduleKey]=Object.keys(byId).map(function(key){return byId[key];});
+        const okSaveModule=await saveState();
+        if(!okSaveModule)return;
+        refreshDashboard();refreshCurrentView();
+        toast('بازیابی «'+title+'» انجام شد: '+faDigits(added)+' مورد تازه و '+faDigits(updated)+' به‌روزرسانی.');
+        return;
+      }
       if(!candidate||!MODULES.every(function(key){return Array.isArray(candidate[key]);}))throw new Error('فایل پشتیبان معتبر نیست.');
       if(!(await askConfirm({title:'بازیابی نسخهٔ پشتیبان',message:'با بازیابی، اطلاعات فعلی و تنظیمات ذخیره‌شدهٔ این دستگاه با اطلاعات فایل جایگزین می‌شود. ادامه می‌دهی؟',confirmLabel:'بازیابی'})))return;
       appData=normalizeState(candidate);
@@ -5724,7 +6082,6 @@
       ? '<button type="button" class="secondary-btn" data-leave-export="csv">CSV</button> ' +
         '<button type="button" class="secondary-btn" data-leave-export="xlsx">Excel</button> ' +
         '<button type="button" class="secondary-btn" data-leave-export="docx">Word</button> ' +
-        '<button type="button" class="secondary-btn" data-leave-export="pptx">PowerPoint</button> ' +
         '<button type="button" class="secondary-btn" data-leave-export="png">تصویر PNG</button> ' +
         '<button type="button" class="secondary-btn" data-leave-export="print">چاپ</button> '
       : '';
@@ -6034,7 +6391,6 @@
       const format=selector?selector.value:'csv';
       if(format==='xlsx')exportReportXlsx();
       else if(format==='docx')exportReportDocx();
-      else if(format==='pptx')exportReportPptx();
       else if(format==='png')exportRowsPng(currentReportRows(), currentReportTitle(), 'ATLAS-SHIFT-report-'+todayIso()+'.png');
       else exportReportCsv();
     }else if(action==='export-all'){
@@ -6045,6 +6401,8 @@
       else window.print();
     }else if(action==='backup'){
       exportBackup();
+    }else if(action==='backup-section'){
+      await exportSectionBackup(button.dataset.view||currentView);
     }else if(action==='toggle-test-mode'){
       toggleTestMode();
     }else if(action==='clear-test-data'){
@@ -6245,6 +6603,25 @@
     closeModal();
   });
 
+  // نوار ابزار فهرست: تغییر جهت مرتب‌سازی و پاک‌کردن فیلترها.
+  document.addEventListener('click', function (event) {
+    const dirButton = event.target.closest('[data-module-sort-dir]');
+    if (dirButton) {
+      const moduleKey = dirButton.dataset.view;
+      const current = listSortFor(moduleKey);
+      setListSort(moduleKey, { direction: current.direction === 'asc' ? 'desc' : 'asc' });
+      render(moduleKey, document.getElementById('sectionView'));
+      return;
+    }
+    const resetButton = event.target.closest('[data-module-reset]');
+    if (resetButton) {
+      const moduleKey = resetButton.dataset.view;
+      searchState[moduleKey] = '';
+      filterState[moduleKey] = 'all';
+      render(moduleKey, document.getElementById('sectionView'));
+    }
+  });
+
   // Delegate clicks for dynamically generated notification cards as well as the initial markup.
   document.addEventListener('click', function(event) {
     const card = event.target.closest('.notice-card');
@@ -6400,6 +6777,9 @@
     const target=event.target;
     if(target.matches('[data-module-filter]')){
       filterState[target.dataset.view]=target.value;
+      render(target.dataset.view,document.getElementById('sectionView'));
+    }else if(target.matches('[data-module-sort]')){
+      setListSort(target.dataset.view,{key:target.value});
       render(target.dataset.view,document.getElementById('sectionView'));
     }else if(target.matches('[data-module-select-all]')){
       const section=document.getElementById('sectionView');
@@ -7799,6 +8179,8 @@
     setGasTab: setGasTab,
     setVehicleTab: setVehicleTab,
     saveNow: saveState,
+    sectionBackup: exportSectionBackup,
+    sectionBackupButton: sectionBackupButton,
     addReferenceValue: async function (key, value) {
       const text = String(value == null ? '' : value).trim();
       if (!key || !text) return false;
