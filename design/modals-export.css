@@ -1,8 +1,10 @@
 /* ATLAS SHIFT — پنجرهٔ فرم روی زمین، اکشن‌های تماس و منوی خروجی */
 
 /* 1 · MODAL ───────────────────────────────────────────────────────────── */
-/* الگوی مشترک همهٔ پنجره‌ها: ارتفاع آزاد و متناسب با محتوا، بدون اسکرول داخلی؛
-   اگر محتوا از نمایشگر بلندتر شد، خود پس‌زمینه اسکرول می‌شود. */
+/* الگوی مشترک همهٔ پنجره‌ها: پنجره هرگز از کادر نمایشگر بیرون نمی‌زند.
+   ارتفاع آزاد است ولی سقف دارد (100dvh منهای حاشیهٔ پس‌زمینه) و بدنهٔ پنجره
+   اسکرول می‌شود؛ سرصفحه و دکمه‌های پایانی همیشه سر جایشان می‌مانند.
+   همین چند خط برای همهٔ پنجره‌ها (کارمند، مأموریت، خودرو، …) یکسان است. */
 .atlas-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -10,22 +12,24 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 14px 12px;
+  padding: 12px;
   background: var(--scrim);
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* در نمایشگرهای کوتاه، فاصلهٔ دور پنجره کمتر می‌شود تا کامل جا شود. */
 @media (max-height: 780px) {
   .atlas-modal-backdrop {
-    padding: 8px 12px;
+    padding: 8px;
   }
 }
 
 .atlas-modal {
   width: min(980px, 100%);
-  max-height: none;
+  max-height: calc(100dvh - 24px);
   height: auto;
+  margin: auto;
   display: flex;
   flex-direction: column;
   border: 1px solid var(--line-hi);
@@ -35,7 +39,9 @@
   overflow: hidden;
 }
 
+/* سرصفحه ثابت می‌ماند؛ فقط بدنهٔ فرم اسکرول می‌خورد. */
 .atlas-modal-head {
+  flex: 0 0 auto;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -76,9 +82,19 @@
 }
 
 .atlas-modal-body {
-  padding: 9px 13px 8px;
-  overflow: visible;
+  --modal-pad: 13px;
+  --modal-pad-y: 10px;
+  flex: 1 1 auto;
   min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 9px var(--modal-pad) var(--modal-pad-y);
+}
+@media (max-width: 640px) {
+  .atlas-modal-body {
+    --modal-pad: 11px;
+    --modal-pad-y: 9px;
+  }
 }
 
 /* فرم‌ها: فشرده و متناسب با محتوا (همان الگوی پنجرهٔ ثبت کارمند). */
@@ -141,16 +157,24 @@
   display: none;
 }
 
+/* نوار دکمه‌ها بیرون از ناحیهٔ اسکرول است: همیشه دیده می‌شود و به لبه‌ها می‌چسبد. */
 .atlas-modal .module-form-actions {
-  position: sticky;
-  bottom: 0;
+  position: static;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
   flex-wrap: wrap;
-  padding: 6px 0 0;
-  background: var(--panel);
+  margin: 0;
+  padding: 8px 13px 10px;
+  background: var(--panel-2);
+  border-top: 1px solid var(--line);
+}
+@media (max-width: 640px) {
+  .atlas-modal .module-form-actions {
+    padding: 8px 11px calc(9px + env(safe-area-inset-bottom));
+  }
 }
 
 @media (max-width: 640px) {

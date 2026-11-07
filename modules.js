@@ -75,43 +75,53 @@
     },
     missions: {
       title: 'مأموریت‌ها', singular: 'مأموریت',
-      subtitle: 'ثبت مسیر، افراد اعزامی، خودرو، زمان‌بندی و نتیجهٔ مأموریت',
+      subtitle: 'ثبت افراد، خودرو و راننده، محدودهٔ عملیاتی، آلودگی و نتیجهٔ مأموریت',
       fields: [
-        {key:'title',label:'عنوان مأموریت',type:'select',required:true,listKey:'missionTitles',options:['بازدید دورهای خط','رفع نشتی','نظارت بر جوشکاری','بررسی انشعاب','پایش ایمنی','سرویس تجهیزات','مأموریت اضطراری','سایر']},
-        {key:'missionType',label:'نوع فعالیت',type:'select',required:true,listKey:'missionTypes',options:['نظارت بر جوشکاری','بررسی انشعاب یا نشتی','بررسی آلودگی خاک یا آب','بازدید ایستگاه','سرویس تجهیزات','بازدید ایمنی','سایر']},
-        {key:'startAt',label:'زمان شروع',type:'jalali-datetime',required:true},
-        {key:'endAt',label:'زمان پایان',type:'jalali-datetime'},
-        {key:'city',label:'شهر یا محدوده',type:'select',required:true,listKey:'workplaces',options:['اهواز','آبادان','اندیمشک','ماهشهر','بندر امام','آغاجاری','سایر']},
-        {key:'origin',label:'مبدأ'},
-        {key:'destination',label:'مقصد یا محل عملیات'},
-        {key:'stops',label:'توقف‌ها و نقاط مسیر',type:'textarea',wide:true,placeholder:'هر نقطه را در یک خط وارد کن'},
-        {key:'pipelineSize',label:'قطر خط (اینچ)',type:'select',listKey:'pipelineSizes',options:['۴','۶','۸','۱۰','۱۲','۱۴','۱۶','۲۰','۲۴','۳۰','۳۶']},
-        {key:'productType',label:'نوع فرآورده',type:'select',listKey:'products',options:['نفت خام','نفت گاز','بنزین','نفت سفید','گاز مایع','آب آلوده','سایر']},
-        // محدودهٔ عملیاتی یک کادر است، نه دو: فهرست پیشنهادها کنار نوشتن آزاد.
-        {key:'operationalRange',label:'محدودهٔ عملیاتی / کیلومتر خط',type:'combo-text',listKey:'operationalRanges',placeholder:'مثلاً روستای سویسه یا کیلومتر ۹۶ تا ۱۰۲',options:['روستای سویسه','روستای الهایی','کیلومتر ۹۶ تا ۱۰۲','کیلومتر ۱۲۰ تا ۱۳۵','محور اهواز – آبادان']},
-        {key:'lineNotes',label:'شرح خط و نقطه عملیات',type:'textarea',wide:true},
-        {key:'crewIds',label:'افراد اعزامی',type:'select',source:'employees',multiple:true,wide:true},
-        {key:'crewText',label:'شرح گروه یا افراد خارج از فهرست',type:'textarea',wide:true},
-        {key:'driverId',label:'راننده',type:'select',source:'employees'},
-        {key:'vehicleId',label:'خودرو',type:'select',source:'vehicles'},
+        {key:'employeeId',label:'نام و نام خانوادگی',type:'select',source:'employees',required:true},
+        // همراهان: فهرست کامل کارکنان با جستجو؛ می‌توان چند نفر را تیک زد و یک‌جا افزود.
+        // نام‌های انتخاب‌شده زیر همان ردیف با رنگ متفاوت خوانا نمایش داده می‌شوند.
+        {key:'crewIds',label:'کارکنان همراه',type:'multi-check',source:'employees',showChosen:true,
+          hint:'جستجو کن، هر تعداد نفر را تیک بزن و «افزودن همراهان» را بزن.'},
+        // خودروها: هر خودروی تیک‌خورده یک کادر راننده می‌گیرد که فقط از افراد همین مأموریت پر می‌شود.
+        {key:'vehicleIds',label:'خودرو یا خودروها',type:'multi-check',source:'vehicles',driversFrom:'crewIds',
+          hint:'برای هر خودروی انتخاب‌شده، راننده‌اش را از میان کارکنان همین مأموریت مشخص کن.'},
+        {key:'title',label:'عنوان مأموریت',type:'select',required:true,listKey:'missionTitles',options:['بازدید دوره‌ای خط','رفع نشتی','نظارت بر جوشکاری','بررسی انشعاب','پایش ایمنی','سرویس تجهیزات','مأموریت اضطراری','سایر']},
+        {key:'missionType',label:'نوع مأموریت',type:'select',required:true,listKey:'missionTypes',options:['نظارت بر جوشکاری','بررسی انشعاب یا نشتی','بررسی آلودگی خاک یا آب','بازدید ایستگاه','سرویس تجهیزات','بازدید ایمنی','سایر']},
         {key:'status',label:'وضعیت مأموریت',type:'select',required:true,listKey:'missionStatuses',options:['برنامه‌ریزی‌شده','در جریان','انجام‌شده','لغو‌شده']},
-        // مأموریت انجام‌شده بدون شرح نتیجه بسته نمی‌شود.
-        {key:'result',label:'شرح کار و نتیجه',type:'textarea',wide:true,requiredWhen:{key:'status',values:['انجام‌شده']}},
-        {key:'attachments',label:'پیوست گزارش',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx'}
+        {key:'origin',label:'مبدأ',type:'place'},
+        {key:'destination',label:'مقصد',type:'place'},
+        // محدودهٔ عملیاتی یک فهرست مدیریت‌شدنی است: شهر، روستا، ایستگاه مخابراتی، ایستگاه برق،
+        // رکتیفایر، مرکز انتقال نفت و هر چیز دیگر؛ با «+» اضافه و در تنظیمات فهرست‌ها کم می‌شود.
+        {key:'operationalRange',label:'محدودهٔ عملیاتی',type:'select',listKey:'operationalRanges',
+          options:['شهر','روستا','ایستگاه مخابراتی','ایستگاه برق','ایستگاه رکتیفایر','مرکز انتقال نفت']},
+        {key:'startAt',label:'تاریخ آغاز مأموریت',type:'jalali-datetime',required:true},
+        {key:'endAt',label:'تاریخ پایان مأموریت',type:'jalali-datetime'},
+        {key:'pipelineSize',label:'سایز خط لوله',type:'select',listKey:'pipelineSizes',options:['۴','۶','۸','۱۰','۱۲','۱۴','۱۶','۲۰','۲۴','۳۰','۳۶']},
+        {key:'productType',label:'نوع فرآورده',type:'select',listKey:'products',options:['نفت خام','نفت گاز','بنزین','نفت سفید','گاز مایع','آب آلوده','سایر']},
+        {key:'hasPollution',label:'آلودگی',type:'select',options:['ندارد','دارد']},
+        // ردیف‌های آلودگی فقط وقتی «آلودگی: دارد» انتخاب شود باز می‌شوند.
+        {key:'soilPollution',label:'آلودگی خاکی',type:'select',options:['دارد','ندارد'],dependsOn:{key:'hasPollution',values:['دارد']}},
+        {key:'waterPollution',label:'آلودگی آبی',type:'select',options:['دارد','ندارد'],dependsOn:{key:'hasPollution',values:['دارد']}},
+        {key:'pollutionAmount',label:'میزان آلودگی',type:'text',placeholder:'یک خط توضیح',dependsOn:{key:'hasPollution',values:['دارد']}},
+        {key:'pollutionCleared',label:'در پایان عملیات رفع آلودگی انجام شد؟',type:'select',options:['انجام شد','انجام نشد'],dependsOn:{key:'hasPollution',values:['دارد']}},
+        {key:'attachments',label:'پیوست‌های گزارش',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx'},
+        {key:'result',label:'شرح کار و نتیجه',type:'textarea',wide:true,placeholder:'کار انجام‌شده و نتیجهٔ نهایی مأموریت'}
       ],
-      // چیدمان پنجرهٔ ثبت مأموریت: هر ردیف یک شبکهٔ مستقل و به همان ترتیب منطقی کار.
+      // چیدمان پنجرهٔ ثبت مأموریت: هر ردیف یک شبکهٔ مستقل و به همان ترتیب کار.
+      // ردیف ۸ تا ۱۰ (رفع آلودگی، پیوست، نتیجه) با «کامنت» روی مأموریت هم اصلاح می‌شوند.
       layout: [
+        ['employeeId','crewIds'],
+        ['vehicleIds'],
         ['title','missionType','status'],
-        ['startAt','endAt','city'],
-        ['origin','destination','pipelineSize'],
-        ['productType','driverId','vehicleId'],
-        ['operationalRange'],
-        ['stops','lineNotes'],
-        ['crewIds','crewText'],
-        ['result'],
-        ['attachments']
+        ['origin','destination','operationalRange'],
+        ['startAt','endAt'],
+        ['pipelineSize','productType','hasPollution'],
+        ['soilPollution','waterPollution','pollutionAmount'],
+        ['pollutionCleared'],
+        ['attachments'],
+        ['result']
       ],
-      columns: ['title','missionType','startAt','city','crewIds','vehicleId','status']
+      columns: ['title','missionType','startAt','employeeId','crewIds','vehicleIds','status']
     },
     leaves: {
       title: 'مرخصی‌ها', singular: 'درخواست مرخصی',
@@ -946,6 +956,87 @@
     return !!(field.listKey && SEARCHABLE_LIST_KEYS.indexOf(referenceBaseKey(field.listKey)) >= 0);
   }
 
+  // ── انتخاب چندتایی با جستجو (همراهان مأموریت، خودروها) ──────────────────
+  // الگو: لیست کامل باز است، کاربر هر تعداد نفر را تیک می‌زند و یک‌جا اضافه می‌کند؛
+  // موارد افزوده‌شده به‌صورت «چیپ» با رنگ متفاوت زیر همان کادر می‌آیند و هر وقت
+  // خواست با × حذف می‌شود. فقط چیپ‌ها نام‌دارند (name=field.key) و به فرم ارسال می‌شوند.
+  function employeeLabelById(id) {
+    const person = (appData.employees || []).find(function (item) { return String(item.id) === String(id); });
+    return person ? (employeeName(person) || person.personnelId || 'کارمند') : String(id);
+  }
+
+  function crewOptionsMarkup(crewIds, currentDriver) {
+    const only = Array.isArray(crewIds) ? crewIds.map(String) : null;
+    return (appData.employees || []).slice()
+      .filter(function (person) { return !only || only.indexOf(String(person.id)) >= 0; })
+      .sort(function (a, b) { return employeeName(a).localeCompare(employeeName(b), 'fa'); })
+      .map(function (person) {
+        const id = String(person.id);
+        return '<option value="' + esc(id) + '"' + (String(currentDriver || '') === id ? ' selected' : '') + '>' +
+          esc((employeeName(person) || 'بدون نام') + (person.personnelId ? ' · ' + person.personnelId : '')) + '</option>';
+      }).join('');
+  }
+
+  function driverBoxMarkup(vehicleId, label, currentDriver, crewIds) {
+    return '<div class="mmc-driver-box" data-driver-box="' + esc(vehicleId) + '">' +
+      '<span class="mmc-driver-title">رانندهٔ ' + esc(label) + '</span>' +
+      '<select class="mmc-driver-select" name="vehicleDriver:' + esc(vehicleId) + '" data-vehicle-id="' + esc(vehicleId) + '">' +
+      '<option value="">انتخاب راننده از کارکنان مأموریت…</option>' + crewOptionsMarkup(crewIds, currentDriver) + '</select>' +
+      '</div>';
+  }
+
+  function chosenChipMarkup(field, id, label) {
+    return '<span class="mmc-chip" data-mmc-chip="' + esc(id) + '">' +
+      '<span class="mmc-chip-name">' + esc(label) + '</span>' +
+      '<input type="hidden" name="' + esc(field.key) + '" value="' + esc(id) + '">' +
+      '<button type="button" class="mmc-chip-x" data-mmc-remove="' + esc(id) + '" aria-label="حذف ' + esc(label) + '" title="حذف">×</button>' +
+      '</span>';
+  }
+
+  function multiCheckMarkup(moduleKey, field, record, data) {
+    const raw = record ? record[field.key] : '';
+    const chosen = (Array.isArray(raw) ? raw : String(raw || '').split(','))
+      .map(function (id) { return String(id).trim(); }).filter(Boolean);
+    const options = getSelectOptions(field, data);
+    const labels = {};
+    options.forEach(function (option) { labels[String(option.value)] = option.label; });
+    const driverMap = (record && record.vehicleDrivers) || {};
+    const rows = options.map(function (option) {
+      const id = String(option.value);
+      return '<label class="mmc-row" data-mmc-row data-label="' + esc(option.label) + '">' +
+        '<input type="checkbox" data-mmc-pick value="' + esc(id) + '">' +
+        '<span class="mmc-name">' + esc(option.label) + '</span>' +
+        '</label>';
+    }).join('');
+    const chips = chosen.map(function (id) { return chosenChipMarkup(field, id, labels[id] || id); }).join('');
+    const crewIds = field.driversFrom && record && Array.isArray(record[field.driversFrom])
+      ? record[field.driversFrom].map(String) : null;
+    const drivers = field.driversFrom
+      ? chosen.map(function (id) { return driverBoxMarkup(id, labels[id] || id, driverMap[id], crewIds); }).join('')
+      : '';
+    const empty = '<small class="mmc-empty" data-mmc-empty' + (chosen.length ? ' hidden' : '') + '>' +
+      (field.driversFrom ? 'هنوز خودرویی انتخاب نشده است.' : 'هنوز کسی اضافه نشده است.') + '</small>';
+    return '<div class="module-multi-check" data-multi-check="' + esc(field.key) + '" data-mmc-source="' + esc(field.source || '') + '"' +
+      (field.driversFrom ? ' data-mmc-drivers="' + esc(field.driversFrom) + '"' : '') + '>' +
+      '<div class="mmc-toolbar">' +
+      '<input type="search" class="mmc-search" placeholder="جستجو در فهرست…" data-mmc-search autocomplete="off" spellcheck="false">' +
+      '<span class="mmc-count" data-mmc-count>۰ انتخاب‌شده</span>' +
+      '</div>' +
+      (options.length
+        ? '<div class="mmc-list" data-mmc-list>' + rows + '</div>'
+        : '<div class="module-empty module-check-empty">فهرستی برای انتخاب ثبت نشده است.</div>') +
+      (options.length
+        ? '<div class="mmc-foot">' +
+          '<button type="button" class="secondary-btn mmc-add" data-mmc-add>افزودن انتخاب‌شده‌ها</button>' +
+          '<button type="button" class="mmc-clear" data-mmc-clear>پاک کردن همه</button>' +
+          '</div>'
+        : '') +
+      '<div class="mmc-chosen" data-mmc-chosen>' + chips + '</div>' +
+      (field.driversFrom ? '<div class="mmc-drivers" data-mmc-drivers-box>' + drivers + '</div>' : '') +
+      empty +
+      '</div>';
+  }
+
   function renderField(moduleKey, field, record, data) {
     const value = record && record[field.key] != null ? record[field.key] : (field.custom && record && record.customFields ? record.customFields[field.key] : '');
     const id = 'atlas-field-' + moduleKey + '-' + field.key;
@@ -1011,6 +1102,8 @@
         '<small class="module-field-hint">نام را از مخاطبان دفترچه تلفن جستجو کن یا نام تازه را همین‌جا بنویس.</small>';
     } else if (field.type === 'textarea') {
       control = '<textarea id="' + esc(id) + '" name="' + esc(field.key) + '" rows="3"' + required + ' placeholder="' + esc(field.placeholder || '') + '">' + esc(value) + '</textarea>';
+    } else if (field.type === 'multi-check') {
+      control = multiCheckMarkup(moduleKey, field, record, data);
     } else if (field.type === 'checks') {
       const selected = Array.isArray(value) ? value : String(value || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean);
       control = '<div class="module-check-options">' + field.options.map(function (option) {
@@ -1124,7 +1217,7 @@
     let relatedVehicleHistory = '';
     if (moduleKey === 'vehicles' && existing) {
       const linked = (data.missions || []).filter(function (mission) {
-        return String(mission.vehicleId || '') === String(existing.id);
+        return [].concat(mission.vehicleIds || [], mission.vehicleId || []).map(String).indexOf(String(existing.id)) >= 0;
       }).slice().sort(function (a,b) { return String(b.startAt || '').localeCompare(String(a.startAt || '')); });
       relatedVehicleHistory = '<section class="module-related-history"><div class="module-list-head"><div><h3>سوابق مأموریت این خودرو</h3><p>این فهرست از مأموریت‌هایی ساخته می‌شود که همین خودرو در آن‌ها انتخاب شده است.</p></div><span class="module-tag">' + faDigits(linked.length) + ' مورد</span></div>' +
         (linked.length ? '<div class="module-table-wrap" style="width:100%;min-width:0"><table class="module-table"><thead><tr><th>مأموریت</th><th>نوع فعالیت</th><th>شروع</th><th>پایان</th><th>وضعیت</th><th>گروه اعزامی</th></tr></thead><tbody>' +
@@ -1144,14 +1237,17 @@
       '<div class="atlas-modal-head"><div><h3 id="atlasModalTitle">' +
       (existing ? 'ویرایش ' : 'ثبت ') + esc(specs[moduleKey].singular) + '</h3><p>پس از ذخیره، اطلاعات به فهرست، داشبورد و گزارش‌های مرتبط منتقل می‌شود.</p></div>' +
       '<button type="button" class="atlas-modal-close" data-module-action="cancel" data-view="' + esc(moduleKey) + '" aria-label="بستن پنجره">×</button></div>' +
-      '<div class="atlas-modal-body"><form class="module-form" data-module-form autocomplete="off" data-view="' + esc(moduleKey) + '" data-id="' + esc(existing ? existing.id : '') + '"' + (vehicleScope ? ' data-fault-scope="vehicle"' : '') + '>' +
+      '<div class="atlas-modal-body"><form class="module-form" id="atlasModuleForm" data-module-form autocomplete="off" data-view="' + esc(moduleKey) + '" data-id="' + esc(existing ? existing.id : '') + '"' + (vehicleScope ? ' data-fault-scope="vehicle"' : '') + '>' +
       renderFieldsMarkup(moduleKey, fields, draft, data) +
       (moduleKey === 'employees' ? customFieldsEditorMarkup() : '') +
       fileNotice +
+      '</form>' +
+      relatedVehicleHistory + '</div>' +
+      // نوار دکمه‌ها بیرون از ناحیهٔ اسکرول است؛ پس در هر ارتفاعی از نمایشگر دیده می‌شود.
       '<div class="module-form-actions"><span class="module-required-help">موارد دارای * ضروری هستند.</span><div>' +
       '<button type="button" class="secondary-btn" data-module-action="cancel" data-view="' + esc(moduleKey) + '">انصراف</button> ' +
-      '<button type="submit" class="primary-btn">' + (existing ? 'ذخیرهٔ تغییرات' : 'ثبت ' + esc(specs[moduleKey].singular)) + '</button></div></div></form>' +
-      relatedVehicleHistory + '</div></div></div>';
+      '<button type="submit" form="atlasModuleForm" class="primary-btn">' + (existing ? 'ذخیرهٔ تغییرات' : 'ثبت ' + esc(specs[moduleKey].singular)) + '</button></div></div>' +
+      '</div></div>';
   }
 
   // معناى وضعیت‌ها؛ رنگ هر معنا در design/tones.css تعیین می‌شود.
@@ -1188,8 +1284,11 @@
       return esc(Array.isArray(value) ? value.map(findName).join('، ') : findName(value));
     }
     if (field && field.source === 'vehicles') {
-      const item = data.vehicles.find(function (vehicle) { return String(vehicle.id) === String(value); });
-      return esc(item ? (item.name || 'خودرو') + (item.companyPlate ? ' · ' + item.companyPlate : '') : value);
+      const nameOf = function (id) {
+        const item = data.vehicles.find(function (vehicle) { return String(vehicle.id) === String(id); });
+        return item ? (item.name || 'خودرو') + (item.companyPlate ? ' · ' + item.companyPlate : '') : id;
+      };
+      return esc(Array.isArray(value) ? value.map(nameOf).join('، ') : nameOf(value));
     }
     if (field && field.source === 'gasmeters') {
       const item = (data.gasmeters || []).find(function (meter) { return String(meter.id) === String(value); });
@@ -1275,7 +1374,7 @@
           columns.map(function (key) {
             if (moduleKey === 'vehicles' && key === 'relatedMissions') {
               const linkedCount = (data.missions || []).filter(function (mission) {
-                return String(mission.vehicleId || '') === String(record.id);
+                return [].concat(mission.vehicleIds || [], mission.vehicleId || []).map(String).indexOf(String(record.id)) >= 0;
               }).length;
               return '<td>' + faDigits(linkedCount) + ' مورد</td>';
             }
@@ -1357,7 +1456,7 @@
       (existing ? 'ویرایش برنامهٔ شیفت' : 'ثبت برنامهٔ شیفت') +
       '</h3><p>نوع روز/شب و زمان شروع و پایان را مشخص کن. برای شیفت شب، تاریخ پایان روز بعد را وارد کن.</p></div>' +
       '<button type="button" class="atlas-modal-close" data-shift-action="cancel" aria-label="بستن پنجره">×</button></div>' +
-      '<div class="atlas-modal-body"><form class="module-form" data-shift-form data-shift-id="' + esc(existing ? existing.id : '') + '"><div class="module-fields">' +
+      '<div class="atlas-modal-body"><form class="module-form" id="atlasShiftForm" data-shift-form data-shift-id="' + esc(existing ? existing.id : '') + '"><div class="module-fields">' +
       '<label class="module-field"><span>نوع شیفت <i>*</i></span><select name="shiftType" required><option value="">انتخاب کنید</option>' +
       ['۱۲ ساعته روز','۱۲ ساعته شب','روزکار'].map(function (option) {
         return '<option value="' + esc(option) + '"' + (current.shiftType === option ? ' selected' : '') + '>' + esc(option) + '</option>';
@@ -1374,9 +1473,10 @@
       '<label class="module-field module-field-wide"><span>نیروهای این شیفت <i>*</i></span><select name="employeeIds" multiple size="5" required>' +
       employeeOptions + '</select><small class="module-field-hint">برای انتخاب چند نفر در رایانه، کلید Ctrl را نگه‌دار.</small></label>' +
       '<label class="module-field module-field-wide"><span>توضیحات</span><textarea name="notes" rows="3">' + esc(current.notes || '') + '</textarea></label>' +
-      '</div><div class="module-form-actions"><span class="module-required-help">برنامه‌های ثبت‌شده در تقویم روزانه و وضعیت کارکنان منعکس می‌شوند.</span><div>' +
+      '</div></form></div>' +
+      '<div class="module-form-actions"><span class="module-required-help">برنامه‌های ثبت‌شده در تقویم روزانه و وضعیت کارکنان منعکس می‌شوند.</span><div>' +
       '<button type="button" class="secondary-btn" data-shift-action="cancel">انصراف</button> ' +
-      '<button type="submit" class="primary-btn">' + (existing ? 'ذخیرهٔ تغییرات' : 'ثبت برنامهٔ شیفت') + '</button></div></div></form></div></div></div>';
+      '<button type="submit" form="atlasShiftForm" class="primary-btn">' + (existing ? 'ذخیرهٔ تغییرات' : 'ثبت برنامهٔ شیفت') + '</button></div></div></div></div>';
   }
 
   function renderShiftSchedule(data) {
@@ -1635,7 +1735,7 @@
         list.innerHTML=recent.length?recent.map(function(m,index){
           const names=(m.crewIds||[]).map(function(id){const person=staff.find(function(e){return String(e.id)===String(id)});return person?employeeName(person):''}).filter(Boolean);
           const crew=[names.join('، '),m.crewText].filter(Boolean).join('؛ ');
-          return '<div class="list-item"><div class="route-mark"><b>'+esc((m.city||'—').slice(0,3))+'</b><span>مسیر '+faDigits(index+1)+'</span></div><div class="list-main"><b>'+esc(m.title||'مأموریت')+'</b><span>'+esc([m.origin,m.destination,m.city].filter(Boolean).join(' ← '))+' · '+esc(crew||'گروه ثبت نشده')+'</span></div><div class="list-side"><strong>'+esc(m.status||'ثبت نشده')+'</strong><span class="status-pill">'+formatJalali(m.startAt,true)+'</span></div></div>';
+          return '<div class="list-item"><div class="route-mark"><b>'+esc((m.operationalRange||m.destination||'—').slice(0,3))+'</b><span>مسیر '+faDigits(index+1)+'</span></div><div class="list-main"><b>'+esc(m.title||'مأموریت')+'</b><span>'+esc([m.origin,m.destination,m.operationalRange].filter(Boolean).join(' ← '))+' · '+esc(crew||'گروه ثبت نشده')+'</span></div><div class="list-side"><strong>'+esc(m.status||'ثبت نشده')+'</strong><span class="status-pill">'+formatJalali(m.startAt,true)+'</span></div></div>';
         }).join(''):'<div class="module-empty">هنوز مأموریتی ثبت نشده است.</div>';
       }
     }
@@ -1679,7 +1779,7 @@
       const items=[];
       const dayInRange=function(value){const day=String(value||'').slice(0,10);return !!day&&day>=selectedStart&&day<=selectedEnd;};
       missions.filter(function(m){return dayInRange(m.startAt)&&m.status!=='لغو‌شده';}).forEach(function(m){
-        items.push({sortKey:String(m.startAt||''),date:String(m.startAt||'').slice(0,10),time:String(m.startAt||'').slice(11,16),type:'مأموریت',title:m.title||'مأموریت',detail:[m.city,m.destination].filter(Boolean).join(' · ')});
+        items.push({sortKey:String(m.startAt||''),date:String(m.startAt||'').slice(0,10),time:String(m.startAt||'').slice(11,16),type:'مأموریت',title:m.title||'مأموریت',detail:[m.operationalRange,m.destination].filter(Boolean).join(' · ')});
       });
       (appData.shifts||[]).filter(function(s){
         const start=String(s.startAt||'').slice(0,10),end=String(s.endAt||'').slice(0,10);
@@ -3500,6 +3600,148 @@
     if (form) refreshDependentFields(form);
   });
 
+  // ── رفتار کادر «انتخاب چندتایی با جستجو» ─────────────────────────────────
+  // تیک‌ها فقط در فهرست باز هستند (پیش‌نویس)؛ با «افزودن انتخاب‌شده‌ها» به چیپ‌های
+  // نام‌دار تبدیل می‌شوند و همان‌ها به فرم ارسال می‌شوند.
+  function mmcChips(box) {
+    return Array.prototype.slice.call(box.querySelectorAll('[data-mmc-chosen] [data-mmc-chip]'));
+  }
+
+  function mmcRefresh(box) {
+    if (!box) return;
+    const count = mmcChips(box).length;
+    const counter = box.querySelector('[data-mmc-count]');
+    if (counter) counter.textContent = faDigits(count) + ' انتخاب‌شده';
+    const empty = box.querySelector('[data-mmc-empty]');
+    if (empty) empty.hidden = count > 0;
+    const clear = box.querySelector('[data-mmc-clear]');
+    if (clear) clear.hidden = count === 0;
+    mmcRefreshAddLabel(box);
+  }
+
+  function mmcRefreshAddLabel(box) {
+    const button = box.querySelector('[data-mmc-add]');
+    if (!button) return;
+    const staged = box.querySelectorAll('[data-mmc-pick]:checked').length;
+    button.textContent = staged ? 'افزودن ' + faDigits(staged) + ' مورد انتخاب‌شده' : 'افزودن انتخاب‌شده‌ها';
+    button.classList.toggle('is-ready', staged > 0);
+  }
+
+  // رانندهٔ هر خودرو فقط از کارکنان همراه همین مأموریت پر می‌شود؛ با تغییر همراهان
+  // فهرست راننده‌ها هم به‌روز می‌شود و انتخاب قبلی اگر هنوز معتبر باشد حفظ می‌شود.
+  function mmcRefreshDrivers(form) {
+    if (!form) return;
+    const crewBox = form.querySelector('[data-multi-check="crewIds"]');
+    if (!crewBox) return;
+    const crew = mmcChips(crewBox).map(function (chip) { return String(chip.dataset.mmcChip); });
+    Array.prototype.forEach.call(form.querySelectorAll('[data-driver-box] select'), function (select) {
+      const previous = String(select.value || '');
+      select.innerHTML = '<option value="">انتخاب راننده از کارکنان مأموریت…</option>' + crewOptionsMarkup(crew, previous);
+      select.value = crew.indexOf(previous) >= 0 ? previous : '';
+      const box = select.closest('[data-driver-box]');
+      if (box) box.classList.toggle('is-empty', !crew.length);
+    });
+  }
+
+  function mmcAddStaged(box) {
+    const form = box.closest('[data-module-form]');
+    const key = box.dataset.multiCheck;
+    const chosenHost = box.querySelector('[data-mmc-chosen]');
+    const driversHost = box.querySelector('[data-mmc-drivers-box]');
+    const driversFrom = box.dataset.mmcDrivers;
+    const picked = box.querySelectorAll('[data-mmc-pick]:checked');
+    if (!picked.length) {
+      toast('اول از فهرست، موارد مورد نظر را تیک بزن.');
+      return;
+    }
+    const existing = mmcChips(box).map(function (chip) { return String(chip.dataset.mmcChip); });
+    Array.prototype.forEach.call(picked, function (input) {
+      const id = String(input.value);
+      const row = input.closest('[data-mmc-row]');
+      const label = row ? String(row.dataset.label || id) : id;
+      input.checked = false;
+      if (existing.indexOf(id) >= 0) return;
+      existing.push(id);
+      chosenHost.insertAdjacentHTML('beforeend', chosenChipMarkup({ key: key }, id, label));
+      if (driversFrom && driversHost) driversHost.insertAdjacentHTML('beforeend', driverBoxMarkup(id, label, ''));
+      if (key === driversFrom) mmcRefreshDrivers(form);
+    });
+    mmcRefresh(box);
+    if (driversFrom) mmcRefreshDrivers(form);
+    if (box.dataset.mmcDrivers) mmcRefreshDrivers(form);
+  }
+
+  // بعد از هر رندر، شمارنده‌ها و فهرست راننده‌ها با مقادیر فعلی هم‌تراز می‌شوند.
+  function initMultiChecks(scope) {
+    Array.prototype.forEach.call((scope || document).querySelectorAll('[data-multi-check]'), function (box) {
+      mmcRefresh(box);
+    });
+    Array.prototype.forEach.call((scope || document).querySelectorAll('[data-module-form]'), function (form) {
+      if (form.querySelector('[data-driver-box]')) mmcRefreshDrivers(form);
+    });
+  }
+
+  function mmcRemove(box, id) {
+    const form = box.closest('[data-module-form]');
+    mmcChips(box).forEach(function (chip) {
+      if (String(chip.dataset.mmcChip) !== String(id)) return;
+      chip.remove();
+    });
+    const driverBox = box.querySelector('[data-driver-box="' + String(id).replace(/"/g, '') + '"]');
+    if (driverBox) driverBox.remove();
+    mmcRefresh(box);
+    if (form) mmcRefreshDrivers(form);
+  }
+
+  document.addEventListener('input', function (event) {
+    const search = event.target.closest && event.target.closest('[data-mmc-search]');
+    if (!search) return;
+    const box = search.closest('[data-multi-check]');
+    // ارقام فارسی/عربی هم مثل لاتین دیده می‌شوند تا جستجو با هر صفحه‌کلیدی جواب بدهد.
+    const normalize = function (text) {
+      return String(text || '').replace(/[\u06F0-\u06F9]/g, function (d) { return String(d.charCodeAt(0) - 0x06F0); })
+        .replace(/[\u0660-\u0669]/g, function (d) { return String(d.charCodeAt(0) - 0x0660); })
+        .trim().toLocaleLowerCase();
+    };
+    const term = normalize(search.value);
+    Array.prototype.forEach.call(box.querySelectorAll('[data-mmc-row]'), function (row) {
+      row.hidden = !!term && normalize(row.dataset.label).indexOf(term) < 0;
+    });
+  });
+
+  document.addEventListener('change', function (event) {
+    const pick = event.target.closest && event.target.closest('[data-mmc-pick]');
+    if (!pick) return;
+    const box = pick.closest('[data-multi-check]');
+    if (box) mmcRefreshAddLabel(box);
+  });
+
+  document.addEventListener('click', function (event) {
+    const add = event.target.closest && event.target.closest('[data-mmc-add]');
+    if (add) {
+      event.preventDefault();
+      mmcAddStaged(add.closest('[data-multi-check]'));
+      return;
+    }
+    const remove = event.target.closest && event.target.closest('[data-mmc-remove]');
+    if (remove) {
+      event.preventDefault();
+      const box = remove.closest('[data-multi-check]');
+      if (box) mmcRemove(box, remove.dataset.mmcRemove);
+      return;
+    }
+    const clear = event.target.closest && event.target.closest('[data-mmc-clear]');
+    if (clear) {
+      event.preventDefault();
+      const box = clear.closest('[data-multi-check]');
+      if (!box) return;
+      box.querySelectorAll('[data-mmc-chosen] [data-mmc-chip]').forEach(function (chip) { chip.remove(); });
+      box.querySelectorAll('[data-driver-box]').forEach(function (node) { node.remove(); });
+      mmcRefresh(box);
+      mmcRefreshDrivers(box.closest('[data-module-form]'));
+    }
+  });
+
   // دکمه‌های کم/زیاد کنار کادرهای عددی؛ بازهٔ مجاز همان min و max خود کادر است.
   function stepNumberInput(input, direction) {
     const min = input.min === '' ? null : Number(input.min);
@@ -4433,6 +4675,7 @@
     else if(view==='settings')renderSettings(section);
     else{section.hidden=true;section.innerHTML='';}
     enhanceJalaliInputs(section);
+    initMultiChecks(section);
     if(view==='dashboard')applyDashboardLayout();
   }
 
@@ -4459,8 +4702,13 @@
   function requiredIsEmpty(form, field) {
     const controls = form.querySelectorAll('[name="' + field.key + '"]');
     if (!controls.length) return false;
-    if (field.type === 'checks' || (field.type === 'select' && field.multiple)) {
-      return !Array.prototype.some.call(controls, function (control) { return control.checked && control.value; });
+    if (field.type === 'checks' || field.type === 'multi-check') {
+      return !Array.prototype.some.call(controls, function (control) {
+        return control.type === 'hidden' ? !!control.value : (control.checked && control.value);
+      });
+    }
+    if (field.type === 'select' && field.multiple) {
+      return !Array.prototype.some.call(controls[0].options || [], function (option) { return option.selected; });
     }
     return !String(controls[0].value || '').trim();
   }
@@ -4566,7 +4814,7 @@
           for(let j=0;j<selected.length;j+=1)list.push(await readFileAsDataUrl(selected[j]));
           data[field.key]=field.type==='file-multiple'?list:(list[0].dataUrl);
         }
-      }else if(field.type==='checks'||(field.type==='select'&&field.multiple)){
+      }else if(field.type==='checks'||field.type==='multi-check'||(field.type==='select'&&field.multiple)){
         data[field.key]=fd.getAll(field.key);
       }else if(field.type==='jalali'||field.type==='jalali-datetime'){
         const raw=String(fd.get(field.key)||'').trim();
@@ -4579,6 +4827,20 @@
       if(fieldRequired(field,visibleRecord) && (data[field.key] == null || data[field.key] === '' || (Array.isArray(data[field.key])&&!data[field.key].length))){
         throw new Error('فیلد «'+field.label+'» ضروری است.');
       }
+    }
+    // خودروهای یک مأموریت: فهرست کامل در vehicleIds می‌ماند و خودروی اول برای
+    // نماهای قدیمی (سوابق خودرو) در vehicleId تکرار می‌شود؛ رانندهٔ هر خودرو هم
+    // در vehicleDrivers به‌صورت {vehicleId: employeeId} نگه‌داری می‌شود.
+    if(moduleKey==='missions'){
+      const vehicles=Array.isArray(data.vehicleIds)?data.vehicleIds.filter(Boolean):[];
+      data.vehicleIds=vehicles;
+      data.vehicleId=vehicles[0]||'';
+      const drivers={};
+      Array.prototype.forEach.call(form.querySelectorAll('[data-vehicle-id]'),function(select){
+        const vid=String(select.dataset.vehicleId||''), driver=String(select.value||'');
+        if(vid&&driver)drivers[vid]=driver;
+      });
+      data.vehicleDrivers=drivers;
     }
     return data;
   }
@@ -5341,11 +5603,26 @@
           return '<div class="record-comment-line">' + esc(line) + '</div>';
         }).join('')
       : '<p class="module-local-note">هنوز کامنتی روی این مورد ثبت نشده است.</p>';
+    // مأموریت: سه بخش پایانی فرم (رفع آلودگی، پیوست گزارش، شرح نتیجه) از همین
+    // پنجرهٔ کامنت هم اصلاح می‌شوند؛ پس همان کادرها اینجا هم می‌آیند.
+    const missionExtras = moduleKey === 'missions'
+      ? ((record.hasPollution === 'دارد')
+          ? '<div class="atlas-dialog-field"><label for="recordCommentCleared">در پایان عملیات رفع آلودگی انجام شد؟</label>' +
+            '<select id="recordCommentCleared" class="atlas-dialog-input"><option value="">بدون تغییر</option>' +
+            ['انجام شد','انجام نشد'].map(function (value) {
+              return '<option value="' + esc(value) + '"' + (record.pollutionCleared === value ? ' selected' : '') + '>' + esc(value) + '</option>';
+            }).join('') + '</select></div>'
+          : '') +
+        '<div class="atlas-dialog-field"><label for="recordCommentFiles">افزودن به پیوست‌های گزارش</label>' +
+        '<input id="recordCommentFiles" class="atlas-dialog-input" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx">' +
+        '<small class="module-field-hint">پیوست‌های قبلی (' + faDigits((record.attachments || []).length) + ' مورد) حفظ می‌شوند.</small></div>'
+      : '';
     const body =
       '<div class="record-comments">' + thread + '</div>' +
       '<div class="atlas-dialog-field"><label for="recordCommentText">کامنت یا اقدام جدید</label>' +
       '<textarea id="recordCommentText" class="atlas-dialog-input" rows="3" placeholder="' + esc(fieldDef.placeholder || 'تاریخ | شخص | شرح اقدام | وضعیت') + '"></textarea>' +
       '<p class="atlas-dialog-error" data-dialog-error hidden></p></div>' +
+      missionExtras +
       (statusValues.length
         ? '<div class="atlas-dialog-field"><label for="recordCommentStatus">وضعیت این مورد (اختیاری)</label>' +
           '<select id="recordCommentStatus" class="atlas-dialog-input"><option value="">بدون تغییر</option>' +
@@ -5374,16 +5651,32 @@
     if (textarea) textarea.focus();
     backdrop.querySelector('[data-dialog-ok]').addEventListener('click', async function () {
       const text = String(textarea && textarea.value || '').trim();
-      if (!text) {
-        if (error) { error.textContent = 'متن کامنت را بنویس.'; error.hidden = false; }
+      const clearedSelect = backdrop.querySelector('#recordCommentCleared');
+      const clearedValue = clearedSelect ? String(clearedSelect.value || '') : '';
+      const filesInput = backdrop.querySelector('#recordCommentFiles');
+      const files = filesInput && filesInput.files ? Array.from(filesInput.files) : [];
+      if (!text && !clearedValue && !files.length) {
+        if (error) { error.textContent = 'متن کامنت، وضعیت رفع آلودگی یا پیوست را وارد کن.'; error.hidden = false; }
         if (textarea) textarea.focus();
         return;
       }
       const nextStatus = statusSelect ? String(statusSelect.value || '') : '';
-      const current = String(record[fieldKey] || '').replace(/\s+$/, '');
-      const line = [commentStamp(), 'کامنت', text, nextStatus || record.status || ''].filter(Boolean).join(' | ');
-      record[fieldKey] = current ? current + '\n' + line : line;
-      addHistory(moduleKey, record, 'کامنت', [{ field: fieldDef.label, before: '', after: text.slice(0, 90) }]);
+      if (text) {
+        const current = String(record[fieldKey] || '').replace(/\s+$/, '');
+        const line = [commentStamp(), 'کامنت', text, nextStatus || record.status || ''].filter(Boolean).join(' | ');
+        record[fieldKey] = current ? current + '\n' + line : line;
+        addHistory(moduleKey, record, 'کامنت', [{ field: fieldDef.label, before: '', after: text.slice(0, 90) }]);
+      }
+      if (clearedValue && clearedValue !== record.pollutionCleared) {
+        addHistory(moduleKey, record, 'اصلاح از کامنت', [{ field: 'رفع آلودگی', before: record.pollutionCleared || '—', after: clearedValue }]);
+        record.pollutionCleared = clearedValue;
+      }
+      if (files.length) {
+        const list = Array.isArray(record.attachments) ? record.attachments.slice() : [];
+        for (let i = 0; i < files.length; i += 1) list.push(await readFileAsDataUrl(files[i]));
+        record.attachments = list;
+        addHistory(moduleKey, record, 'پیوست از کامنت', [{ field: 'پیوست‌های گزارش', before: '', after: faDigits(files.length) + ' فایل' }]);
+      }
       if (nextStatus && nextStatus !== record.status) {
         addHistory(moduleKey, record, 'تغییر وضعیت', [{ field: 'وضعیت', before: record.status || '—', after: nextStatus }]);
         record.status = nextStatus;

@@ -363,6 +363,34 @@ body > .drawer-backdrop,body > .drawer,body > .settings-popover,body > .toast{po
 .module-check-options input{width:15px!important;height:15px;accent-color:var(--accent)}
 /* وقتی هنوز کارمندی ثبت نشده، جای فهرست تیک‌ها راهنما نشان داده می‌شود. */
 .module-check-empty{min-height:52px;padding:9px 12px;font-size:10.5px;text-align:right;line-height:1.9}
+
+/* ── انتخاب چندتایی با جستجو (همراهان مأموریت، خودروها) ─────────────────────
+   فهرست باز با جستجو → تیک زدن چند مورد → «افزودن انتخاب‌شده‌ها» → چیپ‌های
+   رنگی زیر کادر که فقط همان‌ها به فرم ارسال می‌شوند. */
+.module-multi-check{display:flex;flex-direction:column;gap:6px;width:100%}
+.mmc-toolbar{display:flex;align-items:center;gap:8px}
+.mmc-search{flex:1 1 auto;min-width:0;padding:5px 9px!important;border:1px solid var(--line);border-radius:9px;background:rgba(var(--c-white-rgb),.03);color:var(--text);font-size:11px}
+.mmc-search:focus{outline:none;border-color:var(--accent-line)}
+.mmc-count{flex:0 0 auto;font-size:10px;color:var(--muted);white-space:nowrap}
+.mmc-list{max-height:148px;overflow:auto;overscroll-behavior:contain;padding:5px;border:1px solid var(--line);border-radius:10px;background:rgba(0,0,0,.14);display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:1px 8px}
+.mmc-row{display:flex;align-items:center;gap:6px;padding:3px 5px;border-radius:7px;font-size:11px;color:var(--text);cursor:pointer}
+.mmc-row:hover{background:rgba(var(--c-white-rgb),.05)}
+.mmc-row input{width:14px!important;height:14px;flex:0 0 auto;accent-color:var(--accent)}
+.mmc-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mmc-foot{display:flex;align-items:center;gap:8px}
+.mmc-add{padding:4px 10px!important;font-size:10.5px!important}
+.mmc-add.is-ready{border-color:var(--accent-line);color:var(--text-bright)}
+.mmc-clear{border:0;background:transparent;color:var(--muted);font-size:10px;cursor:pointer;padding:2px 4px}
+.mmc-clear:hover{color:var(--danger,var(--accent))}
+.mmc-chosen{display:flex;flex-wrap:wrap;gap:5px}
+.mmc-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:var(--radius-pill);border:1px solid rgba(var(--accent-rgb),.38);background:rgba(var(--accent-rgb),.16);color:var(--text-bright);font-size:10.5px;line-height:1.7}
+.mmc-chip-x{border:0;background:transparent;color:inherit;font-size:13px;line-height:1;cursor:pointer;opacity:.65}
+.mmc-chip-x:hover{opacity:1}
+.mmc-drivers{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:6px}
+.mmc-driver-box{display:flex;flex-direction:column;gap:3px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:rgba(var(--c-white-rgb),.03)}
+.mmc-driver-title{font-size:10px;color:var(--muted)}
+.mmc-driver-select{font-size:10.5px!important;padding:4px 7px!important}
+.mmc-empty{font-size:10px;color:var(--muted)}
 .module-report-range{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-top:12px}
 .module-report-range .module-field{flex:1 1 220px}
 .module-report-range>[data-module-action]{flex:0 0 auto}
