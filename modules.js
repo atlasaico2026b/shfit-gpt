@@ -1278,7 +1278,7 @@
       '<div class="atlas-modal-head"><div><h3 id="atlasModalTitle">' +
       (existing ? 'ویرایش ' : 'ثبت ') + esc(specs[moduleKey].singular) + '</h3><p>پس از ذخیره، اطلاعات به فهرست، داشبورد و گزارش‌های مرتبط منتقل می‌شود.</p></div>' +
       '<button type="button" class="atlas-modal-close" data-module-action="cancel" data-view="' + esc(moduleKey) + '" aria-label="بستن پنجره">×</button></div>' +
-      '<div class="atlas-modal-body"><form class="module-form" id="atlasModuleForm" data-module-form autocomplete="off" data-view="' + esc(moduleKey) + '" data-id="' + esc(existing ? existing.id : '') + '"' + (vehicleScope ? ' data-fault-scope="vehicle"' : '') + '>' +
+      '<div class="atlas-modal-body"><form class="module-form" id="atlasModuleForm" data-module-form autocomplete="off" novalidate data-view="' + esc(moduleKey) + '" data-id="' + esc(existing ? existing.id : '') + '"' + (vehicleScope ? ' data-fault-scope="vehicle"' : '') + '>' +
       renderFieldsMarkup(moduleKey, fields, draft, data) +
       (moduleKey === 'employees' ? customFieldsEditorMarkup() : '') +
       fileNotice +
@@ -1389,6 +1389,10 @@
   }
 
   function renderHistoryButton(moduleKey, record) {
+    // در مرخصی‌ها «سوابق» یعنی مرخصی‌های گذشتهٔ همین شخص، نه فقط تاریخچهٔ تغییرات یک رکورد.
+    if (moduleKey === 'leaves') {
+      return '<button type="button" class="secondary-btn" data-module-action="leave-history" data-view="leaves" data-id="' + esc(record.id) + '">سوابق</button> ';
+    }
     const hasHistory = appData.history.some(function (item) { return item.module === moduleKey && item.recordId === String(record.id); });
     return hasHistory ? '<button type="button" class="secondary-btn" data-module-action="history" data-view="' + esc(moduleKey) + '" data-id="' + esc(record.id) + '">سوابق</button> ' : '';
   }
@@ -4786,6 +4790,25 @@
       note.textContent = 'فیلد مورد نظر اجباری است.';
       wrap.appendChild(note);
     });
+    // فرم با novalidate باز می‌شود تا هرگز حباب انگلیسی مرورگر جلوی ثبت را بگیرد و
+    // هیچ‌چیز بی‌صدا انجام‌نشده نماند؛ پس محدودیت‌های خود کادرها (عدد، بازه، الگو)
+    // هم همین‌جا با پیام فارسی بررسی می‌شوند.
+    Array.prototype.forEach.call(form.querySelectorAll('[name]'), function (control) {
+      if (control.type === 'hidden' || control.disabled) return;
+      const field = fields.find(function (item) { return item.key === control.name; });
+      if (!field || !fieldVisible(field, visibleRecord)) return;
+      if (control.checkValidity()) return;
+      if (missing.some(function (item) { return item.key === field.key; })) return;
+      missing.push(field);
+      const wrap = control.closest('.module-field');
+      if (!wrap || wrap.classList.contains('is-required')) return;
+      wrap.classList.add('is-required');
+      const note = document.createElement('small');
+      note.className = 'module-field-required';
+      note.setAttribute('data-required-error', '');
+      note.textContent = 'مقدار این فیلد معتبر نیست.';
+      wrap.appendChild(note);
+    });
     if (!missing.length) return true;
     const first = form.querySelector('.module-field.is-required [name]');
     if (first) {
@@ -5747,6 +5770,104 @@
     openCommentDialog(parts[0], parts.slice(1).join(':'));
   });
 
+  // مدت هر مرخصی بر حسب روز (شامل روز شروع و پایان).
+  function leaveDayCount(record) {
+    const start = toValidDate(record && record.startDate);
+    const end = toValidDate(record && record.endDate);
+    if (!start || !end || end < start) return 0;
+    return Math.round((end - start) / 86400000) + 1;
+  }
+
+  // «سوابق» در مرخصی‌ها: همهٔ مرخصی‌های ثبت‌شده برای همان شخص، تازه‌ترین اول،
+  // به‌همراه جمع روزها و جمع هر نوع مرخصی.
+  function openLeaveHistory(id) {
+    const record = (appData.leaves || []).find(function (item) { return String(item.id) === String(id); });
+    if (!record) return;
+    const employeeId = String(record.employeeId || '');
+    const person = (appData.employees || []).find(function (item) { return String(item.id) === employeeId; });
+    const personName = person ? (employeeName(person) || person.personnelId) : '';
+    const leaves = (appData.leaves || [])
+      .filter(function (item) {
+        return employeeId ? String(item.employeeId || '') === employeeId : String(item.id) === String(record.id);
+      })
+      .slice()
+      .sort(function (a, b) { return String(b.startDate || '').localeCompare(String(a.startDate || '')); });
+    const totalDays = leaves.reduce(function (sum, item) { return sum + leaveDayCount(item); }, 0);
+    const usedDays = leaves
+      .filter(function (item) { return item.status === 'تأییدشده' || item.status === 'استفاده‌شده'; })
+      .reduce(function (sum, item) { return sum + leaveDayCount(item); }, 0);
+    const byType = {};
+    leaves.forEach(function (item) {
+      const key = String(item.leaveType || 'نامشخص');
+      byType[key] = (byType[key] || 0) + leaveDayCount(item);
+    });
+    const typeSummary = Object.keys(byType)
+      .map(function (key) { return key + ': ' + faDigits(byType[key]) + ' روز'; })
+      .join(' · ');
+    const rows = leaves.map(function (item) {
+      const days = leaveDayCount(item);
+      const isCurrent = String(item.id) === String(record.id);
+      return '<tr>' +
+        '<td>' + esc(item.leaveType || '—') + (isCurrent ? ' <span class="module-tag">همین درخواست</span>' : '') + '</td>' +
+        '<td>' + formatJalali(item.startDate, false) + '</td>' +
+        '<td>' + formatJalali(item.endDate, false) + '</td>' +
+        '<td>' + (days ? faDigits(days) + ' روز' : '—') + '</td>' +
+        '<td>' + statusTag(item.status || 'ثبت‌نشده') + '</td>' +
+        '<td>' + esc(item.reason || '—') + '</td>' +
+        '</tr>';
+    }).join('');
+    const changes = (appData.history || []).filter(function (item) {
+      return item.module === 'leaves' && item.recordId === String(record.id);
+    }).sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); });
+    const changeRows = changes.map(function (item) {
+      const text = (item.changes || []).map(function (change) {
+        return change.field + ': «' + change.before + '» ← «' + change.after + '»';
+      }).join(' — ');
+      return '<li>' + displayDateTime(item.at) + ' · ' + esc(item.action) + (text ? ' · ' + esc(text) : '') + '</li>';
+    }).join('');
+    const backdrop = document.createElement('div');
+    backdrop.className = 'atlas-modal-backdrop';
+    backdrop.setAttribute('data-modal-backdrop', '');
+    backdrop.innerHTML =
+      '<div class="atlas-modal atlas-modal-form" role="dialog" aria-modal="true" aria-labelledby="atlasLeaveHistoryTitle">' +
+      '<div class="atlas-modal-head"><div><h3 id="atlasLeaveHistoryTitle">سوابق مرخصی' + (personName ? ' — ' + esc(personName) : '') + '</h3></div>' +
+      '<button type="button" class="atlas-modal-close" data-leave-history-close aria-label="بستن پنجره">×</button></div>' +
+      '<div class="atlas-modal-body">' +
+      '<div class="module-list-head"><div><h3>خلاصهٔ مرخصی‌های این شخص</h3>' +
+      '<p>' + faDigits(leaves.length) + ' درخواست ثبت‌شده؛ مجموع ' + faDigits(totalDays) + ' روز' +
+      (usedDays ? ' که ' + faDigits(usedDays) + ' روز آن تأییدشده یا استفاده‌شده است' : '') +
+      (typeSummary ? ' · ' + esc(typeSummary) : '') + '</p></div>' +
+      '<span class="module-tag">' + faDigits(totalDays) + ' روز</span></div>' +
+      (leaves.length
+        ? '<div class="module-table-wrap" style="width:100%;min-width:0"><table class="module-table"><thead><tr>' +
+          '<th>نوع مرخصی</th><th>از تاریخ</th><th>تا تاریخ</th><th>مدت</th><th>وضعیت</th><th>دلیل</th>' +
+          '</tr></thead><tbody>' + rows + '</tbody></table></div>'
+        : '<div class="module-empty">برای این شخص مرخصی دیگری ثبت نشده است.</div>') +
+      (changeRows ? '<section class="module-related-history"><h3>تاریخچهٔ تغییرات همین درخواست</h3><ul class="module-history-list">' + changeRows + '</ul></section>' : '') +
+      '</div>' +
+      '<div class="module-form-actions"><span class="module-required-help">مرخصی‌های همین شخص، تازه‌ترین اول.</span>' +
+      '<div><button type="button" class="secondary-btn" data-leave-history-close>بستن</button></div></div>' +
+      '</div>';
+    document.body.appendChild(backdrop);
+    let closed = false;
+    function closeHistory() {
+      if (closed) return;
+      closed = true;
+      backdrop.remove();
+    }
+    backdrop.querySelectorAll('[data-leave-history-close]').forEach(function (button) {
+      button.addEventListener('click', closeHistory);
+    });
+    backdrop.addEventListener('click', function (event) {
+      if (event.target === backdrop) closeHistory();
+    });
+    backdrop.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') closeHistory();
+    });
+    const closeButton = backdrop.querySelector('[data-leave-history-close]');
+    if (closeButton) closeButton.focus();
+  }
+
   function openHistory(moduleKey, id) {
     const record=appData[moduleKey].find(function(item){return String(item.id)===String(id);});
     const rows=appData.history.filter(function(item){return item.module===moduleKey&&item.recordId===String(id);})
@@ -6027,6 +6148,8 @@
       const input=document.getElementById('atlasRestoreFile');if(input)input.click();
     }else if(action==='history'&&specs[moduleKey]){
       openHistory(moduleKey,button.dataset.id);
+    }else if(action==='leave-history'){
+      openLeaveHistory(button.dataset.id);
     }else if(action==='file'&&specs[moduleKey]){
       document.dispatchEvent(new CustomEvent('atlas-open-file',{detail:{module:moduleKey,id:button.dataset.id}}));
     }else if(action==='apply-report-range'){
@@ -6336,7 +6459,10 @@
           appData.missions.forEach(function(mission){if((mission.crewIds||[]).map(String).includes(String(record.id))&&mission.status==='برنامه‌ریزی‌شده')mission.updatedAt=new Date().toISOString();});
         }
         const ok=await saveState();
-        if(!ok)return;
+        if(!ok){
+          toast('ذخیره انجام نشد؛ اطلاعات روی این دستگاه نوشته نشد'+(loadError?' — '+loadError:'')+'.');
+          return;
+        }
         delete formState[moduleKey];
         clearDetachedModals();
         refreshCurrentView();
