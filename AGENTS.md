@@ -27,6 +27,15 @@ missions, leave, vehicles, gas detectors, notes/actions, reports, settings.
   borders, larger/bolder column headers, content-proportional column widths (`<colgroup>`), numeric cells
   kept on one line, and a font/padding step that shrinks as the column count grows (`data-density`).
   Tests: `node tests/print-sheet.cjs`.
+- `design/export-docs.js` + `design/pptx-base.js` — **تنها مرجع ساخت فایل‌های Word (.docx)، PowerPoint
+  (.pptx) و CSV** (اکسل/PNG/چاپ صاحبان خودشان را دارند). هر خروجی سندی از این دو تابع می‌آید:
+  `AtlasExportDocs.docx(sheet)`، `AtlasExportDocs.pptx(sheet)`، `AtlasExportDocs.csv(rows, opts)`.
+  قاعده‌ها: برگهٔ **فهرست** همیشه A4 افقی و برگهٔ **پرونده** همیشه عمودی؛ جدول Word راست‌به‌چپ
+  (`w:bidiVisual`) و راست‌چین با خط کامل بین خانه‌ها، پهنای ستون متناسب محتوا، سرستون تکرارشونده در
+  هر صفحه و ردیف‌های بلند که به صفحهٔ بعد می‌روند (نه قیچی‌شده). فایل pptx بدنهٔ سالم PowerPoint را از
+  `pptx-base.js` می‌گیرد و فقط اسلایدها را می‌سازد (ردیف‌های زیاد روی چند اسلاید). CSV با BOM و
+  نشانهٔ راست‌به‌چپ در هر خانه تا کلمات فارسی در Excel به‌هم نریزند.
+  Tests: `node tests/export-docs.cjs`.
 - `design/contact-sync.js` — links phonebook contacts to employees by personnel number, national ID or
   mobile (`isSameEmployee`). A new employee creates/updates its contact; deleting the employee never
   deletes the contact. Auto-created contacts carry `pending: true` and render with a yellow card until
@@ -50,6 +59,8 @@ missions, leave, vehicles, gas detectors, notes/actions, reports, settings.
 | فیلد اجباری | `design/forms-validation.css` + `validateRequired` در `modules.js` |
 | مشاهدهٔ پرونده و خروجی A4 | `design/record-file.js` + `.css` |
 | خروجی چاپ/PDF فهرست‌ها (A4 افقی) | `design/print-sheet.js` + `design/print.css` |
+| خروجی Word / PowerPoint / CSV (همهٔ برنامه) | `design/export-docs.js` + `design/pptx-base.js` |
+| لایه‌بندی منوی «خروجی و چاپ» بالای پنل‌ها | `design/modals-export.css` |
 | همگام‌سازی کارمند ↔ مخاطب | `design/contact-sync.js` |
 | تم/رنگ‌ها | `design/theme-switch.js` + `design/skins/*.css` |
 | اعتبارسنجی/نرمال‌سازی داده‌ها | `design/…` یا توابع مشترک `modules.js` (بدون تکرار) |

@@ -33,29 +33,38 @@
     return window.getComputedStyle(el);
   }
 
+  // آیا این عنصر در همین محور واقعاً اسکرول می‌شود؟ (سرریز محور دیگر مهم نیست)
+  function scrollable(el, axis) {
+    if (!el || el.nodeType !== 1) return false;
+    const style = styleOf(el);
+    if (axis === 'x') return SCROLL_OVERFLOW.test(style.overflowX) && el.scrollWidth - el.clientWidth > 2;
+    return SCROLL_OVERFLOW.test(style.overflowY) && el.scrollHeight - el.clientHeight > 2;
+  }
+
   function scrollAxis(el) {
     if (!el || el.nodeType !== 1) return null;
-    const style = styleOf(el);
-    if (SCROLL_OVERFLOW.test(style.overflowY) && el.scrollHeight - el.clientHeight > 2) return 'y';
-    if (SCROLL_OVERFLOW.test(style.overflowX) && el.scrollWidth - el.clientWidth > 2) return 'x';
+    if (scrollable(el, 'y')) return 'y';
+    if (scrollable(el, 'x')) return 'x';
     return null;
   }
 
-  // نزدیک‌ترین جد اسکرول‌شونده نسبت به یک عنصر (بدنه و html حساب نمی‌شوند).
-  function scrollerAt(node) {
+  // نزدیک‌ترین جد اسکرول‌شونده «در همان محور» نسبت به یک عنصر (بدنه و html
+  // حساب نمی‌شوند). عنصری که فقط افقی اسکرول می‌شود، چرخ عمودی را نمی‌بلعد؛
+  // در غیر این صورت جدول‌های پهن (مثل شیفت‌ها) چرخ موس را قفل می‌کردند.
+  function scrollerAt(node, axis) {
+    const want = axis === 'x' ? 'x' : 'y';
     let current = node && node.nodeType === 1 ? node : (node && node.parentElement);
     while (current && current !== document.body && current !== document.documentElement) {
-      if (scrollAxis(current)) return current;
+      if (scrollable(current, want)) return current;
       current = current.parentElement;
     }
     return null;
   }
 
-  function canScroll(el, delta) {
+  function canScroll(el, delta, axis) {
     if (Math.abs(delta) < 0.5) return true;
-    return delta > 0
-      ? el.scrollTop + el.clientHeight < el.scrollHeight - 1
-      : el.scrollTop > 0;
+    if (axis === 'x') return delta > 0 ? el.scrollLeft + el.clientWidth < el.scrollWidth - 1 : el.scrollLeft > 0;
+    return delta > 0 ? el.scrollTop + el.clientHeight < el.scrollHeight - 1 : el.scrollTop > 0;
   }
 
   function overlayOf(node) {

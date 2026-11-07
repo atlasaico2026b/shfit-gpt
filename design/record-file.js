@@ -9,7 +9,7 @@
   const FA_DIGITS = '۰۱۲۳۴۵۶۷۸۹';
   const EXPORT_FORMATS = {
     print: { label: 'چاپ / PDF (A4)', hint: 'برگهٔ A4 با تنظیمات چاپ مرورگر ذخیره می‌شود.' },
-    doc: { label: 'Word (.doc)', hint: 'فایل Word با صفحهٔ A4 و چیدمان همین برگه.' },
+    doc: { label: 'Word (.docx)', hint: 'فایل Word با صفحهٔ A4 عمودی و چیدمان همین برگه.' },
     xls: { label: 'Excel (.xls)', hint: 'همان اطلاعات در یک کاربرگ؛ بدون سطر یا ستون اضافه.' },
     csv: { label: 'CSV', hint: 'متن ساده برای بازکردن در هر برنامهٔ جدول.' }
   };
@@ -373,16 +373,6 @@
       '.rf-sheet .rf-foot-stamp{text-align:left}';
   }
 
-  // تنظیم صفحه: A4 با حاشیهٔ ۱۲ میلی‌متر. Word حاشیه را از @page می‌گیرد و
-  // مرورگر (پیش‌نمایش) آن را در نمایش رومیزی اعمال نمی‌کند، پس همان اندازه با
-  // @media screen به body داده می‌شود.
-  function docPageCss() {
-    return '@page WordSection1{size:210mm 297mm;margin:12mm 12mm 14mm}' +
-      'div.WordSection1{page:WordSection1}' +
-      'body{margin:0;direction:rtl;background:#fff;font-family:' + SHEET_FONT + ';font-size:10.5pt;line-height:1.9;mso-line-height-rule:exactly}' +
-      '@media screen{body{padding:12mm 12mm 14mm;box-sizing:border-box}}';
-  }
-
   // پیش‌نمایش روی صفحه: همان برگه، به‌اندازهٔ یک صفحهٔ A4 روی میز
   function screenPageCss(scope) {
     return scope + ' .rf-sheet{width:210mm;max-width:100%;min-height:297mm;margin:0 auto;padding:12mm 12mm 14mm;' +
@@ -406,14 +396,22 @@
       screenPageCss('.rf-sheet-host') + '</style>' + sheetHtml + '</div>';
   }
 
-  // فایل Word از همان مارک‌آپ برگه ساخته می‌شود؛ فقط با تنظیم صفحهٔ A4 و
-  // استایل جدولی بالا. BOM جلوی خراب‌شدن حروف فارسی در Word را می‌گیرد.
-  function wordDocument(model) {
-    return '\ufeff<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40" dir="rtl">' +
-      '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>' + esc(model.title) + '</title>' +
-      '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->' +
-      '<style>' + docPageCss() + sheetRules() + '</style></head>' +
-      '<body dir="rtl"><div class="WordSection1">' + buildSheet(model) + '</div></body></html>';
+  // برگهٔ پرونده همیشه A4 عمودی است (برخلاف فهرست‌ها که افقی‌اند) و فایل Word
+  // آن با همان ساخت‌کنندهٔ مشترک برنامه ساخته می‌شود: راست‌چین، جدول خط‌دار و
+  // پهنای ستون متناسب محتوا؛ پس چیزی «قیچی» یا جابه‌جا نمی‌شود.
+  function wordSheet(model) {
+    return {
+      title: model.title,
+      subtitle: model.subtitle,
+      stamp: model.stamp,
+      footNote: model.footNote,
+      photo: model.photo,
+      landscape: false,
+      facts: (model.facts || []).map(function (fact) { return [fact.label, fact.value]; }),
+      tables: (model.tables || []).map(function (table) {
+        return { heading: table.title, rows: [table.headers].concat(table.rows) };
+      })
+    };
   }
 
   function xlsDocument(html) {
@@ -426,20 +424,19 @@
 
   function csvDocument(model) {
     const rows = [];
-    const push = cells => rows.push(cells.map(cell => '"' + String(cell == null ? '' : cell).replace(/"/g, '""') + '"').join(','));
-    push(['ATLAS SHIFT', model.kind]);
-    push([model.title]);
-    push([model.stamp]);
-    push([]);
-    model.facts.forEach(fact => push([fact.label, fact.value || '']));
+    rows.push(['ATLAS SHIFT', model.kind]);
+    rows.push([model.title]);
+    rows.push([model.stamp]);
+    rows.push([]);
+    (model.facts || []).forEach(fact => rows.push([fact.label, fact.value || '']));
     (model.tables || []).forEach(table => {
-      push([]);
-      push([table.title]);
-      push(table.headers);
-      if (!table.rows.length) push(['موردی ثبت نشده است.']);
-      table.rows.forEach(row => push(row));
+      rows.push([]);
+      rows.push([table.title]);
+      rows.push(table.headers);
+      if (!table.rows.length) rows.push(['موردی ثبت نشده است.']);
+      table.rows.forEach(row => rows.push(row));
     });
-    return '\ufeff' + rows.join('\r\n');
+    return window.AtlasExportDocs.csv(rows, { ragged: true });
   }
 
   function sheetTablesHtml(tables) {
@@ -464,7 +461,7 @@
   function runExport(format, model, sheetHtml) {
     const name = 'ATLAS-SHIFT-' + slug(model.title) + '-' + fileStamp();
     if (format === 'print') { printSheet(sheetHtml); return; }
-    if (format === 'doc') { download(name + '.doc', wordDocument(model), 'application/msword'); return; }
+    if (format === 'doc') { download(name + '.docx', window.AtlasExportDocs.docx(wordSheet(model)), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'); return; }
     if (format === 'xls') { download(name + '.xls', xlsDocument(xlsSheetHtml(model)), 'application/vnd.ms-excel'); return; }
     download(name + '.csv', csvDocument(model), 'text/csv;charset=utf-8');
   }
@@ -566,7 +563,8 @@
     openModule: openModuleRecord,
     openContact: contact => open(contactSheet(contact)),
     buildSheet: model => buildSheet(model),
-    buildWord: model => wordDocument(model),
+    buildWord: model => window.AtlasExportDocs.docx(wordSheet(model)),
+    buildCsv: model => csvDocument(model),
     buildPreview: model => sheetPreviewHtml(buildSheet(model))
   };
 })();

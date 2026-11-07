@@ -1537,8 +1537,7 @@
     }).join('') : '<tr><td colspan="7"><div class="module-empty">هنوز برنامهٔ شیفتی ثبت نشده است.</div></td></tr>';
     return '<section class="module-list-panel" id="shift-schedule" style="width:100%;min-width:0"><div class="module-list-head"><div><h3>برنامهٔ شیفت‌ها</h3>' +
       '<p>ثبت و پیگیری برنامهٔ ۱۲ ساعتهٔ روز/شب و جایگزینی روزکار، در کنار پروندهٔ کارکنان.</p></div><div class="module-page-actions">' +
-      '<button type="button" class="secondary-btn" data-shift-action="print">چاپ شیفت‌ها</button> ' +
-      '<button type="button" class="secondary-btn" data-shift-action="export">خروجی CSV شیفت‌ها</button> ' +
+      customExportMenu('shifts') + ' ' +
       '<button type="button" class="primary-btn" data-shift-action="new">+ ثبت شیفت</button></div></div>' +
       renderShiftForm(data) + '<div class="module-table-wrap" style="width:100%;max-width:100%;min-width:0"><table class="module-table"><thead><tr>' +
       '<th>شروع</th><th>پایان</th><th>نوع</th><th>کارکنان</th><th>محل خدمت</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>' +
@@ -4065,6 +4064,8 @@
         const meter = (appData.gasmeters || []).find(function (item) { return String(item.id) === String(custom.dataset.gas); });
         if (!meter) return;
         runExport(gasMeterExportRows(meter), 'سوابق ' + gasMeterName(meter) + ' · ATLAS SHIFT', 'ATLAS-SHIFT-gaslogs-' + exportSlug(meter.code, meter.id) + '-' + todayIso(), format);
+      } else if (kind === 'shifts') {
+        runExport(shiftPrintRows(), 'برنامهٔ شیفت‌ها · ATLAS SHIFT', 'ATLAS-SHIFT-shifts-' + todayIso(), format);
       } else if (kind === 'service-vehicles') {
         runExport(serviceVehicleExportRows(serviceStatsByVehicle()), 'دفتر سرویس خودروها · ATLAS SHIFT', 'ATLAS-SHIFT-servicebook-vehicles-' + todayIso(), format);
       } else if (kind === 'service-vehicle') {
@@ -4939,12 +4940,6 @@
     return changes.slice(0,100);
   }
 
-  function csvEscape(value) {
-    let text=String(value == null ? '' : value);
-    if (/^[=+\-@\t\r]/.test(text)) text="'"+text;
-    return '"' + text.replace(/"/g,'""') + '"';
-  }
-
   function downloadFile(filename, content, mime) {
     const blob=new Blob([content],{type:mime||'application/octet-stream'});
     const url=URL.createObjectURL(blob);
@@ -5051,77 +5046,24 @@
 
   function exportReportCsv() {
     const rows=currentReportRows();
-    downloadFile('ATLAS-SHIFT-report-'+todayIso()+'.csv','\uFEFF'+rows.map(function(row){return row.map(csvEscape).join(',');}).join('\r\n'),'text/csv;charset=utf-8;');
+    downloadFile('ATLAS-SHIFT-report-'+todayIso()+'.csv', window.AtlasExportDocs.csv(rows, {
+      title: currentReportTitle(),
+      stamp: formatJalali(new Date().toISOString(), true)
+    }),'text/csv;charset=utf-8;');
   }
 
-  // ── تایپوگرافی خروجی ───────────────────────────────────────────────────────
-  // هر خروجی (Word، Excel، تصویر، چاپ) چند فونت و چند اندازه دارد: عنوان،
-  // زیرعنوان، سرستون و بدنه؛ فاصلهٔ سطر و ستون هم متناسب همان اندازه است.
-  const EXPORT_TYPE = {
-    headFont: 'B Nazanin',
-    bodyFont: 'Tahoma',
-    titleSize: 34,   // نیم‌پوینت در Word (۱۷pt) / پیکسل در تصویر
-    metaSize: 20,
-    tableHeadSize: 21,
-    tableBodySize: 20,
-    headerFill: 'E8EEF7',
-    headerInk: '14304F',
-    metaInk: '4B5563'
-  };
-
-  function wordRunProps(options) {
-    const o = options || {};
-    const font = o.font || EXPORT_TYPE.bodyFont;
-    const size = o.size || EXPORT_TYPE.tableBodySize;
-    const color = o.color || '';
-    return '<w:rPr>' + (o.bold ? '<w:b/><w:bCs/>' : '') +
-      '<w:rFonts w:ascii="' + font + '" w:hAnsi="' + font + '" w:cs="' + font + '"/>' +
-      (color ? '<w:color w:val="' + color + '"/>' : '') +
-      '<w:sz w:val="' + size + '"/><w:szCs w:val="' + size + '"/>' +
-      '<w:rtl/><w:lang w:val="fa-IR"/></w:rPr>';
-  }
-
-  function wordParagraph(text, bold, center, options) {
-    const o = options || {};
-    return '<w:p><w:pPr><w:bidi w:val="1"/>' + (center ? '<w:jc w:val="center"/>' : '<w:jc w:val="right"/>') +
-      '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after == null ? 90 : o.after) + '" w:line="' + (o.line || 260) + '" w:lineRule="auto"/></w:pPr><w:r>' +
-      wordRunProps({ bold: bold, size: o.size || EXPORT_TYPE.metaSize, font: o.font, color: o.color }) +
-      '<w:t xml:space="preserve">' + xmlEscape(text) + '</w:t></w:r></w:p>';
-  }
-
-  function wordTable(rows) {
-    const borders = '<w:tblBorders><w:top w:val="single" w:sz="6" w:space="0" w:color="A8BBD0"/><w:left w:val="single" w:sz="6" w:space="0" w:color="A8BBD0"/><w:bottom w:val="single" w:sz="6" w:space="0" w:color="A8BBD0"/><w:right w:val="single" w:sz="6" w:space="0" w:color="A8BBD0"/><w:insideH w:val="single" w:sz="4" w:space="0" w:color="D7E1EA"/><w:insideV w:val="single" w:sz="4" w:space="0" w:color="D7E1EA"/></w:tblBorders>';
-    const cellMargin = '<w:tblCellMar><w:top w:w="70" w:type="dxa"/><w:left w:w="120" w:type="dxa"/><w:bottom w:w="70" w:type="dxa"/><w:right w:w="120" w:type="dxa"/></w:tblCellMar>';
-    const body = rows.map(function (row, rowIndex) {
-      const header = rowIndex === 0;
-      const rowProps = '<w:trPr><w:cantSplit/>' + (header ? '<w:tblHeader/>' : '') +
-        '<w:trHeight w:val="' + (header ? 400 : 340) + '" w:hRule="atLeast"/></w:trPr>';
-      return '<w:tr>' + rowProps + row.map(function (cell) {
-        const shading = header ? '<w:shd w:val="clear" w:color="auto" w:fill="' + EXPORT_TYPE.headerFill + '"/>' : '';
-        return '<w:tc><w:tcPr><w:tcW w:w="1800" w:type="dxa"/>' + shading + '<w:vAlign w:val="center"/></w:tcPr>' +
-          '<w:p><w:pPr><w:bidi w:val="1"/><w:jc w:val="right"/>' +
-          '<w:spacing w:before="20" w:after="20" w:line="' + (header ? 240 : 260) + '" w:lineRule="auto"/></w:pPr><w:r>' +
-          wordRunProps({ bold: header, size: header ? EXPORT_TYPE.tableHeadSize : EXPORT_TYPE.tableBodySize, color: header ? EXPORT_TYPE.headerInk : '' }) +
-          '<w:t xml:space="preserve">' + xmlEscape(cell) + '</w:t></w:r></w:p></w:tc>';
-      }).join('') + '</w:tr>';
-    }).join('');
-    return '<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/>' + borders + cellMargin + '<w:tblLayout w:type="autofit"/></w:tblPr>' + body + '</w:tbl>';
-  }
-
+  // ── Word: یک ساخت‌کنندهٔ واحد در design/export-docs.js ────────────────────
+  // برگهٔ فهرست‌ها همیشه A4 افقی است (همان چیزی که در چاپ/PDF و روی صفحه دیده
+  // می‌شود) و برگهٔ پرونده عمودی می‌ماند؛ ساخت XML و پهنای ستون‌ها آن‌جاست.
   function exportReportDocx() {
     const rows=currentReportRows();
-    const paragraphs=wordParagraph(currentReportTitle(),true,false,{size:EXPORT_TYPE.titleSize,font:EXPORT_TYPE.headFont,after:140,line:300})+
-      wordParagraph('تاریخ تهیه: '+formatJalali(new Date().toISOString(),true),false,false,{size:EXPORT_TYPE.metaSize,color:EXPORT_TYPE.metaInk,after:40})+
-      wordParagraph('تعداد ردیف‌های گزارش: '+faDigits(Math.max(0,rows.length-1)),false,false,{size:EXPORT_TYPE.metaSize,color:EXPORT_TYPE.metaInk,after:200});
-    const documentXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+paragraphs+wordTable(rows)+
-      '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720" w:header="360" w:footer="360" w:gutter="0"/></w:sectPr></w:body></w:document>';
-    const files=[
-      {name:'[Content_Types].xml',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>'},
-      {name:'_rels/.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>'},
-      {name:'word/document.xml',content:documentXml}
-    ];
-    downloadBlob('ATLAS-SHIFT-report-'+todayIso()+'.docx',zipStored(files));
+    downloadBlob('ATLAS-SHIFT-report-'+todayIso()+'.docx', window.AtlasExportDocs.docx({
+      title: currentReportTitle(),
+      stamp: formatJalali(new Date().toISOString(),true),
+      meta: 'تعداد ردیف‌های گزارش: '+faDigits(Math.max(0,rows.length-1)),
+      landscape: true,
+      tables: [{rows: rows}]
+    }));
   }
 
   function excelColumn(index) {
@@ -5136,62 +5078,12 @@
     downloadBlob('ATLAS-SHIFT-report-'+todayIso()+'.xlsx',zipStored(xlsxPackage('گزارش ATLAS SHIFT',sheet)));
   }
 
-  function pptTextShape(id,name,x,y,cx,cy,lines,size,bold) {
-    return '<p:sp><p:nvSpPr><p:cNvPr id="'+id+'" name="'+xmlEscape(name)+'"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>'+
-      '<p:spPr><a:xfrm><a:off x="'+x+'" y="'+y+'"/><a:ext cx="'+cx+'" cy="'+cy+'"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></p:spPr>'+
-      '<p:txBody><a:bodyPr wrap="square" rtlCol="1" anchor="t"/><a:lstStyle/>'+
-      lines.map(function(line){return '<a:p><a:pPr algn="r" rtl="1"><a:lnSpc><a:spcPct val="140000"/></a:lnSpc><a:spcAft><a:spcPts val="600"/></a:spcAft></a:pPr><a:r><a:rPr lang="fa-IR" sz="'+size+'"'+(bold?' b="1"':'')+'/><a:t xml:space="preserve">'+xmlEscape(line)+'</a:t></a:r><a:endParaRPr lang="fa-IR"/></a:p>';}).join('')+
-      '</p:txBody></p:sp>';
-  }
-
-  function pptxPackage(slide) {
-    const groupTree='<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>';
-
-    const master='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-      '<p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld name="ATLAS SHIFT"><p:spTree>'+groupTree+'</p:spTree></p:cSld>'+
-      '<p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>'+
-      '<p:sldLayoutIdLst><p:sldLayoutId id="1" r:id="rId1"/></p:sldLayoutIdLst><p:txStyles><p:titleStyle><a:lvl1pPr><a:defRPr sz="2800"/></a:lvl1pPr></p:titleStyle><p:bodyStyle><a:lvl1pPr><a:defRPr sz="1800"/></a:lvl1pPr></p:bodyStyle><p:otherStyle><a:lvl1pPr><a:defRPr sz="1600"/></a:lvl1pPr></p:otherStyle></p:txStyles></p:sldMaster>';
-    const layout='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-      '<p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" type="blank" preserve="1"><p:cSld name="Blank"><p:spTree>'+groupTree+'</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>';
-    const theme='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-      '<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="ATLAS SHIFT"><a:themeElements>'+
-      '<a:clrScheme name="ATLAS SHIFT"><a:dk1><a:srgbClr val="183E69"/></a:dk1><a:lt1><a:srgbClr val="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="243447"/></a:dk2><a:lt2><a:srgbClr val="EAF5FF"/></a:lt2>'+
-      '<a:accent1><a:srgbClr val="25BCE8"/></a:accent1><a:accent2><a:srgbClr val="7B82FF"/></a:accent2><a:accent3><a:srgbClr val="39C6A5"/></a:accent3><a:accent4><a:srgbClr val="FFB8DF"/></a:accent4><a:accent5><a:srgbClr val="F3C66B"/></a:accent5><a:accent6><a:srgbClr val="A7B5C6"/></a:accent6><a:hlink><a:srgbClr val="0563C1"/></a:hlink><a:folHlink><a:srgbClr val="954F72"/></a:folHlink></a:clrScheme>'+
-      '<a:fontScheme name="ATLAS SHIFT"><a:majorFont><a:latin typeface="Aptos Display"/><a:ea typeface=""/><a:cs typeface="Tahoma"/></a:majorFont><a:minorFont><a:latin typeface="Aptos"/><a:ea typeface=""/><a:cs typeface="Tahoma"/></a:minorFont></a:fontScheme>'+
-      '<a:fmtScheme name="ATLAS SHIFT"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"><a:lumMod val="95000"/><a:lumOff val="5000"/></a:schemeClr></a:solidFill><a:solidFill><a:schemeClr val="phClr"><a:lumMod val="90000"/><a:lumOff val="10000"/></a:schemeClr></a:solidFill></a:fillStyleLst>'+
-      '<a:lnStyleLst><a:ln w="6350" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:round/></a:ln><a:ln w="12700" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:round/></a:ln><a:ln w="19050" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:round/></a:ln></a:lnStyleLst>'+
-      '<a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst>'+
-      '<a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"><a:lumMod val="95000"/><a:lumOff val="5000"/></a:schemeClr></a:solidFill><a:solidFill><a:schemeClr val="phClr"><a:lumMod val="90000"/><a:lumOff val="10000"/></a:schemeClr></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements><a:objectDefaults/><a:extraClrSchemeLst/></a:theme>';
-    return [
-      {name:'[Content_Types].xml',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/><Override PartName="/ppt/slides/slide1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/><Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/><Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/><Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/></Types>'},
-      {name:'_rels/.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/></Relationships>'},
-      {name:'ppt/presentation.xml',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst><p:sldIdLst><p:sldId id="256" r:id="rId2"/></p:sldIdLst><p:sldSz cx="12192000" cy="6858000" type="screen16x9"/><p:notesSz cx="6858000" cy="9144000"/><p:defaultTextStyle><a:defPPr><a:defRPr lang="fa-IR"/></a:defPPr></p:defaultTextStyle></p:presentation>'},
-      {name:'ppt/_rels/presentation.xml.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide1.xml"/></Relationships>'},
-      {name:'ppt/slides/slide1.xml',content:slide},
-      {name:'ppt/slides/_rels/slide1.xml.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/></Relationships>'},
-      {name:'ppt/slideLayouts/slideLayout1.xml',content:layout},
-      {name:'ppt/slideLayouts/_rels/slideLayout1.xml.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/></Relationships>'},
-      {name:'ppt/slideMasters/slideMaster1.xml',content:master},
-      {name:'ppt/slideMasters/_rels/slideMaster1.xml.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/></Relationships>'},
-      {name:'ppt/theme/theme1.xml',content:theme}
-    ];
-  }
-
   function exportReportPptx() {
     const rows=currentReportRows();
-    const summary=MODULES.map(function(key){
-      const count=appData[key].filter(function(record){return isInRange(key,record,reportPeriod);}).length;
-      return specs[key].title+': '+faDigits(count);
-    });
-    summary.push('برنامهٔ شیفت‌ها: '+faDigits((appData.shifts||[]).filter(function(record){return isInRange('shifts',record,reportPeriod);}).length));
-    summary.push('کل ردیف‌های گزارش: '+faDigits(Math.max(0,rows.length-1)));
-    summary.push('تهیه‌شده در '+formatJalali(new Date().toISOString(),true));
-    const slide='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-      '<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld name="ATLAS SHIFT"><p:spTree>'+groupTree+
-      pptTextShape(2,'عنوان گزارش',500000,350000,11100000,900000,[currentReportTitle()],2800,true)+
-      pptTextShape(3,'خلاصه گزارش',500000,1500000,11100000,5200000,summary.slice(0,18),1800,false)+
-      '</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>';
-    downloadBlob('ATLAS-SHIFT-report-'+todayIso()+'.pptx',zipStored(pptxPackage(slide)));
+    downloadBlob('ATLAS-SHIFT-report-'+todayIso()+'.pptx', window.AtlasExportDocs.pptx({
+      title: currentReportTitle(),
+      rows: rows
+    }));
   }
 
   // ── خروجی یکپارچه: CSV، اکسل، ورد، پاورپوینت، تصویر و چاپ ─────────────────
@@ -5345,37 +5237,17 @@
   }
 
   function exportRowsDocx(rows, title, filename) {
-    const paragraphs = wordParagraph(title, true, false, { size: EXPORT_TYPE.titleSize, font: EXPORT_TYPE.headFont, after: 140, line: 300 }) +
-      wordParagraph('تاریخ تهیه: ' + formatJalali(new Date().toISOString(), true), false, false, { size: EXPORT_TYPE.metaSize, color: EXPORT_TYPE.metaInk, after: 40 }) +
-      wordParagraph('تعداد ردیف‌ها: ' + faDigits(Math.max(0, rows.length - 1)), false, false, { size: EXPORT_TYPE.metaSize, color: EXPORT_TYPE.metaInk, after: 200 });
-    const documentXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + paragraphs + wordTable(rows) +
-      '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720" w:header="360" w:footer="360" w:gutter="0"/></w:sectPr></w:body></w:document>';
-    const files = [
-      {name:'[Content_Types].xml',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>'},
-      {name:'_rels/.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>'},
-      {name:'word/document.xml',content:documentXml}
-    ];
-    downloadBlob(filename, zipStored(files));
+    downloadBlob(filename, window.AtlasExportDocs.docx({
+      title: title,
+      stamp: formatJalali(new Date().toISOString(), true),
+      meta: 'تعداد ردیف‌ها: ' + faDigits(Math.max(0, rows.length - 1)),
+      landscape: true,
+      tables: [{rows: rows}]
+    }));
   }
 
   function exportRowsPptx(rows, title, filename) {
-    const header = rows[0] || [];
-    const lines = rows.slice(1, 15).map(function (row) {
-      return row.map(function (cell, index) {
-        const label = header[index] ? header[index] + ': ' : '';
-        return label + String(cell || '');
-      }).join(' | ');
-    });
-    if (rows.length > 15) lines.push('… و ' + faDigits(rows.length - 15) + ' ردیف دیگر');
-    if (!lines.length) lines.push('داده‌ای برای نمایش ثبت نشده است.');
-    const groupTree = '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>';
-    const slide = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-      '<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld name="ATLAS SHIFT"><p:spTree>' + groupTree +
-      pptTextShape(2, 'عنوان', 500000, 350000, 11100000, 900000, [title], 2600, true) +
-      pptTextShape(3, 'داده‌ها', 500000, 1400000, 11100000, 5200000, lines, 1500, false) +
-      '</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>';
-    downloadBlob(filename, zipStored(pptxPackage(slide)));
+    downloadBlob(filename, window.AtlasExportDocs.pptx({ title: title, rows: rows }));
   }
 
   // تصویر: همان قالب جدول روی کاغذ سفید؛ عنوان، سرستون و بدنه هر سه فونت و
@@ -5503,7 +5375,10 @@
     else if (format === 'pptx') exportRowsPptx(rows, title, base + '.pptx');
     else if (format === 'png') exportRowsPng(rows, title, base + '.png');
     else if (format === 'print') printRows(rows, title);
-    else downloadFile(base + '.csv', '\uFEFF' + rows.map(function (row) { return row.map(csvEscape).join(','); }).join('\r\n'), 'text/csv;charset=utf-8;');
+    else downloadFile(base + '.csv', window.AtlasExportDocs.csv(rows, {
+      title: title,
+      stamp: formatJalali(new Date().toISOString(), true)
+    }), 'text/csv;charset=utf-8;');
   }
 
   function exportModule(moduleKey, format) {
@@ -5527,7 +5402,10 @@
 
   function exportCsv(moduleKey) {
     const rows = moduleExportRows(moduleKey);
-    downloadFile('ATLAS-SHIFT-'+moduleKey+'-'+todayIso()+'.csv','\uFEFF'+rows.map(function(row){return row.map(csvEscape).join(',');}).join('\r\n'),'text/csv;charset=utf-8;');
+    downloadFile('ATLAS-SHIFT-'+moduleKey+'-'+todayIso()+'.csv', window.AtlasExportDocs.csv(rows, {
+      title: specs[moduleKey] ? specs[moduleKey].title : moduleKey,
+      stamp: formatJalali(new Date().toISOString(), true)
+    }),'text/csv;charset=utf-8;');
   }
 
   function shiftPrintRows() {
@@ -5538,14 +5416,6 @@
     return rows;
   }
 
-  function exportShiftsCsv() {
-    const rows=[['شناسه','شروع','پایان','نوع شیفت','کارکنان','محل خدمت','وضعیت','توضیحات']];
-    (appData.shifts||[]).forEach(function(record){
-      rows.push([record.id,record.startAt||'',record.endAt||'',record.shiftType||'',shiftLabel(record,appData),record.workplace||'',record.status||'',record.notes||'']);
-    });
-    downloadFile('ATLAS-SHIFT-shifts-'+todayIso()+'.csv','\uFEFF'+rows.map(function(row){return row.map(csvEscape).join(',');}).join('\r\n'),'text/csv;charset=utf-8;');
-  }
-
   function exportAllCsv() {
     const rows=[['بخش','عنوان','وضعیت','تاریخ','شرح']];
     MODULES.forEach(function(key){
@@ -5554,7 +5424,10 @@
       });
     });
     (appData.shifts||[]).forEach(function(record){rows.push(['برنامهٔ شیفت',shiftLabel(record,appData),record.status||'',record.startAt||'',record.workplace||record.notes||'']);});
-    downloadFile('ATLAS-SHIFT-report-'+todayIso()+'.csv','\uFEFF'+rows.map(function(row){return row.map(csvEscape).join(',');}).join('\r\n'),'text/csv;charset=utf-8;');
+    downloadFile('ATLAS-SHIFT-report-'+todayIso()+'.csv', window.AtlasExportDocs.csv(rows, {
+      title: 'همهٔ اطلاعات',
+      stamp: formatJalali(new Date().toISOString(), true)
+    }),'text/csv;charset=utf-8;');
   }
 
   function recordDateForCsv(key, record) {
@@ -5938,10 +5811,6 @@
       appData.shifts=appData.shifts.filter(function(item){return String(item.id)!==String(record.id);});
       addShiftHistory(record,'حذف',[]);
       if(await saveState()){render('employees',section);refreshDashboard();toast('برنامهٔ شیفت حذف شد.');}
-    }else if(action==='export'){
-      exportShiftsCsv();
-    }else if(action==='print'){
-      printRows(shiftPrintRows(),'برنامهٔ شیفت‌ها · ATLAS SHIFT');
     }
   });
 
