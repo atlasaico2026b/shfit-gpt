@@ -1,9 +1,15 @@
-/* ATLAS SHIFT — خروجی چاپ: سفید و سیاه، بدون رنگ و بدون اجزای رابط */
+/* ATLAS SHIFT — برگهٔ چاپ فهرست‌ها: A4 افقی، سفید و سیاه، جدول شبکه‌دار
+   همهٔ بخش‌های فهرست‌دار (کارکنان، مرخصی‌ها، مأموریت‌ها، خودروها، گازسنج‌ها،
+   ایستگاه‌ها و سوابق) خروجی چاپ/PDF خود را از این یک فایل می‌گیرند.
+   برگهٔ «مشاهدهٔ پرونده» (design/record-file.css) تنظیم صفحهٔ خودش را دارد
+   و دست‌نخورده می‌ماند. */
 
 /* مرکب و کاغذ چاپ باید همیشه تعریف باشند؛ وگرنه رنگ و خطوط جدول چاپ بی‌اثر می‌شود. */
 :root {
   --print-ink: #000000;
   --print-paper: #ffffff;
+  --print-grid: #000000;
+  --print-head-fill: #e4e4e4;
 }
 
 #atlasPrintArea {
@@ -13,7 +19,7 @@
 @media print {
   @page {
     size: A4 landscape;
-    margin: 12mm;
+    margin: 9mm 9mm 11mm;
   }
 
   html,
@@ -22,41 +28,69 @@
     color: var(--print-ink) !important;
   }
 
+  /* فقط برگهٔ فهرست‌ها حاشیهٔ بدنه را صفر می‌کند؛ چاپ برگهٔ پرونده و
+     چاپ کامل صفحه رفتار خودشان را دارند. */
+  body.atlas-printing {
+    margin: 0;
+    padding: 0;
+  }
+
   body.atlas-printing > *:not(#atlasPrintArea) {
     display: none !important;
   }
 
   body.atlas-printing #atlasPrintArea {
     display: block !important;
+    width: 100%;
+    box-sizing: border-box;
     color: var(--print-ink) !important;
     background: var(--print-paper) !important;
-    font-family: "Vazirmatn", Tahoma, sans-serif;
+    font-family: Tahoma, "Vazirmatn", "Segoe UI", sans-serif;
+    font-size: 8.5pt;
+    line-height: 1.6;
+    direction: rtl;
+    text-align: right;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
+  /* ── سربرگ برگه: نام موضوع، درشت و کلفت، با خط جداکننده ── */
+  #atlasPrintArea .atlas-print-head {
+    margin: 0 0 3mm;
+    padding: 0 0 2mm;
+    border-bottom: 1.4pt solid var(--print-ink);
+  }
+
+  #atlasPrintArea .atlas-print-title,
   #atlasPrintArea h1 {
-    margin: 0 0 5px;
+    margin: 0;
     font-family: "B Nazanin", "Vazirmatn", Tahoma, sans-serif;
-    font-size: 16pt;
-    font-weight: 700;
-    letter-spacing: .01em;
+    font-size: 15pt;
+    font-weight: 800;
+    line-height: 1.35;
+    letter-spacing: 0;
     color: var(--print-ink);
     text-align: right;
   }
 
   #atlasPrintArea .atlas-print-meta {
-    margin: 0 0 12px;
-    font-family: Tahoma, "Vazirmatn", sans-serif;
-    font-size: 8.5pt;
+    margin: 1.2mm 0 0;
+    font-size: 8pt;
+    font-weight: 400;
+    line-height: 1.5;
     color: var(--print-ink);
     text-align: right;
   }
 
-  #atlasPrintArea table {
+  /* ── جدول: ستون‌های هم‌عرض، خط کامل بین سطر و ستون ── */
+  #atlasPrintArea .atlas-print-table {
     width: 100%;
+    max-width: 100%;
+    table-layout: fixed;
     border-collapse: collapse;
     direction: rtl;
-    font-family: Tahoma, "Vazirmatn", sans-serif;
-    font-size: 8pt;
+    font-family: Tahoma, "Vazirmatn", "Segoe UI", sans-serif;
+    font-size: 8.5pt;
   }
 
   #atlasPrintArea thead {
@@ -65,27 +99,83 @@
 
   #atlasPrintArea tr {
     page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   #atlasPrintArea th,
   #atlasPrintArea td {
-    padding: 5px 7px;
-    border: 0.6pt solid var(--print-ink);
+    padding: 1.6mm 2mm;
+    border: 0.7pt solid var(--print-grid);
     color: var(--print-ink);
     background: var(--print-paper);
     text-align: right;
     vertical-align: middle;
-    line-height: 1.75;
+    line-height: 1.6;
+    overflow-wrap: break-word;
+    word-break: normal;
+    hyphens: auto;
   }
 
   #atlasPrintArea th {
-    font-family: Tahoma, "Vazirmatn", sans-serif;
-    font-size: 8.5pt;
-    font-weight: 700;
-    letter-spacing: .01em;
-    border-width: 1pt;
-    border-bottom-width: 1.4pt;
-    padding: 6px 7px;
+    font-size: 9.5pt;
+    font-weight: 800;
+    line-height: 1.45;
+    background: var(--print-head-fill) !important;
+    border-width: 0.9pt;
+    border-bottom-width: 1.5pt;
+    padding: 2mm;
+    text-align: center;
+  }
+
+  #atlasPrintArea tbody tr:nth-child(even) td {
+    background: var(--print-paper);
+  }
+
+  #atlasPrintArea .atlas-print-empty {
+    padding: 6mm 2mm;
+    text-align: center;
+    font-size: 9pt;
+    border: 0.7pt solid var(--print-grid);
+  }
+
+  /* عدد، تاریخ و تلفن وسط عدد شکسته نمی‌شود؛ کمی ریزتر تا در ستون باریک جا شود */
+  #atlasPrintArea .atlas-print-num {
+    white-space: nowrap;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.88em;
+    letter-spacing: -0.02em;
+  }
+
+  /* ── تناسب خودکار با تعداد ستون‌ها ── */
+  #atlasPrintArea[data-density="compact"] .atlas-print-table {
+    font-size: 8pt;
+  }
+
+  #atlasPrintArea[data-density="compact"] th,
+  #atlasPrintArea[data-density="compact"] td {
+    padding: 1.3mm 1.6mm;
+    line-height: 1.5;
+  }
+
+  #atlasPrintArea[data-density="compact"] th {
+    font-size: 8.8pt;
+    padding: 1.6mm;
+  }
+
+  #atlasPrintArea[data-density="tight"] .atlas-print-table {
+    font-size: 7pt;
+  }
+
+  #atlasPrintArea[data-density="tight"] th,
+  #atlasPrintArea[data-density="tight"] td {
+    padding: 1mm 1.2mm;
+    line-height: 1.45;
+  }
+
+  #atlasPrintArea[data-density="tight"] th {
+    font-size: 7.8pt;
+    padding: 1.2mm;
   }
 
   #atlasPrintArea a {

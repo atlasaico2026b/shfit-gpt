@@ -20,6 +20,13 @@ missions, leave, vehicles, gas detectors, notes/actions, reports, settings.
   sheet of every stored field plus related records, with preview-before-export (print/PDF, Word, Excel, CSV).
   Opens via `document.dispatchEvent(new CustomEvent('atlas-open-file', {detail:{module, id}}))` or
   `AtlasRecordFile.openContact(contact)`. It only prints data that exists; never invent fields.
+- `design/print-sheet.js` + `design/print.css` — «خروجی چاپ/PDF» of every list section (employees, leaves,
+  missions, vehicles, gas meters, stations, logs, shifts, reports). One owner for the list sheet: `printRows()`
+  in `modules.js` only calls `AtlasPrintSheet.render(host, rows, {title, stamp})`. Sheet = A4 **landscape**,
+  title = the subject name (`مرخصی‌ها`, `مأموریت‌ها`, …) with the `· ATLAS SHIFT` suffix stripped, full grid
+  borders, larger/bolder column headers, content-proportional column widths (`<colgroup>`), numeric cells
+  kept on one line, and a font/padding step that shrinks as the column count grows (`data-density`).
+  Tests: `node tests/print-sheet.cjs`.
 - `design/contact-sync.js` — links phonebook contacts to employees by personnel number, national ID or
   mobile (`isSameEmployee`). A new employee creates/updates its contact; deleting the employee never
   deletes the contact. Auto-created contacts carry `pending: true` and render with a yellow card until
@@ -42,6 +49,7 @@ missions, leave, vehicles, gas detectors, notes/actions, reports, settings.
 | فهرست‌های بازشوی جستجوپذیر | `modules.js` → `buildCombo` / `enhanceSearchSelects` + `design/settings-view.css` |
 | فیلد اجباری | `design/forms-validation.css` + `validateRequired` در `modules.js` |
 | مشاهدهٔ پرونده و خروجی A4 | `design/record-file.js` + `.css` |
+| خروجی چاپ/PDF فهرست‌ها (A4 افقی) | `design/print-sheet.js` + `design/print.css` |
 | همگام‌سازی کارمند ↔ مخاطب | `design/contact-sync.js` |
 | تم/رنگ‌ها | `design/theme-switch.js` + `design/skins/*.css` |
 | اعتبارسنجی/نرمال‌سازی داده‌ها | `design/…` یا توابع مشترک `modules.js` (بدون تکرار) |
