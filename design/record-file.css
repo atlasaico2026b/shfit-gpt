@@ -1,6 +1,9 @@
 /* ── مشاهدهٔ پرونده و خروجی A4 ─────────────────────────────────────
    یک صفحهٔ کامل برای هر رکورد: همهٔ اطلاعات ثبت‌شده + سوابق مرتبط، با
-   پیش‌نمایش پیش از هر خروجی. رنگ‌ها از design/tokens.css. */
+   پیش‌نمایش پیش از هر خروجی. رنگ‌ها از design/tokens.css.
+   توجه: استایل خودِ برگهٔ خروجی این‌جا نیست؛ در design/record-file.js
+   (تابع sheetRules) است تا پیش‌نمایش، چاپ و فایل Word دقیقاً یک ظاهر
+   داشته باشند. این فایل فقط پوستهٔ مودال و قاب پیش‌نمایش را می‌سازد. */
 
 .rf-backdrop {
   position: fixed;
@@ -82,161 +85,6 @@
   margin-inline-start: auto;
 }
 
-/* ── برگهٔ A4 ── */
-.rf-sheet {
-  width: 210mm;
-  max-width: 100%;
-  min-height: 297mm;
-  margin: 0 auto;
-  padding: 12mm 12mm 14mm;
-  background: #ffffff;
-  color: #16203a;
-  border-radius: 6px;
-  box-shadow: 0 10px 30px rgba(var(--c-black-rgb), .35);
-  font-size: 10.5pt;
-  line-height: 1.9;
-}
-
-/* سربرگ برگه: چیدمان با جدول (نه flex/grid) تا فایل Word همان ساختار را بدهد */
-.rf-sheet-head {
-  border-bottom: 1.4px solid #16203a;
-  padding-bottom: 6mm;
-  margin-bottom: 5mm;
-}
-
-.rf-brandrow,
-.rf-top,
-.rf-facts,
-.rf-sheet-foot {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.rf-brandrow td,
-.rf-top td,
-.rf-sheet-foot td {
-  padding: 0;
-  vertical-align: top;
-  border: 0;
-}
-
-.rf-sheet-main {
-  padding-left: 6mm;
-}
-
-.rf-photo {
-  width: 27mm;
-  text-align: left;
-}
-
-.rf-photo img {
-  width: 27mm;
-  height: 34mm;
-  border: 1.2px solid #16203a;
-  border-radius: 3px;
-  background: #f2f5fb;
-  object-fit: cover;
-  display: block;
-}
-
-.rf-sheet-brand {
-  font-weight: 700;
-  letter-spacing: .04em;
-  text-align: right;
-}
-
-.rf-sheet-title {
-  text-align: left;
-  font-size: 9pt;
-  line-height: 1.7;
-  color: #3c4660;
-}
-
-.rf-sheet h2 {
-  margin: 0 0 2mm;
-  font-size: 15pt;
-}
-
-.rf-sheet h3 {
-  margin: 5mm 0 2mm;
-  padding-bottom: 1mm;
-  font-size: 10.5pt;
-  border-bottom: 1px solid #c7cede;
-  color: #16203a;
-}
-
-.rf-sheet-sub {
-  margin: 0 0 4mm;
-  font-size: 9pt;
-  color: #4a5573;
-}
-
-.rf-facts {
-  width: 100%;
-  table-layout: fixed;
-  border-collapse: collapse;
-}
-
-.rf-facts td {
-  border: 0;
-  border-bottom: 1px dotted #cfd6e4;
-  padding: 0 0 1mm;
-  vertical-align: baseline;
-}
-
-.rf-facts .rf-fact-lbl {
-  width: 21%;
-  font-weight: 600;
-  color: #46506b;
-  font-size: 9pt;
-  padding-left: 4px;
-}
-
-.rf-facts .rf-fact-val {
-  width: 29%;
-  word-break: break-word;
-}
-
-.rf-facts .rf-fact-void {
-  border-bottom: 0;
-}
-
-.rf-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 9pt;
-  margin-top: 1mm;
-}
-
-.rf-table th,
-.rf-table td {
-  border: 1px solid #c7cede;
-  padding: 1mm 2mm;
-  text-align: right;
-  vertical-align: top;
-}
-
-.rf-table th {
-  background: #eef1f8;
-  font-weight: 600;
-}
-
-.rf-sheet-foot {
-  margin-top: 6mm;
-  border-top: 1px solid #c7cede;
-  padding-top: 3mm;
-  font-size: 8pt;
-  color: #5b6580;
-}
-
-.rf-sheet-foot .rf-foot-note {
-  text-align: right;
-}
-
-.rf-sheet-foot .rf-foot-stamp {
-  text-align: left;
-}
-
 .rf-empty {
   color: #6c768f;
   font-size: 9pt;
@@ -311,17 +159,8 @@
   background: #fff;
 }
 
-.rf-preview-body .rf-sheet {
-  box-shadow: 0 14px 40px rgba(var(--c-black-rgb), .5);
-}
-
-/* چاپ: فقط برگهٔ خروجی دیده می‌شود */
+/* چاپ: فقط برگهٔ خروجی دیده می‌شود؛ استایل برگه از همان قواعد خروجی می‌آید */
 @media print {
-  @page {
-    size: A4;
-    margin: 10mm;
-  }
-
   body.rf-printing > *:not(#rfPrintArea) {
     display: none !important;
   }
@@ -330,62 +169,7 @@
     display: block !important;
   }
 
-  body.rf-printing #rfPrintArea .rf-sheet {
-    width: auto;
-    min-height: 0;
-    margin: 0;
-    padding: 0;
-    box-shadow: none;
-    border-radius: 0;
-    font-size: 10pt;
-  }
-
   #rfPrintArea {
     display: none;
-  }
-
-  .rf-facts {
-    width: 100%;
-    table-layout: fixed;
-  }
-
-  .rf-sheet tr {
-    break-inside: avoid;
-  }
-
-  .rf-sheet h3 {
-    break-after: avoid;
-  }
-}
-
-@media screen and (max-width: 720px) {
-  .rf-sheet {
-    width: 100%;
-    min-height: 0;
-    padding: 14px;
-    font-size: 11px;
-  }
-
-  .rf-photo {
-    width: 64px;
-  }
-
-  .rf-photo img {
-    width: 64px;
-    height: 80px;
-  }
-
-  .rf-facts .rf-fact-lbl {
-    font-size: 8.5px;
-  }
-
-  .rf-facts .rf-fact-val {
-    word-break: break-word;
-  }
-
-  .rf-table th,
-  .rf-table td {
-    font-size: 8.5px;
-    padding: 2px 4px;
   }
 }

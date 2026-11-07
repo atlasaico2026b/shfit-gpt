@@ -182,9 +182,11 @@
         ? table.rows.map(row => '<tr>' + row.map(cell => '<td>' + esc(cell || '—') + '</td>').join('') + '</tr>').join('')
         : '<tr><td colspan="' + table.headers.length + '">موردی ثبت نشده است.</td></tr>') +
       '</tbody></table>').join('');
-    // عکس پرسنلی: کادر بالا و سمت چپ برگه؛ همان برگه در چاپ/PDF و Word هم می‌آید.
+    // عکس پرسنلی: کادر ۱.۵×۲ اینچ (۳۸.۱×۵۰.۸ میلی‌متر) بالا و سمت چپ برگه؛
+    // اندازه با اینچ و هم در style و هم در width/height نوشته می‌شود تا Word
+    // دقیقاً همان کادر را بسازد و به میلی‌متر گرد نکند.
     const photoCell = model.photo
-      ? '<td class="rf-photo"><img src="' + esc(model.photo) + '" alt="عکس پرسنلی"></td>'
+      ? '<td class="rf-photo"><img src="' + esc(model.photo) + '" alt="عکس پرسنلی" width="144" height="192"></td>'
       : '';
     const mainCell = '<td class="rf-sheet-main">' +
         '<div class="rf-sheet-head">' +
@@ -315,7 +317,8 @@
       area.id = 'rfPrintArea';
       document.body.appendChild(area);
     }
-    area.innerHTML = html;
+    // همان قواعد برگه، به‌همراه تنظیم صفحهٔ A4، تا چاپ/PDF با خروجی Word یکی باشد
+    area.innerHTML = '<style>@page{size:A4;margin:12mm 12mm 14mm}' + sheetRules() + '</style>' + html;
     document.body.classList.add('rf-printing');
     const cleanup = () => {
       document.body.classList.remove('rf-printing');
@@ -327,45 +330,74 @@
     setTimeout(cleanup, 60000);
   }
 
-  // استایل برگهٔ خروجی؛ همین CSS هم داخل فایل Word و هم در پیش‌نمایش همان فایل
-  // استفاده می‌شود تا اندازه‌ها و فونت‌ها دو جای مختلف تعریف نشوند.
+  // ── استایل برگه: تنها منبع ظاهر برگه ───────────────────────────────
+  // همین قواعد هم داخل فایل Word، هم در چاپ/PDF و هم در پیش‌نمایش به کار
+  // می‌رود؛ پس ساختار و فونت‌ها هرگز دو جا و دو اندازه نمی‌شوند.
   const SHEET_FONT = 'Tahoma, "Segoe UI", sans-serif';
-  function sheetCss() {
+
+  function sheetRules() {
+    return '.rf-sheet{margin:0;padding:0;width:100%;direction:rtl;text-align:right;background:#fff;color:#16203a;' +
+        'font-family:' + SHEET_FONT + ';font-size:10.5pt;line-height:1.9;box-shadow:none;border-radius:0}' +
+      '.rf-sheet div,.rf-sheet p,.rf-sheet span,.rf-sheet td,.rf-sheet th,.rf-sheet h2,.rf-sheet h3{font-family:' + SHEET_FONT + '}' +
+      '.rf-sheet p{margin:0}' +
+      '.rf-sheet h2{margin:0 0 2mm;font-size:15pt;line-height:1.4;font-weight:700}' +
+      '.rf-sheet h3{margin:5mm 0 2mm;padding-bottom:1mm;font-size:10.5pt;line-height:1.7;border-bottom:1px solid #c7cede}' +
+      '.rf-sheet table{width:100%;border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt}' +
+      '.rf-sheet td,.rf-sheet th{padding:0;vertical-align:top}' +
+      '.rf-sheet .rf-sheet-head{border-bottom:1.4px solid #16203a;padding-bottom:6mm;margin-bottom:5mm}' +
+      '.rf-sheet .rf-brandrow{width:100%}' +
+      '.rf-sheet .rf-sheet-brand{font-size:10.5pt;line-height:1.8;font-weight:700;letter-spacing:.5pt;text-align:right}' +
+      '.rf-sheet .rf-sheet-title{font-size:9pt;line-height:1.7;color:#3c4660;text-align:left}' +
+      '.rf-sheet .rf-sheet-main{padding:0 0 0 6mm}' +
+      '.rf-sheet .rf-sheet-sub{margin:0 0 4mm;font-size:9pt;line-height:1.7;color:#4a5573}' +
+      '.rf-sheet .rf-photo{width:1.5in;text-align:left}' +
+      '.rf-sheet .rf-photo img{display:block;width:1.5in;height:2in;border:1.2px solid #16203a}' +
+      '.rf-sheet .rf-facts{table-layout:fixed}' +
+      '.rf-sheet .rf-facts td{padding:0 0 1mm;border-bottom:1px dotted #cfd6e4;vertical-align:baseline}' +
+      '.rf-sheet .rf-facts .rf-fact-lbl{width:21%;font-size:9pt;line-height:1.8;font-weight:600;color:#46506b;padding-left:4pt}' +
+      '.rf-sheet .rf-facts .rf-fact-val{width:29%;font-size:10.5pt;line-height:1.8}' +
+      '.rf-sheet .rf-facts .rf-fact-void{border:0}' +
+      '.rf-sheet .rf-table{margin-top:1mm}' +
+      '.rf-sheet .rf-table th,.rf-sheet .rf-table td{border:1px solid #c7cede;padding:1mm 2mm;font-size:9pt;line-height:1.7;text-align:right;vertical-align:top}' +
+      '.rf-sheet .rf-table th{background:#eef1f8;font-weight:600}' +
+      '.rf-sheet tr{page-break-inside:avoid}' +
+      '.rf-sheet .rf-sheet-foot{margin-top:6mm;border-top:1px solid #c7cede;padding-top:3mm}' +
+      '.rf-sheet .rf-sheet-foot td{border:0;padding:0;font-size:8pt;line-height:1.7;color:#5b6580;vertical-align:top}' +
+      '.rf-sheet .rf-foot-note{text-align:right}' +
+      '.rf-sheet .rf-foot-stamp{text-align:left}';
+  }
+
+  // تنظیم صفحه: A4 با حاشیهٔ ۱۲ میلی‌متر. Word حاشیه را از @page می‌گیرد و
+  // مرورگر (پیش‌نمایش) آن را در نمایش رومیزی اعمال نمی‌کند، پس همان اندازه با
+  // @media screen به body داده می‌شود.
+  function docPageCss() {
     return '@page WordSection1{size:210mm 297mm;margin:12mm 12mm 14mm}' +
       'div.WordSection1{page:WordSection1}' +
-      // حاشیهٔ صفحهٔ Word از @page می‌آید؛ مرورگر (پیش‌نمایش) آن را در نمایش
-      // رومیزی اعمال نمی‌کند، پس همان حاشیه با @media screen به body داده می‌شود.
-      '@media screen{body{padding:12mm 12mm 14mm;box-sizing:border-box}}' +
-      'body{margin:0;direction:rtl;text-align:right;background:#fff;color:#16203a;' +
-        'font-family:' + SHEET_FONT + ';font-size:10.5pt;line-height:1.9;mso-line-height-rule:exactly}' +
-      'td,th,div,p,h2,h3,span{font-family:' + SHEET_FONT + '}' +
-      'p{margin:0}' +
-      'h2{margin:0 0 2mm;font-size:15pt;line-height:1.4;font-weight:700}' +
-      'h3{margin:5mm 0 2mm;padding-bottom:1mm;font-size:10.5pt;line-height:1.7;border-bottom:1px solid #c7cede}' +
-      'table{width:100%;border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt}' +
-      'td,th{padding:0;vertical-align:top}' +
-      '.rf-sheet{width:100%;margin:0;padding:0}' +
-      '.rf-sheet-head{border-bottom:1.4px solid #16203a;padding-bottom:6mm;margin-bottom:5mm}' +
-      '.rf-brandrow{width:100%}' +
-      '.rf-sheet-brand{font-size:10.5pt;line-height:1.8;font-weight:700;letter-spacing:.5pt;text-align:right}' +
-      '.rf-sheet-title{font-size:9pt;line-height:1.7;color:#3c4660;text-align:left}' +
-      '.rf-sheet-main{padding:0 0 0 6mm}' +
-      '.rf-sheet-sub{margin:0 0 4mm;font-size:9pt;line-height:1.7;color:#4a5573}' +
-      '.rf-photo{width:27mm;text-align:left}' +
-      '.rf-photo img{display:block;width:27mm;height:34mm;border:1.2px solid #16203a}' +
-      '.rf-facts{table-layout:fixed}' +
-      '.rf-facts td{padding:0 0 1mm;border-bottom:1px dotted #cfd6e4;vertical-align:baseline}' +
-      '.rf-facts .rf-fact-lbl{width:21%;font-size:9pt;line-height:1.8;font-weight:600;color:#46506b;padding-left:4pt}' +
-      '.rf-facts .rf-fact-val{width:29%;font-size:10.5pt;line-height:1.8}' +
-      '.rf-facts .rf-fact-void{border:0}' +
-      '.rf-table{margin-top:1mm}' +
-      '.rf-table th,.rf-table td{border:1px solid #c7cede;padding:1mm 2mm;font-size:9pt;line-height:1.7;text-align:right;vertical-align:top}' +
-      '.rf-table th{background:#eef1f8;font-weight:600}' +
-      '.rf-sheet tr{page-break-inside:avoid}' +
-      '.rf-sheet-foot{margin-top:6mm;border-top:1px solid #c7cede;padding-top:3mm}' +
-      '.rf-sheet-foot td{border:0;padding:0;font-size:8pt;line-height:1.7;color:#5b6580;vertical-align:top}' +
-      '.rf-foot-note{text-align:right}' +
-      '.rf-foot-stamp{text-align:left}';
+      'body{margin:0;direction:rtl;background:#fff;font-family:' + SHEET_FONT + ';font-size:10.5pt;line-height:1.9;mso-line-height-rule:exactly}' +
+      '@media screen{body{padding:12mm 12mm 14mm;box-sizing:border-box}}';
+  }
+
+  // پیش‌نمایش روی صفحه: همان برگه، به‌اندازهٔ یک صفحهٔ A4 روی میز
+  function screenPageCss(scope) {
+    return scope + ' .rf-sheet{width:210mm;max-width:100%;min-height:297mm;margin:0 auto;padding:12mm 12mm 14mm;' +
+        'background:#fff;box-shadow:0 14px 40px rgba(0,0,0,.45)}' +
+      '@media screen and (max-width:720px){' +
+        scope + ' .rf-sheet{width:100%;min-height:0;padding:14px;font-size:11px}' +
+        scope + ' .rf-sheet .rf-photo{width:96px}' +
+        scope + ' .rf-sheet .rf-photo img{width:96px;height:128px}' +
+        scope + ' .rf-sheet .rf-facts .rf-fact-lbl{font-size:8.5px}' +
+        scope + ' .rf-sheet .rf-table th,' + scope + ' .rf-sheet .rf-table td{font-size:8.5px;padding:2px 4px}' +
+      '}';
+  }
+
+  // قواعد برگه را زیر یک ریشه محدود می‌کند تا استایل داخل صفحه به بقیهٔ برنامه نشت نکند
+  function scopeRules(css, scope) {
+    return css.replace(/([^{}]+)\{/g, (all, selectors) => selectors.split(',').map(sel => scope + ' ' + sel.trim()).join(',') + '{');
+  }
+
+  function sheetPreviewHtml(sheetHtml) {
+    return '<div class="rf-sheet-host"><style>' + scopeRules(sheetRules(), '.rf-sheet-host') +
+      screenPageCss('.rf-sheet-host') + '</style>' + sheetHtml + '</div>';
   }
 
   // فایل Word از همان مارک‌آپ برگه ساخته می‌شود؛ فقط با تنظیم صفحهٔ A4 و
@@ -374,7 +406,7 @@
     return '\ufeff<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40" dir="rtl">' +
       '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>' + esc(model.title) + '</title>' +
       '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->' +
-      '<style>' + sheetCss() + '</style></head>' +
+      '<style>' + docPageCss() + sheetRules() + '</style></head>' +
       '<body dir="rtl"><div class="WordSection1">' + buildSheet(model) + '</div></body></html>';
   }
 
@@ -463,7 +495,7 @@
       '</div></div>' +
       (isDoc
         ? '<div class="rf-preview-body is-frame"><iframe class="rf-preview-frame" title="' + esc(label) + '" src="' + esc(docUrl) + '"></iframe></div>'
-        : '<div class="rf-preview-body">' + sheetHtml + '</div>');
+        : '<div class="rf-preview-body">' + sheetPreviewHtml(sheetHtml) + '</div>');
     document.body.appendChild(overlay);
     const close = () => {
       overlay.remove();
@@ -486,7 +518,7 @@
       '<div class="rf-modal" role="dialog" aria-modal="true" aria-label="پرونده">' +
         '<div class="rf-head"><div><h3>' + esc(model.title) + '</h3><p>' + esc(model.kind) + ' — همهٔ اطلاعات ثبت‌شده در یک برگه</p></div>' +
         '<button type="button" class="rf-close" data-rf-close aria-label="بستن پرونده">×</button></div>' +
-        '<div class="rf-body">' + sheetHtml + '</div>' +
+        '<div class="rf-body">' + sheetPreviewHtml(sheetHtml) + '</div>' +
         '<div class="rf-toolbar">' +
           Object.keys(EXPORT_FORMATS).map(format => '<button type="button" class="secondary-btn" data-rf-export="' + format + '">' + esc(EXPORT_FORMATS[format].label) + '</button>').join('') +
           '<small>هر خروجی اول پیش‌نمایش می‌شود؛ تأیید کن تا فایل ساخته شود.</small>' +
@@ -528,6 +560,7 @@
     openModule: openModuleRecord,
     openContact: contact => open(contactSheet(contact)),
     buildSheet: model => buildSheet(model),
-    buildWord: model => wordDocument(model)
+    buildWord: model => wordDocument(model),
+    buildPreview: model => sheetPreviewHtml(buildSheet(model))
   };
 })();

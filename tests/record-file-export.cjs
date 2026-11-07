@@ -26,6 +26,7 @@ const model = {
   title: 'علی رضایی <b>تست</b>',
   subtitle: 'کارشناس بهره‌برداری · مرکز انتقال نفت',
   stamp: 'تاریخ تهیه: ۱۴۰۵/۰۸/۱۶ — ۱۰:۲۰',
+  photo: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAC0AAAA8CAIAAAB98qTzAAAAQUlEQVR4nO3OMQ0AAAgDMGRzowSpyGBHkwpo9WyCeh94eHh4eHh4eHgk8PDw8PDw8PDw8PDw8PDw8PDw8Pjnkfk4fW3lKTNnoWoAAAAASUVORK5CYII=',
   footNote: 'این برگه فقط شامل اطلاعات ثبت‌شده در همین پرونده است.',
   facts: [
     { label: 'شمارهٔ پرسنلی', value: '۱۰۴۲۳' },
@@ -59,7 +60,7 @@ check('بدون grid', !/display:\s*grid/.test(doc));
 check('بدون flex', !/display:\s*(inline-)?flex/.test(doc));
 check('بدون float', !/float:/.test(doc));
 check('فونت صریح روی body', /font-family:Tahoma, "Segoe UI", sans-serif/.test(doc));
-check('فونت صریح روی td/th', /td,th,div,p,h2,h3,span\{font-family:Tahoma/.test(doc));
+check('فونت صریح روی td/th', /\.rf-sheet td,\.rf-sheet th,.+font-family:Tahoma/.test(doc));
 check('اندازهٔ فونت پایه 10.5pt', /font-size:10\.5pt/.test(doc));
 check('چیدمان سربرگ جدولی', /class="rf-brandrow"/.test(html));
 check('چیدمان اصلی جدولی', /class="rf-top"/.test(html));
@@ -70,6 +71,10 @@ check('جدول سوابق کلاس rf-table', /<table class="rf-table"/.test(ht
 check('پاورقی جدولی', /class="rf-sheet-foot"/.test(html) && /rf-foot-stamp/.test(html));
 check('جدول خالی پیام می‌دهد', /colspan="2">موردی ثبت نشده است\./.test(html));
 check('خروجی escape شده', html.includes('&lt;b&gt;تست&lt;/b&gt;') && !html.includes('<b>تست</b>'));
+
+check('کادر عکس ۱.۵×۲ اینچ در Word', /\.rf-photo img\{display:block;width:1\.5in;height:2in/.test(doc));
+check('کادر عکس با width/height صریح', /width="144" height="192"/.test(html));
+check('ستون عکس ۱.۵ اینچ', /\.rf-photo\{width:1\.5in/.test(doc));
 
 const factsRows = (html.match(/<tr>/g) || []).length;
 check('همهٔ فکت‌ها در جدول آمده‌اند', (html.match(/rf-fact-lbl/g) || []).length + 2 >= model.facts.length, 'rows=' + factsRows);
