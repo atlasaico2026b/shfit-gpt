@@ -5825,6 +5825,29 @@
       }).join(' — ');
       return '<li>' + displayDateTime(item.at) + ' · ' + esc(item.action) + (text ? ' · ' + esc(text) : '') + '</li>';
     }).join('');
+    // ردیف‌های خروجی همان چیزی است که در پنجره دیده می‌شود، به‌همراه ردیف جمع.
+    const exportRows = [['نوع مرخصی', 'از تاریخ', 'تا تاریخ', 'مدت (روز)', 'وضعیت', 'دلیل']];
+    leaves.forEach(function (item) {
+      exportRows.push([
+        String(item.leaveType || ''),
+        item.startDate ? formatJalali(item.startDate, false) : '',
+        item.endDate ? formatJalali(item.endDate, false) : '',
+        String(leaveDayCount(item) || ''),
+        String(item.status || ''),
+        String(item.reason || '')
+      ]);
+    });
+    exportRows.push(['مجموع', '', '', String(totalDays), '', 'تعداد درخواست: ' + leaves.length]);
+    const exportTitle = 'سوابق مرخصی' + (personName ? ' · ' + personName : '') + ' · ATLAS SHIFT';
+    const exportBase = 'ATLAS-SHIFT-leaves-' + exportSlug(personName || '', 'person') + '-' + todayIso();
+    const exportButtons = leaves.length
+      ? '<button type="button" class="secondary-btn" data-leave-export="csv">CSV</button> ' +
+        '<button type="button" class="secondary-btn" data-leave-export="xlsx">Excel</button> ' +
+        '<button type="button" class="secondary-btn" data-leave-export="docx">Word</button> ' +
+        '<button type="button" class="secondary-btn" data-leave-export="pptx">PowerPoint</button> ' +
+        '<button type="button" class="secondary-btn" data-leave-export="png">تصویر PNG</button> ' +
+        '<button type="button" class="secondary-btn" data-leave-export="print">چاپ</button> '
+      : '';
     const backdrop = document.createElement('div');
     backdrop.className = 'atlas-modal-backdrop';
     backdrop.setAttribute('data-modal-backdrop', '');
@@ -5846,7 +5869,7 @@
       (changeRows ? '<section class="module-related-history"><h3>تاریخچهٔ تغییرات همین درخواست</h3><ul class="module-history-list">' + changeRows + '</ul></section>' : '') +
       '</div>' +
       '<div class="module-form-actions"><span class="module-required-help">مرخصی‌های همین شخص، تازه‌ترین اول.</span>' +
-      '<div><button type="button" class="secondary-btn" data-leave-history-close>بستن</button></div></div>' +
+      '<div>' + exportButtons + '<button type="button" class="primary-btn" data-leave-history-close>بستن</button></div></div>' +
       '</div>';
     document.body.appendChild(backdrop);
     let closed = false;
@@ -5857,6 +5880,12 @@
     }
     backdrop.querySelectorAll('[data-leave-history-close]').forEach(function (button) {
       button.addEventListener('click', closeHistory);
+    });
+    backdrop.querySelectorAll('[data-leave-export]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        runExport(exportRows, exportTitle, exportBase, button.dataset.leaveExport || 'csv');
+        toast('خروجی سوابق مرخصی این شخص آماده شد.');
+      });
     });
     backdrop.addEventListener('click', function (event) {
       if (event.target === backdrop) closeHistory();
