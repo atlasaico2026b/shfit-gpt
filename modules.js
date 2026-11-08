@@ -45,8 +45,9 @@
     missions: [['startAt', 'تاریخ آغاز'], ['endAt', 'تاریخ پایان'], ['name', 'نام فرد مأمور'], ['title', 'عنوان مأموریت'],
       ['missionType', 'نوع مأموریت'], ['origin', 'مبدأ'], ['destination', 'مقصد'], ['operationalRange', 'محدودهٔ عملیاتی'],
       ['status', 'وضعیت'], ['updatedAt', 'آخرین به‌روزرسانی']],
-    leaves: [['startDate', 'تاریخ شروع'], ['endDate', 'تاریخ پایان'], ['name', 'نام کارمند'], ['leaveType', 'نوع مرخصی'], ['status', 'وضعیت'],
-      ['employeeId', 'کارمند'], ['updatedAt', 'آخرین به‌روزرسانی']],
+    leaves: [['startDate', 'تاریخ شروع'], ['endDate', 'تاریخ پایان'], ['name', 'نام و نام خانوادگی'],
+      ['firstName', 'نام'], ['lastName', 'نام خانوادگی'], ['leaveType', 'نوع مرخصی'], ['status', 'وضعیت'],
+      ['updatedAt', 'آخرین به‌روزرسانی']],
     vehicles: [['name', 'نام خودرو'], ['companyPlate', 'پلاک شرکت'], ['policePlate', 'پلاک پلیس'], ['status', 'وضعیت'],
       ['currentKm', 'کارکرد (کیلومتر)'], ['updatedAt', 'آخرین به‌روزرسانی']],
     stations: [['name', 'نام ایستگاه'], ['placeType', 'نوع محل'], ['city', 'شهر'], ['status', 'وضعیت'],
@@ -91,6 +92,11 @@
         if (person) return employeeName(person);
       }
       return String(record.name || record.title || '');
+    }
+    if (key === 'firstName' || key === 'lastName') {
+      const person = moduleKey === 'employees' ? record
+        : (appData.employees || []).find(function (item) { return String(item.id) === String(record.employeeId); });
+      return person ? String(person[key] == null ? '' : person[key]).trim() : '';
     }
     if (key === 'employeeId') {
       const person = (appData.employees || []).find(function (item) { return String(item.id) === String(record.employeeId); });
