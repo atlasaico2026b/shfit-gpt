@@ -336,6 +336,121 @@ check('سطر شهر ۳۰٪ بزرگ‌تر از متن جدول است', /font-
 check('انتخابگر از قاعدهٔ راه‌راه جدول قوی‌تر است',
   /\.sp-table tbody tr\.sp-group-row td/.test(groupRule), groupRule);
 
+// ── الگوی روزبه‌روز قالب: «روز اول، روز دوم … تا آخر قالب» ──────────────
+check('الگو از rotation فشرده باز می‌شود', e.templatePattern(template).length === 8, e.templatePattern(template).length);
+check('الگو ترتیب روزها را می‌دهد',
+  e.templatePattern(template).join('') === 'صصشش' + e.OFF + e.OFF + e.OFF + e.OFF,
+  e.templatePattern(template).join(''));
+
+const patternTemplate = {
+  id: 't2', name: 'الگویی', shifts: template.shifts,
+  pattern: ['ص', 'ش', e.OFF], cycleStart: '2026-11-07'
+};
+check('قالب pattern-محور طول ۳ دارد', e.cycleLength(patternTemplate) === 3, e.cycleLength(patternTemplate));
+check('روز اول الگو صبح', e.rotationCodeAt(patternTemplate, '2026-11-07') === 'ص');
+check('روز دوم الگو شب', e.rotationCodeAt(patternTemplate, '2026-11-08') === 'ش');
+check('روز سوم الگو استراحت', e.rotationCodeAt(patternTemplate, '2026-11-09') === e.OFF);
+check('روز چهارم دوباره صبح', e.rotationCodeAt(patternTemplate, '2026-11-10') === 'ص');
+check('فشرده‌سازی الگو',
+  JSON.stringify(e.compressPattern(['ص', 'ص', 'ش', e.OFF])) ===
+  JSON.stringify([{ code: 'ص', days: 2 }, { code: 'ش', days: 1 }, { code: e.OFF, days: 1 }]),
+  JSON.stringify(e.compressPattern(['ص', 'ص', 'ش', e.OFF])));
+
+// ── یک تب برای قالب شیفت و روش کاری ─────────────────────────────────────
+clickOn('data-sp-tab', 'methods');
+check('تب جداگانهٔ قالب‌ها حذف شده است', fakeHost.innerHTML.indexOf('data-sp-tab="templates"') < 0);
+check('عنوان تب هر دو را دارد', fakeHost.innerHTML.indexOf('قالب شیفت و روش کاری') >= 0);
+check('انتخابگر قالب پیش از روش‌های کاری می‌آید',
+  fakeHost.innerHTML.indexOf('sp-template-picker') >= 0 &&
+  fakeHost.innerHTML.indexOf('sp-template-picker') < fakeHost.innerHTML.indexOf('sp-section-head'));
+check('گزینهٔ «بدون قالب» هست', fakeHost.innerHTML.indexOf('data-sp-pick-template=""') >= 0);
+check('قالب موجود در انتخابگر هست', fakeHost.innerHTML.indexOf('data-sp-pick-template="t1"') >= 0);
+
+clickOn('data-sp-pick-template', 't1');
+check('انتخاب قالب، روش‌های همان قالب را نشان می‌دهد',
+  bodyHtml.indexOf('چرخشی') >= 0 && bodyHtml.indexOf('اداری') < 0);
+check('الگوی قالب انتخاب‌شده نمایش داده می‌شود', bodyHtml.indexOf('sp-day-chip') >= 0);
+
+clickOn('data-sp-pick-template', '');
+check('بدون قالب، روش روزکار دیده می‌شود',
+  bodyHtml.indexOf('اداری') >= 0 && bodyHtml.indexOf('چرخشی') < 0);
+
+// ── پنجره‌ها: نوع روش کاری پرسیده نمی‌شود و خروجی فرد کار می‌کند ─────────
+function makeElement() {
+  const el = {
+    className: '', innerHTML: '', parentNode: null, children: [], attrs: {},
+    setAttribute: function (key, value) { el.attrs[key] = value; },
+    getAttribute: function (key) { return el.attrs[key] == null ? null : el.attrs[key]; },
+    appendChild: function (child) { child.parentNode = el; el.children.push(child); return child; },
+    removeChild: function (child) {
+      el.children = el.children.filter(function (item) { return item !== child; });
+      child.parentNode = null;
+    },
+    querySelector: function () { return null; },
+    querySelectorAll: function () { return []; },
+    insertAdjacentHTML: function () {},
+    remove: function () {}
+  };
+  return el;
+}
+document.createElement = function () { return makeElement(); };
+document.body = makeElement();
+
+function clickAttr(selector, value) {
+  fire('click', {
+    closest: function (sel) {
+      return sel === selector ? { getAttribute: function () { return value; } } : null;
+    }
+  });
+}
+function currentModal() { return document.body.children[document.body.children.length - 1]; }
+
+clickOn('data-sp-tab', 'methods');
+clickOn('data-sp-pick-template', '');
+clickAttr('[data-sp-new="method"]', '');
+let methodModal = currentModal();
+check('پنجرهٔ روش کاری نوع روش را نمی‌پرسد', methodModal.innerHTML.indexOf('name="kind"') < 0);
+check('پنجرهٔ روش کاری قالب را در خود دارد', methodModal.innerHTML.indexOf('name="templateId"') >= 0);
+check('روش روزکار قوانین هفتگی دارد', methodModal.innerHTML.indexOf('data-sp-week-block') >= 0);
+clickAttr('[data-sp-close]', '');
+
+clickOn('data-sp-pick-template', 't1');
+clickAttr('[data-sp-new="method"]', '');
+methodModal = currentModal();
+check('روش شیفتی الگوی قالب را نشان می‌دهد', methodModal.innerHTML.indexOf('data-sp-pattern-block') >= 0);
+check('روش شیفتی روزهای هفته را نمی‌پرسد', methodModal.innerHTML.indexOf('data-sp-week-block') < 0);
+check('روش شیفتی به قالب وصل است', methodModal.innerHTML.indexOf('name="templateId" value="t1"') >= 0);
+clickAttr('[data-sp-close]', '');
+
+// دکمه‌های خروجی پنجرهٔ «شیفت یک نفر» باید فعال باشند.
+// ریشهٔ باگ: onSectionClick فقط کلیک داخل بخش را می‌گرفت و پنجره بیرون آن است،
+// پس هیچ‌کدام از دکمه‌های خروجی پنجره کار نمی‌کردند.
+const exportCalls = [];
+fakeBridge.runExport = function (rows, title, base, format) {
+  exportCalls.push({ rows: rows, title: title, format: format });
+};
+fakeBridge.exportSlug = function () { return 'person'; };
+
+clickOn('data-sp-person', 'e1');
+const personModal = currentModal();
+check('پنجرهٔ شیفت یک نفر دکمهٔ خروجی دارد', personModal.innerHTML.indexOf('data-sp-export="csv"') >= 0);
+
+const savedContains = fakeHost.contains;
+fakeHost.contains = function () { return false; };
+fire('click', {
+  closest: function (sel) {
+    if (sel === '[data-sp-export]') {
+      return { getAttribute: function (key) { return key === 'data-sp-export' ? 'csv' : 'person'; } };
+    }
+    return null;
+  }
+});
+fakeHost.contains = savedContains;
+check('دکمهٔ خروجی پنجرهٔ فرد کار می‌کند', exportCalls.length === 1, exportCalls.length);
+check('خروجی فرد با قالب CSV گرفته می‌شود', exportCalls[0] && exportCalls[0].format === 'csv');
+check('خروجی فرد از ردیف‌های همان فرد ساخته می‌شود', exportCalls[0] && exportCalls[0].rows.length > 1);
+clickAttr('[data-sp-close]', '');
+
 // ── گزارش ──
 let failed = 0;
 checks.forEach(function (item) {
