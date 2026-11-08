@@ -470,7 +470,8 @@
         {key:'healthStatus',label:'وضعیت سلامت',type:'select',listKey:'healthStatuses',options:['سالم','نیازمند بررسی','دارای نقص','در حال تعمیر']},
         {key:'currentCity',label:'شهر فعلی',type:'select',listKey:'workplaces',options:['اهواز','آبادان','اندیمشک','ماهشهر','بندر امام','آغاجاری','سایر']},
         {key:'currentPlace',label:'محل یا نقطهٔ استقرار',type:'select',listKey:'deploymentLocations',searchable:false,options:['پارکینگ مرکزی','تعمیرگاه مرکزی','انبار مرکزی','محور جاده','دفتر مرکزی','سایر'],hint:'محل استقرار را از فهرست کشویی انتخاب کن؛ با + می‌توانی محل تازه اضافه کنی.'},
-        {key:'occupants',label:'سرنشینان فعلی',type:'textarea',wide:true},
+        {key:'mainDriver',label:'راهبر اصلی این خودرو',type:'select',source:'employees'},
+        {key:'secondaryDrivers',label:'راهبران فرعی',type:'multi-check',source:'employees',showChosen:true,wide:true},
         {key:'currentKm',label:'کیلومتر فعلی',type:'number',min:0},
         {key:'currentKmRecordedAt',label:'زمان آخرین ثبت کیلومتر',type:'text',placeholder:'با ثبت کیلومتر به‌صورت خودکار ثبت می‌شود'},
         {key:'nextServiceKm',label:'کیلومتر سرویس بعدی',type:'number',min:0},
@@ -1068,6 +1069,16 @@
       return String(part == null ? '' : part).trim();
     }).filter(Boolean).join(' ');
     return joined || String(person.fullName || '').trim();
+  }
+
+  // نام کارمند از شناسه؛ برای نمایش راهبر اصلی و راهبران فرعی خودرو.
+  function employeeLabelById(id) {
+    const person = (appData.employees || []).find(function (item) { return String(item.id) === String(id); });
+    return person ? (employeeName(person) || person.personnelId || 'کارمند') : '';
+  }
+
+  function employeeLabelsByIds(ids) {
+    return (Array.isArray(ids) ? ids : []).map(employeeLabelById).filter(Boolean).join('، ');
   }
 
   function recordLabel(moduleKey, record) {
@@ -3339,6 +3350,8 @@
         vtabFact('نوع خودرو', vehicle.vehicleType || '') +
         vtabFact('وضعیت سلامت', vehicle.healthStatus || '') +
         vtabFact('شهر و محل استقرار', [vehicle.currentCity, vehicle.currentPlace].filter(Boolean).join(' · ')) +
+        vtabFact('راهبر اصلی', employeeLabelById(vehicle.mainDriver)) +
+        vtabFact('راهبران فرعی', employeeLabelsByIds(vehicle.secondaryDrivers)) +
         vtabFact('کیلومتر فعلی', vehicle.currentKm ? faDigits(vehicle.currentKm) : '') +
         '</dl></section>'
       : '';

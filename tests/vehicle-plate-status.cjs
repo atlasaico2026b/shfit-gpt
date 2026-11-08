@@ -63,6 +63,13 @@ check('محل استقرار کشویی ساده است، نه پنل جستجو
   selectApi.isSearchableSelect({ type: 'select', listKey: 'deploymentLocations', searchable: false }) === false);
 check('بدون searchable:false همان فهرست پنل جستجو می‌گرفت',
   selectApi.isSearchableSelect({ type: 'select', listKey: 'deploymentLocations' }) === true);
+// ── راهبر اصلی و راهبران فرعی به‌جای سرنشینان ──
+check('فیلد «سرنشینان فعلی» حذف شده است', !/key:'occupants'/.test(modules));
+check('راهبر اصلی از بین کارمندان انتخاب می‌شود', /\{key:'mainDriver',label:'راهبر اصلی این خودرو',type:'select',source:'employees'\}/.test(modules));
+check('راهبران فرعی از بین کارمندان چک‌مارک می‌شوند', /\{key:'secondaryDrivers',label:'راهبران فرعی',type:'multi-check',source:'employees'/.test(modules));
+check('نام راهبر از شناسهٔ کارمند خوانده می‌شود', /function employeeLabelById\(id\)/.test(modules) && /function employeeLabelsByIds\(ids\)/.test(modules));
+check('وضعیت فعلی خودرو راهبر اصلی و فرعی را نشان می‌دهد', /vtabFact\('راهبر اصلی', employeeLabelById\(vehicle\.mainDriver\)\)/.test(modules) && /vtabFact\('راهبران فرعی', employeeLabelsByIds\(vehicle\.secondaryDrivers\)\)/.test(modules));
+
 check('کادر پلاک چهار بخش دارد', /data-plate-part="' \+ key/.test(modules) && /data-plate-part="letter"/.test(modules));
 check('کادر پلاک از چپ به راست چیده می‌شود', /data-plate-field="' \+ esc\(field\.key\) \+ '" dir="ltr"/.test(modules));
 check('فرم مقدار چهار بخش را در یک رشته جمع می‌کند', /field\.type==='plate'/.test(modules) && /data\[field\.key\]=plateText\(parts\)/.test(modules));
