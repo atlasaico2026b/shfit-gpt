@@ -183,24 +183,37 @@
 /* پیشوند html[data-atlas-theme] عمدی است: هم‌وزنِ قواعد پوسته‌ها
    (skins/theme-two.css) می‌شود و چون این فایل بعد از آن‌ها بار می‌شود،
    رنگ ستون‌ها در هر دو پوسته دیده می‌شود. */
+/* هر سرستون یک چیپ مستقل است: گوشه‌های خودش + فاصلهٔ ۳px از همسایه.
+   فاصله با حاشیهٔ شفاف ساخته می‌شود و background-clip: padding-box
+   رنگ را از زیر آن حاشیه پس می‌کشد؛ td هم همان حاشیه را دارد تا
+   ستون‌های سر و تنه دقیقاً روی هم بمانند. */
 html[data-atlas-theme] .module-table thead th {
-  background-image: linear-gradient(180deg,
-    rgba(var(--th-hue, var(--surf-3-rgb)), .14),
-    rgba(var(--th-hue, var(--surf-3-rgb)), .035));
+  --th-line: .55;
+  background-image:
+    linear-gradient(180deg,
+      rgba(var(--th-hue, var(--surf-3-rgb)), var(--th-line)) 0 2px,
+      transparent 2px),
+    linear-gradient(180deg,
+      rgba(var(--th-hue, var(--surf-3-rgb)), .14),
+      rgba(var(--th-hue, var(--surf-3-rgb)), .035));
   background-color: var(--glass-strong);
+  background-clip: padding-box;
   color: rgba(var(--c-white-rgb), .95);
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: .015em;
   white-space: nowrap;
+  border-left: 3px solid transparent;
   border-bottom: 1px solid rgba(var(--c-white-rgb), .10);
-  box-shadow:
-    inset 0 2px 0 rgba(var(--th-hue, var(--surf-3-rgb)), .55),
-    inset -1px 0 0 rgba(var(--c-white-rgb), .04);
-  transition: color .16s ease, box-shadow .16s ease;
+  border-radius: 10px;
+  transition: color .16s ease;
 }
 
-/* گوشه‌های گرد: کادر جدول ۲۰px و سرستون‌ها ۱۹px تا داخلش بنشیند. */
+html[data-atlas-theme] .module-table td {
+  border-left: 3px solid transparent;
+}
+
+/* گوشه‌های گرد: کادر جدول ۲۰px و چیپ‌های سرستون ۱۹px تا داخلش بنشیند. */
 html[data-atlas-theme] .module-table-wrap {
   border-radius: 20px;
 }
@@ -210,9 +223,7 @@ html[data-atlas-theme] .module-table thead th:last-child { border-top-left-radiu
 
 /* سرستون مرتب‌شده: همان رنگ ستون، یک پله پررنگ‌تر */
 html[data-atlas-theme] .module-table .module-sort-th.is-sorted {
-  box-shadow:
-    inset 0 2px 0 rgba(var(--th-hue, var(--accent-rgb)), 1),
-    inset -1px 0 0 rgba(var(--c-white-rgb), .04);
+  --th-line: 1;
 }
 
 html[data-atlas-theme] .module-table .module-sort-th.is-sorted .module-sort-btn {
