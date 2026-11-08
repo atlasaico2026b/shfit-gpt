@@ -80,6 +80,36 @@
     return key;
   }
 
+  // ── عناوین (ستون‌های) جدول هر بخش ─────────────────────────────────────────
+  // کاربر از پنجرهٔ «عناوین» می‌تواند ستون‌های جدول را تیک بزند (نمایش/پنهان) و
+  // ترتیبشان را با بالا/پایین جابه‌جا کند. انتخاب در تنظیمات همان بخش ذخیره
+  // می‌شود تا بعد از بازکردن دوبارهٔ برنامه هم بماند.
+  function allTableColumns(moduleKey) {
+    return specs[moduleKey].columns.concat(moduleKey === 'employees'
+      ? customFieldDefs().map(function (def, index) { return 'customField' + (index + 1); })
+      : []);
+  }
+  function columnPrefsFor(moduleKey) {
+    const stored = appData.settings && appData.settings.columnPrefs ? appData.settings.columnPrefs[moduleKey] : null;
+    return stored && typeof stored === 'object' ? stored : null;
+  }
+  function orderedTableColumns(moduleKey) {
+    const all = allTableColumns(moduleKey);
+    const prefs = columnPrefsFor(moduleKey);
+    const order = prefs && Array.isArray(prefs.order) ? prefs.order : [];
+    const ordered = order.filter(function (key) { return all.indexOf(key) >= 0; });
+    all.forEach(function (key) { if (ordered.indexOf(key) < 0) ordered.push(key); });
+    return ordered;
+  }
+  function tableColumns(moduleKey) {
+    const all = allTableColumns(moduleKey);
+    const prefs = columnPrefsFor(moduleKey);
+    if (!prefs) return all;
+    const hidden = Array.isArray(prefs.hidden) ? prefs.hidden : [];
+    const visible = orderedTableColumns(moduleKey).filter(function (key) { return hidden.indexOf(key) < 0; });
+    return visible.length ? visible : orderedTableColumns(moduleKey);
+  }
+
   // گزینه‌های مرتب‌سازی هر بخش: فهرست تخصصی بالا، به‌اضافهٔ هر ستونی از جدول که
   // در آن فهرست نیست. این‌طور هر «عنوان» جدول هم قابل مرتب‌سازی می‌شود.
   function sortOptionsFor(moduleKey) {
@@ -1684,6 +1714,7 @@
         '</div>' +
         '<div class="list-filter-row" role="group" aria-label="فیلترها">' +
           renderFilterControls(moduleKey) +
+          '<button type="button" class="list-chip list-chip-columns" data-module-action="columns-open" data-view="' + esc(moduleKey) + '" title="نمایش و ترتیب ستون‌های جدول" aria-label="عناوین جدول">▤ عناوین</button>' +
           '<button type="button" class="list-chip list-chip-reset' + (active ? ' is-active' : '') + '" data-module-reset data-view="' + esc(moduleKey) + '"' + (active ? '' : ' hidden') + '>پاک‌کردن فیلترها</button>' +
           '<span class="list-filter-count" data-module-result-count>' + faDigits(recordsForView(moduleKey, appData).length) + ' مورد</span>' +
         '</div>' +
@@ -1716,9 +1747,7 @@
   }
 
   function renderTable(moduleKey, data) {
-    const columns = specs[moduleKey].columns.concat(moduleKey === 'employees'
-      ? customFieldDefs().map(function (def, index) { return 'customField' + (index + 1); })
-      : []);
+    const columns = tableColumns(moduleKey);
     const records = recordsForView(moduleKey, data);
     if (!records.length) {
       return '<div class="module-empty">' + ((data[moduleKey] || []).length ?
@@ -5632,6 +5661,41 @@
       '<button type="button" class="primary-btn" data-module-action="export-columns-save" data-view="' + esc(moduleKey) + '">ذخیرهٔ ستون‌ها</button></div></div></div></div></div>';
   }
 
+  // پنجرهٔ «عناوین»: همهٔ ستون‌های جدول را با تیک نمایش/پنهان و دکمه‌های ↑ ↓
+  // برای تعیین ترتیب نشان می‌دهد. ترتیب ردیف‌ها در DOM همان ترتیب نهایی است.
+  function updateColumnMoveButtons(list) {
+    if (!list) return;
+    const rows = Array.from(list.querySelectorAll('[data-col-key]'));
+    rows.forEach(function (row, index) {
+      const up = row.querySelector('[data-dir="up"]');
+      const down = row.querySelector('[data-dir="down"]');
+      if (up) up.disabled = index === 0;
+      if (down) down.disabled = index === rows.length - 1;
+    });
+  }
+
+  function columnsModal(moduleKey) {
+    const ordered = orderedTableColumns(moduleKey);
+    const prefs = columnPrefsFor(moduleKey);
+    const hidden = prefs && Array.isArray(prefs.hidden) ? prefs.hidden : [];
+    return '<div class="atlas-modal-backdrop" data-modal-backdrop data-modal-kind="columns" data-view="' + esc(moduleKey) + '">' +
+      '<div class="atlas-modal atlas-modal-narrow" role="dialog" aria-modal="true"><div class="atlas-modal-head"><div><h3>عناوین جدول</h3>' +
+      '<p>هر عنوانی را که می‌خواهی در جدول ببینی تیک بزن و با دکمه‌های ↑ ↓ ترتیبش را مشخص کن.</p></div>' +
+      '<button type="button" class="atlas-modal-close" data-module-action="columns-cancel" data-view="' + esc(moduleKey) + '" aria-label="بستن">×</button></div>' +
+      '<div class="atlas-modal-body"><div class="module-column-list" data-column-list>' +
+      ordered.map(function (key, index) {
+        return '<div class="module-column-row" data-col-key="' + esc(key) + '">' +
+          '<label><input type="checkbox" class="nu-keep-native" value="' + esc(key) + '"' + (hidden.indexOf(key) < 0 ? ' checked' : '') + '><span>' + esc(columnLabel(moduleKey, key)) + '</span></label>' +
+          '<div class="module-column-move">' +
+            '<button type="button" class="module-column-move-btn" data-module-action="column-move" data-dir="up" data-view="' + esc(moduleKey) + '" aria-label="بالا" title="بالا"' + (index === 0 ? ' disabled' : '') + '>↑</button>' +
+            '<button type="button" class="module-column-move-btn" data-module-action="column-move" data-dir="down" data-view="' + esc(moduleKey) + '" aria-label="پایین" title="پایین"' + (index === ordered.length - 1 ? ' disabled' : '') + '>↓</button>' +
+          '</div></div>';
+      }).join('') + '</div>' +
+      '<div class="module-form-actions"><span class="module-required-help">حداقل یک عنوان لازم است.</span><div>' +
+      '<button type="button" class="secondary-btn" data-module-action="columns-all" data-view="' + esc(moduleKey) + '">انتخاب همه</button> ' +
+      '<button type="button" class="primary-btn" data-module-action="columns-save" data-view="' + esc(moduleKey) + '">ذخیرهٔ عناوین</button></div></div></div></div></div>';
+  }
+
   // فهرست دیده‌شدهٔ هر بخش: همان چیزی که کاربر روی صفحه می‌بیند (جست‌وجو، فیلتر و
   // ترتیب). خروجی‌ها از همین تابع ساخته می‌شوند تا فایل با صفحه یکی باشد.
   function visibleRecordsFor(moduleKey) {
@@ -5928,6 +5992,16 @@
   });
   document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') closeExportMenus();
+  });
+
+  // پنجرهٔ «عناوین» با کلیک بیرون از آن یا Escape بسته می‌شود.
+  document.addEventListener('click', function (event) {
+    const backdrop = event.target.closest('[data-modal-kind="columns"]');
+    if (backdrop && !event.target.closest('.atlas-modal')) backdrop.remove();
+  });
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape') return;
+    document.querySelectorAll('[data-modal-kind="columns"]').forEach(function (node) { node.remove(); });
   });
 
   function exportCsv(moduleKey) {
@@ -7065,6 +7139,36 @@
       if(await saveState()){
         if(modal)modal.remove();
         toast('ستون‌های گزارش ذخیره شد؛ خروجی‌ها فقط همین ستون‌ها را دارند.');
+        render(moduleKey,section);
+      }
+    }else if(action==='columns-open'&&specs[moduleKey]){
+      document.body.insertAdjacentHTML('beforeend',columnsModal(moduleKey));
+    }else if(action==='columns-cancel'){
+      const modal=button.closest('[data-modal-backdrop]');
+      if(modal)modal.remove();
+    }else if(action==='columns-all'){
+      const modal=button.closest('[data-modal-backdrop]');
+      if(modal)modal.querySelectorAll('[data-column-list] input').forEach(function(box){box.checked=true;});
+    }else if(action==='column-move'){
+      const row=button.closest('[data-col-key]');
+      const list=row&&row.parentElement;
+      if(!row||!list)return;
+      if(button.dataset.dir==='up'&&row.previousElementSibling)list.insertBefore(row,row.previousElementSibling);
+      else if(button.dataset.dir==='down'&&row.nextElementSibling)list.insertBefore(row.nextElementSibling,row);
+      updateColumnMoveButtons(list);
+    }else if(action==='columns-save'&&specs[moduleKey]){
+      const modal=button.closest('[data-modal-backdrop]');
+      const list=modal?modal.querySelector('[data-column-list]'):null;
+      if(!list)return;
+      const order=Array.from(list.querySelectorAll('[data-col-key]')).map(function(row){return row.dataset.colKey;});
+      const visible=Array.from(list.querySelectorAll('input:checked')).map(function(box){return box.value;});
+      if(!visible.length){toast('حداقل یک عنوان را انتخاب کن.');return;}
+      const hidden=order.filter(function(key){return visible.indexOf(key)<0;});
+      if(!appData.settings.columnPrefs)appData.settings.columnPrefs={};
+      appData.settings.columnPrefs[moduleKey]={order:order,hidden:hidden};
+      if(await saveState()){
+        if(modal)modal.remove();
+        toast('عناوین جدول ذخیره شد.');
         render(moduleKey,section);
       }
     }else if(action==='export'&&specs[moduleKey]){

@@ -164,6 +164,19 @@
 
 .list-chip-reset[hidden] { display: none; }
 
+/* «عناوین»: تنها قرص رنگیِ نوار فیلتر، تا از فیلترها جدا و قابل‌تشخیص باشد. */
+.list-chip-columns {
+  border-color: rgba(var(--special-rgb), 0.55);
+  background: rgba(var(--special-rgb), 0.16);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.list-chip-columns:hover {
+  border-color: rgba(var(--special-rgb), 0.85);
+  background: rgba(var(--special-rgb), 0.26);
+}
+
 .list-filter-count {
   flex: none;
   margin-inline-start: auto;

@@ -108,6 +108,13 @@ check('تیک‌های انتخاب ستون بومی‌اند (نه کلید ک
 check('گزینه‌های تیک در شبکهٔ ستونی می‌نشینند', /\.module-check-options\s*\{[^}]*display:\s*grid/.test(read('design/styles.css')) && /grid-template-columns:\s*repeat\(auto-fill/.test(read('design/styles.css')));
 check('تیک گزینه‌ها ۱۵px و بومی است', /\.module-check-options input\s*\{[^}]*width:\s*15px!important/.test(read('design/styles.css')));
 
+// ── «عناوین»: انتخاب و ترتیب ستون‌های جدول ──
+check('قرص «عناوین» در نوار فیلتر هست', /list-chip-columns[^>]*data-module-action="columns-open"/.test(modules));
+check('پنجرهٔ عناوین با تیک و دکمه‌های ترتیب ساخته می‌شود', /function columnsModal\(moduleKey\)/.test(modules) && /data-column-list/.test(modules) && /data-module-action="column-move" data-dir="up"/.test(modules) && /data-module-action="column-move" data-dir="down"/.test(modules));
+check('جدول از ستون‌های انتخابی/مرتب‌شده استفاده می‌کند', /function renderTable\(moduleKey, data\) \{\s*const columns = tableColumns\(moduleKey\);/.test(modules));
+check('ذخیرهٔ عناوین در تنظیمات بخش', /appData\.settings\.columnPrefs\[moduleKey\]=\{order:order,hidden:hidden\}/.test(modules));
+check('قرص عناوین رنگ متفاوت دارد', /\.list-chip-columns\s*\{[^}]*--special-rgb/.test(read('design/toolbars.css')));
+
 // ── کش آفلاین ──
 check('notices.css در فهرست پیش‌کش سرویس‌ورکر است', sw.includes('./design/notices.css'));
 

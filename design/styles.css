@@ -371,6 +371,17 @@ body > .drawer-backdrop,body > .drawer,body > .settings-popover,body > .toast{po
 /* این تیک‌ها عمداً بومی می‌مانند (نه کلید کشویی): کلید ۴۰px در این شبکهٔ تنگ
    از کادر بیرون می‌زد و دسته‌اش روی نوشته می‌افتاد. */
 .module-check-options input{flex:0 0 auto;width:15px!important;height:15px!important;accent-color:var(--accent)}
+
+/* پنجرهٔ «عناوین»: هر ستون یک ردیف با تیک و دکمه‌های جابه‌جایی ترتیب. */
+.module-column-list{display:flex;flex-direction:column;gap:6px;max-height:52vh;overflow:auto;padding:2px}
+.module-column-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border:1px solid var(--line);border-radius:10px;background:rgba(var(--c-white-rgb),.04)}
+.module-column-row label{display:flex;align-items:center;gap:8px;flex:1;min-width:0;font-size:12px;cursor:pointer}
+.module-column-row label span{min-width:0;overflow-wrap:anywhere}
+.module-column-row input{flex:0 0 auto;width:15px!important;height:15px!important;accent-color:var(--accent)}
+.module-column-move{display:flex;gap:4px;flex:none}
+.module-column-move-btn{width:26px;height:26px;display:grid;place-items:center;border:1px solid var(--line-hi);border-radius:8px;background:rgba(var(--navy-rgb),.32);color:var(--text);font-size:12px;line-height:1;cursor:pointer}
+.module-column-move-btn:hover:not(:disabled){border-color:rgba(var(--accent-rgb),.5);background:rgba(var(--accent-rgb),.12)}
+.module-column-move-btn:disabled{opacity:.35;cursor:default}
 /* وقتی هنوز کارمندی ثبت نشده، جای فهرست تیک‌ها راهنما نشان داده می‌شود. */
 .module-check-empty{min-height:52px;padding:9px 12px;font-size:10.5px;text-align:right;line-height:1.9}
 
