@@ -1810,7 +1810,10 @@
     const data = appData;
     const records = data[moduleKey] || [];
     const existing = records.length;
-    const actions = exportMenu(moduleKey) +
+    const actions = (moduleKey === 'employees'
+      ? '<button class="secondary-btn" type="button" data-module-action="range-report" data-view="employees" title="تعداد مأموریت و مرخصی هر فرد در بازهٔ انتخاب‌شده">گزارش افراد در بازه</button>'
+      : '') +
+      exportMenu(moduleKey) +
       '<button class="primary-btn" type="button" data-module-action="new" data-view="' + esc(moduleKey) + '">+ ثبت مورد جدید</button>';
     section.innerHTML = rootWrap(
       pageHead(specs[moduleKey].title, specs[moduleKey].subtitle, actions) +
@@ -6406,13 +6409,12 @@
     if (closeButton) closeButton.focus();
   }
 
-  // ── گزارش افراد در بازهٔ داشبورد ──────────────────────────────────────────
-  // برای همان بازه‌ای که بالای داشبورد انتخاب شده، تعداد مأموریت و مرخصی هر فرد
-  // شمرده می‌شود، فهرست ریز هرکدام نشان داده می‌شود و خروجی (CSV/Excel/Word/
-  // تصویر/چاپ) گرفته می‌شود.
-  function rangeReportData() {
-    const start = dashboardRange.start || todayIso();
-    const end = dashboardRange.end || start;
+  // ── گزارش افراد در بازه (فقط در بخش پرسنل) ────────────────────────────────
+  // برای بازهٔ انتخابی دو تب جدا دارد: «مرخصی‌ها» و «مأموریت‌ها». هر تب فقط
+  // موارد خودش را نشان می‌دهد و بازه از بالای همان پنجره قابل تغییر است.
+  function rangeReportData(startArg, endArg) {
+    const start = startArg || dashboardRange.start || todayIso();
+    const end = endArg || dashboardRange.end || start;
     const dayOf = function (value) { return String(value || '').slice(0, 10); };
     const inRange = function (value) {
       const day = dayOf(value);
@@ -6424,25 +6426,12 @@
       return !!a && !!b && a <= end && b >= start;
     };
     const staff = appData.employees || [];
-    const personOf = function (id) {
-      return staff.find(function (person) { return String(person.id) === String(id); }) || null;
+    const nameOf = function (id) {
+      const person = staff.find(function (item) { return String(item.id) === String(id); });
+      return person ? employeeName(person) : (id ? 'کارمند حذف‌شده' : 'بدون کارمند');
     };
-    const summary = Object.create(null);
-    const detail = [];
-    const bucket = function (id) {
-      const key = String(id || '');
-      if (!summary[key]) {
-        const person = personOf(id);
-        summary[key] = {
-          id: key,
-          name: person ? employeeName(person) : (key ? 'کارمند حذف‌شده' : 'بدون کارمند'),
-          personnelId: person ? String(person.personnelId || '') : '',
-          workplace: person ? String(person.assignedWorkplace || person.workplace || '') : '',
-          missions: 0, leaves: 0, leaveDays: 0
-        };
-      }
-      return summary[key];
-    };
+    const missions = [];
+    const leaves = [];
     (appData.missions || []).forEach(function (mission) {
       if (mission.status === 'لغو‌شده') return;
       if (!inRange(mission.startAt)) return;
@@ -6452,117 +6441,185 @@
         if (id && people.indexOf(String(id)) < 0) people.push(String(id));
       });
       people.forEach(function (id) {
-        const entry = bucket(id);
-        entry.missions += 1;
-        detail.push({
-          type: 'مأموریت', person: entry.name, title: mission.title || 'مأموریت',
-          from: dayOf(mission.startAt), to: dayOf(mission.endAt),
-          status: mission.status || '', place: [mission.origin, mission.destination].filter(Boolean).join(' ← ') || String(mission.operationalRange || '')
+        missions.push({
+          person: nameOf(id),
+          title: mission.title || 'مأموریت',
+          from: dayOf(mission.startAt),
+          to: dayOf(mission.endAt),
+          status: mission.status || '',
+          place: [mission.origin, mission.destination].filter(Boolean).join(' ← ') || String(mission.operationalRange || '')
         });
       });
     });
     (appData.leaves || []).forEach(function (leave) {
       if (leave.status === 'ردشده') return;
       if (!overlaps(leave.startDate, leave.endDate)) return;
-      const entry = bucket(leave.employeeId);
-      entry.leaves += 1;
       const from = dayOf(leave.startDate);
       const to = dayOf(leave.endDate || leave.startDate);
       const days = from && to ? Math.max(1, Math.round((new Date(to) - new Date(from)) / 86400000) + 1) : 0;
-      entry.leaveDays += days;
-      detail.push({
-        type: 'مرخصی', person: entry.name, title: leave.leaveType || 'مرخصی',
-        from: from, to: to, status: leave.status || '', place: leave.reason ? String(leave.reason).split('\n')[0].slice(0, 60) : ''
+      leaves.push({
+        person: nameOf(leave.employeeId),
+        title: leave.leaveType || 'مرخصی',
+        from: from,
+        to: to,
+        days: days,
+        status: leave.status || '',
+        place: leave.reason ? String(leave.reason).split('\n')[0].slice(0, 60) : ''
       });
     });
-    const people = Object.keys(summary).map(function (key) { return summary[key]; })
-      .filter(function (row) { return row.missions + row.leaves > 0; })
-      .sort(function (a, b) {
-        return (b.missions + b.leaves) - (a.missions + a.leaves) || String(a.name).localeCompare(String(b.name), 'fa');
-      });
-    detail.sort(function (a, b) {
+    const byDate = function (a, b) {
       return String(a.from).localeCompare(String(b.from)) || String(a.person).localeCompare(String(b.person), 'fa');
+    };
+    missions.sort(byDate);
+    leaves.sort(byDate);
+    return { start: start, end: end, missions: missions, leaves: leaves };
+  }
+
+  const RANGE_REPORT_TABS = [
+    { key: 'leaves', label: 'مرخصی‌ها' },
+    { key: 'missions', label: 'مأموریت‌ها' }
+  ];
+
+  function rangeReportTabLabel(key) {
+    const found = RANGE_REPORT_TABS.find(function (item) { return item.key === key; });
+    return found ? found.label : '';
+  }
+
+  function rangeReportTable(tab, report) {
+    const rows = tab === 'leaves' ? report.leaves : report.missions;
+    if (!rows.length) {
+      return '<div class="module-empty">' + (tab === 'leaves'
+        ? 'در این بازه مرخصی‌ای ثبت نشده است.'
+        : 'در این بازه مأموریتی ثبت نشده است.') + '</div>';
+    }
+    const head = tab === 'leaves'
+      ? ['کارمند', 'نوع مرخصی', 'از تاریخ', 'تا تاریخ', 'روز', 'وضعیت']
+      : ['کارمند', 'عنوان مأموریت', 'از تاریخ', 'تا تاریخ', 'وضعیت', 'محل / مقصد'];
+    const body = rows.map(function (row) {
+      const cells = tab === 'leaves'
+        ? [row.person, row.title, formatJalali(row.from, false), row.to ? formatJalali(row.to, false) : '—', faDigits(row.days), row.status || '—']
+        : [row.person, row.title, formatJalali(row.from, false), row.to ? formatJalali(row.to, false) : '—', row.status || '—', row.place || '—'];
+      return '<tr>' + cells.map(function (cell) { return '<td>' + esc(cell) + '</td>'; }).join('') + '</tr>';
+    }).join('');
+    return '<div class="module-table-wrap" style="width:100%;min-width:0"><table class="module-table"><thead><tr>' +
+      head.map(function (label) { return '<th>' + esc(label) + '</th>'; }).join('') +
+      '</tr></thead><tbody>' + body + '</tbody></table></div>';
+  }
+
+  function rangeReportExport(tab, report) {
+    if (tab === 'leaves') {
+      const rows = [['کارمند', 'نوع مرخصی', 'از تاریخ', 'تا تاریخ', 'تعداد روز', 'وضعیت']];
+      report.leaves.forEach(function (row) {
+        rows.push([row.person, row.title, formatJalali(row.from, false), row.to ? formatJalali(row.to, false) : '', faDigits(row.days), row.status]);
+      });
+      return { rows: rows, title: 'مرخصی‌های افراد', base: 'ATLAS-SHIFT-leaves-' + report.start + '_' + report.end };
+    }
+    const rows = [['کارمند', 'عنوان مأموریت', 'از تاریخ', 'تا تاریخ', 'وضعیت', 'محل / مقصد']];
+    report.missions.forEach(function (row) {
+      rows.push([row.person, row.title, formatJalali(row.from, false), row.to ? formatJalali(row.to, false) : '', row.status, row.place]);
     });
-    return { start: start, end: end, people: people, detail: detail };
+    return { rows: rows, title: 'مأموریت‌های افراد', base: 'ATLAS-SHIFT-missions-' + report.start + '_' + report.end };
   }
 
   function openRangeReport() {
-    const report = rangeReportData();
-    const rangeLabel = formatJalali(report.start, false) + ' تا ' + formatJalali(report.end, false);
-    const summaryRows = [['کارمند', 'شمارهٔ پرسنلی', 'محل خدمت', 'تعداد مأموریت', 'تعداد مرخصی', 'مجموع روز مرخصی']];
-    report.people.forEach(function (row) {
-      summaryRows.push([row.name, row.personnelId, row.workplace,
-        faDigits(row.missions), faDigits(row.leaves), faDigits(row.leaveDays)]);
-    });
-    const detailRows = [['نوع', 'کارمند', 'عنوان', 'از تاریخ', 'تا تاریخ', 'وضعیت', 'محل / مقصد']];
-    report.detail.forEach(function (row) {
-      detailRows.push([row.type, row.person, row.title,
-        formatJalali(row.from, false), row.to ? formatJalali(row.to, false) : '',
-        row.status, row.place]);
-    });
-    const summaryTable = report.people.length
-      ? '<div class="module-table-wrap" style="width:100%;min-width:0"><table class="module-table"><thead><tr>' +
-        ['کارمند', 'شمارهٔ پرسنلی', 'محل خدمت', 'مأموریت', 'مرخصی', 'روز مرخصی'].map(function (label) { return '<th>' + esc(label) + '</th>'; }).join('') +
-        '</tr></thead><tbody>' + report.people.map(function (row) {
-          return '<tr><td>' + esc(row.name) + '</td><td>' + esc(row.personnelId || '—') + '</td><td>' + esc(row.workplace || '—') + '</td>' +
-            '<td>' + faDigits(row.missions) + '</td><td>' + faDigits(row.leaves) + '</td><td>' + faDigits(row.leaveDays) + '</td></tr>';
-        }).join('') + '</tbody></table></div>'
-      : '<div class="module-empty">در بازهٔ ' + esc(rangeLabel) + ' برای هیچ کارمندی مأموریت یا مرخصی ثبت نشده است.</div>';
-    const detailTable = report.detail.length
-      ? '<div class="module-table-wrap" style="width:100%;min-width:0"><table class="module-table"><thead><tr>' +
-        ['نوع', 'کارمند', 'عنوان', 'از تاریخ', 'تا تاریخ', 'وضعیت'].map(function (label) { return '<th>' + esc(label) + '</th>'; }).join('') +
-        '</tr></thead><tbody>' + report.detail.map(function (row) {
-          return '<tr><td>' + esc(row.type) + '</td><td>' + esc(row.person) + '</td><td>' + esc(row.title) + '</td>' +
-            '<td>' + esc(formatJalali(row.from, false)) + '</td><td>' + esc(row.to ? formatJalali(row.to, false) : '—') + '</td><td>' + esc(row.status || '—') + '</td></tr>';
-        }).join('') + '</tbody></table></div>'
-      : '<div class="module-empty">جزئیاتی برای نمایش نیست.</div>';
+    let range = {
+      start: dashboardRange.start || todayIso(),
+      end: dashboardRange.end || dashboardRange.start || todayIso()
+    };
+    let tab = 'leaves';
     const backdrop = document.createElement('div');
     backdrop.className = 'atlas-modal-backdrop';
     backdrop.setAttribute('data-modal-backdrop', '');
     backdrop.setAttribute('data-modal-kind', 'range-report');
     backdrop.innerHTML =
-      '<div class="atlas-modal atlas-modal-form" role="dialog" aria-modal="true" aria-labelledby="atlasRangeReportTitle">' +
+      '<div class="atlas-modal atlas-modal-range-report" role="dialog" aria-modal="true" aria-labelledby="atlasRangeReportTitle">' +
         '<div class="atlas-modal-head"><div><h3 id="atlasRangeReportTitle">گزارش افراد در بازه</h3>' +
-          '<p>' + esc(rangeLabel) + ' · ' + faDigits(report.people.length) + ' نفر · ' + faDigits(report.detail.length) + ' مورد</p></div>' +
+          '<p data-range-caption></p></div>' +
           '<button type="button" class="atlas-modal-close" data-range-close aria-label="بستن پنجره">×</button></div>' +
-        '<div class="atlas-modal-body">' +
-          '<div class="module-list-head"><div><h3>خلاصهٔ هر فرد</h3><p>تعداد مأموریت‌ها و مرخصی‌های ثبت‌شده در همین بازه.</p></div></div>' +
-          summaryTable +
-          '<div class="module-list-head" style="margin-top:14px"><div><h3>فهرست ریز موارد</h3><p>هر مأموریت و مرخصی این بازه با تاریخ و وضعیت.</p></div></div>' +
-          detailTable +
-          '<div class="module-form-actions" style="margin-top:14px"><span class="module-required-help">خروجی از همین داده‌ها ساخته می‌شود.</span><div>' +
-            '<select id="rangeReportScope" class="module-report-export" aria-label="دامنهٔ خروجی">' +
-              '<option value="summary">خلاصهٔ افراد</option><option value="detail">فهرست ریز</option></select> ' +
-            '<button type="button" class="secondary-btn" data-range-export="csv">CSV</button> ' +
-            '<button type="button" class="secondary-btn" data-range-export="xlsx">Excel</button> ' +
-            '<button type="button" class="secondary-btn" data-range-export="docx">Word</button> ' +
-            '<button type="button" class="secondary-btn" data-range-export="png">تصویر PNG</button> ' +
-            '<button type="button" class="secondary-btn" data-range-export="print">چاپ / PDF</button> ' +
-            '<button type="button" class="primary-btn" data-range-close>بستن</button>' +
-          '</div></div>' +
-        '</div></div>';
+        '<div class="range-report-toolbar">' +
+          '<label class="module-field"><span>از تاریخ</span><input type="text" data-jalali-input="jalali" data-range-from value="' + esc(formatJalali(range.start, false)) + '" placeholder="۱۴۰۵/۰۷/۰۱"></label>' +
+          '<label class="module-field"><span>تا تاریخ</span><input type="text" data-jalali-input="jalali" data-range-to value="' + esc(formatJalali(range.end, false)) + '" placeholder="۱۴۰۵/۰۷/۳۰"></label>' +
+          '<button type="button" class="primary-btn" data-range-apply>اعمال بازه</button>' +
+          '<div class="module-subtabs" role="tablist" aria-label="نوع گزارش">' +
+            RANGE_REPORT_TABS.map(function (item) {
+              return '<button type="button" role="tab" class="module-subtab" data-range-tab="' + item.key + '">' + item.label + '</button>';
+            }).join('') +
+          '</div>' +
+        '</div>' +
+        '<div class="atlas-modal-body" data-range-panel></div>' +
+        '<div class="module-form-actions"><span class="module-required-help" data-range-note></span><div>' +
+          '<button type="button" class="secondary-btn" data-range-export="csv">CSV</button> ' +
+          '<button type="button" class="secondary-btn" data-range-export="xlsx">Excel</button> ' +
+          '<button type="button" class="secondary-btn" data-range-export="docx">Word</button> ' +
+          '<button type="button" class="secondary-btn" data-range-export="png">تصویر PNG</button> ' +
+          '<button type="button" class="secondary-btn" data-range-export="print">چاپ / PDF</button> ' +
+          '<button type="button" class="primary-btn" data-range-close>بستن</button>' +
+        '</div></div>' +
+      '</div>';
     document.body.appendChild(backdrop);
+    enhanceJalaliInputs(backdrop);
+
+    const panel = backdrop.querySelector('[data-range-panel]');
+    const caption = backdrop.querySelector('[data-range-caption]');
+    const note = backdrop.querySelector('[data-range-note]');
+    const tabButtons = Array.prototype.slice.call(backdrop.querySelectorAll('[data-range-tab]'));
+
+    function paint() {
+      const report = rangeReportData(range.start, range.end);
+      const rangeLabel = formatJalali(report.start, false) + ' تا ' + formatJalali(report.end, false);
+      const counts = { leaves: report.leaves.length, missions: report.missions.length };
+      tabButtons.forEach(function (button) {
+        const key = button.dataset.rangeTab;
+        const active = key === tab;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-selected', active ? 'true' : 'false');
+        button.textContent = rangeReportTabLabel(key) + ' (' + faDigits(counts[key] || 0) + ')';
+      });
+      caption.textContent = rangeLabel + ' · ' + faDigits(counts.leaves) + ' مرخصی · ' + faDigits(counts.missions) + ' مأموریت';
+      panel.innerHTML = rangeReportTable(tab, report);
+      note.textContent = 'خروجی از همین تب (' + rangeReportTabLabel(tab) + ') ساخته می‌شود.';
+    }
+
     let closed = false;
     function closeReport() {
       if (closed) return;
       closed = true;
       backdrop.remove();
     }
-    backdrop.querySelectorAll('[data-range-close]').forEach(function (button) { button.addEventListener('click', closeReport); });
-    backdrop.addEventListener('click', function (event) { if (event.target === backdrop) closeReport(); });
-    backdrop.addEventListener('keydown', function (event) { if (event.key === 'Escape') closeReport(); });
-    const scopeSelect = backdrop.querySelector('#rangeReportScope');
-    backdrop.querySelectorAll('[data-range-export]').forEach(function (button) {
-      button.addEventListener('click', function () {
-        const scope = scopeSelect ? scopeSelect.value : 'summary';
-        const rows = scope === 'detail' ? detailRows : summaryRows;
-        if (rows.length < 2) { toast('برای این بازه داده‌ای برای خروجی وجود ندارد.'); return; }
-        const title = (scope === 'detail' ? 'فهرست ریز مأموریت و مرخصی' : 'خلاصهٔ افراد') + ' · ' + rangeLabel + ' · ATLAS SHIFT';
-        const base = 'ATLAS-SHIFT-range-' + (scope === 'detail' ? 'detail' : 'summary') + '-' + report.start + '_' + report.end;
-        runExport(rows, title, base, button.dataset.rangeExport || 'csv');
+
+    backdrop.addEventListener('click', function (event) {
+      const tabButton = event.target.closest('[data-range-tab]');
+      if (tabButton) {
+        tab = tabButton.dataset.rangeTab;
+        paint();
+        return;
+      }
+      if (event.target.closest('[data-range-apply]')) {
+        const fromInput = backdrop.querySelector('[data-range-from]');
+        const toInput = backdrop.querySelector('[data-range-to]');
+        const from = parseJalali(fromInput ? fromInput.value : '', false);
+        const to = parseJalali(toInput ? toInput.value : '', false);
+        if (!from || !to) { toast('تاریخ بازه را به شکل شمسی ۱۴۰۵/۰۷/۲۸ وارد کن.'); return; }
+        if (from > to) { toast('تاریخ پایان نباید قبل از تاریخ شروع باشد.'); return; }
+        range = { start: from, end: to };
+        paint();
+        return;
+      }
+      const exportButton = event.target.closest('[data-range-export]');
+      if (exportButton) {
+        const report = rangeReportData(range.start, range.end);
+        const pack = rangeReportExport(tab, report);
+        if (pack.rows.length < 2) { toast('برای این بازه داده‌ای برای خروجی وجود ندارد.'); return; }
+        runExport(pack.rows, pack.title + ' · ' + formatJalali(report.start, false) + ' تا ' + formatJalali(report.end, false) + ' · ATLAS SHIFT', pack.base, exportButton.dataset.rangeExport || 'csv');
         toast('خروجی گزارش بازه آماده شد.');
-      });
+        return;
+      }
+      if (event.target.closest('[data-range-close]')) { closeReport(); return; }
+      if (event.target === backdrop) closeReport();
     });
+    backdrop.addEventListener('keydown', function (event) { if (event.key === 'Escape') closeReport(); });
+
+    paint();
     const closeButton = backdrop.querySelector('[data-range-close]');
     if (closeButton) closeButton.focus();
   }

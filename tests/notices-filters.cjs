@@ -59,11 +59,16 @@ check('نام/نام خانوادگی از پروندهٔ کارمند خوان�
 
 // ── گزارش افراد در بازه ──
 check('محاسبهٔ گزارش بازه وجود دارد', /function rangeReportData/.test(modules) && /function openRangeReport/.test(modules));
-check('دکمهٔ گزارش در بالای داشبورد هست', index.includes('data-module-action="range-report"'));
+check('دکمهٔ گزارش فقط در بخش پرسنل ساخته می‌شود', /moduleKey === 'employees'[\s\S]{0,220}data-module-action="range-report"/.test(modules));
+check('دکمهٔ گزارش از داشبورد برداشته شده', !index.includes('data-module-action="range-report"'));
+check('پنجرهٔ گزارش دو تب مرخصی و مأموریت دارد', /key: 'leaves', label: 'مرخصی‌ها'/.test(modules) && /key: 'missions', label: 'مأموریت‌ها'/.test(modules) && /data-range-tab=/.test(modules));
+check('هر تب فقط موارد خودش را نشان می‌دهد', /tab === 'leaves' \? report\.leaves : report\.missions/.test(modules));
+check('بازهٔ زمانی بالای پنجرهٔ گزارش قابل تغییر است', /data-range-from/.test(modules) && /data-range-to/.test(modules) && /data-range-apply/.test(modules));
+check('بدنهٔ پنجرهٔ گزارش اسکرول می‌خورد', /\.atlas-modal-range-report \.atlas-modal-body\s*\{[\s\S]{0,120}overflow-y:\s*auto/.test(read('design/modals-export.css')));
 check('گزارش از بازهٔ انتخاب‌شدهٔ داشبورد استفاده می‌کند', /dashboardRange\.start/.test(modules) && /dashboardRange\.end/.test(modules));
 check('همراهان مأموریت هم شمرده می‌شوند', /mission\.crewIds\.forEach/.test(modules));
 check('مرخصی ردشده در گزارش نمی‌آید', /leave\.status === 'ردشده'/.test(modules));
-check('خروجی گزارش با runExport ساخته می‌شود', /runExport\(rows, title, base/.test(modules));
+check('خروجی گزارش با runExport ساخته می‌شود', /runExport\(pack\.rows,/.test(modules) && /function rangeReportExport/.test(modules));
 check('دکمهٔ گزارش به handler وصل است', /openRangeReport\(\)/.test(modules));
 
 // ── خروجی برابر با چیزی که دیده می‌شود ──

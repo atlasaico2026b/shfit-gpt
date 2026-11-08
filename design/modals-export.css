@@ -27,6 +27,9 @@
 
 .atlas-modal {
   width: min(980px, 100%);
+  /* مرورگرهای قدیمی‌تر dvh را نمی‌شناسند؛ بدون این خط، سقف ارتفاع حذف می‌شد و
+     بدنهٔ پنجره دیگر اسکرول نمی‌خورد. */
+  max-height: calc(100vh - 24px);
   max-height: calc(100dvh - 24px);
   height: auto;
   margin: auto;
@@ -390,4 +393,65 @@
   border: 1px solid var(--line);
   background: rgba(var(--navy-rgb), .22);
   color: var(--text);
+}
+
+/* 7 · RANGE REPORT ────────────────────────────────────────────────────── */
+/* پنجرهٔ «گزارش افراد در بازه»: بازه و تب‌ها بالای پنجره ثابت می‌مانند و فقط
+   فهرست موارد اسکرول می‌خورد. */
+.atlas-modal-range-report {
+  width: min(1040px, 100%);
+}
+
+.range-report-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 8px 13px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel-2);
+}
+
+.range-report-toolbar .module-field {
+  flex: 1 1 200px;
+  min-width: 0;
+  gap: 3px;
+}
+
+.range-report-toolbar .module-field > span {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.range-report-toolbar > .primary-btn {
+  flex: 0 0 auto;
+  height: 38px;
+}
+
+.range-report-toolbar .module-subtabs {
+  flex: 1 1 100%;
+  margin: 0;
+}
+
+.atlas-modal-range-report .atlas-modal-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 640px) {
+  .range-report-toolbar {
+    padding: 8px 11px;
+  }
+
+  /* دو کادر تاریخ کنار هم می‌مانند تا نوار بالای پنجره روی گوشی بلند نشود و
+     برای فهرست موارد جای کافی بماند. */
+  .range-report-toolbar .module-field {
+    flex: 1 1 140px;
+  }
+
+  .range-report-toolbar > .primary-btn {
+    flex: 1 1 100%;
+  }
 }
