@@ -202,7 +202,7 @@ html[data-atlas-theme] .module-table thead th {
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: .015em;
-  line-height: 1.5;
+  line-height: 1.35;
   white-space: normal;
   border-left: var(--th-gap, 3px) solid transparent;
   border-bottom: 1px solid rgba(var(--c-white-rgb), .10);
@@ -270,6 +270,27 @@ html[data-atlas-theme] .module-table td {
    هرگز جدول را از کادر بیرون نزنند. */
 html[data-atlas-theme] .module-table thead th {
   overflow-wrap: break-word;
+}
+
+/* ارتفاع سرستون: پدینگ دوبل بود — ۹px روی خود th و ۱۱px دیگر روی دکمهٔ
+   مرتب‌سازی که داخلش نشسته. پدینگ دکمه صفر شد تا فقط پدینگ سلول ارتفاع
+   بسازد، و پدینگ عمودی سلول هم به ۴px رسید. فونت و line-height دست
+   نمی‌خورند، پس متن بریده نمی‌شود. */
+html[data-atlas-theme] .module-table thead th {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+/* پدینگ از سلول به دکمه منتقل می‌شود تا ارتفاع همان بماند ولی کل سطح
+   سرستون قابل کلیک باشد. */
+html[data-atlas-theme] .module-table thead th.module-sort-th {
+  padding: 0;
+}
+
+html[data-atlas-theme] .module-table .module-sort-btn {
+  padding: 4px 7px;
+  min-height: 0;
+  line-height: inherit;
 }
 
 /* برچسب مرتب‌سازی یک آیتم فلکس است و پیش‌فرض min-width:auto دارد؛ بدون این
