@@ -5917,16 +5917,30 @@
       host.id = 'atlasPrintArea';
       document.body.appendChild(host);
     }
+    // برگهٔ «مشاهدهٔ پرونده» یک <style> با @page خودش در صفحه می‌گذارد؛ اگر
+    // پاک‌نشده مانده باشد، تنظیم صفحهٔ چاپ فهرست‌ها را عوض می‌کند.
+    const staleRecordSheet = document.getElementById('rfPrintArea');
+    if (staleRecordSheet) staleRecordSheet.innerHTML = '';
     const stamp = formatJalali(new Date().toISOString(), true);
     if (window.AtlasPrintSheet) {
       window.AtlasPrintSheet.render(host, rows, { title: title, stamp: stamp });
     } else {
       // پشتیبان: اگر فایل برگهٔ چاپ بارگذاری نشده بود، ساده‌ترین جدول ساخته می‌شود.
-      host.innerHTML = '<h1>' + esc(title) + '</h1><p class="atlas-print-meta">ATLAS SHIFT · ' + stamp + '</p>' +
-        '<table class="atlas-print-table"><thead><tr>' + (rows[0] || []).map(function (cell) { return '<th>' + esc(cell) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      // سربرگ و سطرهای فاصله هم داخل thead/tfoot می‌روند تا مثل مسیر اصلی در هر
+      // صفحه تکرار شوند (حاشیهٔ صفحه صفر است و فاصله را همین سطرها می‌سازند).
+      const cols = (rows[0] || []).length || 1;
+      host.innerHTML = '<table class="atlas-print-table"><thead>' +
+        '<tr class="atlas-print-pad"><td colspan="' + cols + '"></td></tr>' +
+        '<tr class="atlas-print-head-row"><td colspan="' + cols + '"><header class="atlas-print-head">' +
+          '<h1 class="atlas-print-title">' + esc(title) + '</h1>' +
+          '<p class="atlas-print-meta">ATLAS SHIFT · ' + esc(stamp) + '</p>' +
+        '</header></td></tr>' +
+        '<tr class="atlas-print-cols">' + (rows[0] || []).map(function (cell) { return '<th scope="col">' + esc(cell) + '</th>'; }).join('') + '</tr>' +
+        '</thead><tbody>' +
         rows.slice(1).map(function (row) {
           return '<tr>' + row.map(function (cell) { return '<td>' + esc(cell) + '</td>'; }).join('') + '</tr>';
-        }).join('') + '</tbody></table>';
+        }).join('') + '</tbody>' +
+        '<tfoot><tr class="atlas-print-pad atlas-print-pad-bottom"><td colspan="' + cols + '"></td></tr></tfoot></table>';
     }
     document.body.classList.add('atlas-printing');
     const cleanup = function () { document.body.classList.remove('atlas-printing'); window.removeEventListener('afterprint', cleanup); };

@@ -107,14 +107,24 @@
     const colgroup = '<colgroup>' + columnPercents(table, columns)
       .map(percent => '<col style="width:' + percent + '%">').join('') + '</colgroup>';
 
-    return '<header class="atlas-print-head">' +
-        '<h1 class="atlas-print-title">' + esc(title) + '</h1>' +
-        '<p class="atlas-print-meta">' + esc(meta) + '</p>' +
-      '</header>' +
-      '<table class="atlas-print-table" data-columns="' + columns + '">' +
+    // سربرگ و حاشیهٔ بالا/پایین برگه داخل thead و tfoot می‌نشینند تا در هر صفحه
+    // تکرار شوند. دلیل: با @page margin:0 (که سرصفحه/پاصفحهٔ مرورگر — آدرس سایت،
+    // تاریخ و شمارهٔ صفحه — را حذف می‌کند) فاصلهٔ بالای صفحهٔ دوم به بعد از بین
+    // می‌رفت؛ سطرهای فاصله‌دهندهٔ thead/tfoot همان حاشیه را در هر صفحه می‌سازند.
+    return '<table class="atlas-print-table" data-columns="' + columns + '">' +
         colgroup +
-        '<thead><tr>' + headCells.join('') + '</tr></thead>' +
+        '<thead>' +
+          '<tr class="atlas-print-pad"><td colspan="' + columns + '"></td></tr>' +
+          '<tr class="atlas-print-head-row"><td colspan="' + columns + '">' +
+            '<header class="atlas-print-head">' +
+              '<h1 class="atlas-print-title">' + esc(title) + '</h1>' +
+              '<p class="atlas-print-meta">' + esc(meta) + '</p>' +
+            '</header>' +
+          '</td></tr>' +
+          '<tr class="atlas-print-cols">' + headCells.join('') + '</tr>' +
+        '</thead>' +
         '<tbody>' + (bodyRows || '<tr><td colspan="' + columns + '" class="atlas-print-empty">موردی برای نمایش ثبت نشده است.</td></tr>') + '</tbody>' +
+        '<tfoot><tr class="atlas-print-pad atlas-print-pad-bottom"><td colspan="' + columns + '"></td></tr></tfoot>' +
       '</table>';
   }
 
