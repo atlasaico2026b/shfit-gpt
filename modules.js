@@ -1911,7 +1911,11 @@
       renderForm(moduleKey, data) +
       '<section class="module-list-panel" style="width:100%;min-width:0"><div class="module-list-head"><div><h3>فهرست ' + esc(specs[moduleKey].title) + '</h3><p>جست‌وجو، فیلتر، انتخاب چند ردیف و ویرایش از همین بخش انجام می‌شود.</p></div>' +
       '<div class="module-list-tools-slot">' + renderListToolbar(moduleKey) + '</div></div>' +
-      '<div class="module-bulk-tools"><label><input type="checkbox" data-module-select-all> انتخاب همه</label><button type="button" class="module-delete-btn" data-module-action="bulk-delete" data-view="' + esc(moduleKey) + '">حذف انتخاب‌شده‌ها</button>' +
+      '<div class="module-bulk-tools"><label><input type="checkbox" data-module-select-all> انتخاب همه</label>' +
+      '<button type="button" class="secondary-btn" data-module-action="bulk-files" data-view="' + esc(moduleKey) + '" title="پنجرهٔ پرونده‌های انتخاب‌شده: فهرست مرتب در سمت راست و برگهٔ A4 در سمت چپ، با خروجی گروهی">مشاهدهٔ پرونده‌های انتخاب‌شده</button>' +
+      '<button type="button" class="secondary-btn" data-module-action="bulk-invert" data-view="' + esc(moduleKey) + '">انتخاب معکوس</button>' +
+      '<button type="button" class="secondary-btn" data-module-action="bulk-clear" data-view="' + esc(moduleKey) + '">پاک‌کردن انتخاب</button>' +
+      '<button type="button" class="module-delete-btn" data-module-action="bulk-delete" data-view="' + esc(moduleKey) + '">حذف انتخاب‌شده‌ها</button>' +
       '<span>' + faDigits(recordsForView(moduleKey, data).length) + ' مورد از ' + faDigits(existing) + '</span></div>' +
       '<div data-module-list-region>' + renderTable(moduleKey, data) + '</div></section>' +
       (moduleKey === 'employees' ? renderShiftSchedule(data) : '')
@@ -7106,6 +7110,17 @@
       appData[moduleKey]=appData[moduleKey].filter(function(item){return String(item.id)!==String(button.dataset.id);});
       addHistory(moduleKey,record,'حذف',[]);
       if(await saveState()){render(moduleKey,section);refreshDashboard();toast('مورد حذف شد.')}
+    }else if(action==='bulk-files'){
+      if(!specs[moduleKey])return;
+      const selected=Array.from(section.querySelectorAll('[data-record-select]:checked')).map(function(box){return box.value;});
+      if(!selected.length){toast('ابتدا یک یا چند ردیف را انتخاب کن.');return;}
+      document.dispatchEvent(new CustomEvent('atlas-open-files',{detail:{module:moduleKey,ids:selected}}));
+    }else if(action==='bulk-invert'){
+      section.querySelectorAll('[data-record-select]').forEach(function(box){box.checked=!box.checked;});
+      syncSelectAllBoxes(section);
+    }else if(action==='bulk-clear'){
+      section.querySelectorAll('[data-record-select]').forEach(function(box){box.checked=false;});
+      syncSelectAllBoxes(section);
     }else if(action==='bulk-delete'){
       if(!specs[moduleKey])return;
       const selected=Array.from(section.querySelectorAll('[data-record-select]:checked')).map(function(box){return box.value;});
@@ -7580,6 +7595,13 @@
     const replacement=section.querySelector('[data-module-search]');
     if(replacement){replacement.focus();try{replacement.setSelectionRange(cursor,cursor);}catch(error){}}
   });
+
+  // «انتخاب همه» فقط وقتی تیک می‌خورد که همهٔ ردیف‌های دیده‌شده انتخاب شده باشند.
+  function syncSelectAllBoxes(section) {
+    const boxes=Array.from(section.querySelectorAll('[data-record-select]'));
+    const all=boxes.length>0&&boxes.every(function(box){return box.checked;});
+    section.querySelectorAll('[data-module-select-all]').forEach(function(box){box.checked=all;});
+  }
 
   document.addEventListener('change', function(event) {
     const target=event.target;
