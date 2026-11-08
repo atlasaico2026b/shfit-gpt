@@ -15,6 +15,7 @@ const toolbarsCss = read('design/toolbars.css');
 const themeTwo = read('design/skins/theme-two.css');
 const settingsView = read('design/settings-view.css');
 const newUi = read('design/new-ui.css');
+const spectrumCss = read('design/spectrum.css');
 const tokens = read('design/tokens.css');
 
 const checks = [];
@@ -97,6 +98,10 @@ check('فهرست دفترچه تلفن الفبایی بر اساس نام مر
 // ── منوی خروجی: کلیک بیرون آن را می‌بندد ──
 check('منوی خروجی با کلیک بیرون بسته می‌شود', /function closeExportMenus/.test(modules) && /event\.target\.closest\('\[data-export-menu\]'\)\) return;\s*closeExportMenus\(\)/.test(modules));
 check('منوی خروجی با Escape هم بسته می‌شود', /event\.key === 'Escape'\) closeExportMenus\(\)/.test(modules));
+
+// ── ستون تیک جدول: کلید کشویی ۴۰px باید در ستون جا شود ──
+check('ستون تیک جدول به‌اندازهٔ کلید کشویی جا دارد', /\.module-check-cell\s*\{[^}]*min-width:\s*48px/.test(spectrumCss) && /\.module-check-cell\s*\{[^}]*width:\s*48px/.test(spectrumCss));
+check('کلید کشویی ۴۰px است', /input\[type="checkbox"\]:not\(\.nu-keep-native\)\s*\{[^}]*width:\s*40px/.test(newUi));
 
 // ── کش آفلاین ──
 check('notices.css در فهرست پیش‌کش سرویس‌ورکر است', sw.includes('./design/notices.css'));

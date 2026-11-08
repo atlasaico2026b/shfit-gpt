@@ -310,9 +310,14 @@ html[data-atlas-theme] .module-table .module-row-actions {
   white-space: normal !important;
 }
 
+/* ستون تیک باید به‌اندازهٔ خودِ کلید کشویی (۴۰px) جا داشته باشد؛ وگرنه کلید
+   از ستون بیرون می‌زند و در حالت تیک‌خورده دستهٔ آن روی نوشتهٔ ستون کنار
+   می‌افتد. ۴۸px = ۴۰px کلید + ۴px فاصله از هر طرف. */
 html[data-atlas-theme] .module-table .module-check-cell {
-  width: auto;
-  min-width: 24px;
+  width: 48px;
+  min-width: 48px;
+  padding-left: 4px;
+  padding-right: 4px;
 }
 
 @media (max-width: 900px) {
