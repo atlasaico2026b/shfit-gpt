@@ -107,6 +107,47 @@ check('جدول خلاصه ردیف جمع دارد', /<tfoot>/.test(table) && t
 check('جدول خلاصه هر سه کارمند را دارد',
   table.indexOf('مریم احمدی') >= 0 && table.indexOf('علی رضایی') >= 0 && table.indexOf('سارا کریمی') >= 0);
 
+// ── «مجموع» در خروجی (ورد/چاپ/اکسل) ──
+const pack = api.rangeReportSummaryExport(leaves);
+const lastRow = pack.rows[pack.rows.length - 1];
+check('ردیف مجموع در خروجی خلاصه هست', lastRow[0] === 'مجموع', JSON.stringify(lastRow));
+check('مجموع خروجی با مجموع جدول یکی است',
+  lastRow[lastRow.length - 1] === '۷' && lastRow[1] === '۳' && lastRow[2] === '۱',
+  JSON.stringify(lastRow));
+check('خروجی خلاصه سرستون و همهٔ کارکنان را دارد',
+  pack.rows[0][0] === 'کارمند' && pack.rows.length === 5);
+
+// ── مرتب‌سازی و خروجی هم‌ترتیب با صفحه ──
+const sortedByName = api.rangeReportSummary('2026-01-01', '2026-01-31', 'leave-days');
+const tableAsc = api.rangeReportSummaryTable(sortedByName, { key: 'name', direction: 'asc' });
+const tableDesc = api.rangeReportSummaryTable(sortedByName, { key: 'name', direction: 'desc' });
+check('سرستون‌های جدول خلاصه دکمهٔ مرتب‌سازی دارند', /data-range-sort="name"/.test(tableAsc) && /data-range-sort="total"/.test(tableAsc));
+check('مرتب‌سازی صعودی/نزولی ترتیب را عوض می‌کند',
+  tableAsc.indexOf('سارا کریمی') < tableAsc.indexOf('مریم احمدی') &&
+  tableDesc.indexOf('مریم احمدی') < tableDesc.indexOf('سارا کریمی'));
+const exportAsc = api.rangeReportSummaryExport(sortedByName, { key: 'name', direction: 'asc' });
+const exportDesc = api.rangeReportSummaryExport(sortedByName, { key: 'name', direction: 'desc' });
+check('خروجی همان ترتیبِ مرتب‌شدهٔ صفحه را دارد',
+  exportAsc.rows[1][0] === 'سارا کریمی' && exportDesc.rows[1][0] === 'مریم احمدی',
+  exportAsc.rows[1][0] + ' / ' + exportDesc.rows[1][0]);
+const byTotal = api.rangeReportSummaryExport(sortedByName, { key: 'total', direction: 'desc' });
+check('مرتب‌سازی عددی روی مجموع کار می‌کند', byTotal.rows[1][0] === 'مریم احمدی', byTotal.rows[1][0]);
+
+// ── گزارش رکوردها (تب مرخصی/مأموریت) هم مرتب‌شدنی است ──
+const report = { start: '2026-01-01', end: '2026-01-31', leaves: [], missions: [] };
+data.leaves.forEach(function (leave) {
+  report.leaves.push({ person: leave.employeeId, title: leave.leaveType, from: leave.startDate, to: leave.endDate, days: 1, status: leave.status, place: '' });
+});
+check('گزارش رکوردها تابع خروجی دارد', typeof api.rangeReportExport === 'function');
+const recExport = api.rangeReportExport('leaves', report, { key: 'person', direction: 'asc' });
+check('خروجی گزارش رکوردها سرستون دارد', recExport.rows[0][0] === 'کارمند' && recExport.rows.length === report.leaves.length + 1);
+
+// ── اکسل: آیکون فیلتر/مرتب‌سازی روی ردیف سرستون، نه اولین ردیف داده ──
+const sheetWithTitle = api.xlsxSheetXml([['نام', 'تعداد'], ['الف', '۱'], ['ب', '۲']], 'عنوان گزارش');
+check('فیلتر اکسل از ردیف سرستون شروع می‌شود (با عنوان)', /<autoFilter ref="A2:B4"\/>/.test(sheetWithTitle), (sheetWithTitle.match(/<autoFilter[^>]*>/) || [''])[0]);
+const sheetNoTitle = api.xlsxSheetXml([['نام', 'تعداد'], ['الف', '۱']], '');
+check('فیلتر اکسل از ردیف سرستون شروع می‌شود (بدون عنوان)', /<autoFilter ref="A1:B2"\/>/.test(sheetNoTitle), (sheetNoTitle.match(/<autoFilter[^>]*>/) || [''])[0]);
+
 const failed = checks.filter(c => !c.ok);
 checks.forEach(c => console.log((c.ok ? 'PASS ' : 'FAIL ') + c.name + (c.extra ? ' — ' + c.extra : '')));
 console.log('\n' + (checks.length - failed.length) + '/' + checks.length + ' بررسی موفق');

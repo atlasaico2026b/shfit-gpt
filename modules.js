@@ -5786,13 +5786,16 @@
     }).join('') + '</cols>';
     const lastRow = rows.length + titleRow;
     const split = titleRow ? 2 : 1;
+    // سرستون همیشه یک ردیف پایین‌تر از عنوان است؛ فیلتر/آیکون مرتب‌سازی اکسل
+    // باید روی همان ردیف سرستون بنشیند، نه روی اولین ردیف داده.
+    const headerRow = titleRow + 1;
     return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
       '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
       '<dimension ref="A1:' + excelColumn(columns - 1) + Math.max(1, lastRow) + '"/>' +
       '<sheetViews><sheetView workbookViewId="0" rightToLeft="1"><pane ySplit="' + split + '" topLeftCell="A' + (split + 1) + '" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' +
       '<sheetFormatPr defaultRowHeight="20"/>' + cols +
       '<sheetData>' + parts.join('') + '</sheetData>' +
-      (rows.length > 1 ? '<autoFilter ref="A' + (split + 1) + ':' + excelColumn(columns - 1) + lastRow + '"/>' : '') +
+      (rows.length > 1 ? '<autoFilter ref="A' + headerRow + ':' + excelColumn(columns - 1) + lastRow + '"/>' : '') +
       '</worksheet>';
   }
 
@@ -6732,48 +6735,106 @@
     return { start: start, end: end, kind: kind, rows: rows, types: LEAVE_SUMMARY_TYPES.concat(extraTypes) };
   }
 
-  function rangeReportSummaryTable(summary) {
-    const isMission = summary.kind === 'mission-days';
-    const head = isMission
-      ? ['کارمند', 'تعداد مأموریت', 'مجموع روزهای مأموریت']
-      : ['کارمند'].concat(summary.types, ['مجموع مرخصی (بدون غیبت)']);
+  // ── مرتب‌سازی جدول‌های گزارش بازه ─────────────────────────────────────────
+  // هر سرستون یک کلید دارد؛ کلیک اول صعودی و کلیک دوباره نزولی می‌کند و خروجی
+  // هم از همان ترتیبِ دیده‌شده ساخته می‌شود.
+  function rangeSortValue(row, key) {
+    if (key === 'name' || key === 'person') return String(row.name || row.person || '');
+    if (key === 'title') return String(row.title || '');
+    if (key === 'from') return String(row.from || '');
+    if (key === 'to') return String(row.to || '');
+    if (key === 'status') return String(row.status || '');
+    if (key === 'place') return String(row.place || '');
+    if (key === 'days') return Number(row.days || 0);
+    if (key === 'count') return Number(row.count || 0);
+    if (key === 'total') return Number(row.total || 0);
+    if (key.indexOf('type:') === 0) return Number((row.days || {})[key.slice(5)] || 0);
+    return '';
+  }
+
+  function rangeSortRows(rows, sort) {
+    if (!sort || !sort.key) return rows.slice();
+    const key = sort.key;
+    const direction = sort.direction === 'desc' ? -1 : 1;
+    return rows.slice().sort(function (a, b) {
+      const av = rangeSortValue(a, key);
+      const bv = rangeSortValue(b, key);
+      let cmp = (typeof av === 'number' && typeof bv === 'number')
+        ? av - bv
+        : String(av).localeCompare(String(bv), 'fa');
+      if (cmp === 0) cmp = String(a.name || a.person || '').localeCompare(String(b.name || b.person || ''), 'fa');
+      return cmp * direction;
+    });
+  }
+
+  function rangeSortHeader(key, label, sort) {
+    const active = !!sort && sort.key === key;
+    const ascending = !sort || sort.direction !== 'desc';
+    return '<th class="module-sort-th' + (active ? ' is-sorted' : '') + '" aria-sort="' +
+      (active ? (ascending ? 'ascending' : 'descending') : 'none') + '">' +
+      '<button type="button" class="module-sort-btn" data-range-sort="' + esc(key) + '" title="مرتب‌سازی بر اساس ' + esc(label) + '">' +
+      '<span class="module-sort-label">' + esc(label) + '</span>' +
+      '<span class="module-sort-caret" aria-hidden="true">' + (active ? (ascending ? '↑' : '↓') : '↕') + '</span>' +
+      '</button></th>';
+  }
+
+  // جمع ستون‌های جدول خلاصه؛ هم ردیف پایین جدول و هم خروجی از همین‌جا ساخته می‌شود
+  // تا «مجموع» در فایل ورد/چاپ/اکسل هم بیاید.
+  function rangeSummaryTotals(summary) {
     const totals = {};
     summary.types.forEach(function (type) { totals[type] = 0; });
     let grandTotal = 0;
     let grandCount = 0;
-    const body = summary.rows.map(function (row) {
+    summary.rows.forEach(function (row) {
       grandTotal += row.total;
       grandCount += row.count;
-      const cells = isMission
-        ? [row.name, faDigits(row.count), faDigits(row.total)]
-        : [row.name].concat(summary.types.map(function (type) {
-            const value = row.days[type] || 0;
-            totals[type] += value;
-            return faDigits(value);
-          }), [faDigits(row.total)]);
-      return '<tr>' + cells.map(function (cell) { return '<td>' + esc(cell) + '</td>'; }).join('') + '</tr>';
+      summary.types.forEach(function (type) { totals[type] += row.days[type] || 0; });
+    });
+    return { totals: totals, grandTotal: grandTotal, grandCount: grandCount };
+  }
+
+  function rangeSummaryHead(summary) {
+    const isMission = summary.kind === 'mission-days';
+    return isMission
+      ? [['name', 'کارمند'], ['count', 'تعداد مأموریت'], ['total', 'مجموع روزهای مأموریت']]
+      : [['name', 'کارمند']].concat(summary.types.map(function (type) { return ['type:' + type, type]; }), [['total', 'مجموع مرخصی (بدون غیبت)']]);
+  }
+
+  function rangeSummaryCells(summary, row) {
+    const isMission = summary.kind === 'mission-days';
+    return isMission
+      ? [row.name, faDigits(row.count), faDigits(row.total)]
+      : [row.name].concat(summary.types.map(function (type) { return faDigits(row.days[type] || 0); }), [faDigits(row.total)]);
+  }
+
+  function rangeReportSummaryTable(summary, sort) {
+    const head = rangeSummaryHead(summary);
+    const rows = rangeSortRows(summary.rows, sort);
+    const body = rows.map(function (row) {
+      return '<tr>' + rangeSummaryCells(summary, row).map(function (cell) { return '<td>' + esc(cell) + '</td>'; }).join('') + '</tr>';
     }).join('');
-    const footCells = isMission
-      ? ['مجموع', faDigits(grandCount), faDigits(grandTotal)]
-      : ['مجموع'].concat(summary.types.map(function (type) { return faDigits(totals[type]); }), [faDigits(grandTotal)]);
+    const sums = rangeSummaryTotals(summary);
+    const footCells = summary.kind === 'mission-days'
+      ? ['مجموع', faDigits(sums.grandCount), faDigits(sums.grandTotal)]
+      : ['مجموع'].concat(summary.types.map(function (type) { return faDigits(sums.totals[type]); }), [faDigits(sums.grandTotal)]);
     return '<div class="module-table-wrap" style="width:100%;min-width:0"><table class="module-table"><thead><tr>' +
-      head.map(function (label) { return '<th>' + esc(label) + '</th>'; }).join('') +
+      head.map(function (pair) { return rangeSortHeader(pair[0], pair[1], sort); }).join('') +
       '</tr></thead><tbody>' + body + '</tbody><tfoot><tr>' +
       footCells.map(function (cell) { return '<th>' + esc(cell) + '</th>'; }).join('') +
       '</tr></tfoot></table></div>';
   }
 
-  function rangeReportSummaryExport(summary) {
+  function rangeReportSummaryExport(summary, sort) {
     const isMission = summary.kind === 'mission-days';
-    const head = isMission
-      ? ['کارمند', 'تعداد مأموریت', 'مجموع روزهای مأموریت']
-      : ['کارمند'].concat(summary.types, ['مجموع مرخصی (بدون غیبت)']);
+    const head = rangeSummaryHead(summary).map(function (pair) { return pair[1]; });
     const rows = [head];
-    summary.rows.forEach(function (row) {
-      rows.push(isMission
-        ? [row.name, faDigits(row.count), faDigits(row.total)]
-        : [row.name].concat(summary.types.map(function (type) { return faDigits(row.days[type] || 0); }), [faDigits(row.total)]));
+    rangeSortRows(summary.rows, sort).forEach(function (row) {
+      rows.push(rangeSummaryCells(summary, row));
     });
+    const sums = rangeSummaryTotals(summary);
+    rows.push(isMission
+      ? ['مجموع', faDigits(sums.grandCount), faDigits(sums.grandTotal)]
+      : ['مجموع'].concat(summary.types.map(function (type) { return faDigits(sums.totals[type]); }), [faDigits(sums.grandTotal)]));
     return {
       rows: rows,
       title: isMission ? 'روزهای مأموریت هر فرد' : 'روزهای مرخصی هر فرد',
@@ -6859,40 +6920,45 @@
     return found ? found.label : '';
   }
 
-  function rangeReportTable(tab, report) {
-    const rows = tab === 'leaves' ? report.leaves : report.missions;
+  function rangeReportHead(tab) {
+    return tab === 'leaves'
+      ? [['person', 'کارمند'], ['title', 'نوع مرخصی'], ['from', 'از تاریخ'], ['to', 'تا تاریخ'], ['days', 'روز'], ['status', 'وضعیت']]
+      : [['person', 'کارمند'], ['title', 'عنوان مأموریت'], ['from', 'از تاریخ'], ['to', 'تا تاریخ'], ['status', 'وضعیت'], ['place', 'محل / مقصد']];
+  }
+
+  function rangeReportCells(tab, row) {
+    return tab === 'leaves'
+      ? [row.person, row.title, formatJalali(row.from, false), row.to ? formatJalali(row.to, false) : '—', faDigits(row.days), row.status || '—']
+      : [row.person, row.title, formatJalali(row.from, false), row.to ? formatJalali(row.to, false) : '—', row.status || '—', row.place || '—'];
+  }
+
+  function rangeReportTable(tab, report, sort) {
+    const rows = rangeSortRows(tab === 'leaves' ? report.leaves : report.missions, sort);
     if (!rows.length) {
       return '<div class="module-empty">' + (tab === 'leaves'
         ? 'در این بازه مرخصی‌ای ثبت نشده است.'
         : 'در این بازه مأموریتی ثبت نشده است.') + '</div>';
     }
-    const head = tab === 'leaves'
-      ? ['کارمند', 'نوع مرخصی', 'از تاریخ', 'تا تاریخ', 'روز', 'وضعیت']
-      : ['کارمند', 'عنوان مأموریت', 'از تاریخ', 'تا تاریخ', 'وضعیت', 'محل / مقصد'];
+    const head = rangeReportHead(tab);
     const body = rows.map(function (row) {
-      const cells = tab === 'leaves'
-        ? [row.person, row.title, formatJalali(row.from, false), row.to ? formatJalali(row.to, false) : '—', faDigits(row.days), row.status || '—']
-        : [row.person, row.title, formatJalali(row.from, false), row.to ? formatJalali(row.to, false) : '—', row.status || '—', row.place || '—'];
-      return '<tr>' + cells.map(function (cell) { return '<td>' + esc(cell) + '</td>'; }).join('') + '</tr>';
+      return '<tr>' + rangeReportCells(tab, row).map(function (cell) { return '<td>' + esc(cell) + '</td>'; }).join('') + '</tr>';
     }).join('');
     return '<div class="module-table-wrap" style="width:100%;min-width:0"><table class="module-table"><thead><tr>' +
-      head.map(function (label) { return '<th>' + esc(label) + '</th>'; }).join('') +
+      head.map(function (pair) { return rangeSortHeader(pair[0], pair[1], sort); }).join('') +
       '</tr></thead><tbody>' + body + '</tbody></table></div>';
   }
 
-  function rangeReportExport(tab, report) {
-    if (tab === 'leaves') {
-      const rows = [['کارمند', 'نوع مرخصی', 'از تاریخ', 'تا تاریخ', 'تعداد روز', 'وضعیت']];
-      report.leaves.forEach(function (row) {
-        rows.push([row.person, row.title, formatJalali(row.from, false), row.to ? formatJalali(row.to, false) : '', faDigits(row.days), row.status]);
-      });
-      return { rows: rows, title: 'مرخصی‌های افراد', base: 'ATLAS-SHIFT-leaves-' + report.start + '_' + report.end };
-    }
-    const rows = [['کارمند', 'عنوان مأموریت', 'از تاریخ', 'تا تاریخ', 'وضعیت', 'محل / مقصد']];
-    report.missions.forEach(function (row) {
-      rows.push([row.person, row.title, formatJalali(row.from, false), row.to ? formatJalali(row.to, false) : '', row.status, row.place]);
+  function rangeReportExport(tab, report, sort) {
+    const head = rangeReportHead(tab).map(function (pair) { return pair[1]; });
+    const rows = [head];
+    rangeSortRows(tab === 'leaves' ? report.leaves : report.missions, sort).forEach(function (row) {
+      rows.push(rangeReportCells(tab, row).map(function (cell) { return cell === '—' ? '' : cell; }));
     });
-    return { rows: rows, title: 'مأموریت‌های افراد', base: 'ATLAS-SHIFT-missions-' + report.start + '_' + report.end };
+    return {
+      rows: rows,
+      title: tab === 'leaves' ? 'مرخصی‌های افراد' : 'مأموریت‌های افراد',
+      base: 'ATLAS-SHIFT-' + (tab === 'leaves' ? 'leaves-' : 'missions-') + report.start + '_' + report.end
+    };
   }
 
   function openRangeReport(mode) {
@@ -6908,6 +6974,7 @@
       ? dashboardRange.name
       : 'custom';
     let tab = 'leaves';
+    let sort = { key: '', direction: 'asc' };
     const backdrop = document.createElement('div');
     backdrop.className = 'atlas-modal-backdrop';
     backdrop.setAttribute('data-modal-backdrop', '');
@@ -6966,9 +7033,9 @@
           rangeLabel + ' · ' + faDigits(summary.rows.length) + ' کارمند · ' + faDigits(totalDays) +
           (summaryKind === 'mission-days' ? ' روز مأموریت' : ' روز مرخصی');
         panel.innerHTML = summary.rows.length
-          ? rangeReportSummaryTable(summary)
+          ? rangeReportSummaryTable(summary, sort)
           : '<div class="module-empty">کارمندی برای نمایش ثبت نشده است.</div>';
-        note.textContent = 'خروجی از همین جدول ساخته می‌شود.';
+        note.textContent = 'خروجی از همین جدول و با همین ترتیب ساخته می‌شود.';
         return;
       }
       const report = rangeReportData(range.start, range.end);
@@ -6982,8 +7049,8 @@
       });
       caption.textContent = (preset === 'custom' ? '' : rangeReportPresetLabel(preset) + ' · ') +
         rangeLabel + ' · ' + faDigits(counts.leaves) + ' مرخصی · ' + faDigits(counts.missions) + ' مأموریت';
-      panel.innerHTML = rangeReportTable(tab, report);
-      note.textContent = 'خروجی از همین تب (' + rangeReportTabLabel(tab) + ') ساخته می‌شود.';
+      panel.innerHTML = rangeReportTable(tab, report, sort);
+      note.textContent = 'خروجی از همین تب (' + rangeReportTabLabel(tab) + ') و با همین ترتیب ساخته می‌شود.';
     }
 
     let closed = false;
@@ -6994,9 +7061,19 @@
     }
 
     backdrop.addEventListener('click', function (event) {
+      const sortButton = event.target.closest('[data-range-sort]');
+      if (sortButton) {
+        const key = sortButton.dataset.rangeSort;
+        sort = sort.key === key
+          ? { key: key, direction: sort.direction === 'asc' ? 'desc' : 'asc' }
+          : { key: key, direction: 'asc' };
+        paint();
+        return;
+      }
       const tabButton = event.target.closest('[data-range-tab]');
       if (tabButton) {
         tab = tabButton.dataset.rangeTab;
+        sort = { key: '', direction: 'asc' };
         paint();
         return;
       }
@@ -7035,8 +7112,8 @@
       const exportButton = event.target.closest('[data-range-export]');
       if (exportButton) {
         const pack = summaryKind
-          ? rangeReportSummaryExport(rangeReportSummary(range.start, range.end, summaryKind))
-          : rangeReportExport(tab, rangeReportData(range.start, range.end));
+          ? rangeReportSummaryExport(rangeReportSummary(range.start, range.end, summaryKind), sort)
+          : rangeReportExport(tab, rangeReportData(range.start, range.end), sort);
         if (pack.rows.length < 2) { toast('برای این بازه داده‌ای برای خروجی وجود ندارد.'); return; }
         runExport(pack.rows, pack.title + ' · ' + formatJalali(range.start, false) + ' تا ' + formatJalali(range.end, false) + ' · ATLAS SHIFT', pack.base, exportButton.dataset.rangeExport || 'csv');
         toast('خروجی گزارش بازه آماده شد.');
@@ -9158,6 +9235,9 @@
     isReady: function () { return ready; },
     rangeReportSummary: rangeReportSummary,
     rangeReportSummaryTable: rangeReportSummaryTable,
+    rangeReportSummaryExport: rangeReportSummaryExport,
+    rangeReportExport: rangeReportExport,
+    xlsxSheetXml: xlsxSheetXml,
     parseJalali: parseJalali,
     formatJalali: formatJalali,
     confirm: askConfirm,
