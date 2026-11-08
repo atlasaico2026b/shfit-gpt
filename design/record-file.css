@@ -125,6 +125,27 @@
   overflow: hidden;
 }
 
+/* دو حالت پنجره رنگ خودشان را دارند: پرونده‌ها آبی، سوابق بنفش. */
+.rf-bulk-modal.is-files .rf-head {
+  border-bottom-color: var(--info-line);
+  box-shadow: inset 0 3px 0 var(--info);
+}
+
+.rf-bulk-modal.is-history .rf-head {
+  border-bottom-color: var(--special-line);
+  box-shadow: inset 0 3px 0 var(--special);
+}
+
+.rf-bulk-modal.is-files .rf-bulk-item.is-active {
+  background: var(--info-soft);
+  border-color: var(--info-line);
+}
+
+.rf-bulk-modal.is-history .rf-bulk-item.is-active {
+  background: var(--special-soft);
+  border-color: var(--special-line);
+}
+
 .rf-bulk-body {
   display: flex;
   gap: 12px;

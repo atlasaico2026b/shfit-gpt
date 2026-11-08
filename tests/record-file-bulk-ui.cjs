@@ -126,6 +126,32 @@ check('هر چهار قالب خروجی گروهی هست',
 check('برگهٔ A4 پروندهٔ اول در کادر چپ رندر شده است',
   !!backdrop && /class="rf-sheet/.test(backdrop._sheet ? backdrop._sheet.innerHTML : ''));
 check('دکمهٔ بستن وصل شده است', !!backdrop && (backdrop._close.listeners.click || []).length === 1);
+check('حالت پیش‌فرض «پرونده‌ها» است', /rf-bulk-modal is-files/.test(html));
+
+// همان پنجره در حالت «سوابق»: چیدمان یکی است، برگهٔ سوابق جای پرونده می‌آید.
+// e2 = «علی رضایی» و در فهرست مرتب، اولین مورد است.
+data.history = [
+  { module: 'employees', recordId: 'e2', action: 'ویرایش', at: '2026-01-03T09:30:00.000Z', changes: [{ field: 'وضعیت', before: 'مرخصی', after: 'فعال' }] },
+  { module: 'employees', recordId: 'e1', action: 'ثبت', at: '2026-01-04T10:00:00.000Z', changes: [] }
+];
+let historyError = null;
+try {
+  api.openBulk('employees', ['e1', 'e2'], 'history');
+} catch (thrown) {
+  historyError = thrown;
+}
+check('openBulk در حالت سوابق بدون خطا اجرا می‌شود', !historyError, historyError ? String(historyError && historyError.message) : '');
+const historyBackdrop = sandbox.document.body.lastChild;
+const historyHtml = historyBackdrop ? historyBackdrop.innerHTML : '';
+check('عنوان پنجرهٔ سوابق درست است', historyHtml.indexOf('سوابق انتخاب‌شده') >= 0);
+check('حالت سوابق کلاس رنگی خودش را دارد', /rf-bulk-modal is-history/.test(historyHtml));
+check('همان دو کادر و نوار پایین در حالت سوابق هم هست',
+  /class="rf-bulk-list"/.test(historyHtml) && /class="rf-bulk-sheet"/.test(historyHtml) && /class="rf-bulk-foot"/.test(historyHtml));
+check('برگهٔ سوابق در کادر چپ رندر شده است',
+  !!historyBackdrop && /class="rf-sheet/.test(historyBackdrop._sheet ? historyBackdrop._sheet.innerHTML : ''));
+check('برگهٔ سوابق تغییرات همان رکورد را نشان می‌دهد',
+  !!historyBackdrop && (historyBackdrop._sheet ? historyBackdrop._sheet.innerHTML : '').indexOf('وضعیت: «مرخصی» ← «فعال»') >= 0);
+check('پنجرهٔ قبلی بسته شده است', !!backdrop && backdrop.removed === true);
 
 const failed = checks.filter(c => !c.ok);
 checks.forEach(c => console.log((c.ok ? 'PASS ' : 'FAIL ') + c.name + (c.extra ? ' — ' + c.extra : '')));

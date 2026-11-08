@@ -37,6 +37,32 @@ const check = (name, ok, extra) => checks.push({ name, ok: !!ok, extra: extra ||
 check('openBulk صادر شده است', typeof api.openBulk === 'function');
 check('buildWordMany صادر شده است', typeof api.buildWordMany === 'function');
 check('buildCsvMany صادر شده است', typeof api.buildCsvMany === 'function');
+check('historySheet صادر شده است', typeof api.historySheet === 'function');
+
+// برگهٔ سوابق: همان برگهٔ A4، ولی با تاریخچهٔ تغییرات همان رکورد.
+sandbox.ATLAS_MODULES = {
+  getData: () => ({}),
+  spec: () => ({ title: 'کارکنان', subtitle: 'پروندهٔ پرسنلی' }),
+  fieldsFor: () => [],
+  formatJalali: value => String(value),
+};
+const historyData = {
+  history: [
+    { module: 'employees', recordId: 'e1', action: 'ثبت', at: '2026-01-02T08:00:00.000Z', changes: [] },
+    { module: 'employees', recordId: 'e1', action: 'ویرایش', at: '2026-01-03T09:30:00.000Z', changes: [{ field: 'وضعیت', before: 'مرخصی', after: 'فعال' }] },
+    { module: 'employees', recordId: 'e2', action: 'انتقال', at: '2026-01-04T10:00:00.000Z', changes: [] }
+  ]
+};
+const historyModel = api.historySheet('employees', { id: 'e1', firstName: 'علی', lastName: 'رضایی' }, historyData);
+const historyHtml = api.buildSheet(historyModel);
+check('برگهٔ سوابق عنوان رکورد را دارد', historyHtml.indexOf('علی رضایی') >= 0);
+check('برگهٔ سوابق فقط سوابق همین رکورد را دارد',
+  historyHtml.indexOf('ویرایش') >= 0 && historyHtml.indexOf('وضعیت: «مرخصی» ← «فعال»') >= 0);
+check('برگهٔ سوابق سوابق رکورد دیگر را نمی‌آورد', historyHtml.indexOf('انتقال') < 0);
+check('برگهٔ سوابق تعداد را نشان می‌دهد', historyHtml.indexOf('تعداد سوابق') >= 0);
+check('برگهٔ سوابق بدون سابقه پیام خالی می‌دهد',
+  api.buildSheet(api.historySheet('employees', { id: 'e9', firstName: 'بی', lastName: 'سابقه' }, historyData))
+    .indexOf('موردی ثبت نشده است') >= 0);
 
 const PHOTO = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAC0AAAA8CAIAAAB98qTzAAAAQUlEQVR4nO3OMQ0AAAgDMGRzowSpyGBHkwpo9WyCeh94eHh4eHh4eHgk8PDw8PDw8PDw8PDw8PDw8PDw8Pjnkfk4fW3lKTNnoWoAAAAASUVORK5CYII=';
 
@@ -110,10 +136,23 @@ sys.exit(1 if fail else 0)
     /data-module-action="bulk-files"/.test(modules) && modules.indexOf('مشاهدهٔ پرونده‌های انتخاب‌شده') >= 0);
   check('دکمه‌های انتخاب معکوس و پاک‌کردن انتخاب هست',
     /data-module-action="bulk-invert"/.test(modules) && /data-module-action="bulk-clear"/.test(modules));
-  check('modules.js رویداد atlas-open-files را می‌فرستد', /atlas-open-files/.test(modules));
+  check('دکمهٔ «مشاهدهٔ سوابق انتخاب‌شده» در نوار انتخاب گروهی هست',
+    /data-module-action="bulk-history"/.test(modules) && modules.indexOf('مشاهدهٔ سوابق انتخاب‌شده') >= 0);
+  check('modules.js رویداد atlas-open-files را با حالت می‌فرستد',
+    /atlas-open-files/.test(modules) && /mode:action==='bulk-history'\?'history':'files'/.test(modules));
   check('record-file.js رویداد atlas-open-files را می‌شنود', /addEventListener\('atlas-open-files'/.test(recordFile));
   check('پنجرهٔ گروهی دو کادر عمودی و نوار افقی پایین دارد',
     /rf-bulk-list/.test(recordFile) && /rf-bulk-sheet/.test(recordFile) && /rf-bulk-foot/.test(recordFile));
+
+  // رنگ متفاوت «مشاهدهٔ پرونده» و «سوابق» با بقیهٔ دکمه‌های همان سطر.
+  const styles = fs.readFileSync(path.join(root, 'design/styles.css'), 'utf8');
+  check('دکمهٔ «مشاهدهٔ پرونده» کلاس رنگی خودش را دارد',
+    /\.module-file-btn\{[^}]*var\(--info/.test(styles) && /class="secondary-btn module-file-btn"/.test(modules));
+  check('دکمهٔ «سوابق» کلاس رنگی خودش را دارد',
+    /\.module-history-btn\{[^}]*var\(--special/.test(styles) && /class="secondary-btn module-history-btn"/.test(modules));
+  check('دو رنگ پرونده و سوابق از هم متفاوت‌اند',
+    /--info/.test(styles.match(/\.module-file-btn\{[^}]*\}/)[0]) &&
+    /--special/.test(styles.match(/\.module-history-btn\{[^}]*\}/)[0]));
 
   const failed = checks.filter(c => !c.ok);
   checks.forEach(c => console.log((c.ok ? 'PASS ' : 'FAIL ') + c.name + (c.extra ? ' — ' + c.extra : '')));
