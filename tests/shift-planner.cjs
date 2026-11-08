@@ -134,7 +134,8 @@ check('گوش‌دهنده‌های سراسری ثبت شدند', listeners.len
 const filterState = {
   employees: [
     { id: 'e1', firstName: 'علی', lastName: 'رضایی', workplace: 'تهران', assignedWorkplace: 'ایستگاه ۱' },
-    { id: 'e2', firstName: 'سارا', lastName: 'احمدی', workplace: 'تهران', assignedWorkplace: 'ایستگاه ۲' }
+    { id: 'e2', firstName: 'سارا', lastName: 'احمدی', workplace: 'تهران', assignedWorkplace: 'ایستگاه ۲' },
+    { id: 'e3', firstName: 'مریم', lastName: 'کریمی', workplace: 'کرج', assignedWorkplace: 'ایستگاه ۳' }
   ],
   shiftMethods: [
     { id: 'm1', name: 'اداری', kind: 'office', weekly: e.defaultWeekly('08:00', '14:00') },
@@ -157,7 +158,8 @@ const fakeBody = {
 const fakeHost = {
   innerHTML: '',
   contains: function () { return true; },
-  querySelector: function (selector) { return selector === '[data-sp-body]' ? fakeBody : null; }
+  querySelector: function (selector) { return selector === '[data-sp-body]' ? fakeBody : null; },
+  querySelectorAll: function () { return []; }
 };
 const fakeBridge = {
   esc: function (value) {
@@ -195,6 +197,15 @@ function changeFilter(key, value) {
   fire('change', {
     closest: function (selector) {
       return selector === '[data-sp-filter]' ? { getAttribute: function () { return key; }, value: value } : null;
+    }
+  });
+}
+function changeCity(city, checked) {
+  fire('change', {
+    closest: function (selector) {
+      return selector === '[data-sp-select-city]'
+        ? { getAttribute: function () { return city; }, checked: checked }
+        : null;
     }
   });
 }
@@ -239,6 +250,46 @@ check('فیلتر روش در تقویم هم شناسه‌محور است', fak
 changeFilter('method', optionValueFor(fakeHost.innerHTML, 'method', 'چرخشی'));
 check('فیلتر روش در تقویم اعمال می‌شود', bodyHtml.indexOf('سارا احمدی') >= 0 && bodyHtml.indexOf('علی رضایی') < 0);
 clickOn('data-sp-reset', '');
+
+// ── سطر شهر: عنوان «مکان»، انتخاب گروهی و مرتب‌سازی ─────────────────────
+clickOn('data-sp-tab', 'assign');
+check('سطر شهر عنوان «مکان» دارد', fakeHost.innerHTML.indexOf('data-sp-sort-city') >= 0 && fakeHost.innerHTML.indexOf('مکان') >= 0);
+check('سطر شهر چک‌باکس انتخاب گروهی دارد', fakeHost.innerHTML.indexOf('data-sp-select-city="تهران"') >= 0);
+check('سطر شهر کرج هم چک‌باکس دارد', fakeHost.innerHTML.indexOf('data-sp-select-city="کرج"') >= 0);
+
+let tehranAt = fakeHost.innerHTML.indexOf('sp-group-city">تهران');
+let karajAt = fakeHost.innerHTML.indexOf('sp-group-city">کرج');
+check('ترتیب پیش‌فرض صعودی است', tehranAt >= 0 && karajAt >= 0 && tehranAt < karajAt, tehranAt + '/' + karajAt);
+check('فلش صعودی نشان داده می‌شود', fakeHost.innerHTML.indexOf('▲') >= 0);
+
+// refresh() فقط بدنهٔ تب را دوباره می‌سازد، پس از این به بعد bodyHtml را می‌خوانیم.
+clickOn('data-sp-sort-city', '');
+tehranAt = bodyHtml.indexOf('sp-group-city">تهران');
+karajAt = bodyHtml.indexOf('sp-group-city">کرج');
+check('کلیک روی عنوان، ترتیب را نزولی می‌کند', karajAt >= 0 && karajAt < tehranAt, karajAt + '/' + tehranAt);
+check('فلش نزولی نشان داده می‌شود', bodyHtml.indexOf('▼') >= 0);
+
+clickOn('data-sp-sort-city', '');
+tehranAt = bodyHtml.indexOf('sp-group-city">تهران');
+karajAt = bodyHtml.indexOf('sp-group-city">کرج');
+check('کلیک دوم دوباره صعودی می‌کند', tehranAt >= 0 && tehranAt < karajAt, tehranAt + '/' + karajAt);
+
+changeCity('تهران', true);
+check('انتخاب شهر تهران هر دو کارمندش را تیک می‌زند',
+  bodyHtml.indexOf('data-sp-select="e1" checked') >= 0 && bodyHtml.indexOf('data-sp-select="e2" checked') >= 0);
+check('کارمند شهر دیگر تیک نمی‌خورد', bodyHtml.indexOf('data-sp-select="e3" checked') < 0);
+check('چک‌باکس شهر پس از انتخاب کامل، تیک‌خورده است', bodyHtml.indexOf('data-sp-select-city="تهران" checked') >= 0);
+
+changeCity('تهران', false);
+check('برداشتن تیک شهر، هر دو کارمندش را آزاد می‌کند',
+  bodyHtml.indexOf('data-sp-select="e1" checked') < 0 && bodyHtml.indexOf('data-sp-select="e2" checked') < 0);
+
+// ── ظاهر سطر شهر: سفید، متن مشکی، ۳۰٪ بزرگ‌تر ───────────────────────────
+const plannerCss = fs.readFileSync(path.join(root, 'design/shift-planner.css'), 'utf8');
+const groupRule = (plannerCss.match(/\.sp-table \.sp-group-row td\s*\{[^}]*\}/) || [''])[0];
+check('سطر شهر پس‌زمینهٔ سفید دارد', /background:\s*#fff/.test(groupRule), groupRule);
+check('سطر شهر متن مشکی دارد', /color:\s*#000/.test(groupRule), groupRule);
+check('سطر شهر ۳۰٪ بزرگ‌تر از متن جدول است', /font-size:\s*calc\(12px \* 1\.3\)/.test(groupRule), groupRule);
 
 // ── گزارش ──
 let failed = 0;

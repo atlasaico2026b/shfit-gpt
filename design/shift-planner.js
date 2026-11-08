@@ -298,6 +298,8 @@
   let gridMode = 'employee';
   let filters = { city: '', station: '', method: '', code: '', status: '' };
   let search = '';
+  // ترتیب گروه‌های شهر در تب تخصیص؛ با کلیک روی عنوان «مکان» جابه‌جا می‌شود.
+  let citySort = 'asc';
   let selected = Object.create(null);
   let personId = '';
   let modal = null;
@@ -497,11 +499,27 @@
       groups[city].push(employee);
     });
 
-    const rows = Object.keys(groups).sort(function (a, b) { return a.localeCompare(b, 'fa'); }).map(function (city) {
+    const cityKeys = Object.keys(groups).sort(function (a, b) {
+      const order = a.localeCompare(b, 'fa');
+      return citySort === 'desc' ? -order : order;
+    });
+
+    const rows = cityKeys.map(function (city) {
       const people = groups[city].slice().sort(function (a, b) {
         return bridge.employeeName(a).localeCompare(bridge.employeeName(b), 'fa');
       });
-      return '<tr class="sp-group-row"><td colspan="6"><b>' + esc(city) + '</b> · ' + fa(people.length) + ' نفر</td></tr>' +
+      const picked = people.filter(function (employee) { return selected[employee.id]; }).length;
+      const allPicked = people.length > 0 && picked === people.length;
+      return '<tr class="sp-group-row">' +
+        '<td class="sp-check"><input type="checkbox" data-sp-select-city="' + esc(city) + '"' +
+          (allPicked ? ' checked' : '') + ' aria-label="انتخاب همهٔ کارکنان ' + esc(city) + '"></td>' +
+        '<td colspan="5">' +
+          '<button type="button" class="sp-group-title" data-sp-sort-city aria-label="مرتب‌سازی شهرها">' +
+            'مکان<span class="sp-sort-arrow" aria-hidden="true">' + (citySort === 'asc' ? '▲' : '▼') + '</span>' +
+          '</button>' +
+          '<b class="sp-group-city">' + esc(city) + '</b>' +
+          '<span class="sp-group-count">· ' + fa(people.length) + ' نفر</span>' +
+        '</td></tr>' +
         people.map(function (employee) {
           const assignment = assignmentFor(state, employee.id, todayIso());
           const methodId = assignment ? String(assignment.methodId) : '';
@@ -1319,6 +1337,12 @@
       return;
     }
 
+    if (target.closest('[data-sp-sort-city]')) {
+      citySort = citySort === 'asc' ? 'desc' : 'asc';
+      refresh();
+      return;
+    }
+
     if (target.closest('[data-sp-new="method"]')) { openMethodModal(''); return; }
     if (target.closest('[data-sp-new="template"]')) { openTemplateModal(''); return; }
 
@@ -1403,6 +1427,19 @@
       return;
     }
 
+    const cityBox = target.closest('[data-sp-select-city]');
+    if (cityBox) {
+      const city = cityBox.getAttribute('data-sp-select-city');
+      filteredEmployees(data()).forEach(function (employee) {
+        if ((employeeCity(employee) || 'بدون شهر') !== city) return;
+        if (cityBox.checked) selected[employee.id] = true;
+        else delete selected[employee.id];
+      });
+      refresh();
+      syncSelectionUi();
+      return;
+    }
+
     const selectAll = target.closest('[data-sp-select-all]');
     if (selectAll) {
       filteredEmployees(data()).forEach(function (employee) {
@@ -1477,6 +1514,17 @@
     if (all) {
       const boxes = host.querySelectorAll('[data-sp-select]');
       all.checked = boxes.length > 0 && Array.prototype.every.call(boxes, function (box) { return box.checked; });
+    }
+    const cityBoxes = host.querySelectorAll('[data-sp-select-city]');
+    if (cityBoxes.length) {
+      const people = filteredEmployees(data());
+      Array.prototype.forEach.call(cityBoxes, function (box) {
+        const city = box.getAttribute('data-sp-select-city');
+        const group = people.filter(function (employee) { return (employeeCity(employee) || 'بدون شهر') === city; });
+        const picked = group.filter(function (employee) { return selected[employee.id]; }).length;
+        box.checked = group.length > 0 && picked === group.length;
+        box.indeterminate = picked > 0 && picked < group.length;
+      });
     }
   }
 
