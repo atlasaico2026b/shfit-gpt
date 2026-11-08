@@ -300,6 +300,8 @@
   let search = '';
   // ترتیب گروه‌های شهر در تب تخصیص؛ با کلیک روی عنوان «مکان» جابه‌جا می‌شود.
   let citySort = 'asc';
+  // ترتیب کارکنان داخل هر گروه شهر؛ با کلیک روی سرستون‌ها عوض می‌شود.
+  let assignSort = { key: 'name', direction: 'asc' };
   let selected = Object.create(null);
   let personId = '';
   let modal = null;
@@ -486,6 +488,34 @@
     });
   }
 
+  // سرستون قابل‌کلیک، هم‌شکل با سرستون‌های سایر منوها (module-sort-th/btn/caret).
+  function sortHeader(key, label) {
+    const active = assignSort.key === key;
+    const ascending = assignSort.direction === 'asc';
+    return '<th class="module-sort-th' + (active ? ' is-sorted' : '') + '" aria-sort="' +
+      (active ? (ascending ? 'ascending' : 'descending') : 'none') + '">' +
+      '<button type="button" class="module-sort-btn" data-sp-sort-key="' + esc(key) + '" title="مرتب‌سازی بر اساس ' + esc(label) + '">' +
+      '<span class="module-sort-label">' + esc(label) + '</span>' +
+      '<span class="module-sort-caret" aria-hidden="true">' + (active ? (ascending ? '↑' : '↓') : '↕') + '</span>' +
+      '</button></th>';
+  }
+
+  // مقداری که سرستون فعال بر اساسش مرتب می‌کند.
+  function assignSortValue(state, employee) {
+    const assignment = assignmentFor(state, employee.id, todayIso());
+    if (assignSort.key === 'station') return employeeStation(employee) || '';
+    if (assignSort.key === 'job') return employee.jobTitle || '';
+    if (assignSort.key === 'method') {
+      if (!assignment) return '';
+      const method = (state.shiftMethods || []).find(function (item) {
+        return String(item.id) === String(assignment.methodId);
+      });
+      return method ? (method.name || '') : '';
+    }
+    if (assignSort.key === 'range') return assignment ? String(assignment.from || '') : '';
+    return bridge.employeeName(employee) || '';
+  }
+
   function renderAssign(state) {
     const methods = state.shiftMethods || [];
     const employees = filteredEmployees(state);
@@ -506,7 +536,8 @@
 
     const rows = cityKeys.map(function (city) {
       const people = groups[city].slice().sort(function (a, b) {
-        return bridge.employeeName(a).localeCompare(bridge.employeeName(b), 'fa');
+        const order = assignSortValue(state, a).localeCompare(assignSortValue(state, b), 'fa');
+        return assignSort.direction === 'desc' ? -order : order;
       });
       const picked = people.filter(function (employee) { return selected[employee.id]; }).length;
       const allPicked = people.length > 0 && picked === people.length;
@@ -565,8 +596,9 @@
       '<button type="button" class="secondary-btn" data-sp-select-clear>پاک‌کردن انتخاب</button>' +
       '<span data-sp-selected-count>' + fa(selectedCount) + ' نفر انتخاب شده</span></div>' +
       '<div class="module-table-wrap"><table class="module-table sp-table"><thead><tr>' +
-      '<th class="sp-check"></th><th>نام و نام خانوادگی</th><th>محل خدمت</th><th>عنوان شغلی</th>' +
-      '<th>روش کاری</th><th>بازهٔ اعتبار</th></tr></thead><tbody>' +
+      '<th class="sp-check"></th>' + sortHeader('name', 'نام و نام خانوادگی') + sortHeader('station', 'محل خدمت') +
+      sortHeader('job', 'عنوان شغلی') + sortHeader('method', 'روش کاری') + sortHeader('range', 'بازهٔ اعتبار') +
+      '</tr></thead><tbody>' +
       (rows || '<tr><td colspan="6"><div class="module-empty">کارمندی با این فیلترها پیدا نشد.</div></td></tr>') +
       '</tbody></table></div></section>';
   }
@@ -1339,6 +1371,15 @@
 
     if (target.closest('[data-sp-sort-city]')) {
       citySort = citySort === 'asc' ? 'desc' : 'asc';
+      refresh();
+      return;
+    }
+
+    const sortButton = target.closest('[data-sp-sort-key]');
+    if (sortButton) {
+      const key = sortButton.getAttribute('data-sp-sort-key');
+      if (assignSort.key === key) assignSort.direction = assignSort.direction === 'asc' ? 'desc' : 'asc';
+      else assignSort = { key: key, direction: 'asc' };
       refresh();
       return;
     }

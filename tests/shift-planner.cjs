@@ -133,7 +133,7 @@ check('گوش‌دهنده‌های سراسری ثبت شدند', listeners.len
 // فیلتر را با assignment.methodId مقایسه می‌کند؛ پس هیچ‌وقت تطبیق نمی‌خورد.
 const filterState = {
   employees: [
-    { id: 'e1', firstName: 'علی', lastName: 'رضایی', workplace: 'تهران', assignedWorkplace: 'ایستگاه ۱' },
+    { id: 'e1', firstName: 'علی', lastName: 'رضایی', workplace: 'تهران', assignedWorkplace: 'ایستگاه ۹' },
     { id: 'e2', firstName: 'سارا', lastName: 'احمدی', workplace: 'تهران', assignedWorkplace: 'ایستگاه ۲' },
     { id: 'e3', firstName: 'مریم', lastName: 'کریمی', workplace: 'کرج', assignedWorkplace: 'ایستگاه ۳' }
   ],
@@ -284,12 +284,57 @@ changeCity('تهران', false);
 check('برداشتن تیک شهر، هر دو کارمندش را آزاد می‌کند',
   bodyHtml.indexOf('data-sp-select="e1" checked') < 0 && bodyHtml.indexOf('data-sp-select="e2" checked') < 0);
 
+// ── سرستون‌های قابل‌مرتب‌سازی ────────────────────────────────────────────
+clickOn('data-sp-tab', 'assign');
+['name', 'station', 'job', 'method', 'range'].forEach(function (key) {
+  check('سرستون «' + key + '» قابل مرتب‌سازی است', fakeHost.innerHTML.indexOf('data-sp-sort-key="' + key + '"') >= 0);
+});
+check('سرستون‌ها از کلاس‌های استاندارد منوها استفاده می‌کنند',
+  fakeHost.innerHTML.indexOf('module-sort-th') >= 0 && fakeHost.innerHTML.indexOf('module-sort-btn') >= 0 &&
+  fakeHost.innerHTML.indexOf('module-sort-caret') >= 0);
+
+// پیش‌فرض: نام، صعودی. در ترتیب الفبای فارسی «س» پیش از «ع» می‌آید.
+check('ترتیب پیش‌فرض بر اساس نام است',
+  bodyHtml.indexOf('سارا احمدی') < bodyHtml.indexOf('علی رضایی'),
+  bodyHtml.indexOf('سارا احمدی') + '/' + bodyHtml.indexOf('علی رضایی'));
+
+// کلیک روی «نام» جهت را برمی‌گرداند
+clickOn('data-sp-sort-key', 'name');
+check('کلیک دوباره روی «نام» نزولی می‌کند',
+  bodyHtml.indexOf('علی رضایی') < bodyHtml.indexOf('سارا احمدی'),
+  bodyHtml.indexOf('علی رضایی') + '/' + bodyHtml.indexOf('سارا احمدی'));
+
+// «محل خدمت»: ایستگاه ۱ (سارا) پیش از ایستگاه ۹ (علی) — برخلاف ترتیب نام
+clickOn('data-sp-sort-key', 'station');
+check('مرتب‌سازی بر اساس محل خدمت کار می‌کند',
+  bodyHtml.indexOf('سارا احمدی') < bodyHtml.indexOf('علی رضایی'),
+  bodyHtml.indexOf('سارا احمدی') + '/' + bodyHtml.indexOf('علی رضایی'));
+check('سرستون فعال نشانه‌گذاری می‌شود', bodyHtml.indexOf('is-sorted') >= 0 && bodyHtml.indexOf('↑') >= 0);
+
+clickOn('data-sp-sort-key', 'station');
+check('کلیک دوم روی محل خدمت نزولی می‌کند',
+  bodyHtml.indexOf('علی رضایی') < bodyHtml.indexOf('سارا احمدی'),
+  bodyHtml.indexOf('علی رضایی') + '/' + bodyHtml.indexOf('سارا احمدی'));
+check('فلش نزولی روی سرستون', bodyHtml.indexOf('↓') >= 0);
+
+// «روش کاری»: اداری (علی) پیش از چرخشی (سارا)
+clickOn('data-sp-sort-key', 'method');
+check('مرتب‌سازی بر اساس روش کاری کار می‌کند',
+  bodyHtml.indexOf('علی رضایی') < bodyHtml.indexOf('سارا احمدی'),
+  bodyHtml.indexOf('علی رضایی') + '/' + bodyHtml.indexOf('سارا احمدی'));
+
+// مرتب‌سازی داخل هر گروه شهر اعمال می‌شود، نه روی کل جدول
+check('گروه‌بندی شهر با مرتب‌سازی حفظ می‌شود',
+  bodyHtml.indexOf('sp-group-city">تهران') >= 0 && bodyHtml.indexOf('sp-group-city">کرج') >= 0);
+
 // ── ظاهر سطر شهر: سفید، متن مشکی، ۳۰٪ بزرگ‌تر ───────────────────────────
 const plannerCss = fs.readFileSync(path.join(root, 'design/shift-planner.css'), 'utf8');
-const groupRule = (plannerCss.match(/\.sp-table \.sp-group-row td\s*\{[^}]*\}/) || [''])[0];
+const groupRule = (plannerCss.match(/\.sp-table tbody tr\.sp-group-row td\s*\{[^}]*\}/) || [''])[0];
 check('سطر شهر پس‌زمینهٔ سفید دارد', /background:\s*#fff/.test(groupRule), groupRule);
 check('سطر شهر متن مشکی دارد', /color:\s*#000/.test(groupRule), groupRule);
-check('سطر شهر ۳۰٪ بزرگ‌تر از متن جدول است', /font-size:\s*calc\(12px \* 1\.3\)/.test(groupRule), groupRule);
+check('سطر شهر ۳۰٪ بزرگ‌تر از متن جدول است', /font-size:\s*1\.3em/.test(groupRule), groupRule);
+check('انتخابگر از قاعدهٔ راه‌راه جدول قوی‌تر است',
+  /\.sp-table tbody tr\.sp-group-row td/.test(groupRule), groupRule);
 
 // ── گزارش ──
 let failed = 0;
