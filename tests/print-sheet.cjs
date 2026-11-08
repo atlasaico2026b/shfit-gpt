@@ -89,9 +89,9 @@ check('سرستون تنها در پای صفحه نمی‌ماند', /#atlasPri
 check('جدول و بدنه اجازهٔ شکستن بین سطرها را دارند', /#atlasPrintArea tbody\s*\{[^}]*break-inside:\s*auto/.test(css.replace(/\r/g, '')));
 
 // ── حذف سرصفحه/پاصفحهٔ مرورگر (آدرس سایت، تاریخ، ساعت، «۱ از ۲») ──
-check('برگهٔ فهرست‌ها روی صفحهٔ نام‌دار چاپ می‌شود', /@page atlas-list\s*\{[^}]*margin:\s*0\s*;/.test(css.replace(/\r/g, '')));
-check('برگهٔ فهرست‌ها به همان صفحهٔ نام‌دار وصل است', /body\.atlas-printing #atlasPrintArea\s*\{[^}]*page:\s*atlas-list/.test(css.replace(/\r/g, '')));
-check('چاپ مستقیم کل صفحه (Ctrl+P) حاشیهٔ خودش را نگه می‌دارد', /@page\s*\{[^}]*size:\s*A4 landscape[^}]*margin:\s*9mm 9mm 11mm/.test(css.replace(/\r/g, '')));
+check('حاشیهٔ صفحهٔ چاپ صفر است', /@page\s*\{[^}]*size:\s*A4 landscape[^}]*margin:\s*0\s*;/.test(css.replace(/\r/g, '')));
+check('برگهٔ چاپ به صفحهٔ نام‌دار وابسته نیست', !/page:\s*atlas-list/.test(css) && !/@page\s+atlas-list/.test(css));
+check('چاپ مستقیم کل صفحه (Ctrl+P) حاشیه را از padding بدنه می‌گیرد', /body:not\(\.atlas-printing\):not\(\.rf-printing\)\s*\{[^}]*padding:\s*9mm 9mm 11mm/.test(css.replace(/\r/g, '')));
 check('حاشیهٔ افقی برگه از padding خودش می‌آید', /body\.atlas-printing #atlasPrintArea\s*\{[^}]*padding:\s*0 9mm/.test(css.replace(/\r/g, '')));
 check('سطر فاصلهٔ بالای صفحه ۹mm است', /\.atlas-print-pad > td\s*\{[^}]*height:\s*9mm/.test(css.replace(/\r/g, '')));
 check('سطر فاصلهٔ پایین صفحه ۱۱mm است', /\.atlas-print-pad-bottom > td\s*\{[^}]*height:\s*11mm/.test(css.replace(/\r/g, '')));
