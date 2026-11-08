@@ -7,9 +7,13 @@ const src = fs.readFileSync(path.join(root, 'design/shift-planner.js'), 'utf8');
 
 // فایل مرورگری است؛ فقط برای بارگذاری، document و window را جعل می‌کنیم.
 const listeners = [];
+const handlers = {};
 global.window = global;
 global.document = {
-  addEventListener: function (name) { listeners.push(name); },
+  addEventListener: function (name, fn) {
+    listeners.push(name);
+    (handlers[name] = handlers[name] || []).push(fn);
+  },
   querySelectorAll: function () { return []; }
 };
 new Function('window', 'document', src)(globalThis, global.document);
@@ -123,6 +127,118 @@ check('خلاصهٔ چرخش', e.templateSummary(template).indexOf('استراح
 
 // ── رویدادها ثبت شده‌اند ──
 check('گوش‌دهنده‌های سراسری ثبت شدند', listeners.length >= 4, listeners.join(','));
+
+// ── فیلتر «روش کاری»: مقدار گزینه باید شناسهٔ روش باشد، نه نامش ──────────
+// ریشهٔ باگ: گزینه‌ها با نام روش ساخته می‌شدند ولی filteredEmployees مقدار
+// فیلتر را با assignment.methodId مقایسه می‌کند؛ پس هیچ‌وقت تطبیق نمی‌خورد.
+const filterState = {
+  employees: [
+    { id: 'e1', firstName: 'علی', lastName: 'رضایی', workplace: 'تهران', assignedWorkplace: 'ایستگاه ۱' },
+    { id: 'e2', firstName: 'سارا', lastName: 'احمدی', workplace: 'تهران', assignedWorkplace: 'ایستگاه ۲' }
+  ],
+  shiftMethods: [
+    { id: 'm1', name: 'اداری', kind: 'office', weekly: e.defaultWeekly('08:00', '14:00') },
+    { id: 'm2', name: 'چرخشی', kind: 'rotating', templateId: 't1' }
+  ],
+  shiftTemplates: [template],
+  shiftAssignments: [
+    { id: 'a1', employeeId: 'e1', methodId: 'm1', from: '2026-11-01', to: '', active: true },
+    { id: 'a2', employeeId: 'e2', methodId: 'm2', from: '2026-11-01', to: '', active: true }
+  ],
+  shiftOverrides: [],
+  leaves: []
+};
+
+let bodyHtml = '';
+const fakeBody = {
+  get innerHTML() { return bodyHtml; },
+  set innerHTML(value) { bodyHtml = value; }
+};
+const fakeHost = {
+  innerHTML: '',
+  contains: function () { return true; },
+  querySelector: function (selector) { return selector === '[data-sp-body]' ? fakeBody : null; }
+};
+const fakeBridge = {
+  esc: function (value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  },
+  faDigits: function (value) {
+    return String(value).replace(/[0-9]/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[Number(d)]; });
+  },
+  getData: function () { return filterState; },
+  todayIso: function () { return '2026-11-07'; },
+  rootWrap: function (html) { return html; },
+  pageHead: function () { return ''; },
+  formatJalali: function (iso) { return iso; },
+  jalaliInputValue: function (iso) { return iso; },
+  employeeName: function (employee) { return [employee.firstName, employee.lastName].filter(Boolean).join(' '); },
+  enhanceJalaliInputs: function () {},
+  legacySchedule: function () {},
+  toast: function () {},
+  save: function () { return Promise.resolve(true); },
+  confirm: function () { return Promise.resolve(true); }
+};
+
+function fire(name, target) {
+  (handlers[name] || []).forEach(function (fn) { fn({ target: target }); });
+}
+function clickOn(attribute, value) {
+  fire('click', {
+    closest: function (selector) {
+      return selector === '[' + attribute + ']' ? { getAttribute: function () { return value; } } : null;
+    }
+  });
+}
+function changeFilter(key, value) {
+  fire('change', {
+    closest: function (selector) {
+      return selector === '[data-sp-filter]' ? { getAttribute: function () { return key; }, value: value } : null;
+    }
+  });
+}
+// مقداری که رابط کاربری واقعاً برای یک گزینه می‌فرستد را از HTML بیرون می‌کشد؛
+// آزمون باید همان مسیری را برود که کاربر می‌رود، نه مقدار دلخواه ما.
+function optionValueFor(html, key, label) {
+  const rest = html.split('data-sp-filter="' + key + '"')[1] || '';
+  const pattern = /<option value="([^"]*)"[^>]*>([^<]*)<\/option>/g;
+  let match;
+  while ((match = pattern.exec(rest))) {
+    if (match[2] === label) return match[1];
+  }
+  return null;
+}
+
+planner.render(fakeHost, fakeBridge);
+clickOn('data-sp-tab', 'assign');
+
+check('تب تخصیص رندر شد', fakeHost.innerHTML.indexOf('تخصیص روش کاری به کارکنان') >= 0);
+check('مقدار گزینهٔ فیلتر شناسهٔ روش است', fakeHost.innerHTML.indexOf('<option value="m1"') >= 0);
+check('برچسب گزینه نام روش است', fakeHost.innerHTML.indexOf('>اداری</option>') >= 0);
+check('مقدار گزینه هرگز نام روش نیست', fakeHost.innerHTML.indexOf('<option value="اداری"') < 0);
+
+const m1Value = optionValueFor(fakeHost.innerHTML, 'method', 'اداری');
+const m2Value = optionValueFor(fakeHost.innerHTML, 'method', 'چرخشی');
+check('گزینهٔ «اداری» مقدار شناسه دارد', m1Value === 'm1', m1Value);
+check('گزینهٔ «چرخشی» مقدار شناسه دارد', m2Value === 'm2', m2Value);
+
+changeFilter('method', m1Value);
+check('فیلتر «اداری» فقط کارمند m1 را می‌آورد', bodyHtml.indexOf('علی رضایی') >= 0 && bodyHtml.indexOf('سارا احمدی') < 0);
+check('فیلتر «اداری» در فهرست ۱ نفر', bodyHtml.indexOf('۱ نفر') >= 0);
+
+changeFilter('method', m2Value);
+check('فیلتر «چرخشی» فقط کارمند m2 را می‌آورد', bodyHtml.indexOf('سارا احمدی') >= 0 && bodyHtml.indexOf('علی رضایی') < 0);
+
+clickOn('data-sp-reset', '');
+check('پاک‌کردن فیلترها هر دو کارمند را برمی‌گرداند', bodyHtml.indexOf('علی رضایی') >= 0 && bodyHtml.indexOf('سارا احمدی') >= 0);
+
+// همان فیلتر در تب تقویم هم باید با شناسه کار کند
+clickOn('data-sp-tab', 'calendar');
+check('فیلتر روش در تقویم هم شناسه‌محور است', fakeHost.innerHTML.indexOf('<option value="m1"') >= 0);
+changeFilter('method', optionValueFor(fakeHost.innerHTML, 'method', 'چرخشی'));
+check('فیلتر روش در تقویم اعمال می‌شود', bodyHtml.indexOf('سارا احمدی') >= 0 && bodyHtml.indexOf('علی رضایی') < 0);
+clickOn('data-sp-reset', '');
 
 // ── گزارش ──
 let failed = 0;
