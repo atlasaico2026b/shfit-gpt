@@ -52,6 +52,11 @@ check('مرتب‌سازی با نام فرد مأمور موجود است', /\[
 check('نام فرد برای مأموریت/مرخصی از پروندهٔ کارمند خوانده می‌شود', /moduleKey === 'missions' \|\| moduleKey === 'leaves'/.test(modules));
 check('مرتب‌سازی با مبدأ و محدودهٔ عملیاتی هست', /\['origin', 'مبدأ'\]/.test(modules) && /\['operationalRange', 'محدودهٔ عملیاتی'\]/.test(modules));
 
+// ── مرتب‌سازی مرخصی‌ها با نام ──
+check('مرخصی‌ها مرتب‌سازی با نام و نام خانوادگی دارد', /\['name', 'نام و نام خانوادگی'\]/.test(modules));
+check('مرخصی‌ها مرتب‌سازی جدا با نام و نام خانوادگی دارد', /\['firstName', 'نام'\]/.test(modules) && /\['lastName', 'نام خانوادگی'\]/.test(modules));
+check('نام/نام خانوادگی از پروندهٔ کارمند خوانده می‌شود', /key === 'firstName' \|\| key === 'lastName'/.test(modules));
+
 // ── گزارش افراد در بازه ──
 check('محاسبهٔ گزارش بازه وجود دارد', /function rangeReportData/.test(modules) && /function openRangeReport/.test(modules));
 check('دکمهٔ گزارش در بالای داشبورد هست', index.includes('data-module-action="range-report"'));
