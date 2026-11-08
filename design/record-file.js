@@ -334,8 +334,12 @@
       area.id = 'rfPrintArea';
       document.body.appendChild(area);
     }
-    // همان قواعد برگه، به‌همراه تنظیم صفحهٔ A4، تا چاپ/PDF با خروجی Word یکی باشد
-    area.innerHTML = '<style>@page{size:A4;margin:12mm 12mm 14mm}' + sheetRules() + '</style>' + html;
+    // همان قواعد برگه، به‌همراه تنظیم صفحهٔ A4، تا چاپ/PDF با خروجی Word یکی باشد.
+    // حاشیهٔ صفحه صفر است تا مرورگر آدرس سایت، تاریخ/ساعت و شمارهٔ صفحه را چاپ
+    // نکند؛ حاشیهٔ واقعی برگه از padding خودِ برگه می‌آید (هر برگه از صفحهٔ تازه
+    // شروع می‌شود، پس هر صفحه حاشیهٔ درست دارد).
+    area.innerHTML = '<style>@page{size:A4;margin:0}' + sheetRules() +
+      '.rf-sheet{padding:12mm 12mm 14mm}' + '</style>' + html;
     document.body.classList.add('rf-printing');
     const cleanup = () => {
       document.body.classList.remove('rf-printing');

@@ -89,7 +89,9 @@ check('سرستون تنها در پای صفحه نمی‌ماند', /#atlasPri
 check('جدول و بدنه اجازهٔ شکستن بین سطرها را دارند', /#atlasPrintArea tbody\s*\{[^}]*break-inside:\s*auto/.test(css.replace(/\r/g, '')));
 
 // ── حذف سرصفحه/پاصفحهٔ مرورگر (آدرس سایت، تاریخ، ساعت، «۱ از ۲») ──
-check('حاشیهٔ صفحه صفر است تا مرورگر سرصفحه/پاصفحه چاپ نکند', /@page\s*\{[^}]*margin:\s*0\s*;/.test(css.replace(/\r/g, '')));
+check('برگهٔ فهرست‌ها روی صفحهٔ نام‌دار چاپ می‌شود', /@page atlas-list\s*\{[^}]*margin:\s*0\s*;/.test(css.replace(/\r/g, '')));
+check('برگهٔ فهرست‌ها به همان صفحهٔ نام‌دار وصل است', /body\.atlas-printing #atlasPrintArea\s*\{[^}]*page:\s*atlas-list/.test(css.replace(/\r/g, '')));
+check('چاپ مستقیم کل صفحه (Ctrl+P) حاشیهٔ خودش را نگه می‌دارد', /@page\s*\{[^}]*size:\s*A4 landscape[^}]*margin:\s*9mm 9mm 11mm/.test(css.replace(/\r/g, '')));
 check('حاشیهٔ افقی برگه از padding خودش می‌آید', /body\.atlas-printing #atlasPrintArea\s*\{[^}]*padding:\s*0 9mm/.test(css.replace(/\r/g, '')));
 check('سطر فاصلهٔ بالای صفحه ۹mm است', /\.atlas-print-pad > td\s*\{[^}]*height:\s*9mm/.test(css.replace(/\r/g, '')));
 check('سطر فاصلهٔ پایین صفحه ۱۱mm است', /\.atlas-print-pad-bottom > td\s*\{[^}]*height:\s*11mm/.test(css.replace(/\r/g, '')));
@@ -104,6 +106,8 @@ check('چاپ مستقیم صفحه سرستون را تکرار می‌کند',
 check('چاپ مستقیم صفحه کادر اسکرول جدول را باز می‌کند', /\.module-table-wrap\{overflow:visible!important/.test(stylesCss));
 check('برگهٔ پرونده هم سطرها را نصف نمی‌کند', /\.rf-sheet tr,\.rf-sheet td,\.rf-sheet th\{page-break-inside:avoid;break-inside:avoid\}/.test(recordFileJs));
 check('برگهٔ پرونده سرستون را در هر صفحه تکرار می‌کند', /\.rf-sheet thead\{display:table-header-group/.test(recordFileJs));
+check('برگهٔ پرونده هم سرصفحه/پاصفحهٔ مرورگر را چاپ نمی‌کند', /@page\{size:A4;margin:0\}/.test(recordFileJs));
+check('حاشیهٔ برگهٔ پرونده از padding خودش می‌آید', /\.rf-sheet\{padding:12mm 12mm 14mm\}/.test(recordFileJs));
 
 const failed = checks.filter(c => !c.ok);
 checks.forEach(c => console.log((c.ok ? 'PASS ' : 'FAIL ') + c.name + (c.ok || !c.extra ? '' : ' → ' + c.extra)));
