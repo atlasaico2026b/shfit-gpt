@@ -115,25 +115,46 @@
       : [];
   }
 
+  // الگوی روزبه‌روز قالب: «روز اول کاری، روز دوم کاری … تا آخر قالب».
+  // اگر قالب `pattern` داشته باشد همان مرجع است؛ وگرنه از rotation فشرده باز می‌شود.
+  function templatePattern(template) {
+    if (Array.isArray(template && template.pattern) && template.pattern.length) {
+      return template.pattern.filter(function (code) { return code; });
+    }
+    const out = [];
+    templateRotation(template).forEach(function (step) {
+      const days = Number(step.days || 0);
+      for (let i = 0; i < days; i++) out.push(step.code);
+    });
+    return out;
+  }
+
+  // فشرده‌سازی الگو به مراحل «کد + تعداد روز» برای ذخیره و خلاصه.
+  function compressPattern(pattern) {
+    const out = [];
+    (pattern || []).forEach(function (code) {
+      if (!code) return;
+      const last = out[out.length - 1];
+      if (last && last.code === code) last.days += 1;
+      else out.push({ code: code, days: 1 });
+    });
+    return out;
+  }
+
   function cycleLength(template) {
-    return templateRotation(template).reduce(function (sum, r) { return sum + Number(r.days || 0); }, 0);
+    return templatePattern(template).length;
   }
 
   // کد شیفتِ یک تاریخ در یک قالب چرخشی؛ OFF یعنی استراحت.
   function rotationCodeAt(template, iso) {
-    const rotation = templateRotation(template);
-    const length = cycleLength(template);
+    const pattern = templatePattern(template);
+    const length = pattern.length;
     if (!length) return '';
     const start = dayNumber(template.cycleStart || iso);
     const n = dayNumber(iso);
     if (!isFinite(start) || !isFinite(n)) return '';
-    let index = ((n - start) % length + length) % length;
-    for (let i = 0; i < rotation.length; i++) {
-      const days = Number(rotation[i].days || 0);
-      if (index < days) return rotation[i].code;
-      index -= days;
-    }
-    return '';
+    const index = ((n - start) % length + length) % length;
+    return pattern[index];
   }
 
   function methodWeekly(method) {
@@ -268,9 +289,13 @@
   }
 
   // خلاصهٔ یک روش کاری برای نمایش در کارت.
-  function methodSummary(method) {
+  function methodSummary(method, state) {
     if (!method) return '';
-    if (method.kind === 'rotating' || method.kind === 'camp') return 'چرخشی — قالب شیفت تعیین می‌کند';
+    if (method.kind === 'rotating' || method.kind === 'camp') {
+      const template = state ? findTemplate(state, method.templateId) : null;
+      const length = template ? cycleLength(template) : 0;
+      return length ? 'شیفتی — الگوی ' + length + ' روزهٔ قالب' : 'شیفتی — قالب شیفت تعیین می‌کند';
+    }
     const rules = methodWeekly(method).filter(function (r) { return r.on !== false && r.from && r.to; });
     if (!rules.length) return 'ساعت کاری تعیین نشده';
     const days = rules.map(function (r) { return WEEKDAYS_SHORT[Number(r.day)] || ''; }).join('، ');
@@ -305,6 +330,8 @@
   let selected = Object.create(null);
   let personId = '';
   let modal = null;
+  // قالب شیفتی که روش‌های کاری زیر آن تعریف می‌شوند؛ '' یعنی «بدون قالب — روزکار».
+  let activeTemplateId = '';
 
   function esc(value) { return bridge ? bridge.esc(value) : String(value == null ? '' : value); }
   function fa(value) { return bridge ? bridge.faDigits(value) : String(value); }
@@ -329,8 +356,7 @@
     ensureRange();
     const state = data();
     const tabs = [
-      ['methods', 'روش‌های کاری'],
-      ['templates', 'قالب‌های شیفت'],
+      ['methods', 'قالب شیفت و روش کاری'],
       ['assign', 'تخصیص کارکنان'],
       ['calendar', 'تقویم شیفت'],
       ['legacy', 'برنامه‌های ثبت‌شده']
@@ -359,7 +385,6 @@
 
   function renderTab(state) {
     if (tab === 'methods') return renderMethods(state);
-    if (tab === 'templates') return renderTemplates(state);
     if (tab === 'assign') return renderAssign(state);
     if (tab === 'calendar') return renderCalendar(state);
     if (tab === 'legacy') return '<div data-sp-legacy></div>';
@@ -378,88 +403,111 @@
     if (bridge.enhanceJalaliInputs) bridge.enhanceJalaliInputs(host);
   }
 
-  // ── تب ۱: روش‌های کاری ──────────────────────────────────────────────────
-  function renderMethods(state) {
-    const methods = state.shiftMethods || [];
-    const cards = methods.length ? methods.map(function (method) {
-      const kindLabel = (METHOD_KINDS.find(function (p) { return p[0] === method.kind; }) || [])[1] || method.kind;
+  // ── تب ۱: قالب شیفت و روش کاری ──────────────────────────────────────────
+  // ترتیب کار عمداً همین است: اول قالب شیفتی مشخص می‌شود، بعد روش‌های کاری
+  // زیر همان قالب تعریف می‌شوند. «بدون قالب» یعنی روش روزکار هفتگی.
+  function methodKindLabel(method, state) {
+    if (method.kind === 'rotating' || method.kind === 'camp') {
       const template = findTemplate(state, method.templateId);
+      return template ? 'شیفتی — بر اساس قالب «' + (template.name || '') + '»' : 'شیفتی — قالب تعیین نشده';
+    }
+    return 'روزکار ثابت — قوانین هفتگی';
+  }
+
+  // الگوی روزبه‌روز قالب به شکل قرص: روز اول، روز دوم … تا آخر قالب.
+  function patternChips(template) {
+    const pattern = templatePattern(template);
+    if (!pattern.length) return '<span class="sp-hint">الگوی روزها تعیین نشده است.</span>';
+    return pattern.map(function (code, index) {
+      const shift = findShiftByCode(template, code);
+      const label = code === OFF ? 'استراحت' : (shift ? (shift.label || code) : code);
+      const time = shift && shift.from ? shift.from + '–' + shift.to : '';
+      return '<span class="sp-day-chip' + (code === OFF ? ' is-off' : '') + '">' +
+        '<b>روز ' + fa(index + 1) + '</b>' + esc(label) +
+        (time ? '<i>' + esc(time) + '</i>' : '') + '</span>';
+    }).join('');
+  }
+
+  function renderMethods(state) {
+    const templates = state.shiftTemplates || [];
+    if (activeTemplateId && !findTemplate(state, activeTemplateId)) activeTemplateId = '';
+    const template = activeTemplateId ? findTemplate(state, activeTemplateId) : null;
+    const methods = (state.shiftMethods || []).filter(function (method) {
+      return String(method.templateId || '') === String(activeTemplateId || '');
+    });
+
+    const picker = '<div class="sp-template-picker" role="group" aria-label="انتخاب قالب شیفت">' +
+      '<span class="sp-picker-label">۱) قالب شیفت:</span>' +
+      '<button type="button" class="sp-template-chip' + (activeTemplateId ? '' : ' is-active') +
+        '" data-sp-pick-template="">بدون قالب — روزکار</button>' +
+      templates.map(function (item) {
+        return '<button type="button" class="sp-template-chip' +
+          (String(item.id) === String(activeTemplateId) ? ' is-active' : '') +
+          '" data-sp-pick-template="' + esc(item.id) + '">' + esc(item.name || 'قالب شیفت') + '</button>';
+      }).join('') +
+      '<button type="button" class="list-chip" data-sp-new="template">+ قالب جدید</button>' +
+      '</div>';
+
+    const templatePanel = template
+      ? '<div class="sp-pattern"><div class="sp-pattern-head"><div><h4>' + esc(template.name || 'قالب شیفت') + '</h4>' +
+        '<span class="sp-card-kind">' + fa(templateShifts(template).length) + ' شیفت در روز · الگوی ' +
+        fa(cycleLength(template)) + ' روزه</span></div>' +
+        '<div class="sp-card-actions">' +
+        '<button type="button" class="secondary-btn" data-sp-edit="template" data-sp-id="' + esc(template.id) + '">ویرایش قالب</button>' +
+        '<button type="button" class="module-delete-btn" data-sp-del="template" data-sp-id="' + esc(template.id) + '">حذف</button>' +
+        '</div></div>' +
+        '<div class="sp-shift-chips">' + templateShifts(template).map(function (shift) {
+          return '<span class="sp-shift-chip"><b>' + esc(shift.code) + '</b>' + esc(shift.label || '') +
+            '<i>' + esc(shift.from || '—') + '–' + esc(shift.to || '—') + '</i></span>';
+        }).join('') + '</div>' +
+        '<div class="sp-day-chips">' + patternChips(template) + '</div>' +
+        '<p class="sp-hint">روش‌های کاری زیر این قالب، روزهای کار را از همین الگو می‌گیرند: روز اول، روز دوم … تا آخر قالب.</p>' +
+        '</div>'
+      : '<div class="sp-pattern is-empty"><p class="sp-hint">قالب شیفتی انتخاب نشده است؛ روش‌های کاری این بخش روزکار هفتگی‌اند (روزهای هفته + ساعت کار).</p></div>';
+
+    const cards = methods.length ? methods.map(function (method) {
       const assigned = (state.shiftAssignments || []).filter(function (a) {
         return String(a.methodId) === String(method.id) && a.active !== false;
       }).length;
       return '<article class="sp-card' + (method.active === false ? ' is-off' : '') + '">' +
         '<header class="sp-card-head"><div><h4>' + esc(method.name || 'روش کاری') + '</h4>' +
-        '<span class="sp-card-kind">' + esc(kindLabel) + '</span></div>' +
+        '<span class="sp-card-kind">' + esc(methodKindLabel(method, state)) + '</span></div>' +
         '<div class="sp-card-actions">' +
         '<button type="button" class="secondary-btn" data-sp-edit="method" data-sp-id="' + esc(method.id) + '">ویرایش</button>' +
         '<button type="button" class="module-delete-btn" data-sp-del="method" data-sp-id="' + esc(method.id) + '">حذف</button>' +
         '</div></header>' +
         '<dl class="sp-facts">' +
-        '<div><dt>ساعت کاری</dt><dd>' + esc(methodSummary(method)) + '</dd></div>' +
-        (template ? '<div><dt>قالب شیفت</dt><dd>' + esc(template.name || '') + '</dd></div>' : '') +
+        '<div><dt>ساعت کاری</dt><dd>' + esc(methodSummary(method, state)) + '</dd></div>' +
         '<div><dt>کارکنان تخصیص‌یافته</dt><dd>' + fa(assigned) + ' نفر</dd></div>' +
         (method.notes ? '<div><dt>توضیح</dt><dd>' + esc(method.notes) + '</dd></div>' : '') +
         '</dl></article>';
-    }).join('') : '<div class="module-empty">هنوز روش کاری تعریف نشده است. با یکی از قالب‌های آماده شروع کن.</div>';
+    }).join('') : '<div class="module-empty">' +
+      (template ? 'برای این قالب هنوز روش کاری تعریف نشده است.' : 'هنوز روش کاری روزکار تعریف نشده است.') +
+      ' با «+ روش کاری جدید» شروع کن.</div>';
 
     const presets = [
-      ['office-8-14', 'روزکار اداری ۸ تا ۱۴'],
-      ['office-7-15', 'روزکار اداری ۷ تا ۱۵'],
-      ['fixed-8-16', 'روزکار شیفتی ۸ تا ۱۶'],
-      ['fixed-7-19', 'روزکار شیفتی ۷ تا ۱۹'],
+      ['office-8-14', 'روزکار ثابت ۸ تا ۱۴'],
+      ['office-7-15', 'روزکار ثابت ۷ تا ۱۵'],
+      ['fixed-8-16', 'روزکار ثابت شیفتی ۸ تا ۱۶'],
+      ['fixed-7-19', 'روزکار ثابت شیفتی ۷ تا ۱۹'],
       ['rotating-12', 'شیفت ۱۲ ساعته روز/شب'],
-      ['rotating-8', 'شیفت ۸ ساعته سه‌شیفت']
+      ['rotating-8', 'شیفت ۸ ساعته سه‌شیفت'],
+      ['camp-14-14', 'اقماری ۱۴ روز کار / ۱۴ روز استراحت']
     ];
 
     return '<section class="module-list-panel"><div class="module-list-head"><div>' +
-      '<h3>روش‌های کاری</h3><p>هر روش کاری یا قوانین ساعت کاری هفتگی دارد یا به یک قالب چرخش وصل می‌شود.</p></div>' +
+      '<h3>قالب شیفت و روش کاری</h3><p>اول قالب شیفتی را مشخص کن، بعد روش کاری را زیر آن تعریف کن.</p></div>' +
       '<div class="module-page-actions"><button type="button" class="primary-btn" data-sp-new="method">+ روش کاری جدید</button></div></div>' +
+      picker +
       '<div class="sp-presets"><span>قالب آماده:</span>' + presets.map(function (pair) {
         return '<button type="button" class="list-chip" data-sp-preset="' + pair[0] + '">' + esc(pair[1]) + '</button>';
       }).join('') + '</div>' +
+      templatePanel +
+      '<div class="sp-section-head"><h4>۲) روش‌های کاری' + (template ? ' — ' + esc(template.name || '') : ' — روزکار') + '</h4></div>' +
       '<div class="sp-card-grid">' + cards + '</div></section>';
   }
 
-  // ── تب ۲: قالب‌های شیفت ─────────────────────────────────────────────────
-  function renderTemplates(state) {
-    const templates = state.shiftTemplates || [];
-    const cards = templates.length ? templates.map(function (template) {
-      const shifts = templateShifts(template);
-      const length = cycleLength(template);
-      return '<article class="sp-card">' +
-        '<header class="sp-card-head"><div><h4>' + esc(template.name || 'قالب شیفت') + '</h4>' +
-        '<span class="sp-card-kind">' + fa(shifts.length) + ' شیفت در روز · چرخهٔ ' + fa(length) + ' روزه</span></div>' +
-        '<div class="sp-card-actions">' +
-        '<button type="button" class="secondary-btn" data-sp-edit="template" data-sp-id="' + esc(template.id) + '">ویرایش</button>' +
-        '<button type="button" class="module-delete-btn" data-sp-del="template" data-sp-id="' + esc(template.id) + '">حذف</button>' +
-        '</div></header>' +
-        '<div class="sp-shift-chips">' + shifts.map(function (shift) {
-          return '<span class="sp-shift-chip"><b>' + esc(shift.code) + '</b>' + esc(shift.label || '') +
-            '<i>' + esc(shift.from || '—') + '–' + esc(shift.to || '—') + '</i></span>';
-        }).join('') + '</div>' +
-        '<dl class="sp-facts">' +
-        '<div><dt>ترتیب چرخش</dt><dd>' + esc(templateSummary(template)) + '</dd></div>' +
-        '<div><dt>شروع چرخه</dt><dd>' + (template.cycleStart ? esc(bridge.formatJalali(template.cycleStart, false)) : '—') + '</dd></div>' +
-        '</dl></article>';
-    }).join('') : '<div class="module-empty">هنوز قالب شیفتی ساخته نشده است.</div>';
-
-    const presets = [
-      ['2-2-4', '۲ صبح · ۲ شب · ۴ استراحت'],
-      ['2-2-2', '۲ صبح · ۲ شب · ۲ استراحت'],
-      ['3-3-3', '۳ صبح · ۳ شب · ۳ استراحت'],
-      ['three-8', '۸ ساعته سه‌شیفت (صبح/عصر/شب)']
-    ];
-
-    return '<section class="module-list-panel"><div class="module-list-head"><div>' +
-      '<h3>قالب‌های شیفت</h3><p>هر قالب می‌گوید در یک روز چند شیفت هست، ساعت هر شیفت چیست و به چه ترتیبی می‌چرخند.</p></div>' +
-      '<div class="module-page-actions"><button type="button" class="primary-btn" data-sp-new="template">+ قالب شیفت جدید</button></div></div>' +
-      '<div class="sp-presets"><span>قالب آماده:</span>' + presets.map(function (pair) {
-        return '<button type="button" class="list-chip" data-sp-preset="' + pair[0] + '">' + esc(pair[1]) + '</button>';
-      }).join('') + '</div>' +
-      '<div class="sp-card-grid">' + cards + '</div></section>';
-  }
-
-  // ── تب ۳: تخصیص کارکنان ─────────────────────────────────────────────────
+  // ── تب ۲: تخصیص کارکنان ─────────────────────────────────────────────────
   // شهر از «محل سمت سازمانی» می‌آید و محل خدمت از «محل خدمت فعلی»؛ اگر یکی خالی
   // بود، دیگری جای آن می‌نشیند تا هیچ کارمندی از فهرست بیرون نیفتد.
   function employeeCity(employee) {
@@ -623,7 +671,7 @@
       }).join('') + '</select></label>';
   }
 
-  // ── تب ۴: تقویم شیفت ────────────────────────────────────────────────────
+  // ── تب ۳: تقویم شیفت ────────────────────────────────────────────────────
   function renderCalendar(state) {
     const dates = rangeDates(range.from, range.to);
     const employees = filteredEmployees(state);
@@ -871,10 +919,15 @@
   }
 
   // ── پنجرهٔ روش کاری ──
+  // نوع روش کاری پرسیده نمی‌شود: اگر قالب شیفتی انتخاب شده باشد روش شیفتی است و
+  // روزهای کارش را از الگوی همان قالب می‌گیرد؛ وگرنه روزکار هفتگی است.
   function openMethodModal(id) {
     const state = data();
     const method = id ? findMethod(state, id) : null;
-    const current = method || { name: '', kind: 'office', weekly: defaultWeekly('08:00', '14:00'), templateId: '', notes: '' };
+    const templateId = method ? String(method.templateId || '') : String(activeTemplateId || '');
+    const template = findTemplate(state, templateId);
+    const current = method || { name: '', templateId: templateId, weekly: defaultWeekly('08:00', '14:00'), notes: '' };
+
     const weekly = WEEKDAYS.map(function (label, index) {
       const rule = methodWeekly(current).find(function (r) { return Number(r.day) === index; }) ||
         { day: index, on: index < 5, from: '08:00', to: '14:00' };
@@ -887,43 +940,31 @@
         '</div>';
     }).join('');
 
-    const templates = (state.shiftTemplates || []).map(function (t) { return [t.id, t.name || 'قالب شیفت']; });
+    const scheduleBlock = template
+      ? '<div class="sp-week" data-sp-pattern-block><h4>روزهای کار از قالب «' + esc(template.name || '') + '»</h4>' +
+        '<p class="sp-hint">این روش شیفتی است؛ به روزهای هفته بسته نیست و روز اول، روز دوم … تا آخر قالب را دنبال می‌کند.</p>' +
+        '<div class="sp-day-chips">' + patternChips(template) + '</div></div>'
+      : '<div class="sp-week" data-sp-week-block><h4>روزهای کاری هفتگی</h4>' +
+        '<p class="sp-hint">هر روز را تیک بزن و ساعت شروع و پایان همان روز را بنویس. روزِ بدون تیک، استراحت است.</p>' +
+        weekly + '</div>';
 
     openModal(method ? 'ویرایش روش کاری' : 'روش کاری جدید',
-      'نوع روش کاری را انتخاب کن؛ برای روزکار، ساعت هر روز هفته و برای چرخشی، قالب شیفت را مشخص کن.',
+      template ? 'روش شیفتی زیر قالب «' + (template.name || '') + '»' : 'روش روزکار با قوانین هفتگی',
       '<form class="module-form" data-sp-form="method" data-sp-id="' + esc(method ? method.id : '') + '">' +
+      '<input type="hidden" name="templateId" value="' + esc(templateId) + '">' +
       '<div class="module-fields">' +
       field('نام روش کاری', input('name', current.name, 'required placeholder="مثلاً روزکار اداری ستاد"')) +
-      field('نوع روش کاری', select('kind', METHOD_KINDS, current.kind)) +
-      field('قالب شیفت (برای چرخشی)', '<select name="templateId"><option value="">— انتخاب نشده —</option>' +
-        templates.map(function (pair) {
-          return '<option value="' + esc(pair[0]) + '"' + (String(current.templateId) === String(pair[0]) ? ' selected' : '') + '>' +
-            esc(pair[1]) + '</option>';
-        }).join('') + '</select>', 'فقط برای روش‌های چرخشی و اقماری لازم است.') +
       field('توضیح', '<textarea name="notes" rows="2">' + esc(current.notes || '') + '</textarea>') +
-      '</div>' +
-      '<div class="sp-week" data-sp-week-block><h4>قوانین ساعت کاری هفتگی</h4>' +
-      '<p class="sp-hint">هر روز را تیک بزن و ساعت شروع و پایان همان روز را بنویس. روزِ بدون تیک، استراحت است.</p>' +
-      weekly + '</div></form>',
+      '</div>' + scheduleBlock + '</form>',
       '<button type="button" class="secondary-btn" data-sp-close>انصراف</button> ' +
       '<button type="button" class="primary-btn" data-sp-save="method">' + (method ? 'ذخیرهٔ تغییرات' : 'ثبت روش کاری') + '</button>'
     );
-    syncMethodKind();
   }
 
   function defaultWeekly(from, to) {
     return WEEKDAYS.map(function (label, index) {
       return { day: index, on: index < 5, from: from, to: to };
     });
-  }
-
-  function syncMethodKind() {
-    if (!modal) return;
-    const kind = modal.querySelector('[name="kind"]');
-    const block = modal.querySelector('[data-sp-week-block]');
-    if (!kind || !block) return;
-    const rotating = kind.value === 'rotating' || kind.value === 'camp';
-    block.hidden = rotating;
   }
 
   function readWeekly() {
@@ -946,18 +987,13 @@
     const id = form.getAttribute('data-sp-id');
     const name = String(form.querySelector('[name="name"]').value || '').trim();
     if (!name) { bridge.toast('نام روش کاری را بنویس.'); return; }
-    const kind = form.querySelector('[name="kind"]').value;
-    const templateId = form.querySelector('[name="templateId"]').value;
-    if ((kind === 'rotating' || kind === 'camp') && !templateId) {
-      bridge.toast('برای روش چرخشی، یک قالب شیفت انتخاب کن.');
-      return;
-    }
+    const templateId = String(form.querySelector('[name="templateId"]').value || '');
     const record = {
       id: id || bridge.createId(),
       name: name,
-      kind: kind,
+      kind: templateId ? 'rotating' : 'office',
       templateId: templateId,
-      weekly: readWeekly(),
+      weekly: templateId ? [] : readWeekly(),
       notes: String(form.querySelector('[name="notes"]').value || '').trim(),
       active: true
     };
@@ -996,10 +1032,10 @@
       '<p class="sp-hint">هر شیفت یک کد کوتاه، یک نام و ساعت شروع و پایان دارد.</p>' +
       '<div class="sp-rows-body">' + shiftRows(current.shifts) + '</div>' +
       '<button type="button" class="secondary-btn" data-sp-add-shift>+ افزودن شیفت</button></div>' +
-      '<div class="sp-rows" data-sp-rotation><h4>ترتیب چرخش</h4>' +
-      '<p class="sp-hint">مثلاً ۲ صبح‌کار، ۲ شب‌کار، ۴ استراحت. جمع روزها طول چرخه است.</p>' +
-      '<div class="sp-rows-body">' + rotationRows(current.rotation, current.shifts) + '</div>' +
-      '<button type="button" class="secondary-btn" data-sp-add-rotation>+ افزودن مرحله</button>' +
+      '<div class="sp-rows" data-sp-pattern><h4>الگوی روزها</h4>' +
+      '<p class="sp-hint">روز اول کاری، روز دوم کاری … تا آخر قالب. هر روز یک شیفت یا استراحت.</p>' +
+      '<div class="sp-rows-body">' + patternRows(templatePattern(current), current.shifts) + '</div>' +
+      '<button type="button" class="secondary-btn" data-sp-add-day>+ افزودن روز</button>' +
       '<div class="sp-cycle" data-sp-cycle></div></div></form>',
       '<button type="button" class="secondary-btn" data-sp-close>انصراف</button> ' +
       '<button type="button" class="primary-btn" data-sp-save="template">' + (template ? 'ذخیرهٔ تغییرات' : 'ثبت قالب') + '</button>'
@@ -1019,21 +1055,39 @@
     }).join('');
   }
 
-  function rotationRows(rotation, shifts) {
+  function patternRows(pattern, shifts) {
     const options = [{ value: OFF, label: 'استراحت' }].concat((shifts || []).map(function (shift) {
       return { value: shift.code, label: (shift.code || '') + ' — ' + (shift.label || '') };
     }));
-    return (rotation || []).map(function (step) {
-      return '<div class="sp-row" data-sp-rotation-row>' +
-        '<select data-sp-rotation-code aria-label="شیفت">' + options.map(function (option) {
-          return '<option value="' + esc(option.value) + '"' + (String(step.code) === String(option.value) ? ' selected' : '') + '>' +
+    return (pattern || []).map(function (code, index) {
+      return '<div class="sp-row sp-day-row" data-sp-day-row>' +
+        '<span class="sp-day-label">روز ' + fa(index + 1) + '</span>' +
+        '<select data-sp-day-code aria-label="شیفت روز ' + fa(index + 1) + '">' + options.map(function (option) {
+          return '<option value="' + esc(option.value) + '"' + (String(code) === String(option.value) ? ' selected' : '') + '>' +
             esc(option.label) + '</option>';
         }).join('') + '</select>' +
-        '<input type="number" min="1" max="60" data-sp-rotation-days value="' + esc(step.days || 1) + '" aria-label="تعداد روز">' +
-        '<span class="sp-row-unit">روز</span>' +
-        '<button type="button" class="module-delete-btn" data-sp-del-rotation aria-label="حذف مرحله">×</button>' +
+        '<button type="button" class="module-delete-btn" data-sp-del-day aria-label="حذف روز">×</button>' +
         '</div>';
     }).join('');
+  }
+
+  function readPattern() {
+    const out = [];
+    if (!modal) return out;
+    modal.querySelectorAll('[data-sp-day-row]').forEach(function (row) {
+      const select = row.querySelector('[data-sp-day-code]');
+      if (select && select.value) out.push(select.value);
+    });
+    return out;
+  }
+
+  // شمارهٔ روزها پس از افزودن/حذف دوباره پشت سر هم می‌شود.
+  function renumberDays() {
+    if (!modal) return;
+    modal.querySelectorAll('[data-sp-day-row]').forEach(function (row, index) {
+      const label = row.querySelector('.sp-day-label');
+      if (label) label.textContent = 'روز ' + fa(index + 1);
+    });
   }
 
   function readShifts() {
@@ -1052,25 +1106,12 @@
     return out;
   }
 
-  function readRotation() {
-    const out = [];
-    if (!modal) return out;
-    modal.querySelectorAll('[data-sp-rotation-row]').forEach(function (row) {
-      const code = row.querySelector('[data-sp-rotation-code]').value;
-      const days = Number(row.querySelector('[data-sp-rotation-days]').value || 0);
-      if (!code || !(days > 0)) return;
-      out.push({ code: code, days: days });
-    });
-    return out;
-  }
-
   function updateCycle() {
     if (!modal) return;
     const box = modal.querySelector('[data-sp-cycle]');
     if (!box) return;
-    const rotation = readRotation();
-    const total = rotation.reduce(function (sum, r) { return sum + r.days; }, 0);
-    box.textContent = total ? 'طول چرخه: ' + fa(total) + ' روز' : 'ترتیب چرخش خالی است.';
+    const pattern = readPattern();
+    box.textContent = pattern.length ? 'طول قالب: ' + fa(pattern.length) + ' روز' : 'الگوی روزها خالی است.';
   }
 
   async function saveTemplate() {
@@ -1081,14 +1122,15 @@
     if (!name) { bridge.toast('نام قالب را بنویس.'); return; }
     const shifts = readShifts();
     if (!shifts.length) { bridge.toast('حداقل یک شیفت با کد تعریف کن.'); return; }
-    const rotation = readRotation();
-    if (!rotation.length) { bridge.toast('ترتیب چرخش را مشخص کن.'); return; }
+    const pattern = readPattern();
+    if (!pattern.length) { bridge.toast('الگوی روزها را مشخص کن.'); return; }
     const cycleStart = readJalali(form, 'cycleStart');
     const record = {
       id: id || bridge.createId(),
       name: name,
       shifts: shifts,
-      rotation: rotation,
+      pattern: pattern,
+      rotation: compressPattern(pattern),
       cycleStart: cycleStart || todayIso(),
       active: true
     };
@@ -1333,6 +1375,21 @@
             cycleStart: todayIso()
           }
         };
+      },
+      'camp-14-14': function () {
+        const pattern = [];
+        for (let i = 0; i < 14; i++) pattern.push('ص');
+        for (let i = 0; i < 14; i++) pattern.push(OFF);
+        return {
+          template: {
+            name: 'اقماری ۱۴/۱۴',
+            shifts: [{ code: 'ص', label: 'روزکار اقماری', from: '07:00', to: '19:00' }],
+            pattern: pattern,
+            rotation: compressPattern(pattern),
+            cycleStart: todayIso()
+          },
+          method: { name: 'اقماری ۱۴ روز کار / ۱۴ روز استراحت', kind: 'camp' }
+        };
       }
     };
     const build = presets[key];
@@ -1352,6 +1409,8 @@
       state.shiftMethods = (state.shiftMethods || []).concat([record]);
     }
     if (await bridge.save()) {
+      // بعد از افزودن قالب آماده، همان قالب فعال می‌شود تا روش کاری‌اش دیده شود.
+      activeTemplateId = templateId;
       refresh();
       bridge.toast('قالب آماده اضافه شد.');
     }
@@ -1386,6 +1445,13 @@
 
     if (target.closest('[data-sp-new="method"]')) { openMethodModal(''); return; }
     if (target.closest('[data-sp-new="template"]')) { openTemplateModal(''); return; }
+
+    const pickTemplate = target.closest('[data-sp-pick-template]');
+    if (pickTemplate) {
+      activeTemplateId = pickTemplate.getAttribute('data-sp-pick-template') || '';
+      refresh();
+      return;
+    }
 
     const edit = target.closest('[data-sp-edit]');
     if (edit) {
@@ -1636,16 +1702,26 @@
       if (row) row.remove();
       return;
     }
-    if (target.closest('[data-sp-add-rotation]')) {
-      const body = modal.querySelector('[data-sp-rotation] .sp-rows-body');
-      if (body) body.insertAdjacentHTML('beforeend', rotationRows([{ code: OFF, days: 1 }], readShifts()));
+    if (target.closest('[data-sp-add-day]')) {
+      const body = modal.querySelector('[data-sp-pattern] .sp-rows-body');
+      if (body) body.insertAdjacentHTML('beforeend', patternRows([OFF], readShifts()));
+      renumberDays();
       updateCycle();
       return;
     }
-    if (target.closest('[data-sp-del-rotation]')) {
-      const row = target.closest('[data-sp-rotation-row]');
+    if (target.closest('[data-sp-del-day]')) {
+      const row = target.closest('[data-sp-day-row]');
       if (row) row.remove();
+      renumberDays();
       updateCycle();
+      return;
+    }
+
+    // دکمه‌های خروجی داخل پنجره‌ها (مثل «شیفت یک نفر») هم باید کار کنند؛
+    // onSectionClick فقط کلیک‌های داخل خود بخش را می‌گیرد و پنجره بیرون آن است.
+    const exportButton = target.closest('[data-sp-export]');
+    if (exportButton) {
+      runExport(exportButton.getAttribute('data-sp-export'), exportButton.getAttribute('data-sp-scope'));
       return;
     }
 
@@ -1661,8 +1737,7 @@
 
   function onModalChange(event) {
     if (!modal) return;
-    if (event.target.closest('[name="kind"]')) syncMethodKind();
-    if (event.target.closest('[data-sp-rotation-days]') || event.target.closest('[data-sp-rotation-code]')) updateCycle();
+    if (event.target.closest('[data-sp-day-code]')) updateCycle();
   }
 
   function onKeydown(event) {
@@ -1694,6 +1769,8 @@
       durationMinutes: durationMinutes,
       durationText: durationText,
       cycleLength: cycleLength,
+      templatePattern: templatePattern,
+      compressPattern: compressPattern,
       rotationCodeAt: rotationCodeAt,
       weeklyRuleAt: weeklyRuleAt,
       assignmentFor: assignmentFor,
