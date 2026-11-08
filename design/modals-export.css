@@ -459,6 +459,29 @@
   -webkit-overflow-scrolling: touch;
 }
 
+/* حالت «روزهای هر فرد»: نوار بازه یک ردیف فشرده است (تب ندارد) و جدول خلاصه
+   یک ردیف جمع در پایین دارد. */
+.atlas-modal-range-report.is-summary .range-report-presets {
+  flex: 1 1 auto;
+}
+
+.atlas-modal-range-report.is-summary .range-report-toolbar .module-field {
+  flex: 0 1 150px;
+}
+
+.atlas-modal-range-report.is-summary .range-report-toolbar > .primary-btn {
+  flex: 0 0 auto;
+}
+
+.atlas-modal-range-report .module-table tfoot th {
+  position: sticky;
+  bottom: 0;
+  background: var(--panel-2);
+  border-top: 1px solid var(--line);
+  font-weight: 700;
+  color: var(--text);
+}
+
 @media (max-width: 640px) {
   .range-report-toolbar {
     padding: 8px 11px;

@@ -60,7 +60,12 @@ check('نام/نام خانوادگی از پروندهٔ کارمند خوان�
 
 // ── گزارش افراد در بازه ──
 check('محاسبهٔ گزارش بازه وجود دارد', /function rangeReportData/.test(modules) && /function openRangeReport/.test(modules));
-check('دکمهٔ گزارش فقط در بخش پرسنل ساخته می‌شود', /moduleKey === 'employees'[\s\S]{0,220}data-module-action="range-report"/.test(modules));
+check('دکمهٔ گزارش در بخش پرسنل ساخته می‌شود', /moduleKey === 'employees'[\s\S]{0,220}data-module-action="range-report"/.test(modules));
+check('دکمهٔ روزهای مأموریت در بخش مأموریت‌ها هست', /moduleKey === 'missions'[\s\S]{0,220}data-mode="mission-days"/.test(modules));
+check('دکمهٔ روزهای مرخصی در بخش مرخصی‌ها هست', /moduleKey === 'leaves'[\s\S]{0,220}data-mode="leave-days"/.test(modules));
+check('خلاصهٔ روزهای هر کارمند محاسبه و جدول می‌شود', /function rangeReportSummary/.test(modules) && /function rangeReportSummaryTable/.test(modules));
+check('مجموع مرخصی، غیبت را حساب نمی‌کند', /LEAVE_SUMMARY_EXCLUDED_FROM_TOTAL = \['غیبت'\]/.test(modules));
+check('حالت خلاصه تب ندارد و از mode خوانده می‌شود', /openRangeReport\(button\.dataset\.mode\|\|'records'\)/.test(modules) && /summaryKind \? '' :/.test(modules));
 check('دکمهٔ گزارش از داشبورد برداشته شده', !index.includes('data-module-action="range-report"'));
 check('پنجرهٔ گزارش دو تب مرخصی و مأموریت دارد', /key: 'leaves', label: 'مرخصی‌ها'/.test(modules) && /key: 'missions', label: 'مأموریت‌ها'/.test(modules) && /data-range-tab=/.test(modules));
 check('هر تب فقط موارد خودش را نشان می‌دهد', /tab === 'leaves' \? report\.leaves : report\.missions/.test(modules));
@@ -71,7 +76,7 @@ check('گزارش از بازهٔ انتخاب‌شدهٔ داشبورد است�
 check('همراهان مأموریت هم شمرده می‌شوند', /mission\.crewIds\.forEach/.test(modules));
 check('مرخصی ردشده در گزارش نمی‌آید', /leave\.status === 'ردشده'/.test(modules));
 check('خروجی گزارش با runExport ساخته می‌شود', /runExport\(pack\.rows,/.test(modules) && /function rangeReportExport/.test(modules));
-check('دکمهٔ گزارش به handler وصل است', /openRangeReport\(\)/.test(modules));
+check('دکمهٔ گزارش به handler وصل است', /openRangeReport\(button\.dataset\.mode/.test(modules));
 
 // ── خروجی برابر با چیزی که دیده می‌شود ──
 check('خروجی بخش از فهرست دیده‌شده ساخته می‌شود', /function visibleRecordsFor/.test(modules) && /visibleRecordsFor\(moduleKey\)\.forEach/.test(modules));
