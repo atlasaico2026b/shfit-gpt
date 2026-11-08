@@ -344,6 +344,11 @@
     setTimeout(cleanup, 60000);
   }
 
+  // چند برگه در یک چاپ: هر برگه از صفحهٔ تازه شروع می‌شود.
+  function printSheets(list) {
+    printSheet((list || []).join('<div class="rf-page-break"></div>'));
+  }
+
   // ── استایل برگه: تنها منبع ظاهر برگه ───────────────────────────────
   // همین قواعد هم داخل فایل Word، هم در چاپ/PDF و هم در پیش‌نمایش به کار
   // می‌رود؛ پس ساختار و فونت‌ها هرگز دو جا و دو اندازه نمی‌شوند.
@@ -382,7 +387,9 @@
       '.rf-sheet .rf-sheet-foot{margin-top:6mm;border-top:1px solid #c7cede;padding-top:3mm}' +
       '.rf-sheet .rf-sheet-foot td{border:0;padding:0;font-size:8pt;line-height:1.7;color:#5b6580;vertical-align:top}' +
       '.rf-sheet .rf-foot-note{text-align:right}' +
-      '.rf-sheet .rf-foot-stamp{text-align:left}';
+      '.rf-sheet .rf-foot-stamp{text-align:left}' +
+      // جداکنندهٔ برگه‌ها در خروجی گروهی: هر برگه از صفحهٔ تازه شروع می‌شود.
+      '.rf-page-break{page-break-after:always;break-after:page;height:0;line-height:0;font-size:0}';
   }
 
   // پیش‌نمایش روی صفحه: همان برگه، به‌اندازهٔ یک صفحهٔ A4 روی میز
@@ -434,21 +441,29 @@
       html + '</body></html>';
   }
 
-  function csvDocument(model) {
+  // چند برگه پشت سر هم در یک فایل CSV؛ یک برگه همان مسیر با آرایهٔ یک‌عضوی است.
+  function csvMany(models) {
     const rows = [];
-    rows.push(['ATLAS SHIFT', model.kind]);
-    rows.push([model.title]);
-    rows.push([model.stamp]);
-    rows.push([]);
-    (model.facts || []).forEach(fact => rows.push([fact.label, fact.value || '']));
-    (model.tables || []).forEach(table => {
+    (models || []).forEach((model, index) => {
+      if (index) rows.push([]);
+      rows.push(['ATLAS SHIFT', model.kind]);
+      rows.push([model.title]);
+      rows.push([model.stamp]);
       rows.push([]);
-      rows.push([table.title]);
-      rows.push(table.headers);
-      if (!table.rows.length) rows.push(['موردی ثبت نشده است.']);
-      table.rows.forEach(row => rows.push(row));
+      (model.facts || []).forEach(fact => rows.push([fact.label, fact.value || '']));
+      (model.tables || []).forEach(table => {
+        rows.push([]);
+        rows.push([table.title]);
+        rows.push(table.headers);
+        if (!table.rows.length) rows.push(['موردی ثبت نشده است.']);
+        table.rows.forEach(row => rows.push(row));
+      });
     });
     return window.AtlasExportDocs.csv(rows, { ragged: true });
+  }
+
+  function csvDocument(model) {
+    return csvMany([model]);
   }
 
   function sheetTablesHtml(tables) {
@@ -470,6 +485,12 @@
       '<tr><td colspan="2">' + esc(model.stamp) + '</td></tr>' + rows + tables + '</table>';
   }
 
+  // چند برگه در یک کاربرگ Excel، پشت سر هم و با یک سطر جداکننده.
+  function xlsMany(models) {
+    return (models || []).map((model, index) =>
+      (index ? '<tr><td colspan="2" style="height:12px;border:0"></td></tr>' : '') + xlsSheetHtml(model)).join('');
+  }
+
   function exportFileName(model) {
     return 'ATLAS-SHIFT-' + slug(model.title) + '-' + fileStamp();
   }
@@ -480,6 +501,17 @@
     if (format === 'doc') { download(name + '.docx', window.AtlasExportDocs.docx(wordSheet(model)), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'); return; }
     if (format === 'xls') { download(name + '.xls', xlsDocument(xlsSheetHtml(model)), 'application/vnd.ms-excel'); return; }
     download(name + '.csv', csvDocument(model), 'text/csv;charset=utf-8');
+  }
+
+  // خروجی گروهی: همهٔ برگه‌ها پشت سر هم در یک فایل/چاپ.
+  function runBulkExport(format, models) {
+    const list = (models || []).filter(Boolean);
+    if (!list.length) return;
+    const name = 'ATLAS-SHIFT-' + slug(list.length + '-records') + '-' + fileStamp();
+    if (format === 'print') { printSheets(list.map(buildSheet)); return; }
+    if (format === 'doc') { download(name + '.docx', window.AtlasExportDocs.docxMany(list.map(wordSheet)), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'); return; }
+    if (format === 'xls') { download(name + '.xls', xlsDocument(xlsMany(list)), 'application/vnd.ms-excel'); return; }
+    download(name + '.csv', csvMany(list), 'text/csv;charset=utf-8');
   }
 
   // ── رابط کاربری ────────────────────────────────────────────────
@@ -562,27 +594,117 @@
     open(moduleSheet(moduleKey, record, data));
   }
 
+  // ── پرونده‌های انتخاب‌شده: فهرست باریک سمت راست + برگهٔ A4 سمت چپ ──────
+  // یک پنجره برای همهٔ ردیف‌های مارک‌شده: با کلیک روی هر عنوان، برگهٔ همان
+  // پرونده در کادر سمت چپ نشان داده می‌شود و از نوار پایین، خروجی همهٔ
+  // پرونده‌ها پشت سر هم گرفته می‌شود.
+  let bulk = null;
+
+  function closeBulk() {
+    if (!bulk) return;
+    bulk.backdrop.remove();
+    bulk = null;
+  }
+
+  function openBulk(moduleKey, ids) {
+    const data = snapshot();
+    const wanted = (ids || []).map(String);
+    const records = wanted
+      .map(id => (data[moduleKey] || []).find(item => String(item.id) === id))
+      .filter(Boolean);
+    if (!records.length) return;
+
+    closeFile();
+    closeBulk();
+
+    const spec = modules().spec ? modules().spec(moduleKey) : null;
+    // فهرست سمت راست بر اساس عنوان پرونده مرتب می‌شود و خروجی گروهی هم به
+    // همین ترتیب پشت سر هم می‌آید.
+    const models = records
+      .map(record => moduleSheet(moduleKey, record, data))
+      .sort((a, b) => String(a.title).localeCompare(String(b.title), 'fa'));
+
+    const backdrop = document.createElement('div');
+    backdrop.className = 'rf-bulk-backdrop';
+    backdrop.innerHTML =
+      '<div class="rf-bulk-modal" role="dialog" aria-modal="true" aria-label="پرونده‌های انتخاب‌شده">' +
+        '<div class="rf-head"><div><h3>پرونده‌های انتخاب‌شده</h3>' +
+          '<p>' + esc(spec ? spec.title : 'پرونده‌ها') + ' · ' + fa(models.length) + ' مورد — از فهرست سمت راست یکی را انتخاب کن.</p></div>' +
+          '<button type="button" class="rf-close" data-rf-bulk-close aria-label="بستن پنجره">×</button></div>' +
+        '<div class="rf-bulk-body">' +
+          '<aside class="rf-bulk-list" role="listbox" aria-label="فهرست پرونده‌ها">' +
+            models.map((model, index) =>
+              '<button type="button" class="rf-bulk-item' + (index === 0 ? ' is-active' : '') + '" role="option" aria-selected="' + (index === 0) + '" data-rf-bulk-index="' + index + '">' +
+                '<span class="rf-bulk-item-no">' + fa(index + 1) + '</span>' +
+                '<span class="rf-bulk-item-title">' + esc(model.title) + '</span>' +
+              '</button>').join('') +
+          '</aside>' +
+          '<div class="rf-bulk-sheet" data-rf-bulk-sheet></div>' +
+        '</div>' +
+        '<div class="rf-bulk-foot">' +
+          '<span class="rf-bulk-foot-label">خروجی همهٔ ' + fa(models.length) + ' پرونده، پشت سر هم:</span>' +
+          Object.keys(EXPORT_FORMATS).map(format =>
+            '<button type="button" class="secondary-btn" data-rf-bulk-export="' + format + '">' + esc(EXPORT_FORMATS[format].label) + '</button>').join('') +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(backdrop);
+
+    const sheetHost = backdrop.querySelector('[data-rf-bulk-sheet]');
+    const items = Array.from(backdrop.querySelectorAll('[data-rf-bulk-index]'));
+
+    function show(index) {
+      const model = models[index];
+      if (!model) return;
+      sheetHost.innerHTML = sheetPreviewHtml(buildSheet(model));
+      sheetHost.scrollTop = 0;
+      items.forEach((item, position) => {
+        const active = position === index;
+        item.classList.toggle('is-active', active);
+        item.setAttribute('aria-selected', String(active));
+      });
+    }
+
+    items.forEach((item, index) => item.addEventListener('click', () => show(index)));
+    backdrop.querySelector('[data-rf-bulk-close]').addEventListener('click', closeBulk);
+    backdrop.addEventListener('click', event => { if (event.target === backdrop) closeBulk(); });
+    backdrop.querySelectorAll('[data-rf-bulk-export]').forEach(button => {
+      button.addEventListener('click', () => runBulkExport(button.dataset.rfBulkExport, models));
+    });
+
+    bulk = { backdrop: backdrop, models: models };
+    show(0);
+  }
+
   document.addEventListener('atlas-open-file', event => {
     const detail = event.detail || {};
     if (detail.contact) { open(contactSheet(detail.contact)); return; }
     if (detail.module && detail.id) openModuleRecord(detail.module, detail.id);
   });
 
+  document.addEventListener('atlas-open-files', event => {
+    const detail = event.detail || {};
+    if (detail.module && Array.isArray(detail.ids)) openBulk(detail.module, detail.ids);
+  });
+
   document.addEventListener('keydown', event => {
     if (event.key !== 'Escape') return;
     const preview = document.querySelector('.rf-preview-backdrop');
     if (preview) { preview.remove(); event.preventDefault(); return; }
+    if (bulk) { closeBulk(); event.preventDefault(); return; }
     if (current) { closeFile(); event.preventDefault(); }
   });
 
   window.AtlasRecordFile = {
     openModule: openModuleRecord,
+    openBulk: openBulk,
     openContact: contact => open(contactSheet(contact)),
     buildSheet: model => buildSheet(model),
     buildWord: model => window.AtlasExportDocs.docx(wordSheet(model)),
+    buildWordMany: models => window.AtlasExportDocs.docxMany((models || []).map(wordSheet)),
     exportFileName: model => exportFileName(model),
     buildPreviewOverlay: (model, format) => buildPreviewOverlay(model, format),
     buildCsv: model => csvDocument(model),
+    buildCsvMany: models => csvMany(models),
     buildPreview: model => sheetPreviewHtml(buildSheet(model))
   };
 })();

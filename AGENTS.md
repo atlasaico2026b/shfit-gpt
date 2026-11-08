@@ -20,6 +20,10 @@ missions, leave, vehicles, gas detectors, notes/actions, reports, settings.
   sheet of every stored field plus related records, with preview-before-export (print/PDF, Word, Excel, CSV).
   Opens via `document.dispatchEvent(new CustomEvent('atlas-open-file', {detail:{module, id}}))` or
   `AtlasRecordFile.openContact(contact)`. It only prints data that exists; never invent fields.
+  «پرونده‌های انتخاب‌شده» (نوار انتخاب گروهی هر فهرست) با `atlas-open-files` (`{module, ids}`) باز می‌شود:
+  `openBulk` فهرست مرتب‌شدهٔ عنوان‌ها را در کادر باریک سمت راست و برگهٔ A4 پروندهٔ انتخابی را در کادر چپ
+  می‌گذارد و نوار افقی پایین، خروجی همهٔ برگه‌ها را پشت سر هم می‌دهد (`runBulkExport` → `docxMany` /
+  `csvMany` / `xlsMany` / `printSheets`). آزمون: `node tests/record-file-bulk.cjs` و `tests/record-file-bulk-ui.cjs`.
   پیش‌نمایش هر قالب با `buildPreviewOverlay(model, format)` ساخته می‌شود (بدون iframe، همان برگهٔ A4) و
   نام فایل خروجی با `exportFileName(model)` همیشه ASCII است؛ نام فارسی باعث می‌شد مرورگر فایل را با نام
   «download» ذخیره کند و خروجی Word به دست کاربر نرسد.

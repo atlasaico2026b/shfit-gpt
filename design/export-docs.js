@@ -275,42 +275,78 @@
       '</w:styles>';
   }
 
-  function docx(sheet) {
-    var model = sheet || {};
+  function docxSection(model) {
     var landscape = model.landscape !== false;
-    var page = landscape ? A4_LANDSCAPE : A4_PORTRAIT;
-    var contentWidth = page.w - MARGIN * 2;
+    return { landscape: landscape, page: landscape ? A4_LANDSCAPE : A4_PORTRAIT };
+  }
 
-    var parts = [];
-    var photo = photoPart(model.photo);
-    if (photo) parts.push(photoParagraph('rIdPhoto', 2160, 2880));   // ۱٫۵ × ۲ اینچ
-    parts.push(wordParagraph(model.title || '', { bold: true, size: 34, font: HEAD_FONT, after: 120, line: 300, color: HEAD_INK }));
-    if (model.subtitle) parts.push(wordParagraph(model.subtitle, { size: 20, color: META_INK, after: 60 }));
-    if (model.stamp) parts.push(wordParagraph(model.stamp, { size: 18, color: META_INK, after: 40 }));
-    if (model.meta) parts.push(wordParagraph(model.meta, { size: 18, color: META_INK, after: 160 }));
-
-    if (model.facts && model.facts.length) {
-      parts.push(wordTable([['عنوان', 'مقدار']].concat(model.facts.map(function (fact) {
-        return [text(fact[0]), text(fact[1]) || '—'];
-      })), contentWidth));
-    }
-
-    (model.tables || []).forEach(function (table) {
-      if (table.heading) parts.push(wordParagraph(table.heading, { bold: true, size: 22, color: HEAD_INK, before: 200, after: 80 }));
-      parts.push(wordTable(normalizeRows(table.rows), contentWidth));
-    });
-
-    if (model.footNote) parts.push(wordParagraph(model.footNote, { size: 16, color: META_INK, before: 200 }));
-
-    var sectPr = '<w:sectPr><w:pgSz w:w="' + page.w + '" w:h="' + page.h + '"' + (landscape ? ' w:orient="landscape"' : '') + '/>' +
+  function docxSectPr(section) {
+    return '<w:sectPr><w:pgSz w:w="' + section.page.w + '" w:h="' + section.page.h + '"' +
+      (section.landscape ? ' w:orient="landscape"' : '') + '/>' +
       '<w:pgMar w:top="' + MARGIN + '" w:right="' + MARGIN + '" w:bottom="' + MARGIN + '" w:left="' + MARGIN + '" w:header="284" w:footer="284" w:gutter="0"/>' +
       '<w:bidi/></w:sectPr>';
+  }
+
+  // برگه‌های یک سند Word: هر برگه یک «بخش» است، پس هر کدام صفحهٔ تازه و جهت
+  // کاغذ خودش را دارد. یک برگه = یک بخش، چند برگه = چند بخش پشت سر هم.
+  function docxMany(sheets) {
+    var list = (sheets || []).filter(Boolean);
+    if (!list.length) list = [{}];
+    var photoCount = list.filter(function (model) { return !!photoPart(model.photo); }).length;
+    var photos = [];
+    var body = [];
+    var lastSection = null;
+
+    list.forEach(function (model, index) {
+      var section = docxSection(model);
+      var contentWidth = section.page.w - MARGIN * 2;
+      lastSection = section;
+
+      var parts = [];
+      var photo = photoPart(model.photo);
+      if (photo) {
+        // نام قطعه و رابطه برای یک برگه همان نام پیشین می‌ماند؛ برای چند برگه
+        // شماره می‌گیرد تا عکس‌ها روی هم نیفتند.
+        var photoIndex = photos.length + 1;
+        var rid = photoCount === 1 ? 'rIdPhoto' : 'rIdPhoto' + photoIndex;
+        var base = photoCount === 1 ? 'photo' : 'photo' + photoIndex;
+        var name = 'word/media/' + base + '.' + (photo.ext === 'png' ? 'png' : 'jpg');
+        photos.push({ rid: rid, name: name, bytes: photo.bytes, ext: photo.ext });
+        parts.push(photoParagraph(rid, 2160, 2880));   // ۱٫۵ × ۲ اینچ
+      }
+      parts.push(wordParagraph(model.title || '', { bold: true, size: 34, font: HEAD_FONT, after: 120, line: 300, color: HEAD_INK }));
+      if (model.subtitle) parts.push(wordParagraph(model.subtitle, { size: 20, color: META_INK, after: 60 }));
+      if (model.stamp) parts.push(wordParagraph(model.stamp, { size: 18, color: META_INK, after: 40 }));
+      if (model.meta) parts.push(wordParagraph(model.meta, { size: 18, color: META_INK, after: 160 }));
+
+      if (model.facts && model.facts.length) {
+        parts.push(wordTable([['عنوان', 'مقدار']].concat(model.facts.map(function (fact) {
+          return [text(fact[0]), text(fact[1]) || '—'];
+        })), contentWidth));
+      }
+
+      (model.tables || []).forEach(function (table) {
+        if (table.heading) parts.push(wordParagraph(table.heading, { bold: true, size: 22, color: HEAD_INK, before: 200, after: 80 }));
+        parts.push(wordTable(normalizeRows(table.rows), contentWidth));
+      });
+
+      if (model.footNote) parts.push(wordParagraph(model.footNote, { size: 16, color: META_INK, before: 200 }));
+
+      // شکست بخش: پاراگراف پایانی هر بخش، جز آخرین که sectPr بدنه است.
+      if (index < list.length - 1) parts.push('<w:p><w:pPr>' + docxSectPr(section) + '</w:pPr></w:p>');
+      body.push(parts.join(''));
+    });
 
     var documentXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
       '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
       'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
       'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><w:body>' +
-      parts.join('') + sectPr + '</w:body></w:document>';
+      body.join('') + docxSectPr(lastSection) + '</w:body></w:document>';
+
+    var imageTypes = [];
+    photos.forEach(function (item) {
+      if (imageTypes.indexOf(item.ext) < 0) imageTypes.push(item.ext);
+    });
 
     var entries = [
       { name: '[Content_Types].xml', content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
@@ -319,7 +355,9 @@
         '<Default Extension="xml" ContentType="application/xml"/>' +
         '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
         '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
-        (photo ? '<Default Extension="' + (photo.ext === 'png' ? 'png' : 'jpg') + '" ContentType="' + (photo.ext === 'png' ? 'image/png' : 'image/jpeg') + '"/>' : '') +
+        imageTypes.map(function (ext) {
+          return '<Default Extension="' + (ext === 'png' ? 'png' : 'jpg') + '" ContentType="' + (ext === 'png' ? 'image/png' : 'image/jpeg') + '"/>';
+        }).join('') +
         '</Types>' },
       { name: '_rels/.rels', content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
         '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
@@ -328,13 +366,20 @@
       { name: 'word/_rels/document.xml.rels', content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
         '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
         '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
-        (photo ? '<Relationship Id="rIdPhoto" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/photo.' + (photo.ext === 'png' ? 'png' : 'jpg') + '"/>' : '') +
+        photos.map(function (item) {
+          return '<Relationship Id="' + item.rid + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="' +
+            item.name.replace(/^word\//, '') + '"/>';
+        }).join('') +
         '</Relationships>' },
       { name: 'word/styles.xml', content: docxStyles() },
       { name: 'word/document.xml', content: documentXml }
     ];
-    if (photo) entries.push({ name: photo.name, bytes: photo.bytes });
+    photos.forEach(function (item) { entries.push({ name: item.name, bytes: item.bytes }); });
     return zip(entries);
+  }
+
+  function docx(sheet) {
+    return docxMany([sheet]);
   }
 
   // ── CSV ───────────────────────────────────────────────────────────────────
@@ -371,6 +416,7 @@
   window.AtlasExportDocs = {
     csv: csv,
     docx: docx,
+    docxMany: docxMany,
     zip: zip,
     normalizeRows: normalizeRows,
     columnWidths: columnWidths,

@@ -100,6 +100,138 @@
   font-size: .74rem;
 }
 
+/* ── پرونده‌های انتخاب‌شده: فهرست باریک + برگهٔ A4 + نوار خروجی گروهی ── */
+.rf-bulk-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 270;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 20px 14px 30px;
+  background: rgba(var(--c-black-rgb), .66);
+  backdrop-filter: blur(6px);
+  overflow: auto;
+}
+
+.rf-bulk-modal {
+  width: min(1180px, 100%);
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+
+.rf-bulk-body {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  min-height: 0;
+}
+
+/* کادر باریک سمت راست: عنوان پرونده‌ها، مرتب‌شده */
+.rf-bulk-list {
+  flex: 0 0 250px;
+  max-height: calc(100vh - 260px);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg-mid);
+}
+
+.rf-bulk-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: .82rem;
+  text-align: right;
+  cursor: pointer;
+}
+
+.rf-bulk-item:hover {
+  background: var(--panel-2);
+}
+
+.rf-bulk-item.is-active {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--text-bright);
+  font-weight: 600;
+}
+
+.rf-bulk-item-no {
+  flex: 0 0 auto;
+  min-width: 1.6em;
+  text-align: center;
+  font-size: .72rem;
+  color: var(--muted);
+}
+
+.rf-bulk-item-title {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* کادر سمت چپ: برگهٔ A4 پروندهٔ انتخاب‌شده */
+.rf-bulk-sheet {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-height: calc(100vh - 260px);
+  overflow: auto;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #5b6580;
+}
+
+/* نوار افقی پایین: خروجی همهٔ پرونده‌ها پشت سر هم */
+.rf-bulk-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--bg-mid);
+}
+
+.rf-bulk-foot-label {
+  font-size: .78rem;
+  color: var(--muted);
+  margin-inline-end: auto;
+}
+
+@media (max-width: 720px) {
+  .rf-bulk-body {
+    flex-direction: column;
+  }
+
+  .rf-bulk-list {
+    flex: 0 0 auto;
+    max-height: 30vh;
+  }
+
+  .rf-bulk-sheet {
+    max-height: none;
+  }
+}
+
 /* ── پیش‌نمایش خروجی ── */
 .rf-preview-backdrop {
   position: fixed;
