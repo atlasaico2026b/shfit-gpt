@@ -66,6 +66,15 @@ check('مرخصی ردشده در گزارش نمی‌آید', /leave\.status ==
 check('خروجی گزارش با runExport ساخته می‌شود', /runExport\(rows, title, base/.test(modules));
 check('دکمهٔ گزارش به handler وصل است', /openRangeReport\(\)/.test(modules));
 
+// ── خروجی برابر با چیزی که دیده می‌شود ──
+check('خروجی بخش از فهرست دیده‌شده ساخته می‌شود', /function visibleRecordsFor/.test(modules) && /visibleRecordsFor\(moduleKey\)\.forEach/.test(modules));
+check('خروجی جست‌وجو/فیلتر/مرتب‌سازی را رعایت می‌کند', /return recordsForView\(moduleKey, appData\);/.test(modules));
+check('خروجی برنامه‌ها فیلتر دسته را رعایت می‌کند', /moduleKey === 'programs'[\s\S]{0,200}programFilter/.test(modules));
+check('خروجی اشکالات فیلتر وضعیت را رعایت می‌کند', /moduleKey === 'faults'[\s\S]{0,200}faultFilter/.test(modules));
+check('خروجی گازسنج‌ها فیلتر و ترتیب صفحه را رعایت می‌کند', /moduleKey === 'gasmeters'\) return visibleGasMeters\(\)/.test(modules));
+check('عنوان خروجی وضعیت فیلتر را نشان می‌دهد', /function moduleExportTitle/.test(modules) && /فیلترشده \(/.test(modules));
+check('چاپ فهرست هم از عنوان فیلترشده استفاده می‌کند', /printRows\(moduleExportRows\(moduleKey\), moduleExportTitle\(moduleKey\)\)/.test(modules));
+
 // ── کش آفلاین ──
 check('notices.css در فهرست پیش‌کش سرویس‌ورکر است', sw.includes('./design/notices.css'));
 

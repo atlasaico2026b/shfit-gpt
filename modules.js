@@ -2962,17 +2962,20 @@
       '<button type="button" class="module-delete-btn" data-module-action="delete" data-view="faults" data-id="' + esc(record.id) + '">حذف</button></div></div></article>';
   }
 
+  // ترتیب دفتر اشکالات: بازها اول، بعد اولویت، بعد تازه‌ترین گزارش.
+  function faultBoardOrder(a, b) {
+    const rank = { 'بحرانی': 0, 'زیاد': 1, 'متوسط': 2, 'کم': 3 };
+    const openA = a.status === 'رفع شد' || a.status === 'بسته‌شده' ? 1 : 0;
+    const openB = b.status === 'رفع شد' || b.status === 'بسته‌شده' ? 1 : 0;
+    if (openA !== openB) return openA - openB;
+    const pa = rank[a.priority] == null ? 9 : rank[a.priority];
+    const pb = rank[b.priority] == null ? 9 : rank[b.priority];
+    if (pa !== pb) return pa - pb;
+    return String(b.reportedAt || '').localeCompare(String(a.reportedAt || ''));
+  }
+
   function renderFaults(section) {
-    const records = (appData.faults || []).slice().sort(function (a, b) {
-      const rank = { 'بحرانی': 0, 'زیاد': 1, 'متوسط': 2, 'کم': 3 };
-      const openA = a.status === 'رفع شد' || a.status === 'بسته‌شده' ? 1 : 0;
-      const openB = b.status === 'رفع شد' || b.status === 'بسته‌شده' ? 1 : 0;
-      if (openA !== openB) return openA - openB;
-      const pa = rank[a.priority] == null ? 9 : rank[a.priority];
-      const pb = rank[b.priority] == null ? 9 : rank[b.priority];
-      if (pa !== pb) return pa - pb;
-      return String(b.reportedAt || '').localeCompare(String(a.reportedAt || ''));
-    });
+    const records = (appData.faults || []).slice().sort(faultBoardOrder);
     const open = records.filter(function (r) { return r.status !== 'رفع شد' && r.status !== 'بسته‌شده'; });
     const critical = open.filter(function (r) { return r.priority === 'بحرانی'; }).length;
     const repairing = records.filter(function (r) { return r.status === 'در حال تعمیر'; }).length;
@@ -3211,13 +3214,10 @@
     return { key: 'valid', label: 'معتبر', tone: 'ok', left: left };
   }
 
-  function renderGasRegistry(section) {
-    if (gasTab === 'logs') { renderGasLogs(section); return; }
-    const records = (appData.gasmeters || []).slice();
+  // فهرست دیده‌شدهٔ گازسنج‌ها: همان فیلتر و ترتیبی که روی صفحه اعمال می‌شود.
+  function visibleGasMeters() {
     const stateOf = function (record) { return gasCalibrationState(record); };
-    const locations = ['all'].concat(appData.references.deploymentLocations || []);
-    const statuses = ['all'].concat(appData.references.gasStatuses || []);
-    const visible = records.filter(function (record) {
+    return (appData.gasmeters || []).slice().filter(function (record) {
       if (gasFilter.location !== 'all' && String(record.location || '') !== gasFilter.location) return false;
       if (gasFilter.status !== 'all' && String(record.status || '') !== gasFilter.status) return false;
       if (gasFilter.calibration !== 'all' && stateOf(record).key !== gasFilter.calibration) return false;
@@ -3230,6 +3230,15 @@
       const leftB = stateOf(b).left == null ? 99999 : stateOf(b).left;
       return leftA - leftB;
     });
+  }
+
+  function renderGasRegistry(section) {
+    if (gasTab === 'logs') { renderGasLogs(section); return; }
+    const records = (appData.gasmeters || []).slice();
+    const stateOf = function (record) { return gasCalibrationState(record); };
+    const locations = ['all'].concat(appData.references.deploymentLocations || []);
+    const statuses = ['all'].concat(appData.references.gasStatuses || []);
+    const visible = visibleGasMeters();
     const expired = records.filter(function (r) { return stateOf(r).key === 'expired'; }).length;
     const soon = records.filter(function (r) { return stateOf(r).key === 'soon'; }).length;
     const valid = records.filter(function (r) { return stateOf(r).key === 'valid'; }).length;
@@ -5561,13 +5570,39 @@
       '<button type="button" class="primary-btn" data-module-action="export-columns-save" data-view="' + esc(moduleKey) + '">ذخیرهٔ ستون‌ها</button></div></div></div></div></div>';
   }
 
+  // فهرست دیده‌شدهٔ هر بخش: همان چیزی که کاربر روی صفحه می‌بیند (جست‌وجو، فیلتر و
+  // ترتیب). خروجی‌ها از همین تابع ساخته می‌شوند تا فایل با صفحه یکی باشد.
+  function visibleRecordsFor(moduleKey) {
+    if (moduleKey === 'programs') {
+      const records = (appData.programs || []).slice();
+      return programFilter === 'all' ? records : records.filter(function (record) { return programCategoryOf(record) === programFilter; });
+    }
+    if (moduleKey === 'faults') {
+      const records = (appData.faults || []).slice().sort(faultBoardOrder);
+      return faultFilter === 'all' ? records : records.filter(function (record) { return (record.status || 'ثبت‌شده') === faultFilter; });
+    }
+    if (moduleKey === 'gasmeters') return visibleGasMeters();
+    return recordsForView(moduleKey, appData);
+  }
+
   function moduleExportRows(moduleKey) {
     const fields = selectedExportFields(moduleKey);
     const rows = [fields.map(function (field) { return field.label; })];
-    (appData[moduleKey] || []).forEach(function (record) {
+    // خروجی همان چیزی است که کاربر روی صفحه می‌بیند: جست‌وجو، فیلترها و ترتیب
+    // مرتب‌سازی فعلی روی داده اعمال می‌شود، نه کل دادهٔ خام بخش.
+    visibleRecordsFor(moduleKey).forEach(function (record) {
       rows.push(fields.map(function (field) { return exportValue(moduleKey, field, record, appData); }));
     });
     return rows;
+  }
+
+  // عنوان خروجی وضعیت فیلتر را نشان می‌دهد تا فایل با فهرست کامل اشتباه نشود.
+  function moduleExportTitle(moduleKey) {
+    const title = specs[moduleKey] ? specs[moduleKey].title : moduleKey;
+    const total = (appData[moduleKey] || []).length;
+    const shown = visibleRecordsFor(moduleKey).length;
+    const narrowed = shown !== total || hasActiveFilters(moduleKey) || !!String(searchState[moduleKey] || '').trim();
+    return title + (narrowed ? ' · فیلترشده (' + faDigits(shown) + ' از ' + faDigits(total) + ')' : '') + ' · ATLAS SHIFT';
   }
 
   // استایل‌های مشترک اکسل: فونت عنوان (B Nazanin)، سرستون (Tahoma پرنگ) و بدنه.
@@ -5784,7 +5819,7 @@
 
   function exportModule(moduleKey, format) {
     if (!specs[moduleKey]) return;
-    runExport(moduleExportRows(moduleKey), specs[moduleKey].title + ' · ATLAS SHIFT', 'ATLAS-SHIFT-' + moduleKey + '-' + todayIso(), format);
+    runExport(moduleExportRows(moduleKey), moduleExportTitle(moduleKey), 'ATLAS-SHIFT-' + moduleKey + '-' + todayIso(), format);
   }
 
   function exportMenu(moduleKey) {
@@ -5803,7 +5838,7 @@
   function exportCsv(moduleKey) {
     const rows = moduleExportRows(moduleKey);
     downloadFile('ATLAS-SHIFT-'+moduleKey+'-'+todayIso()+'.csv', window.AtlasExportDocs.csv(rows, {
-      title: specs[moduleKey] ? specs[moduleKey].title : moduleKey,
+      title: moduleExportTitle(moduleKey),
       stamp: formatJalali(new Date().toISOString(), true)
     }),'text/csv;charset=utf-8;');
   }
@@ -6794,7 +6829,7 @@
     }else if(action==='export-all'){
       exportAllCsv();
     }else if(action==='print'){
-      if(specs[moduleKey])printRows(moduleExportRows(moduleKey), specs[moduleKey].title+' · ATLAS SHIFT');
+      if(specs[moduleKey])printRows(moduleExportRows(moduleKey), moduleExportTitle(moduleKey));
       else if(document.getElementById('reportExportFormat'))printRows(currentReportRows(), currentReportTitle());
       else window.print();
     }else if(action==='backup'){
