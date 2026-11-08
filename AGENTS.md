@@ -25,6 +25,8 @@ missions, leave, vehicles, gas detectors, notes/actions, reports, settings.
   کادر باریک سمت راست و برگهٔ A4 مورد انتخابی را در کادر چپ می‌گذارد و نوار افقی پایین، خروجی همهٔ برگه‌ها
   را پشت سر هم می‌دهد (`runBulkExport` → `docxMany` / `csvMany` / `xlsMany` / `printSheets`). برگهٔ پرونده از
   `moduleSheet` و برگهٔ سوابق از `historySheet` می‌آید؛ هر دو یک مدل می‌دهند، پس یک مسیر خروجی دارند.
+  در حالت گروهی `moduleSheet` با `{related:false}` صدا زده می‌شود تا برگهٔ هر ردیف فقط اطلاعات همان منو را
+  داشته باشد و جدول‌های منوهای دیگر (مرخصی/مأموریت/شیفت/یادداشت) در آن نیاید؛ دکمهٔ تک‌ردیفی دست‌نخورده است.
   آزمون: `node tests/record-file-bulk.cjs` و `tests/record-file-bulk-ui.cjs`.
   پیش‌نمایش هر قالب با `buildPreviewOverlay(model, format)` ساخته می‌شود (بدون iframe، همان برگهٔ A4) و
   نام فایل خروجی با `exportFileName(model)` همیشه ASCII است؛ نام فارسی باعث می‌شد مرورگر فایل را با نام

@@ -128,6 +128,32 @@ check('برگهٔ A4 پروندهٔ اول در کادر چپ رندر شده ا
 check('دکمهٔ بستن وصل شده است', !!backdrop && (backdrop._close.listeners.click || []).length === 1);
 check('حالت پیش‌فرض «پرونده‌ها» است', /rf-bulk-modal is-files/.test(html));
 
+// برگهٔ گروهی فقط اطلاعات اختصاصی همان منو را دارد: جدول‌های مرخصی، مأموریت و
+// یادداشت که مال منوهای دیگرند در نمایش گروهی نمی‌آیند (ولی در پروندهٔ تک‌نفرهٔ
+// همان منو، مثل قبل، دیده می‌شوند).
+data.leaves = [{ id: 'l1', employeeId: 'e2', leaveType: 'استحقاقی', startDate: '2026-01-01', endDate: '2026-01-03', status: 'تأییدشده' }];
+data.missions = [{ id: 'm1', title: 'ماموریت تهران', crewIds: ['e2'], startAt: '2026-01-05T08:00:00.000Z', destination: 'تهران', status: 'انجام‌شده' }];
+data.notes = [{ id: 'n1', title: 'پیگیری مدارک', responsibleId: 'e2', date: '2026-01-06', status: 'باز' }];
+let scopedError = null;
+try {
+  api.openBulk('employees', ['e2']);
+} catch (thrown) {
+  scopedError = thrown;
+}
+check('openBulk با دادهٔ منوهای دیگر بدون خطا اجرا می‌شود', !scopedError, scopedError ? String(scopedError && scopedError.message) : '');
+const scopedBackdrop = sandbox.document.body.lastChild;
+const scopedHtml = scopedBackdrop && scopedBackdrop._sheet ? scopedBackdrop._sheet.innerHTML : '';
+check('برگهٔ گروهی جدول مرخصی منوی دیگر را نمی‌آورد', scopedHtml.indexOf('مرخصی‌ها') < 0);
+check('برگهٔ گروهی جدول مأموریت منوی دیگر را نمی‌آورد', scopedHtml.indexOf('مأموریت‌های مرتبط') < 0);
+check('برگهٔ گروهی جدول یادداشت منوی دیگر را نمی‌آورد', scopedHtml.indexOf('پیگیری‌های محوله') < 0);
+check('برگهٔ گروهی اطلاعات اختصاصی کارمند را دارد', scopedHtml.indexOf('شمارهٔ پرسنلی') >= 0);
+
+api.openModule('employees', 'e2');
+const singleBackdrop = sandbox.document.body.lastChild;
+const singleHtml = singleBackdrop ? singleBackdrop.innerHTML : '';
+check('پروندهٔ تک‌نفرهٔ همان منو مثل قبل جدول‌های مرتبط را دارد',
+  singleHtml.indexOf('مرخصی‌ها') >= 0 && singleHtml.indexOf('مأموریت‌های مرتبط') >= 0);
+
 // همان پنجره در حالت «سوابق»: چیدمان یکی است، برگهٔ سوابق جای پرونده می‌آید.
 // e2 = «علی رضایی» و در فهرست مرتب، اولین مورد است.
 data.history = [
