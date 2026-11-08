@@ -265,6 +265,19 @@
   display: none;
 }
 
+/* خلاصهٔ فهرست دیده‌شده بالای گزینه‌های خروجی؛ نشان می‌دهد فایل از همین
+   فیلتر و همین ترتیب ساخته می‌شود. */
+.module-export-note {
+  padding: 6px 10px 8px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.7;
+  white-space: normal;
+  max-width: 240px;
+}
+
 .module-export-list button {
   width: 100%;
   padding: 8px 10px;

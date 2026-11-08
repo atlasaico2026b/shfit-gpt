@@ -5897,10 +5897,23 @@
     runExport(moduleExportRows(moduleKey), moduleExportTitle(moduleKey), 'ATLAS-SHIFT-' + moduleKey + '-' + todayIso(), format);
   }
 
+  // خلاصهٔ فهرست دیده‌شده، بالای منوی خروجی: کاربر پیش از گرفتن فایل می‌بیند
+  // که خروجی از همین فهرست (همان تعداد و همان ترتیب) ساخته می‌شود.
+  function exportMenuSummary(moduleKey) {
+    const shown = visibleRecordsFor(moduleKey).length;
+    const total = (appData[moduleKey] || []).length;
+    const sort = listSortFor(moduleKey);
+    const option = sortOptionsFor(moduleKey).find(function (pair) { return pair[0] === sort.key; });
+    const sortLabel = option ? option[1] : sort.key;
+    return '<div class="module-export-note">خروجی از همین فهرست: ' + faDigits(shown) + ' از ' + faDigits(total) +
+      ' مورد · ترتیب: ' + esc(sortLabel) + ' (' + (sort.direction === 'asc' ? 'صعودی' : 'نزولی') + ')</div>';
+  }
+
   function exportMenu(moduleKey) {
     return '<div class="module-export" data-export-menu>' +
       '<button type="button" class="secondary-btn module-export-toggle" data-module-action="export-toggle" aria-haspopup="true" aria-expanded="false">⬇ خروجی و چاپ</button>' +
       '<div class="module-export-list" hidden>' +
+      exportMenuSummary(moduleKey) +
       '<button type="button" data-module-action="export" data-format="csv" data-view="' + esc(moduleKey) + '">CSV (صفحه‌گسترده)</button>' +
       '<button type="button" data-module-action="export" data-format="xlsx" data-view="' + esc(moduleKey) + '">Excel (.xlsx)</button>' +
       '<button type="button" data-module-action="export" data-format="docx" data-view="' + esc(moduleKey) + '">Word (.docx)</button>' +
@@ -5920,7 +5933,9 @@
 
   function shiftPrintRows() {
     const rows=[['شروع','پایان','نوع شیفت','کارکنان','محل خدمت','وضعیت','توضیحات']];
-    (appData.shifts||[]).forEach(function(record){
+    // همان ترتیبی که در جدول «برنامهٔ شیفت‌ها» روی صفحه دیده می‌شود؛ خروجی و
+    // چاپ نباید ترتیب دیگری بدهند.
+    sortRecords('shifts', appData.shifts || []).forEach(function(record){
       rows.push([formatJalali(record.startAt,true),formatJalali(record.endAt,true),record.shiftType||'',shiftLabel(record,appData),record.workplace||'',record.status||'',record.notes||'']);
     });
     return rows;

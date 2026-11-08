@@ -93,13 +93,40 @@
     font-size: 8.5pt;
   }
 
-  #atlasPrintArea thead {
-    display: table-header-group;
+  /* ── شکستن صفحه: هیچ سطری نصف نمی‌شود ──
+     سطری که در فضای باقی‌ماندهٔ صفحه کامل جا نشود، یک‌جا به صفحهٔ بعد می‌رود؛
+     سرستون هم در بالای هر صفحه تکرار می‌شود و تنها نمی‌ماند. */
+  #atlasPrintArea table {
+    break-inside: auto;
+    page-break-inside: auto;
   }
 
-  #atlasPrintArea tr {
+  #atlasPrintArea tbody {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  #atlasPrintArea thead {
+    display: table-header-group;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  #atlasPrintArea tfoot {
+    display: table-footer-group;
+  }
+
+  #atlasPrintArea tr,
+  #atlasPrintArea td,
+  #atlasPrintArea th {
     page-break-inside: avoid;
     break-inside: avoid;
+  }
+
+  #atlasPrintArea td,
+  #atlasPrintArea th {
+    orphans: 2;
+    widows: 2;
   }
 
   #atlasPrintArea th,

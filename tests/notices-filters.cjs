@@ -80,6 +80,8 @@ check('خروجی اشکالات فیلتر وضعیت را رعایت می‌ک
 check('خروجی گازسنج‌ها فیلتر و ترتیب صفحه را رعایت می‌کند', /moduleKey === 'gasmeters'\) return visibleGasMeters\(\)/.test(modules));
 check('عنوان خروجی وضعیت فیلتر را نشان می‌دهد', /function moduleExportTitle/.test(modules) && /فیلترشده \(/.test(modules));
 check('چاپ فهرست هم از عنوان فیلترشده استفاده می‌کند', /printRows\(moduleExportRows\(moduleKey\), moduleExportTitle\(moduleKey\)\)/.test(modules));
+check('خروجی برنامهٔ شیفت‌ها همان ترتیب جدول روی صفحه را دارد', /sortRecords\('shifts', appData\.shifts \|\| \[\]\)\.forEach/.test(modules));
+check('منوی خروجی تعداد و ترتیب فهرست دیده‌شده را نشان می‌دهد', /function exportMenuSummary/.test(modules) && /خروجی از همین فهرست: /.test(modules) && /exportMenuSummary\(moduleKey\)/.test(modules));
 
 // ── کش آفلاین ──
 check('notices.css در فهرست پیش‌کش سرویس‌ورکر است', sw.includes('./design/notices.css'));

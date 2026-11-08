@@ -335,7 +335,13 @@ body > .drawer-backdrop,body > .drawer,body > .settings-popover,body > .toast{po
 .module-report-card,.module-summary,.module-list-panel,.module-form-panel{color:var(--text)}
 @media(max-width:1000px){.module-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.module-report-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.module-summary,.module-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.module-fields,.module-backup-grid,.module-report-grid{grid-template-columns:1fr}.module-page-head{padding:15px}.module-list-panel,.module-form-panel{padding:12px}.module-list-tools{width:100%}.module-list-tools input{flex:1;width:auto;min-width:120px}.module-page-actions{width:100%}.module-page-actions button{flex:1}.module-form-actions{align-items:flex-start}.module-form-actions>div{display:flex;gap:6px;flex-wrap:wrap}}
-@media print{.app-menu,.topbar,.dashboard-controls,.widget-dock,.layout-hint,.module-page-actions,.module-list-tools,.module-bulk-tools,.module-row-actions,.module-local-note,.module-form-panel{display:none!important}body,body>main.shell{display:block!important;background:var(--c-white)!important;color:var(--bg)!important}.module-list-panel,.module-page-head{box-shadow:none!important;border:1px solid var(--muted)!important;background:var(--c-white)!important;color:var(--bg)!important}.module-table th,.module-table td{color:var(--bg)!important;background:var(--c-white)!important}}
+@media print{.app-menu,.topbar,.dashboard-controls,.widget-dock,.layout-hint,.module-page-actions,.module-list-tools,.module-bulk-tools,.module-row-actions,.module-local-note,.module-form-panel{display:none!important}body,body>main.shell{display:block!important;background:var(--c-white)!important;color:var(--bg)!important}.module-list-panel,.module-page-head{box-shadow:none!important;border:1px solid var(--muted)!important;background:var(--c-white)!important;color:var(--bg)!important}.module-table th,.module-table td{color:var(--bg)!important;background:var(--c-white)!important}
+/* چاپ مستقیم صفحه (Ctrl+P) هم مثل برگهٔ چاپ باید سطرها را نشکند و سرستون را تکرار کند. */
+.module-table-wrap{overflow:visible!important;max-height:none!important;border:0!important}
+.module-table{break-inside:auto;page-break-inside:auto}
+.module-table thead{display:table-header-group;break-after:avoid;page-break-after:avoid}
+.module-table tr,.module-table td,.module-table th{break-inside:avoid;page-break-inside:avoid}
+.module-table td,.module-table th{orphans:2;widows:2}}
 
 /* Main module page must span the entire 12-column section grid. */
 .section-view > .module-wrap{grid-column:1 / -1;width:100%;min-width:0}

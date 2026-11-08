@@ -375,7 +375,10 @@
       '.rf-sheet .rf-table{margin-top:1mm}' +
       '.rf-sheet .rf-table th,.rf-sheet .rf-table td{border:1px solid #c7cede;padding:1mm 2mm;font-size:9pt;line-height:1.7;text-align:right;vertical-align:top}' +
       '.rf-sheet .rf-table th{background:#eef1f8;font-weight:600}' +
-      '.rf-sheet tr{page-break-inside:avoid}' +
+      // هیچ سطری بین دو صفحه نصف نمی‌شود و سرستون جدول در هر صفحه تکرار می‌شود.
+      '.rf-sheet tr,.rf-sheet td,.rf-sheet th{page-break-inside:avoid;break-inside:avoid}' +
+      '.rf-sheet thead{display:table-header-group;break-after:avoid;page-break-after:avoid}' +
+      '.rf-sheet tfoot{display:table-footer-group}' +
       '.rf-sheet .rf-sheet-foot{margin-top:6mm;border-top:1px solid #c7cede;padding-top:3mm}' +
       '.rf-sheet .rf-sheet-foot td{border:0;padding:0;font-size:8pt;line-height:1.7;color:#5b6580;vertical-align:top}' +
       '.rf-sheet .rf-foot-note{text-align:right}' +

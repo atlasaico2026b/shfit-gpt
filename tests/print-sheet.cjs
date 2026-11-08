@@ -78,6 +78,18 @@ const tdSize = Number((css.match(/body\.atlas-printing #atlasPrintArea\s*\{[^}]*
 check('سرستون یک پله درشت‌تر از متن', thSize > tdSize, 'th=' + thSize + 'pt td=' + tdSize + 'pt');
 check('سربرگ با خط جداکننده', /\.atlas-print-head\s*\{[^}]*border-bottom:\s*1\.4pt solid/.test(css));
 check('سلول‌ها هنگام شکست صفحه نصف نمی‌شوند', /page-break-inside:\s*avoid/.test(css));
+check('سطر و خانه‌ها هر دو break-inside:avoid دارند', /#atlasPrintArea tr,\s*\n\s*#atlasPrintArea td,\s*\n\s*#atlasPrintArea th\s*\{[^}]*break-inside:\s*avoid/.test(css.replace(/\r/g, '')));
+check('سرستون تنها در پای صفحه نمی‌ماند', /#atlasPrintArea thead\s*\{[^}]*break-after:\s*avoid/.test(css.replace(/\r/g, '')));
+check('جدول و بدنه اجازهٔ شکستن بین سطرها را دارند', /#atlasPrintArea tbody\s*\{[^}]*break-inside:\s*auto/.test(css.replace(/\r/g, '')));
+
+// ── چاپ مستقیم صفحه (Ctrl+P) و برگهٔ پرونده هم همان قاعده را دارند ──
+const stylesCss = fs.readFileSync(path.join(root, 'design/styles.css'), 'utf8');
+const recordFileJs = fs.readFileSync(path.join(root, 'design/record-file.js'), 'utf8');
+check('چاپ مستقیم صفحه سطرها را نصف نمی‌کند', /\.module-table tr,\.module-table td,\.module-table th\{break-inside:avoid;page-break-inside:avoid\}/.test(stylesCss));
+check('چاپ مستقیم صفحه سرستون را تکرار می‌کند', /\.module-table thead\{display:table-header-group/.test(stylesCss));
+check('چاپ مستقیم صفحه کادر اسکرول جدول را باز می‌کند', /\.module-table-wrap\{overflow:visible!important/.test(stylesCss));
+check('برگهٔ پرونده هم سطرها را نصف نمی‌کند', /\.rf-sheet tr,\.rf-sheet td,\.rf-sheet th\{page-break-inside:avoid;break-inside:avoid\}/.test(recordFileJs));
+check('برگهٔ پرونده سرستون را در هر صفحه تکرار می‌کند', /\.rf-sheet thead\{display:table-header-group/.test(recordFileJs));
 
 const failed = checks.filter(c => !c.ok);
 checks.forEach(c => console.log((c.ok ? 'PASS ' : 'FAIL ') + c.name + (c.ok || !c.extra ? '' : ' → ' + c.extra)));

@@ -5,7 +5,7 @@
    - fetch: اول کش؛ شبکه فقط برای پر کردن کش چیزی که نداریم و به‌عنوان پشتیبان.
    - activate: کش‌های قدیمی پاک می‌شوند و اگر نسخهٔ قبلی وجود داشت، به صفحه اعلام می‌شود.
    افزایش CACHE_NAME در هر انتشار، نصب نسخهٔ تازه و پیش‌کش اتمی را تضمین می‌کند. */
-const CACHE_NAME = 'atlas-shift-v125-sortable-headers';
+const CACHE_NAME = 'atlas-shift-v126-export-print-fixes';
 const APP_FILES = [
   './', './index.html',
   './design/tokens.css', './design/styles.css', './design/skins/flat.css', './design/skins/theme-two.css', './design/tones.css',
@@ -28,7 +28,16 @@ self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
     // addAll اتمی است: اگر حتی یک فایل گرفته نشود، کل نصب رد می‌شود.
-    await cache.addAll(APP_FILES);
+    // اگر یکی از فایل‌ها موقتاً در دسترس نبود، به‌جای شکست کامل نصب (که کاربر
+    // را برای همیشه روی نسخهٔ قدیمی نگه می‌دارد) بقیهٔ فایل‌ها جداگانه ذخیره
+    // می‌شوند؛ فایل جاافتاده در اولین درخواست از شبکه پر می‌شود.
+    try {
+      await cache.addAll(APP_FILES);
+    } catch (_) {
+      await Promise.all(APP_FILES.map(async file => {
+        try { await cache.add(file); } catch (__) { /* در fetch از شبکه پر می‌شود */ }
+      }));
+    }
     await self.skipWaiting();
   })());
 });
