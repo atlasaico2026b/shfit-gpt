@@ -214,7 +214,10 @@
       '</section>';
   }
 
-  function moduleSheet(moduleKey, record, data) {
+  // `options.related === false` برگه را به اطلاعات اختصاصی همان منو محدود می‌کند
+  // (بدون جدول‌های مرخصی/مأموریت/شیفت/یادداشت که مال منوهای دیگرند).
+  function moduleSheet(moduleKey, record, data, options) {
+    const opts = options || {};
     const api = modules();
     const spec = api.spec ? api.spec(moduleKey) : null;
     const fields = api.fieldsFor ? api.fieldsFor(moduleKey) : [];
@@ -253,7 +256,7 @@
       stamp: 'تاریخ تهیه: ' + jalali(new Date().toISOString(), true),
       footNote: 'این برگه فقط شامل اطلاعات ثبت‌شده در همین پرونده است.',
       facts: facts,
-      tables: rowTables(moduleKey, record).concat(relatedTables(moduleKey, record, data))
+      tables: rowTables(moduleKey, record).concat(opts.related === false ? [] : relatedTables(moduleKey, record, data))
     };
   }
 
@@ -633,7 +636,9 @@
       title: 'پرونده‌های انتخاب‌شده',
       hint: 'از فهرست سمت راست یکی را انتخاب کن.',
       unit: 'پرونده',
-      build: moduleSheet
+      // در نمایش گروهی، برگهٔ هر ردیف فقط اطلاعات اختصاصی همان منو را دارد؛
+      // جدول‌های منوهای دیگر (مرخصی، مأموریت، شیفت، یادداشت) نمی‌آیند.
+      build: (moduleKey, record, data) => moduleSheet(moduleKey, record, data, { related: false })
     },
     history: {
       title: 'سوابق انتخاب‌شده',
