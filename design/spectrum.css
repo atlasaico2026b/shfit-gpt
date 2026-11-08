@@ -202,15 +202,16 @@ html[data-atlas-theme] .module-table thead th {
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: .015em;
-  white-space: nowrap;
-  border-left: 3px solid transparent;
+  line-height: 1.5;
+  white-space: normal;
+  border-left: var(--th-gap, 3px) solid transparent;
   border-bottom: 1px solid rgba(var(--c-white-rgb), .10);
   border-radius: 10px;
   transition: color .16s ease;
 }
 
 html[data-atlas-theme] .module-table td {
-  border-left: 3px solid transparent;
+  border-left: var(--th-gap, 3px) solid transparent;
 }
 
 /* گوشه‌های گرد: کادر جدول ۲۰px و چیپ‌های سرستون ۱۹px تا داخلش بنشیند. */
@@ -236,6 +237,85 @@ html[data-atlas-theme] .module-table .module-sort-th.is-sorted .module-sort-care
 
 html[data-atlas-theme] .module-table thead .module-sort-btn:hover {
   background: rgba(var(--th-hue, var(--accent-rgb)), .13);
+}
+
+/* 6 · FIT ─ همهٔ ستون‌ها در یک کادر، بدون اسکرول افقی ─────────────────── */
+/* table-fix.css و skins/theme-two.css برای هر عرضی min-width اجباری (۷۲۰ تا
+   ۷۶۰px) می‌گذارند و همان باعث اسکرول چپ‌راست می‌شود. اینجا برداشته می‌شود و
+   به‌جای آن عنوان‌ها اجازهٔ شکستن تا دو خط می‌گیرند و سلول‌ها جمع‌وجورتر
+   می‌شوند. !important فقط برای غلبه بر min-width پوستهٔ دوم است. */
+html[data-atlas-theme] .module-table {
+  min-width: 0 !important;
+  width: 100%;
+  table-layout: auto;
+}
+
+html[data-atlas-theme] .module-table-wrap {
+  max-width: 100%;
+  overflow-x: clip;
+  overflow-y: visible;
+}
+
+html[data-atlas-theme] .module-table th,
+html[data-atlas-theme] .module-table td {
+  min-width: 0;
+  max-width: none;
+  padding: 9px 7px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* عنوان‌ها فقط سرِ فاصله می‌شکنند، نه وسط کلمه؛ اگر کلمهٔ واحدی جا نشد
+   آن‌وقت می‌شکند. td روی anywhere می‌ماند تا شمارهٔ تلفن و کد و تاریخ
+   هرگز جدول را از کادر بیرون نزنند. */
+html[data-atlas-theme] .module-table thead th {
+  overflow-wrap: break-word;
+}
+
+/* برچسب مرتب‌سازی یک آیتم فلکس است و پیش‌فرض min-width:auto دارد؛ بدون این
+   حاضر نمی‌شد کوچک شود و ستون را پهن نگه می‌داشت. */
+html[data-atlas-theme] .module-table .module-sort-label {
+  min-width: 0;
+}
+
+html[data-atlas-theme] .module-table .module-row-actions .secondary-btn,
+html[data-atlas-theme] .module-table .module-delete-btn {
+  white-space: nowrap;
+}
+
+/* ستون عملیات پیش‌تر ۱۲۶px و nowrap اجباری داشت و تنها ستونِ مقاوم بود. */
+html[data-atlas-theme] .module-table .module-row-actions {
+  min-width: 0;
+  white-space: normal !important;
+}
+
+html[data-atlas-theme] .module-table .module-check-cell {
+  width: auto;
+  min-width: 24px;
+}
+
+@media (max-width: 900px) {
+  html[data-atlas-theme] .module-table {
+    --th-gap: 2px;
+    font-size: 10px;
+  }
+
+  html[data-atlas-theme] .module-table th,
+  html[data-atlas-theme] .module-table td {
+    padding: 7px 5px;
+    line-height: 1.45;
+  }
+
+  html[data-atlas-theme] .module-table thead th {
+    font-size: 9.5px;
+    letter-spacing: 0;
+  }
+
+  html[data-atlas-theme] .module-table .module-row-actions .secondary-btn,
+  html[data-atlas-theme] .module-table .module-delete-btn {
+    padding: 5px 6px;
+    font-size: 9px;
+  }
 }
 
 .module-table tbody tr:nth-child(even) td {
