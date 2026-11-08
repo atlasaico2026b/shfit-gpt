@@ -200,8 +200,13 @@ html[data-atlas-theme] .module-table thead th {
   transition: color .16s ease, box-shadow .16s ease;
 }
 
-html[data-atlas-theme] .module-table thead th:first-child { border-top-right-radius: 12px; }
-html[data-atlas-theme] .module-table thead th:last-child { border-top-left-radius: 12px; }
+/* گوشه‌های گرد: کادر جدول ۲۰px و سرستون‌ها ۱۹px تا داخلش بنشیند. */
+html[data-atlas-theme] .module-table-wrap {
+  border-radius: 20px;
+}
+
+html[data-atlas-theme] .module-table thead th:first-child { border-top-right-radius: 19px; }
+html[data-atlas-theme] .module-table thead th:last-child { border-top-left-radius: 19px; }
 
 /* سرستون مرتب‌شده: همان رنگ ستون، یک پله پررنگ‌تر */
 html[data-atlas-theme] .module-table .module-sort-th.is-sorted {
