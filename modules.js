@@ -1674,28 +1674,15 @@
     }).join('');
   }
 
-  function renderSortControls(moduleKey) {
-    const options = sortOptionsFor(moduleKey);
-    if (!options.length) return '';
-    const sort = listSortFor(moduleKey);
-    const ascending = sort.direction === 'asc';
-    return '<label class="list-chip list-chip-sort"><span class="list-chip-label">مرتب‌سازی</span>' +
-      '<select data-module-sort data-view="' + esc(moduleKey) + '" aria-label="مرتب‌سازی فهرست">' +
-      options.map(function (option) {
-        return '<option value="' + esc(option[0]) + '"' + (sort.key === option[0] ? ' selected' : '') + '>' + esc(option[1]) + '</option>';
-      }).join('') + '</select></label>' +
-      '<button type="button" class="list-chip list-chip-dir' + (ascending ? ' is-asc' : '') + '" data-module-sort-dir data-view="' + esc(moduleKey) + '" aria-label="تغییر جهت مرتب‌سازی" title="' + (ascending ? 'صعودی — برای نزولی بزن' : 'نزولی — برای صعودی بزن') + '">' +
-      '<span class="list-chip-label">جهت</span><b>' + (ascending ? 'صعودی' : 'نزولی') + '</b><span class="list-chip-caret">' + (ascending ? '↑' : '↓') + '</span></button>';
-  }
-
+  // مرتب‌سازی و جهت (صعودی/نزولی) از سرستون‌های جدول انجام می‌شود؛ پس در نوار
+  // فیلترها کنترل جداگانه‌ای برای آن نمی‌گذاریم و فقط فیلترها می‌مانند.
   function renderListToolbar(moduleKey) {
     const active = hasActiveFilters(moduleKey) || !!String(searchState[moduleKey] || '').trim();
     return '<div class="module-list-tools">' +
         '<div class="list-search-row"><span class="list-search-icon" aria-hidden="true">⌕</span>' +
           '<input type="search" data-module-search data-view="' + esc(moduleKey) + '" value="' + esc(searchState[moduleKey] || '') + '" placeholder="جست‌وجو در ' + esc(specs[moduleKey].title) + '" aria-label="جست‌وجو">' +
         '</div>' +
-        '<div class="list-filter-row" role="group" aria-label="فیلتر و مرتب‌سازی">' +
-          renderSortControls(moduleKey) +
+        '<div class="list-filter-row" role="group" aria-label="فیلترها">' +
           renderFilterControls(moduleKey) +
           '<button type="button" class="list-chip list-chip-reset' + (active ? ' is-active' : '') + '" data-module-reset data-view="' + esc(moduleKey) + '"' + (active ? '' : ' hidden') + '>پاک‌کردن فیلترها</button>' +
           '<span class="list-filter-count" data-module-result-count>' + faDigits(recordsForView(moduleKey, appData).length) + ' مورد</span>' +
@@ -7297,14 +7284,6 @@
       render(view, document.getElementById('sectionView'));
       return;
     }
-    const dirButton = event.target.closest('[data-module-sort-dir]');
-    if (dirButton) {
-      const moduleKey = dirButton.dataset.view;
-      const current = listSortFor(moduleKey);
-      setListSort(moduleKey, { direction: current.direction === 'asc' ? 'desc' : 'asc' });
-      render(moduleKey, document.getElementById('sectionView'));
-      return;
-    }
     const resetButton = event.target.closest('[data-module-reset]');
     if (resetButton) {
       const moduleKey = resetButton.dataset.view;
@@ -7482,9 +7461,6 @@
     const target=event.target;
     if(target.matches('[data-module-filter]')){
       setModuleFilter(target.dataset.view, target.dataset.filterKey || 'status', target.value);
-      render(target.dataset.view,document.getElementById('sectionView'));
-    }else if(target.matches('[data-module-sort]')){
-      setListSort(target.dataset.view,{key:target.value});
       render(target.dataset.view,document.getElementById('sectionView'));
     }else if(target.matches('[data-module-select-all]')){
       const section=document.getElementById('sectionView');

@@ -83,6 +83,12 @@ check('چاپ فهرست هم از عنوان فیلترشده استفاده م
 check('خروجی برنامهٔ شیفت‌ها همان ترتیب جدول روی صفحه را دارد', /sortRecords\('shifts', appData\.shifts \|\| \[\]\)\.forEach/.test(modules));
 check('منوی خروجی تعداد و ترتیب فهرست دیده‌شده را نشان می‌دهد', /function exportMenuSummary/.test(modules) && /خروجی از همین فهرست: /.test(modules) && /exportMenuSummary\(moduleKey\)/.test(modules));
 
+// ── مرتب‌سازی فقط از سرستون جدول ──
+check('کنترل مرتب‌سازی/جهت از نوار فیلترها برداشته شده', !/renderSortControls/.test(modules) && !/data-module-sort/.test(modules));
+check('نوار فیلترها فقط فیلتر و شمارش دارد', /role="group" aria-label="فیلترها"/.test(modules) && /renderFilterControls\(moduleKey\)/.test(modules));
+check('مرتب‌سازی از سرستون جدول انجام می‌شود', /data-sort-key/.test(modules) && /setListSort\(moduleKey, \{ key: key, direction: 'asc' \}\)/.test(modules));
+check('کلیک دوباره روی سرستون جهت را عوض می‌کند', /current\.key === key\) setListSort\(moduleKey, \{ direction: current\.direction === 'asc' \? 'desc' : 'asc' \}\)/.test(modules));
+
 // ── کش آفلاین ──
 check('notices.css در فهرست پیش‌کش سرویس‌ورکر است', sw.includes('./design/notices.css'));
 
