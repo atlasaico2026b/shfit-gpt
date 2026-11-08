@@ -37,6 +37,7 @@
   <link rel="stylesheet" href="./design/forms-validation.css">
   <link rel="stylesheet" href="./design/record-file.css">
   <link rel="stylesheet" href="./design/toolbars.css">
+  <link rel="stylesheet" href="./design/shift-planner.css">
   <!-- لایهٔ ظاهری تازه (بر پایهٔ کدهای پیوست) — آخرین لینک تا بر همهٔ فایل‌ها سوار شود -->
   <link rel="stylesheet" href="./design/scroll-routing.css">
   <link rel="stylesheet" href="./design/new-ui.css">
@@ -49,6 +50,7 @@
   <nav class="app-menu-nav">
     <a class="app-menu-item active" href="./index.html" title="داشبورد"><span class="nav-ico" data-atlas-icon="dashboard"></span>داشبورد</a>
     <a class="app-menu-item" href="./index.html?view=employees" title="پرسنل"><span class="nav-ico" data-atlas-icon="employees"></span>پرسنل</a>
+    <a class="app-menu-item" href="./index.html?view=shifts" title="شیفت‌ها"><span class="nav-ico" data-atlas-icon="shifts"></span>شیفت‌ها</a>
     <a class="app-menu-item" href="./index.html?view=missions" title="مأموریت‌ها"><span class="nav-ico" data-atlas-icon="missions"></span>مأموریت</a>
     <a class="app-menu-item" href="./index.html?view=leaves" title="مرخصی‌ها"><span class="nav-ico" data-atlas-icon="leaves"></span>مرخصی</a>
     <a class="app-menu-item" href="./index.html?view=vehicles" title="خودروها"><span class="nav-ico" data-atlas-icon="vehicles"></span>خودرو</a>
@@ -281,7 +283,7 @@
         <input id="newMenuTitle" type="text" maxlength="40" placeholder="مثلاً پیگیری تجهیزات" class="atlas-input atlas-input--block" autocomplete="new-password" spellcheck="false" data-form-type="other">
         <label for="newMenuTarget">صفحه‌ای که منو باز می‌کند</label>
         <select id="newMenuTarget" class="atlas-input atlas-input--block">
-          <option value="dashboard">داشبورد</option><option value="employees">کارکنان</option><option value="missions">مأموریت‌ها</option><option value="leaves">مرخصی‌ها</option><option value="vehicles">خودروها</option><option value="gasmeters">گازسنج‌ها</option><option value="notes">یادداشت‌ها و پیگیری‌ها</option><option value="programs">برنامه‌ها و پرونده‌ها</option><option value="phonebook">دفترچه تلفن</option><option value="reports">گزارشات</option>
+          <option value="dashboard">داشبورد</option><option value="employees">کارکنان</option><option value="shifts">شیفت‌ها</option><option value="missions">مأموریت‌ها</option><option value="leaves">مرخصی‌ها</option><option value="vehicles">خودروها</option><option value="gasmeters">گازسنج‌ها</option><option value="notes">یادداشت‌ها و پیگیری‌ها</option><option value="programs">برنامه‌ها و پرونده‌ها</option><option value="phonebook">دفترچه تلفن</option><option value="reports">گزارشات</option>
         </select>
         <button class="primary-btn" id="addMainMenu" type="button">+ افزودن منو</button>
       </div>
@@ -332,6 +334,7 @@
 <script src="./design/print-sheet.js" defer></script>
 <script src="./design/export-docs.js" defer></script>
 <script src="./modules.js" defer></script>
+<script src="./design/shift-planner.js" defer></script>
 <script src="./design/icons/atlas-icons.js"></script>
 <script src="./app.js" defer></script>
 <script src="./theme-two.js" defer></script>

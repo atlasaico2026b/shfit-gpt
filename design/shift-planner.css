@@ -1,0 +1,433 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   برنامه‌ریز شیفت — ظاهر منوی «شیفت‌ها»
+   همهٔ رنگ‌ها از design/tokens.css می‌آیند؛ هیچ رنگ یا اندازهٔ ثابتی این‌جا
+   تعریف نمی‌شود. چیدمان موبایل‌اول است: کارت‌ها یک‌ستونی شروع می‌شوند و در
+   عرض‌های بزرگ‌تر چندستونی می‌شوند.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* ── نوار تب‌ها ─────────────────────────────────────────────────────────── */
+.sp-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+  scrollbar-width: thin;
+}
+
+.sp-tab {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s, color .15s, border-color .15s;
+}
+
+.sp-tab:hover { color: var(--text); background: var(--panel-3); }
+
+.sp-tab.is-active {
+  color: var(--text-bright);
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  font-weight: 600;
+}
+
+/* ── قالب‌های آماده ─────────────────────────────────────────────────────── */
+.sp-presets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ── کارت روش کاری / قالب شیفت ──────────────────────────────────────────── */
+.sp-card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+@media (min-width: 720px) {
+  .sp-card-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+}
+
+.sp-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--shadow-soft);
+}
+
+.sp-card.is-off { opacity: .6; }
+
+.sp-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sp-card-head h4 {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text-bright);
+}
+
+.sp-card-kind {
+  display: block;
+  margin-top: 3px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.sp-card-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.sp-facts {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  font-size: 12.5px;
+}
+
+.sp-facts > div {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 5px;
+  border-bottom: 1px dashed var(--line);
+}
+
+.sp-facts > div:last-child { border-bottom: 0; padding-bottom: 0; }
+.sp-facts dt { color: var(--muted); flex: 0 0 auto; }
+.sp-facts dd { margin: 0; color: var(--text); text-align: end; }
+
+.sp-shift-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.sp-shift-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 4px 9px;
+  border: 1px solid var(--line-hi);
+  border-radius: var(--radius-pill);
+  background: var(--panel-2);
+  font-size: 12px;
+  color: var(--text);
+}
+
+.sp-shift-chip b { color: var(--accent); font-size: 12.5px; }
+.sp-shift-chip i { color: var(--muted); font-style: normal; font-size: 11px; }
+
+/* ── نوار بازه و فیلترها ────────────────────────────────────────────────── */
+.sp-range {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+
+.sp-range-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+  min-width: 0;
+}
+
+.sp-range-field input {
+  padding: 7px 9px;
+  border: 1px solid var(--line-hi);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.sp-range-quick,
+.sp-mode { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.sp-mode { margin-inline-start: auto; }
+
+.sp-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.sp-filter select {
+  padding: 5px 8px;
+  border: 1px solid var(--line-hi);
+  border-radius: var(--radius-pill);
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  max-width: 160px;
+}
+
+/* ── جدول تقویم ─────────────────────────────────────────────────────────── */
+.sp-grid-wrap {
+  overflow: auto;
+  max-height: 68vh;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overscroll-behavior: contain;
+}
+
+.sp-grid { border-collapse: separate; border-spacing: 0; font-size: 12px; }
+
+.sp-grid thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--panel-3);
+  border-bottom: 1px solid var(--line-hi);
+  padding: 6px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.sp-grid .sp-day-head { text-align: center; min-width: 34px; }
+.sp-grid .sp-day-head span { display: block; font-size: 10px; opacity: .75; }
+.sp-grid .sp-day-head b { display: block; font-size: 11px; color: var(--text); }
+
+.sp-grid .sp-sticky-col {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 3;
+  background: var(--panel);
+  border-inline-end: 1px solid var(--line-hi);
+  text-align: start;
+  padding: 6px 10px;
+  min-width: 150px;
+  max-width: 220px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.sp-grid thead .sp-sticky-col { z-index: 4; background: var(--panel-3); }
+
+.sp-grid tbody tr:nth-child(even) .sp-sticky-col { background: var(--panel-2); }
+.sp-grid tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--panel-2) 60%, transparent); }
+
+.sp-sub {
+  display: block;
+  font-size: 10.5px;
+  color: var(--muted);
+  font-weight: 400;
+  margin-top: 2px;
+}
+
+.sp-cell { padding: 2px; text-align: center; }
+
+.sp-cell-btn {
+  width: 100%;
+  min-width: 30px;
+  padding: 5px 2px;
+  border: 1px solid color-mix(in srgb, var(--tone, var(--muted)) 35%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--tone, var(--muted)) 14%, transparent);
+  color: var(--tone, var(--text));
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .12s, transform .12s;
+}
+
+.sp-cell-btn:hover {
+  background: color-mix(in srgb, var(--tone, var(--muted)) 28%, transparent);
+  transform: translateY(-1px);
+}
+
+.sp-cell.is-filtered { background: transparent; }
+
+.sp-cell[data-tone="muted"],
+.sp-legend-item[data-tone="muted"] { --tone: var(--muted); }
+
+.sp-names { padding: 5px 8px; vertical-align: top; }
+.sp-name {
+  display: inline-block;
+  margin: 1px 2px;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--panel-3);
+  font-size: 11px;
+  color: var(--text);
+  white-space: nowrap;
+}
+.sp-dash { color: var(--muted); }
+
+.sp-grid-station .sp-sticky-col { min-width: 96px; }
+
+/* ── راهنمای رنگ ────────────────────────────────────────────────────────── */
+.sp-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 4px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.sp-legend-item { display: inline-flex; align-items: center; gap: 5px; }
+
+.sp-legend-item i {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--tone, var(--muted)) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tone, var(--muted)) 90%, transparent);
+}
+
+/* ── جدول تخصیص ─────────────────────────────────────────────────────────── */
+.sp-table select {
+  padding: 5px 8px;
+  border: 1px solid var(--line-hi);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  max-width: 200px;
+}
+
+.sp-check { width: 34px; text-align: center; }
+
+.sp-group-row td {
+  background: var(--panel-3);
+  font-size: 12px;
+  color: var(--text-bright);
+  padding: 7px 10px;
+}
+
+.sp-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  text-align: start;
+}
+
+.sp-link:hover { text-decoration: underline; }
+
+/* ── پنجره‌ها ───────────────────────────────────────────────────────────── */
+.sp-backdrop { z-index: 90; }
+
+.sp-week { margin-top: 14px; }
+.sp-week h4 { margin: 0 0 4px; font-size: 13px; color: var(--text-bright); }
+
+.sp-hint { margin: 0 0 8px; font-size: 11.5px; color: var(--muted); }
+
+.sp-week-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px dashed var(--line);
+}
+
+.sp-week-day { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text); }
+.sp-week-sep { font-size: 11px; color: var(--muted); }
+
+.sp-week-row input[type="time"] {
+  padding: 5px 7px;
+  border: 1px solid var(--line-hi);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+}
+
+.sp-rows { margin-top: 14px; }
+.sp-rows h4 { margin: 0 0 4px; font-size: 13px; color: var(--text-bright); }
+.sp-rows-body { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+
+.sp-row {
+  display: grid;
+  grid-template-columns: 56px 1fr auto auto auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.sp-row input,
+.sp-row select {
+  padding: 6px 8px;
+  border: 1px solid var(--line-hi);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  min-width: 0;
+}
+
+.sp-row .sp-code { text-align: center; font-weight: 700; }
+.sp-row-unit { font-size: 11px; color: var(--muted); }
+
+.sp-cycle {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.sp-person-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 10px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.sp-person-head strong { font-size: 14px; color: var(--text-bright); }
+
+.sp-person-wrap { max-height: 52vh; overflow: auto; }
+
+/* ── موبایل ─────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .sp-mode { margin-inline-start: 0; width: 100%; }
+  .sp-range-field { flex: 1 1 130px; }
+  .sp-grid .sp-sticky-col { min-width: 110px; max-width: 130px; font-size: 11.5px; }
+  .sp-row { grid-template-columns: 48px 1fr auto auto; }
+  .sp-row .sp-row-unit { display: none; }
+  .sp-week-row { grid-template-columns: 1fr auto auto; }
+  .sp-week-sep { display: none; }
+}

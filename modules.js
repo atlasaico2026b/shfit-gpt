@@ -665,6 +665,15 @@
       references: { placesByType: {}, lineColors: {} },
       history: [],
       shifts: [],
+      // ── برنامه‌ریز شیفت (منوی مستقل «شیفت‌ها») ──────────────────────────
+      // روش‌های کاری: قوانین ساعت کاری هفتگی یا اتصال به یک قالب چرخشی.
+      shiftMethods: [],
+      // قالب‌های شیفت: چند شیفت در روز، ساعت هر شیفت و ترتیب چرخش.
+      shiftTemplates: [],
+      // تخصیص روش کاری به کارمند با بازهٔ اعتبار؛ تا تغییر نکند پابرجاست.
+      shiftAssignments: [],
+      // تغییر وضعیت موقت یا دائم یک روز/چند روز (مرخصی، استراحت، اضافه‌کار، جایگزینی…).
+      shiftOverrides: [],
       updatedAt: ''
     };
     MODULES.forEach(function (key) { state[key] = []; });
@@ -703,6 +712,10 @@
     });
     if (Array.isArray(value.history)) out.history = value.history.slice(-3000);
     if (Array.isArray(value.shifts)) out.shifts = value.shifts.filter(function(item){return item&&typeof item==='object';});
+    // برنامه‌ریز شیفت: هر چهار فهرست فقط آرایهٔ شیء می‌پذیرند.
+    ['shiftMethods', 'shiftTemplates', 'shiftAssignments', 'shiftOverrides'].forEach(function (key) {
+      if (Array.isArray(value[key])) out[key] = value[key].filter(function (item) { return item && typeof item === 'object'; });
+    });
     out.schemaVersion = 2;
     out.updatedAt = value.updatedAt || '';
     ensureReferenceLists(out);
@@ -1961,12 +1974,12 @@
       customExportMenu('shifts') + ' ' +
       '<button type="button" class="primary-btn" data-shift-action="new">+ ثبت شیفت</button></div></div>' +
       renderShiftForm(data) + '<div class="module-table-wrap" style="width:100%;max-width:100%;min-width:0"><table class="module-table"><thead><tr>' +
-      sortableHeader('shifts', 'startAt', 'شروع', 'employees') +
-      sortableHeader('shifts', 'endAt', 'پایان', 'employees') +
-      sortableHeader('shifts', 'shiftType', 'نوع', 'employees') +
-      sortableHeader('shifts', 'employees', 'کارکنان', 'employees') +
-      sortableHeader('shifts', 'workplace', 'محل خدمت', 'employees') +
-      sortableHeader('shifts', 'status', 'وضعیت', 'employees') +
+      sortableHeader('shifts', 'startAt', 'شروع', 'shifts') +
+      sortableHeader('shifts', 'endAt', 'پایان', 'shifts') +
+      sortableHeader('shifts', 'shiftType', 'نوع', 'shifts') +
+      sortableHeader('shifts', 'employees', 'کارکنان', 'shifts') +
+      sortableHeader('shifts', 'workplace', 'محل خدمت', 'shifts') +
+      sortableHeader('shifts', 'status', 'وضعیت', 'shifts') +
       '<th>عملیات</th></tr></thead><tbody>' +
       rows + '</tbody></table></div><div class="module-list-foot">تعداد برنامه‌ها: ' + faDigits(shifts.length) +
       ' · برای شیفت شب، تاریخ پایان را صریحاً در روز بعد ثبت کن.</div></section>';
@@ -2000,9 +2013,58 @@
       '<button type="button" class="secondary-btn" data-module-action="bulk-clear" data-view="' + esc(moduleKey) + '">پاک‌کردن انتخاب</button>' +
       '<button type="button" class="module-delete-btn" data-module-action="bulk-delete" data-view="' + esc(moduleKey) + '">حذف انتخاب‌شده‌ها</button>' +
       '<span>' + faDigits(recordsForView(moduleKey, data).length) + ' مورد از ' + faDigits(existing) + '</span></div>' +
-      '<div data-module-list-region>' + renderTable(moduleKey, data) + '</div></section>' +
-      (moduleKey === 'employees' ? renderShiftSchedule(data) : '')
+      '<div data-module-list-region>' + renderTable(moduleKey, data) + '</div></section>'
     );
+  }
+
+  // ── منوی مستقل «شیفت‌ها» ────────────────────────────────────────────────────
+  // برنامه‌ریزی شیفت از منوی کارکنان جدا شده است. کل این بخش (روش‌های کاری،
+  // قالب‌های چرخش، تخصیص کارکنان، تقویم بازه‌ای و خروجی‌ها) صاحبش
+  // design/shift-planner.js است؛ این‌جا فقط مسیر رندر و پل دسترسی به ابزارهای
+  // مشترک برنامه ساخته می‌شود.
+  function renderShifts(section) {
+    const planner = window.AtlasShiftPlanner;
+    if (!planner || typeof planner.render !== 'function') {
+      section.innerHTML = rootWrap('<div class="module-empty">برنامه‌ریز شیفت بارگذاری نشد؛ صفحه را دوباره باز کن.</div>');
+      return;
+    }
+    planner.render(section, shiftPlannerBridge());
+  }
+
+  function shiftPlannerBridge() {
+    return {
+      getData: function () { return appData; },
+      save: saveState,
+      createId: createId,
+      esc: esc,
+      faDigits: faDigits,
+      toast: toast,
+      confirm: askConfirm,
+      prompt: askPrompt,
+      text: askText,
+      formatJalali: formatJalali,
+      parseJalali: parseJalali,
+      todayIso: todayIso,
+      jalaliInputValue: jalaliInputValue,
+      enhanceJalaliInputs: enhanceJalaliInputs,
+      enhanceSearchSelects: enhanceSearchSelects,
+      closeOpenCombos: closeOpenCombos,
+      employeeName: employeeName,
+      rootWrap: rootWrap,
+      pageHead: pageHead,
+      runExport: runExport,
+      exportSlug: exportSlug,
+      downloadFile: downloadFile,
+      printRows: printRows,
+      exportFormats: EXPORT_FORMATS,
+      // برگهٔ «برنامه‌های ثبت‌شده» همان فهرست قدیمی شیفت‌هاست؛ صاحبش همین فایل است.
+      legacySchedule: function (host) {
+        if (host) host.innerHTML = renderShiftSchedule(appData);
+      },
+      addReferenceValue: function (key, value) {
+        return window.ATLAS_MODULES.addReferenceValue(key, value);
+      }
+    };
   }
 
   function parseDateValue(value) {
@@ -5316,6 +5378,7 @@
       return;
     }
     if(view==='programs')renderPrograms(section);
+    else if(view==='shifts')renderShifts(section);
     else if(view==='vehicles')renderVehicles(section);
     else if(view==='faults'){if(vehicleTab==='registry')setVehicleTab('history');renderVehicles(section);}
     else if(view==='stations')renderStations(section);
@@ -6267,6 +6330,13 @@
         if (Array.isArray(appData.references[key])) state.references[key] = appData.references[key].slice();
       });
       state[scope.key] = JSON.parse(JSON.stringify(appData[scope.key] || []));
+      // «شیفت‌ها» فقط فهرست برنامه‌ها نیست؛ روش‌های کاری، قالب‌های چرخش،
+      // تخصیص کارکنان و تغییر وضعیت‌ها هم بخشی از همین منو هستند.
+      if (scope.key === 'shifts') {
+        ['shiftMethods', 'shiftTemplates', 'shiftAssignments', 'shiftOverrides'].forEach(function (key) {
+          state[key] = JSON.parse(JSON.stringify(appData[key] || []));
+        });
+      }
       state.history = (appData.history || []).filter(function (item) { return item.module === scope.key; });
       return state;
     }
@@ -7265,18 +7335,18 @@
     const section=document.getElementById('sectionView');
     if(action==='new'||action==='edit'){
       shiftFormState={open:true,id:action==='edit'?button.dataset.id:null};
-      render('employees',section);
+      render('shifts',section);
       const form=section&&section.querySelector('[data-shift-form]');
       if(form)form.scrollIntoView({behavior:'smooth',block:'start'});
     }else if(action==='cancel'){
-      shiftFormState={open:false,id:null};render('employees',section);
+      shiftFormState={open:false,id:null};render('shifts',section);
     }else if(action==='delete'){
       const record=(appData.shifts||[]).find(function(item){return String(item.id)===String(button.dataset.id);});
       if(!record)return;
       if(!(await askConfirm({title:'حذف برنامهٔ شیفت',message:'برنامهٔ شیفت این مورد حذف شود؟',confirmLabel:'حذف',danger:true})))return;
       appData.shifts=appData.shifts.filter(function(item){return String(item.id)!==String(record.id);});
       addShiftHistory(record,'حذف',[]);
-      if(await saveState()){render('employees',section);refreshDashboard();toast('برنامهٔ شیفت حذف شد.');}
+      if(await saveState()){render('shifts',section);refreshDashboard();toast('برنامهٔ شیفت حذف شد.');}
     }
   });
 
@@ -7728,7 +7798,7 @@
     if (backdrop && backdrop.dataset.modalKind === 'shift') {
       shiftFormState = { open: false, id: null };
       const host = document.getElementById('sectionView');
-      if (host) render('employees', host);
+      if (host) render('shifts', host);
       return true;
     }
     const host = document.getElementById('sectionView');
@@ -7834,7 +7904,7 @@
       const ok=await saveState();
       if(!ok)return;
       shiftFormState={open:false,id:null};
-      render('employees',document.getElementById('sectionView'));
+      render('shifts',document.getElementById('sectionView'));
       refreshDashboard();
       toast(old?'برنامهٔ شیفت به‌روزرسانی شد.':'برنامهٔ شیفت ثبت شد.');
     }catch(error){toast(error.message||'ثبت برنامهٔ شیفت انجام نشد.');}

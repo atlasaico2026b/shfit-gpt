@@ -44,6 +44,17 @@ missions, leave, vehicles, gas detectors, notes/actions, reports, settings.
   borders, larger/bolder column headers, content-proportional column widths (`<colgroup>`), numeric cells
   kept on one line, and a font/padding step that shrinks as the column count grows (`data-density`).
   Tests: `node tests/print-sheet.cjs`.
+- `design/shift-planner.js` + `design/shift-planner.css` — **منوی مستقل «شیفت‌ها»** (`?view=shifts`).
+  برنامه‌ریزی شیفت از منوی کارکنان جدا شده است. پنج تب: روش‌های کاری (قوانین ساعت کاری هفتگی یا اتصال
+  به قالب چرخش)، قالب‌های شیفت (چند شیفت در روز + ترتیب چرخش + شروع چرخه)، تخصیص کارکنان (گروه‌بندی
+  بر اساس شهر/محل خدمت، تک‌نفری و گروهی)، تقویم شیفت (بازهٔ دلخواه، نمای کارمند و نمای ایستگاه،
+  فیلتر/جست‌وجو، کلیک روی خانه = تغییر وضعیت) و برنامه‌های ثبت‌شده (فهرست قدیمی، دست‌نخورده).
+  موتور محاسبه (`AtlasShiftPlanner.engine`) خالص و بدون DOM است: `weekdayIndex` (۰=شنبه)،
+  `rotationCodeAt`، `weeklyRuleAt`، `assignmentFor`، `overrideFor`، `leaveFor`، `resolve`.
+  ترتیب اولویت: تغییر وضعیت ← مرخصی تأییدشده ← تخصیص ← بدون تخصیص. تاریخ‌ها همیشه ISO ذخیره
+  می‌شوند؛ ورودی شمسی با `readJalali` تبدیل می‌شود (هرگز رشتهٔ شمسی ذخیره نشود).
+  داده در `shiftMethods` / `shiftTemplates` / `shiftAssignments` / `shiftOverrides`.
+  `modules.js` فقط `renderShifts` + `shiftPlannerBridge` را دارد. آزمون: `node tests/shift-planner.cjs`.
 - `design/export-docs.js` — **تنها مرجع ساخت فایل‌های Word (.docx) و CSV** (اکسل/PNG/چاپ صاحبان
   خودشان را دارند). هر خروجی سندی از این دو تابع می‌آید:
   `AtlasExportDocs.docx(sheet)`، `AtlasExportDocs.csv(rows, opts)`. خروجی PowerPoint حذف شده است.
@@ -76,6 +87,7 @@ missions, leave, vehicles, gas detectors, notes/actions, reports, settings.
 | مشاهدهٔ پرونده و خروجی A4 | `design/record-file.js` + `.css` |
 | خروجی چاپ/PDF فهرست‌ها (A4 افقی) | `design/print-sheet.js` + `design/print.css` |
 | خروجی Word / CSV (همهٔ برنامه) | `design/export-docs.js` |
+| برنامه‌ریزی شیفت (روش کاری، چرخش، تخصیص، تقویم) | `design/shift-planner.js` + `.css` |
 | نوار جست‌وجو/فیلتر/مرتب‌سازی و پشتیبان‌گیری بخش | `design/toolbars.css` + `renderListToolbar` / `exportSectionBackup` در `modules.js` |
 | ظاهر کارت اعلان (کشوی اعلان) | `design/notices.css` (+ `openNoticeDialog` در `modules.js`) |
 | فیلترهای فهرست هر بخش | `LIST_FILTERS` + `recordMatchesFilters` در `modules.js` |

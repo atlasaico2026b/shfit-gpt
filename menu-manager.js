@@ -5,6 +5,7 @@
   const DEFAULTS = [
     { id: 'dashboard', title: 'داشبورد', icon: 'dashboard', href: './index.html', fixed: true },
     { id: 'employees', title: 'کارکنان', icon: 'employees', href: './index.html?view=employees' },
+    { id: 'shifts', title: 'شیفت‌ها', icon: 'shifts', href: './index.html?view=shifts' },
     { id: 'missions', title: 'مأموریت‌ها', icon: 'missions', href: './index.html?view=missions' },
     { id: 'leaves', title: 'مرخصی‌ها', icon: 'leaves', href: './index.html?view=leaves' },
     { id: 'vehicles', title: 'خودروها', icon: 'vehicles', href: './index.html?view=vehicles' },
@@ -18,6 +19,7 @@
   ];
   const TARGETS = {
     dashboard: './index.html', employees: './index.html?view=employees',
+    shifts: './index.html?view=shifts',
     missions: './index.html?view=missions', leaves: './index.html?view=leaves',
     vehicles: './index.html?view=vehicles', stations: './index.html?view=stations', gasmeters: './index.html?view=gasmeters',
     maintenance: './index.html?view=maintenance', faults: './index.html?view=faults',

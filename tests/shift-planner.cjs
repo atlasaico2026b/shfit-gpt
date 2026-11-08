@@ -1,0 +1,134 @@
+// بررسی موتور برنامه‌ریز شیفت: روز هفته، قانون هفتگی، چرخش، تخصیص، تغییر وضعیت و مرخصی.
+const fs = require('fs');
+const path = require('path');
+
+const root = path.resolve(__dirname, '..');
+const src = fs.readFileSync(path.join(root, 'design/shift-planner.js'), 'utf8');
+
+// فایل مرورگری است؛ فقط برای بارگذاری، document و window را جعل می‌کنیم.
+const listeners = [];
+global.window = global;
+global.document = {
+  addEventListener: function (name) { listeners.push(name); },
+  querySelectorAll: function () { return []; }
+};
+new Function('window', 'document', src)(globalThis, global.document);
+
+const planner = globalThis.AtlasShiftPlanner;
+if (!planner) throw new Error('AtlasShiftPlanner صادر نشد');
+const e = planner.engine;
+
+const checks = [];
+const check = (name, ok, extra) => checks.push({ name: name, ok: !!ok, extra: extra === undefined ? '' : String(extra) });
+
+// ── روز هفته: هفتهٔ ایرانی از شنبه ──
+// ۲۰۲۶-۱۱-۰۷ = شنبه
+check('شنبه = ۰', e.weekdayIndex('2026-11-07') === 0, e.weekdayIndex('2026-11-07'));
+check('یکشنبه = ۱', e.weekdayIndex('2026-11-08') === 1, e.weekdayIndex('2026-11-08'));
+check('چهارشنبه = ۴', e.weekdayIndex('2026-11-11') === 4, e.weekdayIndex('2026-11-11'));
+check('جمعه = ۶', e.weekdayIndex('2026-11-13') === 6, e.weekdayIndex('2026-11-13'));
+
+// ── حساب روز ──
+check('addDays مثبت', e.addDays('2026-11-07', 3) === '2026-11-10', e.addDays('2026-11-07', 3));
+check('addDays منفی', e.addDays('2026-11-07', -1) === '2026-11-06', e.addDays('2026-11-07', -1));
+check('addDays روی ماه', e.addDays('2026-10-31', 1) === '2026-11-01', e.addDays('2026-10-31', 1));
+check('rangeDates ۳ روز', e.rangeDates('2026-11-07', '2026-11-09').length === 3);
+check('rangeDates معکوس خالی', e.rangeDates('2026-11-09', '2026-11-07').length === 0);
+
+// ── مدت شیفت ──
+check('۱۲ ساعت', e.durationMinutes('07:00', '19:00') === 720, e.durationMinutes('07:00', '19:00'));
+check('شیفت شب از نیمه‌شب', e.durationMinutes('19:00', '07:00') === 720, e.durationMinutes('19:00', '07:00'));
+check('متن مدت', e.durationText('08:00', '14:00') === '6 ساعت', e.durationText('08:00', '14:00'));
+check('مدت با دقیقه', e.durationText('08:00', '14:30') === '6:30 ساعت', e.durationText('08:00', '14:30'));
+
+// ── قالب چرخش ──
+const template = {
+  id: 't1',
+  name: '۲/۲/۴',
+  shifts: [
+    { code: 'ص', label: 'صبح‌کار', from: '07:00', to: '19:00' },
+    { code: 'ش', label: 'شب‌کار', from: '19:00', to: '07:00' }
+  ],
+  rotation: [{ code: 'ص', days: 2 }, { code: 'ش', days: 2 }, { code: e.OFF, days: 4 }],
+  cycleStart: '2026-11-07'
+};
+check('طول چرخه ۸', e.cycleLength(template) === 8, e.cycleLength(template));
+check('روز ۰ صبح', e.rotationCodeAt(template, '2026-11-07') === 'ص', e.rotationCodeAt(template, '2026-11-07'));
+check('روز ۱ صبح', e.rotationCodeAt(template, '2026-11-08') === 'ص', e.rotationCodeAt(template, '2026-11-08'));
+check('روز ۲ شب', e.rotationCodeAt(template, '2026-11-09') === 'ش', e.rotationCodeAt(template, '2026-11-09'));
+check('روز ۳ شب', e.rotationCodeAt(template, '2026-11-10') === 'ش', e.rotationCodeAt(template, '2026-11-10'));
+check('روز ۴ استراحت', e.rotationCodeAt(template, '2026-11-11') === e.OFF, e.rotationCodeAt(template, '2026-11-11'));
+check('روز ۷ استراحت', e.rotationCodeAt(template, '2026-11-14') === e.OFF, e.rotationCodeAt(template, '2026-11-14'));
+check('روز ۸ دوباره صبح', e.rotationCodeAt(template, '2026-11-15') === 'ص', e.rotationCodeAt(template, '2026-11-15'));
+check('قبل از شروع چرخه هم می‌چرخد', e.rotationCodeAt(template, '2026-11-06') === e.OFF, e.rotationCodeAt(template, '2026-11-06'));
+
+// ── قانون هفتگی ──
+const office = {
+  id: 'm1', name: 'اداری', kind: 'office',
+  weekly: e.defaultWeekly('08:00', '14:00')
+};
+check('شنبه کاری است', !!e.weeklyRuleAt(office, '2026-11-07'));
+check('جمعه تعطیل است', e.weeklyRuleAt(office, '2026-11-13') === null);
+check('ساعت شنبه ۸ تا ۱۴', e.weeklyRuleAt(office, '2026-11-07').from === '08:00');
+
+// ── وضعیت کامل ──
+const state = {
+  employees: [{ id: 'e1', firstName: 'علی', lastName: 'رضایی' }],
+  shiftMethods: [office, { id: 'm2', name: 'چرخشی', kind: 'rotating', templateId: 't1' }],
+  shiftTemplates: [template],
+  shiftAssignments: [{ id: 'a1', employeeId: 'e1', methodId: 'm1', from: '2026-11-01', to: '', active: true }],
+  shiftOverrides: [],
+  leaves: []
+};
+
+let status = e.resolve(state, 'e1', '2026-11-07');
+check('شنبه روزکار', status.label === 'روزکار' && status.from === '08:00', status.label);
+status = e.resolve(state, 'e1', '2026-11-13');
+check('جمعه استراحت', status.kind === 'off', status.label);
+status = e.resolve(state, 'e1', '2026-10-20');
+check('قبل از تخصیص: بدون تخصیص', status.kind === 'none', status.label);
+
+// تخصیص چرخشی از تاریخ بعد، مقدم بر تخصیص قبلی
+state.shiftAssignments.push({ id: 'a2', employeeId: 'e1', methodId: 'm2', from: '2026-11-07', to: '', active: true });
+status = e.resolve(state, 'e1', '2026-11-07');
+check('تخصیص تازه‌تر مقدم است', status.label === 'صبح‌کار', status.label);
+status = e.resolve(state, 'e1', '2026-11-11');
+check('روز چهارم چرخه استراحت', status.kind === 'off', status.label);
+
+// تغییر وضعیت مقدم بر همه
+state.shiftOverrides.push({
+  id: 'o1', employeeId: 'e1', kind: 'overtime', templateId: 't1', code: 'ش',
+  from: '2026-11-11', to: '2026-11-11', permanent: false, note: 'اضافه‌کار', createdAt: '2026-11-01T10:00:00Z'
+});
+status = e.resolve(state, 'e1', '2026-11-11');
+check('اضافه‌کار بر چرخه مقدم است', status.kind === 'overtime' && status.label === 'شب‌کار', status.label);
+check('کامنت تغییر وضعیت می‌آید', status.note === 'اضافه‌کار', status.note);
+check('روز بعد دوباره چرخه', e.resolve(state, 'e1', '2026-11-12').kind === 'off');
+
+// مرخصی تأییدشده منعکس می‌شود، تأییدنشده نه
+state.leaves.push({ id: 'l1', employeeId: 'e1', status: 'تأییدشده', startDate: '2026-11-15', endDate: '2026-11-16', leaveType: 'استحقاقی' });
+check('مرخصی تأییدشده', e.resolve(state, 'e1', '2026-11-15').kind === 'leave');
+check('مرخصی چندروزه', e.resolve(state, 'e1', '2026-11-16').kind === 'leave');
+check('بعد از مرخصی برمی‌گردد', e.resolve(state, 'e1', '2026-11-17').kind !== 'leave');
+state.leaves.push({ id: 'l2', employeeId: 'e1', status: 'در انتظار بررسی', startDate: '2026-11-20', endDate: '2026-11-20' });
+check('مرخصی تأییدنشده در شیفت نمی‌آید', e.resolve(state, 'e1', '2026-11-20').kind !== 'leave');
+
+// تخصیص غیرفعال نادیده گرفته می‌شود
+state.shiftAssignments.forEach(function (a) { a.active = false; });
+check('تخصیص غیرفعال', e.resolve(state, 'e1', '2026-11-07').kind === 'none');
+
+// ── خلاصه‌ها ──
+check('خلاصهٔ روش اداری', e.methodSummary(office).indexOf('08:00–14:00') >= 0, e.methodSummary(office));
+check('خلاصهٔ چرخش', e.templateSummary(template).indexOf('استراحت') >= 0, e.templateSummary(template));
+
+// ── رویدادها ثبت شده‌اند ──
+check('گوش‌دهنده‌های سراسری ثبت شدند', listeners.length >= 4, listeners.join(','));
+
+// ── گزارش ──
+let failed = 0;
+checks.forEach(function (item) {
+  if (!item.ok) failed++;
+  console.log((item.ok ? '✓' : '✗') + ' ' + item.name + (item.ok ? '' : '  → ' + item.extra));
+});
+console.log('\n' + (checks.length - failed) + '/' + checks.length + ' بررسی موفق');
+if (failed) process.exit(1);

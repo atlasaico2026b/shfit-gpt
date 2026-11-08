@@ -5,7 +5,7 @@
    - fetch: اول کش؛ شبکه فقط برای پر کردن کش چیزی که نداریم و به‌عنوان پشتیبان.
    - activate: کش‌های قدیمی پاک می‌شوند و اگر نسخهٔ قبلی وجود داشت، به صفحه اعلام می‌شود.
    افزایش CACHE_NAME در هر انتشار، نصب نسخهٔ تازه و پیش‌کش اتمی را تضمین می‌کند. */
-const CACHE_NAME = 'atlas-shift-v138-print-zero-page-margin';
+const CACHE_NAME = 'atlas-shift-v139-shift-planner';
 const APP_FILES = [
   './', './index.html',
   './design/tokens.css', './design/styles.css', './design/skins/flat.css', './design/skins/theme-two.css', './design/tones.css',
@@ -16,7 +16,7 @@ const APP_FILES = [
   './design/new-ui.css', './design/new-ui.js', './design/notices.css',
   './design/forms-validation.css', './design/record-file.css',
   './design/scroll-routing.css', './design/scroll-routing.js', './design/print-sheet.js', './design/toolbars.css',
-  './design/export-docs.js',
+  './design/export-docs.js', './design/shift-planner.css', './design/shift-planner.js',
   './design/contact-sync.js', './design/record-file.js',
   './design/theme-switch.js',
   './app.js', './design/secure-store.js', './modules.js', './theme-two.js', './settings-tabs.js',
