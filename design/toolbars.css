@@ -219,6 +219,59 @@
   background: rgba(var(--navy-rgb), 0.32);
 }
 
+/* ── 1.5 · سرستون‌های قابل مرتب‌سازی ────────────────────────────────────────
+   هر «عنوان» جدول یک دکمه است: کلیک اول صعودی، کلیک دوم نزولی. */
+.module-table th.module-sort-th {
+  padding: 0;
+}
+
+.module-sort-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  padding: 11px 12px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-align: start;
+  cursor: pointer;
+  transition: color 0.16s ease, background 0.16s ease;
+}
+
+.module-sort-btn:hover {
+  color: var(--text);
+  background: rgba(var(--accent-rgb), 0.1);
+}
+
+.module-sort-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.module-sort-label {
+  min-width: 0;
+}
+
+.module-sort-caret {
+  flex: none;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--muted);
+  opacity: 0.5;
+}
+
+.module-sort-th.is-sorted .module-sort-btn {
+  color: var(--accent);
+}
+
+.module-sort-th.is-sorted .module-sort-caret {
+  color: var(--accent);
+  opacity: 1;
+}
+
 /* ── 2 · دکمهٔ پشتیبان‌گیری هر بخش ───────────────────────────────────────── */
 .module-page-actions .module-backup-btn,
 .module-section-backup-bar .module-backup-btn,
@@ -385,10 +438,13 @@
   .list-chip select { max-width: 118px; }
   .list-filter-count { display: none; }
   .module-page-actions .module-backup-btn { width: 100%; justify-content: center; }
+  /* در نمایشگر باریک، فلش ستون‌های مرتب‌نشده جا می‌گیرد و سرستون را بلند می‌کند. */
+  .module-sort-th:not(.is-sorted) .module-sort-caret { display: none; }
 }
 
 @media print {
   .module-list-tools,
   .module-backup-btn,
   .hero-actions { display: none !important; }
+  .module-sort-caret { display: none !important; }
 }

@@ -62,7 +62,9 @@
       ['updatedAt', 'آخرین به‌روزرسانی']],
     maintenance: [['date', 'تاریخ سرویس'], ['serviceType', 'نوع سرویس'], ['status', 'وضعیت'], ['cost', 'هزینه'],
       ['updatedAt', 'آخرین به‌روزرسانی']],
-    gaslogs: [['date', 'تاریخ سابقه'], ['logType', 'نوع سابقه'], ['updatedAt', 'آخرین به‌روزرسانی']]
+    gaslogs: [['date', 'تاریخ سابقه'], ['logType', 'نوع سابقه'], ['updatedAt', 'آخرین به‌روزرسانی']],
+    shifts: [['startAt', 'شروع شیفت'], ['endAt', 'پایان شیفت'], ['shiftType', 'نوع شیفت'],
+      ['employees', 'کارکنان'], ['workplace', 'محل خدمت'], ['status', 'وضعیت']]
   };
   const listSorts = (function () {
     try {
@@ -70,8 +72,33 @@
       return saved && typeof saved === 'object' ? saved : {};
     } catch (error) { return {}; }
   })();
+  // برچسب هر ستون جدول؛ هم برای سرستون و هم برای گزینهٔ مرتب‌سازی.
+  function columnLabel(moduleKey, key) {
+    const field = specs[moduleKey] ? fieldsFor(moduleKey).find(function (item) { return item.key === key; }) : null;
+    if (field) return field.label;
+    if (key === 'relatedMissions') return 'مأموریت‌های مرتبط';
+    return key;
+  }
+
+  // گزینه‌های مرتب‌سازی هر بخش: فهرست تخصصی بالا، به‌اضافهٔ هر ستونی از جدول که
+  // در آن فهرست نیست. این‌طور هر «عنوان» جدول هم قابل مرتب‌سازی می‌شود.
+  function sortOptionsFor(moduleKey) {
+    const options = (LIST_SORTS[moduleKey] || []).slice();
+    const seen = Object.create(null);
+    options.forEach(function (option) { seen[option[0]] = 1; });
+    const spec = specs[moduleKey];
+    if (spec && spec.columns) {
+      spec.columns.forEach(function (key) {
+        if (seen[key]) return;
+        seen[key] = 1;
+        options.push([key, columnLabel(moduleKey, key)]);
+      });
+    }
+    return options;
+  }
+
   function listSortFor(moduleKey) {
-    const options = LIST_SORTS[moduleKey] || [];
+    const options = sortOptionsFor(moduleKey);
     const saved = listSorts[moduleKey] || {};
     const key = options.some(function (option) { return option[0] === saved.key; }) ? saved.key : (options[0] ? options[0][0] : 'updatedAt');
     return { key: key, direction: saved.direction === 'asc' ? 'asc' : 'desc' };
@@ -84,7 +111,34 @@
     try { localStorage.setItem(LIST_SORT_KEY, JSON.stringify(listSorts)); } catch (error) {}
     return next;
   }
+  // متن قابل‌مقایسهٔ یک فیلد ارجاعی (کارمند، خودرو، گازسنج، ایستگاه) برای مرتب‌سازی.
+  function referenceLabel(field, value, data) {
+    const list = data[field.source] || [];
+    const labelOf = function (id) {
+      const item = list.find(function (row) { return String(row.id) === String(id); });
+      if (!item) return String(id == null ? '' : id);
+      if (field.source === 'employees') return employeeName(item) || item.personnelId || '';
+      if (field.source === 'vehicles') return (item.name || '') + (item.companyPlate ? ' · ' + item.companyPlate : '');
+      if (field.source === 'gasmeters') return (item.code || '') + (item.serial ? ' · ' + item.serial : '');
+      if (field.source === 'stations') return stationLabel(item);
+      return String(item.name || item.title || item.code || '');
+    };
+    return Array.isArray(value) ? value.map(labelOf).join('، ') : labelOf(value);
+  }
+
   function listSortValue(moduleKey, record, key) {
+    if (moduleKey === 'shifts' && key === 'employees') return shiftLabel(record, appData);
+    if (key === 'relatedMissions') {
+      return (appData.missions || []).filter(function (mission) {
+        return [].concat(mission.vehicleIds || [], mission.vehicleId || []).map(String).indexOf(String(record.id)) >= 0;
+      }).length;
+    }
+    const columnField = specs[moduleKey] ? fieldsFor(moduleKey).find(function (item) { return item.key === key; }) : null;
+    if (columnField && columnField.custom) {
+      const custom = record.customFields || {};
+      return String(custom[key] == null ? '' : custom[key]);
+    }
+    if (columnField && columnField.source) return referenceLabel(columnField, record[key], appData);
     if (key === 'name') {
       if (moduleKey === 'employees') return employeeName(record);
       if (moduleKey === 'missions' || moduleKey === 'leaves') {
@@ -1621,7 +1675,7 @@
   }
 
   function renderSortControls(moduleKey) {
-    const options = LIST_SORTS[moduleKey] || [];
+    const options = sortOptionsFor(moduleKey);
     if (!options.length) return '';
     const sort = listSortFor(moduleKey);
     const ascending = sort.direction === 'asc';
@@ -1658,6 +1712,22 @@
     return hasHistory ? '<button type="button" class="secondary-btn" data-module-action="history" data-view="' + esc(moduleKey) + '" data-id="' + esc(record.id) + '">سوابق</button> ' : '';
   }
 
+  // سرستون قابل‌کلیک: هر «عنوان» جدول با یک کلیک مرتب می‌شود و با کلیک دوباره
+  // جهت عوض می‌شود. `viewKey` بخشی است که باید دوباره رندر شود (جدول شیفت‌ها
+  // داخل بخش کارکنان است، پس viewKey آن 'employees' است).
+  function sortableHeader(moduleKey, key, label, viewKey) {
+    const sort = listSortFor(moduleKey);
+    const active = sort.key === key;
+    const ascending = sort.direction === 'asc';
+    return '<th class="module-sort-th' + (active ? ' is-sorted' : '') + '" aria-sort="' +
+      (active ? (ascending ? 'ascending' : 'descending') : 'none') + '">' +
+      '<button type="button" class="module-sort-btn" data-sort-key="' + esc(key) + '" data-sort-module="' + esc(moduleKey) +
+      '" data-sort-view="' + esc(viewKey || moduleKey) + '" title="مرتب‌سازی بر اساس ' + esc(label) + '">' +
+      '<span class="module-sort-label">' + esc(label) + '</span>' +
+      '<span class="module-sort-caret" aria-hidden="true">' + (active ? (ascending ? '↑' : '↓') : '↕') + '</span>' +
+      '</button></th>';
+  }
+
   function renderTable(moduleKey, data) {
     const columns = specs[moduleKey].columns.concat(moduleKey === 'employees'
       ? customFieldDefs().map(function (def, index) { return 'customField' + (index + 1); })
@@ -1671,9 +1741,7 @@
     return '<div class="module-table-wrap" style="width:100%;max-width:100%;min-width:0"><table class="module-table"><thead><tr>' +
       '<th class="module-check-cell"><input type="checkbox" data-module-select-all aria-label="انتخاب همهٔ ردیف‌ها"></th>' +
       columns.map(function (key) {
-        const field = fieldsFor(moduleKey).find(function (item) { return item.key === key; });
-        const label = field ? field.label : (key === 'relatedMissions' ? 'مأموریت‌های مرتبط' : key);
-        return '<th>' + esc(label) + '</th>';
+        return sortableHeader(moduleKey, key, columnLabel(moduleKey, key), moduleKey);
       }).join('') + '<th>عملیات</th></tr></thead><tbody>' +
       records.map(function (record) {
         return '<tr><td class="module-check-cell"><input type="checkbox" data-record-select value="' + esc(record.id) + '" aria-label="انتخاب ردیف"></td>' +
@@ -1786,9 +1854,7 @@
   }
 
   function renderShiftSchedule(data) {
-    const shifts = (data.shifts || []).slice().sort(function (a, b) {
-      return String(b.startAt || '').localeCompare(String(a.startAt || ''));
-    });
+    const shifts = sortRecords('shifts', data.shifts || []);
     const rows = shifts.length ? shifts.map(function (item) {
       return '<tr><td>' + formatJalali(item.startAt, true) + '</td><td>' + formatJalali(item.endAt, true) + '</td><td>' +
         esc(item.shiftType || '—') + '</td><td>' + esc(shiftLabel(item, data)) + '</td><td>' + esc(item.workplace || '—') +
@@ -1801,7 +1867,13 @@
       customExportMenu('shifts') + ' ' +
       '<button type="button" class="primary-btn" data-shift-action="new">+ ثبت شیفت</button></div></div>' +
       renderShiftForm(data) + '<div class="module-table-wrap" style="width:100%;max-width:100%;min-width:0"><table class="module-table"><thead><tr>' +
-      '<th>شروع</th><th>پایان</th><th>نوع</th><th>کارکنان</th><th>محل خدمت</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>' +
+      sortableHeader('shifts', 'startAt', 'شروع', 'employees') +
+      sortableHeader('shifts', 'endAt', 'پایان', 'employees') +
+      sortableHeader('shifts', 'shiftType', 'نوع', 'employees') +
+      sortableHeader('shifts', 'employees', 'کارکنان', 'employees') +
+      sortableHeader('shifts', 'workplace', 'محل خدمت', 'employees') +
+      sortableHeader('shifts', 'status', 'وضعیت', 'employees') +
+      '<th>عملیات</th></tr></thead><tbody>' +
       rows + '</tbody></table></div><div class="module-list-foot">تعداد برنامه‌ها: ' + faDigits(shifts.length) +
       ' · برای شیفت شب، تاریخ پایان را صریحاً در روز بعد ثبت کن.</div></section>';
   }
@@ -7201,6 +7273,17 @@
 
   // نوار ابزار فهرست: تغییر جهت مرتب‌سازی و پاک‌کردن فیلترها.
   document.addEventListener('click', function (event) {
+    const sortHeader = event.target.closest('[data-sort-key]');
+    if (sortHeader) {
+      const moduleKey = sortHeader.dataset.sortModule;
+      const key = sortHeader.dataset.sortKey;
+      const view = sortHeader.dataset.sortView || moduleKey;
+      const current = listSortFor(moduleKey);
+      if (current.key === key) setListSort(moduleKey, { direction: current.direction === 'asc' ? 'desc' : 'asc' });
+      else setListSort(moduleKey, { key: key, direction: 'asc' });
+      render(view, document.getElementById('sectionView'));
+      return;
+    }
     const dirButton = event.target.closest('[data-module-sort-dir]');
     if (dirButton) {
       const moduleKey = dirButton.dataset.view;

@@ -9,6 +9,7 @@ const vm = require('vm');
 const root = path.resolve(__dirname, '..');
 
 function el(props) {
+  const classes = new Set();
   return Object.assign({
     nodeType: 1,
     parentElement: null,
@@ -20,7 +21,11 @@ function el(props) {
     scrollHeight: 100,
     scrollWidth: 100,
     hidden: false,
-    classList: { contains: () => false, add() {} },
+    classList: {
+      contains: (name) => classes.has(name),
+      add: (name) => classes.add(name),
+      remove: (name) => classes.delete(name),
+    },
     closest: () => null,
     querySelectorAll: () => [],
     getBoundingClientRect: () => ({ width: 100, height: 100 }),
@@ -80,6 +85,15 @@ check('سرریز بدون محتوای اضافه نادیده گرفته می�
 
 check('isScrollable برای افقی درست است', scroll.isScrollable(only) === true);
 check('isScrollable برای غیراسکرول‌شونده درست است', scroll.isScrollable(fits) === false);
+
+// مهار سرریز فقط روی ناحیه‌ای که واقعاً عمودی اسکرول می‌شود؛ وگرنه چرخ موس
+// روی کادر فهرست‌ها بلعیده می‌شد و صفحه حرکت نمی‌کرد.
+const containNodes = [tableWrap, both, fits];
+sandbox.document.querySelectorAll = () => containNodes;
+scroll.refreshContainment();
+check('کادر فهرست افقیِ بدون سرریز عمودی مهار نمی‌شود', tableWrap.classList.contains('atlas-scroll-contain') === false);
+check('ناحیهٔ اسکرول عمودی مهار می‌شود', both.classList.contains('atlas-scroll-contain') === true);
+check('ناحیهٔ بدون محتوای اضافه مهار نمی‌شود', fits.classList.contains('atlas-scroll-contain') === false);
 
 const failed = checks.filter(c => !c.ok);
 checks.forEach(c => console.log((c.ok ? 'PASS ' : 'FAIL ') + c.name));

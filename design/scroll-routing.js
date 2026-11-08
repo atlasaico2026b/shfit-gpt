@@ -27,6 +27,33 @@
     '.drawer'
   ].join(',');
 
+  // ناحیه‌هایی که «سرریز»شان مهار می‌شود — اما فقط وقتی واقعاً عمودی اسکرول
+  // می‌شوند. مهار سرریز روی ناحیهٔ غیراسکرول‌شونده چرخ موس را می‌بلعد و صفحه
+  // دیگر حرکت نمی‌کند (باگ «اسکرول روی کادر فهرست‌ها کار نمی‌کند»).
+  const CONTAIN_SELECTOR = [
+    '.atlas-combo-list',
+    '.atlas-combo-panel',
+    '.jalali-popover',
+    '.jalali-wheel',
+    '[role="listbox"]',
+    '.atlas-modal',
+    '.atlas-modal-body',
+    '[data-modal-backdrop]',
+    '[role="dialog"]',
+    '#settingsPanel',
+    '#notificationDrawer',
+    '.drawer',
+    '.settings-popover',
+    '.module-table-wrap',
+    '.option-manager-list',
+    '.gas-group-list',
+    '.atlas-pb-modal',
+    '.rf-backdrop',
+    '.rf-sheet-wrap',
+    '.frame-body'
+  ].join(',');
+  const CONTAIN_CLASS = 'atlas-scroll-contain';
+
   const SCROLL_OVERFLOW = /(auto|scroll|overlay)/;
 
   function styleOf(el) {
@@ -193,12 +220,24 @@
     }
   }
 
+  // مهار سرریز فقط برای ناحیه‌هایی که همین حالا عمودی اسکرول می‌شوند.
+  function refreshContainment() {
+    if (!document.body) return;
+    const nodes = document.querySelectorAll(CONTAIN_SELECTOR);
+    for (let i = 0; i < nodes.length; i += 1) {
+      const el = nodes[i];
+      if (scrollable(el, 'y')) el.classList.add(CONTAIN_CLASS);
+      else el.classList.remove(CONTAIN_CLASS);
+    }
+  }
+
   let sweepTimer = 0;
   function scheduleSweep() {
     if (sweepTimer) return;
     sweepTimer = window.setTimeout(function () {
       sweepTimer = 0;
       refreshScrollbars();
+      refreshContainment();
     }, 150);
   }
 
@@ -220,6 +259,7 @@
     isScrollable: function (el) { return !!scrollAxis(el); },
     overlayOf: overlayOf,
     refreshScrollbars: refreshScrollbars,
+    refreshContainment: refreshContainment,
     contain: function (el) {
       if (!el || !el.style) return el;
       el.style.overscrollBehavior = 'contain';
