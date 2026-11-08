@@ -5910,6 +5910,26 @@
       '</div></div>';
   }
 
+  // بستن منوی «خروجی و چاپ» با کلیک بیرون از آن یا با Escape.
+  // منو با کلیک روی دکمه باز/بسته می‌شود؛ این‌جا فقط وقتی کلیک بیرون از
+  // خودِ منو باشد آن را می‌بندیم تا کلیک روی دکمه یا گزینه‌ها دوباره بازش نکند.
+  function closeExportMenus() {
+    document.querySelectorAll('[data-export-menu]').forEach(function (menu) {
+      const list = menu.querySelector('.module-export-list');
+      if (!list || list.hidden) return;
+      list.hidden = true;
+      const toggle = menu.querySelector('.module-export-toggle');
+      if (toggle) toggle.setAttribute('aria-expanded', 'false');
+    });
+  }
+  document.addEventListener('click', function (event) {
+    if (event.target.closest('[data-export-menu]')) return;
+    closeExportMenus();
+  });
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') closeExportMenus();
+  });
+
   function exportCsv(moduleKey) {
     const rows = moduleExportRows(moduleKey);
     downloadFile('ATLAS-SHIFT-'+moduleKey+'-'+todayIso()+'.csv', window.AtlasExportDocs.csv(rows, {

@@ -94,6 +94,10 @@ check('دفترچه تلفن قرص مرتب‌سازی/جهت ندارد', !/at
 check('نوار فیلتر دفترچه تلفن فقط فیلترها را دارد', /aria-label="فیلترها"/.test(app) && /atlasPbCityFilter/.test(app) && /atlasPbStationFilter/.test(app));
 check('فهرست دفترچه تلفن الفبایی بر اساس نام مرتب می‌شود', /found\.sort\(\(a,b\)=>String\(a\.c\.name/.test(app));
 
+// ── منوی خروجی: کلیک بیرون آن را می‌بندد ──
+check('منوی خروجی با کلیک بیرون بسته می‌شود', /function closeExportMenus/.test(modules) && /event\.target\.closest\('\[data-export-menu\]'\)\) return;\s*closeExportMenus\(\)/.test(modules));
+check('منوی خروجی با Escape هم بسته می‌شود', /event\.key === 'Escape'\) closeExportMenus\(\)/.test(modules));
+
 // ── کش آفلاین ──
 check('notices.css در فهرست پیش‌کش سرویس‌ورکر است', sw.includes('./design/notices.css'));
 
