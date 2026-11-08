@@ -110,13 +110,16 @@
   border-color: rgba(var(--item-hue, var(--accent-rgb)), .38);
 }
 
-/* 3 · MODULE HEADER ─ نوار سه‌رنگ ─────────────────────────────────────── */
+/* 3 · MODULE HEADER ─ یک رنگ، محو‌شونده ───────────────────────────────── */
+/* پیش‌تر سه رنگ (سبز/آبی/بنفش) کنار هم بود و سربرگ را پرسر و صدا می‌کرد.
+   حالا فقط رنگ تأکید با یک محو‌شدن آرام؛ نشانگر رنگی هم روی لبهٔ راست. */
 .module-page-head {
   background-image: linear-gradient(100deg,
-    rgba(var(--surf-2-rgb), .42) 0%,
-    rgba(var(--surf-3-rgb), .38) 48%,
-    rgba(var(--surf-4-rgb), .40) 100%);
-  border-color: rgba(var(--surf-3-rgb), .48);
+    rgba(var(--accent-rgb), .20) 0%,
+    rgba(var(--accent-rgb), .07) 58%,
+    rgba(var(--accent-rgb), .03) 100%);
+  border-color: rgba(var(--accent-rgb), .28);
+  box-shadow: inset -3px 0 0 rgba(var(--accent-rgb), .55);
 }
 
 .module-page-head h2 {
@@ -160,13 +163,63 @@
   color: var(--c-white);
 }
 
-/* 5 · TABLE HEAD ──────────────────────────────────────────────────────── */
-.module-table thead th {
-  background-image: linear-gradient(90deg,
-    rgba(var(--surf-3-rgb), .58),
-    rgba(var(--surf-4-rgb), .44) 62%,
-    rgba(var(--surf-1-rgb), .34));
-  color: var(--c-white);
+/* 5 · TABLE HEAD ─ هر ستون یک رنگ، آرام و هم‌خانواده ──────────────────── */
+/* شش رنگ در گردش؛ زرد و قرمز عمداً نیستند چون روی زمینهٔ تیرهٔ سرستون
+   قهوه‌ای/خونی دیده می‌شوند. شدت همه پایین است (.20) تا سرستون «شکیل»
+   بماند و چشم را نزند؛ رنگ هر ستون بیشتر از خط بالای آن خوانده می‌شود. */
+.module-table thead th:nth-child(6n+1) { --th-hue: var(--c-cyan-rgb); }
+.module-table thead th:nth-child(6n+2) { --th-hue: var(--c-blue-rgb); }
+.module-table thead th:nth-child(6n+3) { --th-hue: var(--c-purple-rgb); }
+.module-table thead th:nth-child(6n+4) { --th-hue: var(--c-pink-rgb); }
+.module-table thead th:nth-child(6n+5) { --th-hue: var(--c-green-rgb); }
+.module-table thead th:nth-child(6n+6) { --th-hue: var(--c-orange-rgb); }
+
+/* ستون تیک و ستون عملیات بی‌رنگ می‌مانند تا رنگ‌ها روی داده بماند. */
+.module-table thead th.module-check-cell,
+.module-table thead th:last-child {
+  --th-hue: var(--c-white-rgb);
+}
+
+/* پیشوند html[data-atlas-theme] عمدی است: هم‌وزنِ قواعد پوسته‌ها
+   (skins/theme-two.css) می‌شود و چون این فایل بعد از آن‌ها بار می‌شود،
+   رنگ ستون‌ها در هر دو پوسته دیده می‌شود. */
+html[data-atlas-theme] .module-table thead th {
+  background-image: linear-gradient(180deg,
+    rgba(var(--th-hue, var(--surf-3-rgb)), .14),
+    rgba(var(--th-hue, var(--surf-3-rgb)), .035));
+  background-color: var(--glass-strong);
+  color: rgba(var(--c-white-rgb), .95);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .015em;
+  white-space: nowrap;
+  border-bottom: 1px solid rgba(var(--c-white-rgb), .10);
+  box-shadow:
+    inset 0 2px 0 rgba(var(--th-hue, var(--surf-3-rgb)), .55),
+    inset -1px 0 0 rgba(var(--c-white-rgb), .04);
+  transition: color .16s ease, box-shadow .16s ease;
+}
+
+html[data-atlas-theme] .module-table thead th:first-child { border-top-right-radius: 12px; }
+html[data-atlas-theme] .module-table thead th:last-child { border-top-left-radius: 12px; }
+
+/* سرستون مرتب‌شده: همان رنگ ستون، یک پله پررنگ‌تر */
+html[data-atlas-theme] .module-table .module-sort-th.is-sorted {
+  box-shadow:
+    inset 0 2px 0 rgba(var(--th-hue, var(--accent-rgb)), 1),
+    inset -1px 0 0 rgba(var(--c-white-rgb), .04);
+}
+
+html[data-atlas-theme] .module-table .module-sort-th.is-sorted .module-sort-btn {
+  color: rgba(var(--c-white-rgb), 1);
+}
+
+html[data-atlas-theme] .module-table .module-sort-th.is-sorted .module-sort-caret {
+  color: rgba(var(--th-hue, var(--accent-rgb)), 1);
+}
+
+html[data-atlas-theme] .module-table thead .module-sort-btn:hover {
+  background: rgba(var(--th-hue, var(--accent-rgb)), .13);
 }
 
 .module-table tbody tr:nth-child(even) td {
@@ -261,5 +314,11 @@
     background-image: none !important;
     background-color: var(--print-paper) !important;
     border-color: var(--print-ink) !important;
+  }
+
+  /* سرستون رنگی در چاپ نمی‌آید؛ فقط متن سیاه روی کاغذ */
+  .module-table thead th {
+    box-shadow: none !important;
+    color: var(--print-ink) !important;
   }
 }
