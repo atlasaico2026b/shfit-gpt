@@ -6016,9 +6016,7 @@
     gaslogs: { kind: 'module', key: 'gaslogs', title: 'سوابق گازسنج‌ها' },
     shifts: { kind: 'module', key: 'shifts', title: 'برنامهٔ شیفت‌ها' },
     phonebook: { kind: 'phonebook', title: 'دفترچه تلفن' },
-    settings: { kind: 'config', title: 'تنظیمات و فهرست‌های کشویی' },
-    dashboard: { kind: 'all', title: 'همهٔ بخش‌ها (داشبورد نمای کلی است)' },
-    reports: { kind: 'all', title: 'همهٔ بخش‌ها (گزارش از همهٔ بخش‌ها ساخته می‌شود)' }
+    settings: { kind: 'config', title: 'تنظیمات و فهرست‌های کشویی' }
   };
 
   function sectionBackupScope(view) {
