@@ -431,6 +431,19 @@
 
 .sp-check { width: 34px; text-align: center; }
 
+/* ستون «شروع چرخه / بازه»: برای روش شیفتی، تاریخ شروع چرخه این‌جا انتخاب می‌شود. */
+.sp-cycle-cell input {
+  width: 100%;
+  max-width: 130px;
+  padding: 5px 8px;
+  border: 1px solid var(--line-hi);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+}
+
 /* سطر عنوان هر شهر: سفید با متن مشکی و ۳۰٪ بزرگ‌تر از متن جدول، تا از
    ردیف‌های کارکنان جدا دیده شود. عنوان «مکان» با کلیک، ترتیب را برمی‌گرداند.
    انتخابگر عمداً `tbody tr.sp-group-row` است تا از قاعدهٔ راه‌راه

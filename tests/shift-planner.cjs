@@ -451,6 +451,58 @@ check('خروجی فرد با قالب CSV گرفته می‌شود', exportCall
 check('خروجی فرد از ردیف‌های همان فرد ساخته می‌شود', exportCalls[0] && exportCalls[0].rows.length > 1);
 clickAttr('[data-sp-close]', '');
 
+// ── شروع چرخه از تخصیص، نه از قالب ──────────────────────────────────────
+check('rotationCodeAt تاریخ شروع را از تخصیص می‌گیرد',
+  e.rotationCodeAt(template, '2026-11-09', '2026-11-09') === 'ص',
+  e.rotationCodeAt(template, '2026-11-09', '2026-11-09'));
+check('rotationCodeAt با شروع دیرتر جابه‌جا می‌شود',
+  e.rotationCodeAt(template, '2026-11-07', '2026-11-09') === e.OFF,
+  e.rotationCodeAt(template, '2026-11-07', '2026-11-09'));
+
+// قالب cycleStart دیگری دارد؛ اگر موتور از آن استفاده کند این آزمون‌ها می‌شکنند.
+const cycleState = {
+  employees: [{ id: 'e9', firstName: 'تست', lastName: 'چرخه' }],
+  shiftMethods: [{ id: 'm9', name: 'چرخشی', kind: 'rotating', templateId: 't9' }],
+  shiftTemplates: [{
+    id: 't9', name: 'ق', shifts: template.shifts,
+    pattern: ['ص', 'ش', e.OFF], cycleStart: '2026-01-01'
+  }],
+  shiftAssignments: [{ id: 'a9', employeeId: 'e9', methodId: 'm9', from: '2026-11-07', to: '', active: true }],
+  shiftOverrides: [], leaves: []
+};
+check('چرخه از تاریخ تخصیص شروع می‌شود',
+  e.resolve(cycleState, 'e9', '2026-11-07').label === 'صبح‌کار',
+  e.resolve(cycleState, 'e9', '2026-11-07').label);
+check('روز دوم چرخه از تاریخ تخصیص',
+  e.resolve(cycleState, 'e9', '2026-11-08').label === 'شب‌کار',
+  e.resolve(cycleState, 'e9', '2026-11-08').label);
+check('روز سوم چرخه از تاریخ تخصیص استراحت', e.resolve(cycleState, 'e9', '2026-11-09').kind === 'off');
+
+// پنجرهٔ قالب دیگر تاریخ شروع چرخه نمی‌پرسد
+clickAttr('[data-sp-new="template"]', '');
+const templateModal = currentModal();
+check('پنجرهٔ قالب فیلد شروع چرخه ندارد', templateModal.innerHTML.indexOf('name="cycleStart"') < 0);
+check('پنجرهٔ قالب الگوی روزها دارد', templateModal.innerHTML.indexOf('data-sp-pattern') >= 0);
+clickAttr('[data-sp-close]', '');
+
+// ستون بعد از «روش کاری» برای روش شیفتی تاریخ شروع چرخه می‌گیرد
+clickOn('data-sp-tab', 'assign');
+check('روش شیفتی ورودی شروع چرخه دارد', fakeHost.innerHTML.indexOf('data-sp-cycle-start="a2"') >= 0);
+check('روش روزکار ورودی شروع چرخه ندارد', fakeHost.innerHTML.indexOf('data-sp-cycle-start="a1"') < 0);
+
+fakeBridge.parseJalali = function (value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(value)) ? String(value) : '';
+};
+const a2 = filterState.shiftAssignments.find(function (a) { return a.id === 'a2'; });
+fire('change', {
+  closest: function (sel) {
+    return sel === '[data-sp-cycle-start]'
+      ? { getAttribute: function () { return 'a2'; }, value: '2026-11-10' }
+      : null;
+  }
+});
+check('تغییر تاریخ شروع چرخه روی تخصیص می‌نشیند', a2.from === '2026-11-10', a2.from);
+
 // ── گزارش ──
 let failed = 0;
 checks.forEach(function (item) {
