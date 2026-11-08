@@ -89,7 +89,7 @@ html .notice-card[data-notice] {
   border: 1px solid rgba(var(--kind-rgb, var(--accent-rgb)), .30);
   border-inline-start: 3px solid rgb(var(--kind-rgb, var(--accent-rgb)));
   background-color: var(--notice-paper);
-  background-image: linear-gradient(100deg, rgba(var(--kind-rgb, var(--accent-rgb)), .17), rgba(var(--kind-rgb, var(--accent-rgb)), .07));
+  background-image: linear-gradient(100deg, rgba(var(--kind-rgb, var(--accent-rgb)), .24), rgba(var(--kind-rgb, var(--accent-rgb)), .13));
   color: var(--notice-ink);
   box-shadow: var(--notice-shadow);
   cursor: pointer;
@@ -97,14 +97,14 @@ html .notice-card[data-notice] {
 }
 html .notice-card:hover {
   background-color: var(--notice-paper);
-  background-image: linear-gradient(100deg, rgba(var(--kind-rgb, var(--accent-rgb)), .24), rgba(var(--kind-rgb, var(--accent-rgb)), .11));
+  background-image: linear-gradient(100deg, rgba(var(--kind-rgb, var(--accent-rgb)), .32), rgba(var(--kind-rgb, var(--accent-rgb)), .18));
   box-shadow: 0 10px 22px -14px rgba(4, 12, 28, .6);
   transform: translateY(-1px);
 }
 html .notice-card.unread {
   border-color: rgba(var(--kind-rgb, var(--accent-rgb)), .55);
   background-color: var(--notice-paper);
-  background-image: linear-gradient(100deg, rgba(var(--kind-rgb, var(--accent-rgb)), .22), rgba(var(--kind-rgb, var(--accent-rgb)), .09));
+  background-image: linear-gradient(100deg, rgba(var(--kind-rgb, var(--accent-rgb)), .30), rgba(var(--kind-rgb, var(--accent-rgb)), .16));
 }
 html .notice-card.is-done {
   opacity: .82;
