@@ -78,6 +78,7 @@
       return item ? [item.name, item.placeType].filter(Boolean).join(' · ') : String(raw);
     }
     if (field.type === 'number') return fa(raw);
+    if (field.type === 'plate') return fa(raw);
     return Array.isArray(raw) ? raw.join('، ') : String(raw);
   }
 

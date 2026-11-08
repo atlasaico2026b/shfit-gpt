@@ -465,11 +465,11 @@
         {key:'vehicleType',label:'نوع خودرو',type:'select',listKey:'vehicleTypes',options:['خودروی آتش‌نشانی','خودروی پشتیبانی','وانت','سواری','مینی‌بوس','سایر']},
         {key:'model',label:'مدل خودرو'},
         {key:'companyPlate',label:'پلاک سازمانی'},
-        {key:'policePlate',label:'پلاک انتظامی'},
+        {key:'policePlate',label:'پلاک انتظامی',type:'plate',hint:'از چپ به راست: ۲ رقم، حرف، ۳ رقم و ۲ رقم.'},
         {key:'status',label:'وضعیت عملیاتی',type:'select',required:true,listKey:'vehicleStatuses',options:['آماده','در سرویس','خارج از سرویس','در تعمیر']},
         {key:'healthStatus',label:'وضعیت سلامت',type:'select',listKey:'healthStatuses',options:['سالم','نیازمند بررسی','دارای نقص','در حال تعمیر']},
         {key:'currentCity',label:'شهر فعلی',type:'select',listKey:'workplaces',options:['اهواز','آبادان','اندیمشک','ماهشهر','بندر امام','آغاجاری','سایر']},
-        {key:'currentPlace',label:'محل یا نقطهٔ استقرار'},
+        {key:'currentPlace',label:'محل یا نقطهٔ استقرار',type:'place',hint:'محل استقرار را از فهرست مشترک مکان‌ها انتخاب کن؛ با + می‌توانی محل تازه اضافه کنی.'},
         {key:'occupants',label:'سرنشینان فعلی',type:'textarea',wide:true},
         {key:'currentKm',label:'کیلومتر فعلی',type:'number',min:0},
         {key:'currentKmRecordedAt',label:'زمان آخرین ثبت کیلومتر',type:'text',placeholder:'با ثبت کیلومتر به‌صورت خودکار ثبت می‌شود'},
@@ -724,6 +724,42 @@
 
   function faDigits(value) {
     return String(value == null ? '' : value).replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[Number(d)]; });
+  }
+
+  // ── پلاک انتظامی ────────────────────────────────────────────────────────────
+  // پلاک چهار بخش دارد و از چپ به راست خوانده می‌شود: ۲ رقم، یک حرف، ۳ رقم و
+  // ۲ رقم. مقدار در یک رشتهٔ واحد («۱۲ الف ۳۴۵ ۶۷») ذخیره می‌شود تا فهرست‌ها،
+  // جست‌وجو، سوابق و خروجی‌ها مثل بقیهٔ فیلدهای متنی با آن کار کنند.
+  const PLATE_LETTERS = ['الف', 'ب', 'پ', 'ت', 'ث', 'ج', 'چ', 'ح', 'خ', 'د', 'ذ', 'ر', 'ز', 'ژ',
+    'س', 'ش', 'ص', 'ض', 'ط', 'ظ', 'ع', 'غ', 'ف', 'ق', 'ک', 'گ', 'ل', 'م', 'ن', 'و', 'ه', 'ی'];
+
+  function parsePlate(value) {
+    const parts = { p1: '', letter: '', p3: '', p4: '' };
+    const text = persianDigitsToLatin(value).trim();
+    if (!text) return parts;
+    const digits = text.match(/\d+/g) || [];
+    const letters = text.match(/[A-Za-zآ-ی]+/g) || [];
+    const all = digits.join('');
+    if (all.length >= 7) {
+      // پلاک کامل: ۲ + ۳ + ۲ رقم، حتی اگر جداکننده‌ها حذف شده باشند.
+      parts.p1 = all.slice(0, 2);
+      parts.p3 = all.slice(2, 5);
+      parts.p4 = all.slice(5, 7);
+    } else {
+      parts.p1 = (digits[0] || '').slice(0, 2);
+      parts.p3 = (digits[1] || '').slice(0, 3);
+      parts.p4 = (digits[2] || '').slice(0, 2);
+    }
+    parts.letter = letters.length ? letters[0] : '';
+    return parts;
+  }
+
+  function plateText(parts) {
+    return [parts.p1, parts.letter, parts.p3, parts.p4].filter(function (part) { return part; }).join(' ');
+  }
+
+  function plateLabel(value) {
+    return faDigits(String(value == null ? '' : value));
   }
 
   function toast(message) {
@@ -1386,6 +1422,32 @@
       '</div>';
   }
 
+  // کادر پلاک: چهار بخش پشت سر هم و از چپ به راست. چون خود صفحه راست‌به‌چپ است،
+  // همین کادر جهت چپ‌به‌راست می‌گیرد تا ترتیب بخش‌ها روی صفحه همان ترتیب خواندن
+  // پلاک باشد. مقدار نهایی در پایین همان کادر یک‌جا ذخیره می‌شود.
+  function plateFieldMarkup(field, value) {
+    const parts = parsePlate(value);
+    const id = 'atlas-field-plate-' + field.key;
+    const digitPart = function (key, length, placeholder, label) {
+      return '<input' + (key === 'p1' ? ' id="' + esc(id) + '"' : '') + ' type="text" inputmode="numeric" maxlength="' + length +
+        '" class="module-plate-part module-plate-digits" data-plate-part="' + key + '" data-plate-digits="1" value="' + esc(faDigits(parts[key])) +
+        '" placeholder="' + placeholder + '" aria-label="' + esc(label) + '" autocomplete="off" spellcheck="false">';
+    };
+    const letters = PLATE_LETTERS.slice();
+    if (parts.letter && letters.indexOf(parts.letter) < 0) letters.unshift(parts.letter);
+    const letterOptions = letters.map(function (letter) {
+      return '<option value="' + esc(letter) + '"' + (parts.letter === letter ? ' selected' : '') + '>' + esc(letter) + '</option>';
+    }).join('');
+    return '<span class="module-plate" data-plate-field="' + esc(field.key) + '" dir="ltr">' +
+      digitPart('p1', 2, '۱۲', 'دو رقم اول پلاک') +
+      '<select class="module-plate-part module-plate-letter" data-plate-part="letter" aria-label="حرف پلاک">' +
+        '<option value="">حرف</option>' + letterOptions + '</select>' +
+      digitPart('p3', 3, '۳۴۵', 'سه رقم میانی پلاک') +
+      digitPart('p4', 2, '۶۷', 'دو رقم آخر پلاک') +
+      '</span>' +
+      (field.hint ? '<small class="module-field-hint">' + esc(field.hint) + '</small>' : '');
+  }
+
   function renderField(moduleKey, field, record, data) {
     const value = record && record[field.key] != null ? record[field.key] : (field.custom && record && record.customFields ? record.customFields[field.key] : '');
     const id = 'atlas-field-' + moduleKey + '-' + field.key;
@@ -1439,6 +1501,8 @@
           '<button type="button" class="module-select-add" data-place-add="1" aria-label="افزودن مکان جدید" title="افزودن مکان جدید به فهرست مشترک">+</button></span>' +
           '<small class="module-field-hint">' + (type ? '«' + esc(type) + '» · ' : '') + 'یک فهرست مشترک برای همهٔ مکان‌ها و محل‌ها؛ با + می‌توانی مکان تازه اضافه کنی.</small>';
       }
+    } else if (field.type === 'plate') {
+      control = plateFieldMarkup(field, value);
     } else if (field.type === 'rows') {
       control = rowEditorMarkup(field, value, data);
     } else if (field.type === 'people') {
@@ -1658,6 +1722,7 @@
       const rows = Array.isArray(value) ? value : [];
       return rows.length ? faDigits(rows.length) + ' ردیف' : '—';
     }
+    if (field && field.type === 'plate') return esc(plateLabel(value));
     if (field && field.type === 'number') return faDigits(value);
     return esc(Array.isArray(value) ? value.join('، ') : value);
   }
@@ -1955,6 +2020,10 @@
     leave: { label: 'مرخصی', icon: 'leaves' }
   };
 
+  // وضعیت‌های عملیاتی‌ای که خودرو را از چرخهٔ آماده‌به‌کار خارج می‌کنند و اعلان
+  // می‌سازند. «آماده» و «در سرویس» خودرو عملیاتی است و اعلان ندارد.
+  const VEHICLE_OUT_OF_SERVICE_STATUSES = ['خارج از سرویس', 'در تعمیر'];
+
   function alertKindIcon(kind) {
     const name = (ALERT_KIND_META[kind] || {}).icon || 'faults';
     return window.atlasIcon ? window.atlasIcon(name) : '';
@@ -1993,8 +2062,10 @@
       }
     });
     (appData.vehicles || []).forEach(function (vehicle) {
-      if (['در تعمیر','خارج از سرویس'].includes(vehicle.status) || vehicle.healthStatus === 'دارای نقص') {
-        alerts.push({ key:'vehicle-' + vehicle.id, kind:'vehicle', critical:true, state:'late', stateLabel:'نیازمند رسیدگی', title:'خودرو نیازمند رسیدگی', detail:(vehicle.name || 'خودرو') + ' · ' + (vehicle.status || vehicle.healthStatus || ''), at:vehicle.updatedAt, module:'vehicles', recordId:vehicle.id });
+      // ملاک اعلان خودرو فقط «وضعیت عملیاتی» است؛ وضعیت سلامت در اعلان‌ها دخالت ندارد.
+      const operationalStatus = String(vehicle.status || '').trim();
+      if (VEHICLE_OUT_OF_SERVICE_STATUSES.indexOf(operationalStatus) >= 0) {
+        alerts.push({ key:'vehicle-' + vehicle.id, kind:'vehicle', critical:true, state:'late', stateLabel:'نیازمند رسیدگی', title:'خودرو از وضعیت عملیاتی خارج شده', detail:(vehicle.name || 'خودرو') + ' · ' + operationalStatus, at:vehicle.updatedAt, module:'vehicles', recordId:vehicle.id });
       }
       const km = Number(vehicle.currentKm), next = Number(vehicle.nextOilKm);
       if (Number.isFinite(km) && Number.isFinite(next) && next > 0 && next - km <= 500) {
@@ -2296,7 +2367,7 @@
     const fleet=document.querySelector('[data-widget="fleet"]'),stack=fleet&&fleet.querySelector('.vehicle-stack');
     if(stack){
       stack.innerHTML=vehicles.length?vehicles.slice(0,6).map(function(v){
-        return '<div class="vehicle"><div class="vehicle-icon"><span>▰</span></div><div class="vehicle-info"><b>'+esc(v.name||'خودرو')+'</b><span>'+esc([v.currentCity,v.currentPlace,v.companyPlate].filter(Boolean).join(' · ')||'موقعیت ثبت نشده')+'</span></div><div class="vehicle-side"><b>'+esc(v.status||'ثبت نشده')+'</b><span>'+esc(v.policePlate||'')+'</span></div></div>';
+        return '<div class="vehicle"><div class="vehicle-icon"><span>▰</span></div><div class="vehicle-info"><b>'+esc(v.name||'خودرو')+'</b><span>'+esc([v.currentCity,v.currentPlace,v.companyPlate].filter(Boolean).join(' · ')||'موقعیت ثبت نشده')+'</span></div><div class="vehicle-side"><b>'+esc(v.status||'ثبت نشده')+'</b><span>'+esc(plateLabel(v.policePlate||''))+'</span></div></div>';
       }).join(''):'<div class="module-empty">هنوز خودرویی ثبت نشده است.</div>';
     }
 
@@ -3262,7 +3333,7 @@
         '<p>هر سابقهٔ پایین، وضعیت ثبت‌شده در تاریخ خودش را نگه می‌دارد.</p></div>' + statusTag(vehicle.status || '—') + '</div>' +
         '<dl class="vtab-facts vtab-facts-wide">' +
         vtabFact('پلاک سازمانی', vehicle.companyPlate || '') +
-        vtabFact('پلاک انتظامی', vehicle.policePlate || '') +
+        vtabFact('پلاک انتظامی', plateLabel(vehicle.policePlate || '')) +
         vtabFact('نوع خودرو', vehicle.vehicleType || '') +
         vtabFact('وضعیت سلامت', vehicle.healthStatus || '') +
         vtabFact('شهر و محل استقرار', [vehicle.currentCity, vehicle.currentPlace].filter(Boolean).join(' · ')) +
@@ -3987,7 +4058,7 @@
       '<p>سرویس بعدی از تاریخ‌های آیندهٔ همین سوابق خوانده می‌شود.</p></div>' + statusTag(vehicle.status || '—') + '</div>' +
       '<dl class="vtab-facts vtab-facts-wide">' +
       vtabFact('پلاک سازمانی', vehicle.companyPlate || '') +
-      vtabFact('پلاک انتظامی', vehicle.policePlate || '') +
+      vtabFact('پلاک انتظامی', plateLabel(vehicle.policePlate || '')) +
       vtabFact('نوع خودرو', vehicle.vehicleType || '') +
       vtabFact('کیلومتر فعلی', vehicle.currentKm ? faDigits(vehicle.currentKm) : '') +
       vtabFact('سرویس بعدی', stats.nextDate ? formatJalali(stats.nextDate, false) + (stats.nextKm ? ' · ' + faDigits(stats.nextKm) + ' کیلومتر' : '') : '') +
@@ -5408,6 +5479,20 @@
         }
       }else if(field.type==='checks'||field.type==='multi-check'||(field.type==='select'&&field.multiple)){
         data[field.key]=fd.getAll(field.key);
+      }else if(field.type==='plate'){
+        const holder=form.querySelector('[data-plate-field="'+field.key+'"]');
+        const parts={p1:'',letter:'',p3:'',p4:''};
+        if(holder){
+          Array.prototype.forEach.call(holder.querySelectorAll('[data-plate-part]'),function(control){
+            const part=control.dataset.platePart;
+            if(part==='letter')parts.letter=String(control.value||'').trim();
+            else parts[part]=persianDigitsToLatin(control.value).replace(/\D/g,'');
+          });
+        }
+        const filled=[parts.p1,parts.letter,parts.p3,parts.p4].filter(Boolean).length;
+        if(filled&&filled<4)throw new Error('پلاک انتظامی باید کامل باشد: ۲ رقم، حرف، ۳ رقم و ۲ رقم.');
+        if(filled&&(parts.p1.length!==2||parts.p3.length!==3||parts.p4.length!==2))throw new Error('پلاک انتظامی باید ۲ رقم، حرف، ۳ رقم و ۲ رقم باشد.');
+        data[field.key]=plateText(parts);
       }else if(field.type==='jalali'||field.type==='jalali-datetime'){
         const raw=String(fd.get(field.key)||'').trim();
         const normalized=dateInputToIso(raw,field.type);
@@ -8581,6 +8666,22 @@
     if (!box) return;
     const clean = persianDigitsToLatin(box.value).replace(/\D/g, '');
     if (clean !== box.value) box.value = clean;
+  });
+
+  // بخش‌های رقمی پلاک: فقط رقم می‌پذیرند، رقم لاتین به فارسی تبدیل می‌شود و با
+  // پر شدن هر بخش، نشانگر خودکار به بخش بعدی می‌رود.
+  document.addEventListener('input', function (event) {
+    const box = event.target && event.target.closest ? event.target.closest('[data-plate-digits]') : null;
+    if (!box) return;
+    const clean = faDigits(persianDigitsToLatin(box.value).replace(/\D/g, ''));
+    if (clean !== box.value) box.value = clean;
+    const max = Number(box.getAttribute('maxlength') || 0);
+    if (max && clean.length >= max) {
+      const holder = box.closest('[data-plate-field]');
+      const parts = holder ? Array.prototype.slice.call(holder.querySelectorAll('[data-plate-part]')) : [];
+      const next = parts[parts.indexOf(box) + 1];
+      if (next) next.focus();
+    }
   });
 
   document.addEventListener('input', function (event) {
