@@ -326,11 +326,14 @@
 .sp-check { width: 34px; text-align: center; }
 
 /* سطر عنوان هر شهر: سفید با متن مشکی و ۳۰٪ بزرگ‌تر از متن جدول، تا از
-   ردیف‌های کارکنان جدا دیده شود. عنوان «مکان» با کلیک، ترتیب را برمی‌گرداند. */
-.sp-table .sp-group-row td {
+   ردیف‌های کارکنان جدا دیده شود. عنوان «مکان» با کلیک، ترتیب را برمی‌گرداند.
+   انتخابگر عمداً `tbody tr.sp-group-row` است تا از قاعدهٔ راه‌راه
+   `.module-table tbody tr:nth-child(even) td` در spectrum.css قوی‌تر باشد؛
+   وگرنه سطرهای زوجِ شهرها پس‌زمینهٔ تیرهٔ خود را نگه می‌داشتند. */
+.sp-table tbody tr.sp-group-row td {
   background: #fff;
   color: #000;
-  font-size: calc(12px * 1.3);
+  font-size: 1.3em;
   padding: 7px 10px;
   border-color: #d5d9e4;
 }
