@@ -47,7 +47,22 @@ check('پلاک با رقم فارسی نمایشد دهد می‌شود', plate
 
 // ── فیلدهای خودرو ──
 check('پلاک انتظامی فیلد چهاربخشی است', /\{key:'policePlate',label:'پلاک انتظامی',type:'plate'/.test(modules));
-check('محل یا نقطهٔ استقرار از فهرست انتخاب می‌شود', /\{key:'currentPlace',label:'محل یا نقطهٔ استقرار',type:'place'/.test(modules));
+check('محل یا نقطهٔ استقرار فهرست کشویی است', /\{key:'currentPlace',label:'محل یا نقطهٔ استقرار',type:'select',listKey:'deploymentLocations',searchable:false/.test(modules));
+check('محل استقرار از فهرست مشترک مکان‌ها می‌آید', /deploymentLocations: 'places'/.test(modules));
+
+// کشویی ساده بودن واقعاً سنجیده می‌شود: تابع انتخاب نوع کادر اجرا می‌شود.
+const selectApi = new Function(
+  [
+    modules.match(/const REFERENCE_ALIASES = \{[\s\S]*?\};/)[0],
+    modules.match(/const SEARCHABLE_LIST_KEYS = \[[\s\S]*?\];/)[0],
+    extract('referenceBaseKey'),
+    extract('isSearchableSelect')
+  ].join('\n') + '\nreturn { isSearchableSelect: isSearchableSelect };'
+)();
+check('محل استقرار کشویی ساده است، نه پنل جستجو',
+  selectApi.isSearchableSelect({ type: 'select', listKey: 'deploymentLocations', searchable: false }) === false);
+check('بدون searchable:false همان فهرست پنل جستجو می‌گرفت',
+  selectApi.isSearchableSelect({ type: 'select', listKey: 'deploymentLocations' }) === true);
 check('کادر پلاک چهار بخش دارد', /data-plate-part="' \+ key/.test(modules) && /data-plate-part="letter"/.test(modules));
 check('کادر پلاک از چپ به راست چیده می‌شود', /data-plate-field="' \+ esc\(field\.key\) \+ '" dir="ltr"/.test(modules));
 check('فرم مقدار چهار بخش را در یک رشته جمع می‌کند', /field\.type==='plate'/.test(modules) && /data\[field\.key\]=plateText\(parts\)/.test(modules));

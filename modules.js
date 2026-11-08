@@ -469,7 +469,7 @@
         {key:'status',label:'وضعیت عملیاتی',type:'select',required:true,listKey:'vehicleStatuses',options:['آماده','در سرویس','خارج از سرویس','در تعمیر']},
         {key:'healthStatus',label:'وضعیت سلامت',type:'select',listKey:'healthStatuses',options:['سالم','نیازمند بررسی','دارای نقص','در حال تعمیر']},
         {key:'currentCity',label:'شهر فعلی',type:'select',listKey:'workplaces',options:['اهواز','آبادان','اندیمشک','ماهشهر','بندر امام','آغاجاری','سایر']},
-        {key:'currentPlace',label:'محل یا نقطهٔ استقرار',type:'place',hint:'محل استقرار را از فهرست مشترک مکان‌ها انتخاب کن؛ با + می‌توانی محل تازه اضافه کنی.'},
+        {key:'currentPlace',label:'محل یا نقطهٔ استقرار',type:'select',listKey:'deploymentLocations',searchable:false,options:['پارکینگ مرکزی','تعمیرگاه مرکزی','انبار مرکزی','محور جاده','دفتر مرکزی','سایر'],hint:'محل استقرار را از فهرست کشویی انتخاب کن؛ با + می‌توانی محل تازه اضافه کنی.'},
         {key:'occupants',label:'سرنشینان فعلی',type:'textarea',wide:true},
         {key:'currentKm',label:'کیلومتر فعلی',type:'number',min:0},
         {key:'currentKmRecordedAt',label:'زمان آخرین ثبت کیلومتر',type:'text',placeholder:'با ثبت کیلومتر به‌صورت خودکار ثبت می‌شود'},
@@ -1337,6 +1337,8 @@
 
   function isSearchableSelect(field) {
     if (!field || field.multiple) return false;
+    // فیلدهایی که صریحاً «کشویی ساده» خواسته شده‌اند پنل جستجو نمی‌گیرند.
+    if (field.searchable === false) return false;
     if (field.type === 'place' || field.source) return true;
     return !!(field.listKey && SEARCHABLE_LIST_KEYS.indexOf(referenceBaseKey(field.listKey)) >= 0);
   }
