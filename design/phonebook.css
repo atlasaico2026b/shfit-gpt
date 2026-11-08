@@ -19,7 +19,7 @@
 .atlas-pb-phone-row .atlas-pb-delete-confirm{background:var(--c-green-deep)!important;color:var(--c-white)!important;border:1px solid var(--c-green)!important}
 .atlas-pb-phone-row .atlas-pb-delete-cancel{background:var(--c-red-deep)!important;color:var(--c-white)!important;border:1px solid var(--c-red)!important}
 .atlas-pb-phone-row .atlas-pb-delete-question{grid-column:1/-1;font-size:12px;color:var(--muted);padding:4px 2px}
-.atlas-pb-toolbar{display:grid;grid-template-columns:minmax(180px,2fr) repeat(3,minmax(120px,1fr)) repeat(2,minmax(180px,1.2fr));gap:9px;margin:12px 0}
+.atlas-pb-toolbar{display:grid;grid-template-columns:minmax(180px,2fr) repeat(3,minmax(120px,1fr));gap:9px;margin:12px 0}
 .atlas-pb-toolbar input,.atlas-pb-toolbar select,.atlas-pb-form input,.atlas-pb-form select,.atlas-pb-form textarea,.atlas-pb-combo input{box-sizing:border-box;width:100%;min-width:0;padding:11px 12px;border:1px solid rgba(var(--info-rgb),.2);border-radius:12px;background:rgba(var(--c-black-rgb),.16);color:inherit;font:inherit}
 .atlas-pb-form{display:none;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0;padding:14px;border:1px solid rgba(var(--info-rgb),.22);border-radius:16px;background:rgba(var(--info-rgb),.045)}
 .atlas-pb-form.open{display:grid}

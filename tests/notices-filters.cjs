@@ -89,6 +89,11 @@ check('نوار فیلترها فقط فیلتر و شمارش دارد', /role=
 check('مرتب‌سازی از سرستون جدول انجام می‌شود', /data-sort-key/.test(modules) && /setListSort\(moduleKey, \{ key: key, direction: 'asc' \}\)/.test(modules));
 check('کلیک دوباره روی سرستون جهت را عوض می‌کند', /current\.key === key\) setListSort\(moduleKey, \{ direction: current\.direction === 'asc' \? 'desc' : 'asc' \}\)/.test(modules));
 
+// ── دفترچه تلفن: نوار فیلتر فقط فیلتر دارد، نه مرتب‌سازی/جهت ──
+check('دفترچه تلفن قرص مرتب‌سازی/جهت ندارد', !/atlasPbSortBy/.test(app) && !/atlasPbSortDirection/.test(app) && !/list-chip-sort/.test(app) && !/list-chip-dir/.test(app));
+check('نوار فیلتر دفترچه تلفن فقط فیلترها را دارد', /aria-label="فیلترها"/.test(app) && /atlasPbCityFilter/.test(app) && /atlasPbStationFilter/.test(app));
+check('فهرست دفترچه تلفن الفبایی بر اساس نام مرتب می‌شود', /found\.sort\(\(a,b\)=>String\(a\.c\.name/.test(app));
+
 // ── کش آفلاین ──
 check('notices.css در فهرست پیش‌کش سرویس‌ورکر است', sw.includes('./design/notices.css'));
 
