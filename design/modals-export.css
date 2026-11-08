@@ -413,6 +413,12 @@
   background: var(--panel-2);
 }
 
+/* ردیف بازه‌های آماده: تمام عرض نوار و در گوشی به‌صورت افقی اسکرول می‌شود. */
+.range-report-presets {
+  flex: 1 1 100%;
+  padding: 0 0 2px;
+}
+
 .range-report-toolbar .module-field {
   flex: 1 1 200px;
   min-width: 0;

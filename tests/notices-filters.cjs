@@ -64,6 +64,7 @@ check('دکمهٔ گزارش از داشبورد برداشته شده', !index.
 check('پنجرهٔ گزارش دو تب مرخصی و مأموریت دارد', /key: 'leaves', label: 'مرخصی‌ها'/.test(modules) && /key: 'missions', label: 'مأموریت‌ها'/.test(modules) && /data-range-tab=/.test(modules));
 check('هر تب فقط موارد خودش را نشان می‌دهد', /tab === 'leaves' \? report\.leaves : report\.missions/.test(modules));
 check('بازهٔ زمانی بالای پنجرهٔ گزارش قابل تغییر است', /data-range-from/.test(modules) && /data-range-to/.test(modules) && /data-range-apply/.test(modules));
+check('بازه‌های آماده (امروز، ۳ روزه، ۷ روزه، ۱ ماهه…) در پنجرهٔ گزارش هست', /RANGE_REPORT_PRESETS/.test(modules) && /data-range-preset=/.test(modules) && /key: 'week', label: '۷ روزه'/.test(modules) && /key: 'month', label: '۱ ماهه'/.test(modules));
 check('بدنهٔ پنجرهٔ گزارش اسکرول می‌خورد', /\.atlas-modal-range-report \.atlas-modal-body\s*\{[\s\S]{0,120}overflow-y:\s*auto/.test(read('design/modals-export.css')));
 check('گزارش از بازهٔ انتخاب‌شدهٔ داشبورد استفاده می‌کند', /dashboardRange\.start/.test(modules) && /dashboardRange\.end/.test(modules));
 check('همراهان مأموریت هم شمرده می‌شوند', /mission\.crewIds\.forEach/.test(modules));

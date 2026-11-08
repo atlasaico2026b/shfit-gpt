@@ -6480,6 +6480,74 @@
     { key: 'missions', label: 'مأموریت‌ها' }
   ];
 
+  // بازه‌های آمادهٔ پنجرهٔ گزارش — همان مجموعهٔ نوار بازهٔ داشبورد.
+  const RANGE_REPORT_PRESETS = [
+    { key: 'today', label: 'امروز' },
+    { key: 'yesterday', label: 'دیروز' },
+    { key: 'threeDays', label: '۳ روزه' },
+    { key: 'week', label: '۷ روزه' },
+    { key: 'tenDays', label: '۱۰ روزه' },
+    { key: 'month', label: '۱ ماهه' },
+    { key: 'threeMonths', label: '۳ ماهه' },
+    { key: 'sixMonths', label: '۶ ماهه' },
+    { key: 'year', label: 'سال جاری' },
+    { key: 'custom', label: 'دلخواه' }
+  ];
+
+  function rangeReportPresetLabel(key) {
+    const found = RANGE_REPORT_PRESETS.find(function (item) { return item.key === key; });
+    return found ? found.label : '';
+  }
+
+  function isoDayOf(date) {
+    return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+  }
+
+  function dayOnly(date) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0, 0);
+  }
+
+  function addDays(date, days) {
+    const d = dayOnly(date);
+    d.setDate(d.getDate() + days);
+    return d;
+  }
+
+  function jalaliMonthStartOf(date) {
+    const parts = intlJalaliParts(date);
+    return jalaliMonthStartDate(parts.year, parts.month);
+  }
+
+  // بازهٔ هر گزینهٔ آماده، دقیقاً با همان قاعدهٔ نوار بازهٔ داشبورد.
+  function rangeReportPresetRange(key) {
+    const today = dayOnly(new Date());
+    let start = today;
+    let end = today;
+    if (key === 'yesterday') { start = addDays(today, -1); end = start; }
+    else if (key === 'threeDays') start = addDays(today, -2);
+    else if (key === 'week') start = addDays(today, -6);
+    else if (key === 'tenDays') start = addDays(today, -9);
+    else if (key === 'month') start = jalaliMonthStartOf(today);
+    else if (key === 'threeMonths') start = jalaliMonthStartOf(addDays(today, -62));
+    else if (key === 'sixMonths') start = jalaliMonthStartOf(addDays(today, -155));
+    else if (key === 'year') start = jalaliYearStart(intlJalaliParts(today).year);
+    return { start: isoDayOf(start), end: isoDayOf(end) };
+  }
+
+  // مقدار کادر تاریخ شمسی را از بیرون عوض می‌کند (بخش‌های سال/ماه/روز هم به‌روز می‌شوند).
+  function setJalaliFieldValue(input, value) {
+    if (!input) return;
+    const text = formatJalali(value, false);
+    const wrap = input.closest('.jalali-field');
+    if (!wrap) { input.value = text; return; }
+    const parts = splitJalaliText(text);
+    ['year', 'month', 'day'].forEach(function (name) {
+      const box = wrap.querySelector('[data-jalali-seg="' + name + '"]');
+      if (box) box.value = parts[name] || '';
+    });
+    syncJalaliField(wrap);
+  }
+
   function rangeReportTabLabel(key) {
     const found = RANGE_REPORT_TABS.find(function (item) { return item.key === key; });
     return found ? found.label : '';
@@ -6526,6 +6594,9 @@
       start: dashboardRange.start || todayIso(),
       end: dashboardRange.end || dashboardRange.start || todayIso()
     };
+    let preset = RANGE_REPORT_PRESETS.some(function (item) { return item.key === dashboardRange.name; })
+      ? dashboardRange.name
+      : 'custom';
     let tab = 'leaves';
     const backdrop = document.createElement('div');
     backdrop.className = 'atlas-modal-backdrop';
@@ -6537,6 +6608,11 @@
           '<p data-range-caption></p></div>' +
           '<button type="button" class="atlas-modal-close" data-range-close aria-label="بستن پنجره">×</button></div>' +
         '<div class="range-report-toolbar">' +
+          '<div class="range-presets range-report-presets" role="group" aria-label="بازه‌های آماده">' +
+            RANGE_REPORT_PRESETS.map(function (item) {
+              return '<button type="button" class="range-chip" data-range-preset="' + item.key + '">' + item.label + '</button>';
+            }).join('') +
+          '</div>' +
           '<label class="module-field"><span>از تاریخ</span><input type="text" data-jalali-input="jalali" data-range-from value="' + esc(formatJalali(range.start, false)) + '" placeholder="۱۴۰۵/۰۷/۰۱"></label>' +
           '<label class="module-field"><span>تا تاریخ</span><input type="text" data-jalali-input="jalali" data-range-to value="' + esc(formatJalali(range.end, false)) + '" placeholder="۱۴۰۵/۰۷/۳۰"></label>' +
           '<button type="button" class="primary-btn" data-range-apply>اعمال بازه</button>' +
@@ -6563,6 +6639,7 @@
     const caption = backdrop.querySelector('[data-range-caption]');
     const note = backdrop.querySelector('[data-range-note]');
     const tabButtons = Array.prototype.slice.call(backdrop.querySelectorAll('[data-range-tab]'));
+    const presetButtons = Array.prototype.slice.call(backdrop.querySelectorAll('[data-range-preset]'));
 
     function paint() {
       const report = rangeReportData(range.start, range.end);
@@ -6575,7 +6652,13 @@
         button.setAttribute('aria-selected', active ? 'true' : 'false');
         button.textContent = rangeReportTabLabel(key) + ' (' + faDigits(counts[key] || 0) + ')';
       });
-      caption.textContent = rangeLabel + ' · ' + faDigits(counts.leaves) + ' مرخصی · ' + faDigits(counts.missions) + ' مأموریت';
+      presetButtons.forEach(function (button) {
+        const active = button.dataset.rangePreset === preset;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+      caption.textContent = (preset === 'custom' ? '' : rangeReportPresetLabel(preset) + ' · ') +
+        rangeLabel + ' · ' + faDigits(counts.leaves) + ' مرخصی · ' + faDigits(counts.missions) + ' مأموریت';
       panel.innerHTML = rangeReportTable(tab, report);
       note.textContent = 'خروجی از همین تب (' + rangeReportTabLabel(tab) + ') ساخته می‌شود.';
     }
@@ -6594,6 +6677,26 @@
         paint();
         return;
       }
+      const presetButton = event.target.closest('[data-range-preset]');
+      if (presetButton) {
+        const key = presetButton.dataset.rangePreset;
+        if (key === 'custom') {
+          preset = 'custom';
+          paint();
+          const fromInput = backdrop.querySelector('[data-range-from]');
+          const wrap = fromInput ? fromInput.closest('.jalali-field') : null;
+          const box = wrap ? wrap.querySelector('[data-jalali-seg="year"]') : null;
+          if (box) box.focus();
+          return;
+        }
+        const next = rangeReportPresetRange(key);
+        range = { start: next.start, end: next.end };
+        preset = key;
+        setJalaliFieldValue(backdrop.querySelector('[data-range-from]'), range.start);
+        setJalaliFieldValue(backdrop.querySelector('[data-range-to]'), range.end);
+        paint();
+        return;
+      }
       if (event.target.closest('[data-range-apply]')) {
         const fromInput = backdrop.querySelector('[data-range-from]');
         const toInput = backdrop.querySelector('[data-range-to]');
@@ -6602,6 +6705,7 @@
         if (!from || !to) { toast('تاریخ بازه را به شکل شمسی ۱۴۰۵/۰۷/۲۸ وارد کن.'); return; }
         if (from > to) { toast('تاریخ پایان نباید قبل از تاریخ شروع باشد.'); return; }
         range = { start: from, end: to };
+        preset = 'custom';
         paint();
         return;
       }
