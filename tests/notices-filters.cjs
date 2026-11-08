@@ -103,6 +103,11 @@ check('منوی خروجی با Escape هم بسته می‌شود', /event\.key
 check('ستون تیک جدول به‌اندازهٔ کلید کشویی جا دارد', /\.module-check-cell\s*\{[^}]*min-width:\s*48px/.test(spectrumCss) && /\.module-check-cell\s*\{[^}]*width:\s*48px/.test(spectrumCss));
 check('کلید کشویی ۴۰px است', /input\[type="checkbox"\]:not\(\.nu-keep-native\)\s*\{[^}]*width:\s*40px/.test(newUi));
 
+// ── پنجرهٔ انتخاب ستون‌های گزارش: تیک بومی و شبکهٔ هم‌تراز ──
+check('تیک‌های انتخاب ستون بومی‌اند (نه کلید کشویی)', /data-export-columns[\s\S]{0,400}class="nu-keep-native"/.test(modules));
+check('گزینه‌های تیک در شبکهٔ ستونی می‌نشینند', /\.module-check-options\s*\{[^}]*display:\s*grid/.test(read('design/styles.css')) && /grid-template-columns:\s*repeat\(auto-fill/.test(read('design/styles.css')));
+check('تیک گزینه‌ها ۱۵px و بومی است', /\.module-check-options input\s*\{[^}]*width:\s*15px!important/.test(read('design/styles.css')));
+
 // ── کش آفلاین ──
 check('notices.css در فهرست پیش‌کش سرویس‌ورکر است', sw.includes('./design/notices.css'));
 

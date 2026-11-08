@@ -1323,7 +1323,7 @@
     const rows = options.map(function (option) {
       const id = String(option.value);
       return '<label class="mmc-row" data-mmc-row data-label="' + esc(option.label) + '">' +
-        '<input type="checkbox" data-mmc-pick value="' + esc(id) + '">' +
+        '<input type="checkbox" class="nu-keep-native" data-mmc-pick value="' + esc(id) + '">' +
         '<span class="mmc-name">' + esc(option.label) + '</span>' +
         '</label>';
     }).join('');
@@ -1369,7 +1369,7 @@
         control = !options.length
           ? '<div class="module-empty module-check-empty">هنوز کارمندی ثبت نشده است. اول از بخش «کارکنان» کارمند اضافه کن یا نام افراد را در کادر زیر بنویس.</div>'
           : '<div class="module-check-options module-check-people">' + options.map(function (option) {
-            return '<label><input type="checkbox" name="' + esc(field.key) + '" value="' + esc(option.value) + '"' + (chosenList.includes(String(option.value)) ? ' checked' : '') + '><span>' + esc(option.label) + '</span></label>';
+            return '<label><input type="checkbox" class="nu-keep-native" name="' + esc(field.key) + '" value="' + esc(option.value) + '"' + (chosenList.includes(String(option.value)) ? ' checked' : '') + '><span>' + esc(option.label) + '</span></label>';
           }).join('') + '</div><small class="module-field-hint">هر نفر را با تیک انتخاب کن؛ نیازی به کلید کمکی نیست.</small>';
       } else {
         if (!field.multiple && value != null && value !== '' && !options.some(function (option) { return String(option.value) === String(value); })) {
@@ -1426,7 +1426,7 @@
     } else if (field.type === 'checks') {
       const selected = Array.isArray(value) ? value : String(value || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean);
       control = '<div class="module-check-options">' + field.options.map(function (option) {
-        return '<label><input type="checkbox" name="' + esc(field.key) + '" value="' + esc(option) + '"' + (selected.includes(option) ? ' checked' : '') + '><span>' + esc(option) + '</span></label>';
+        return '<label><input type="checkbox" class="nu-keep-native" name="' + esc(field.key) + '" value="' + esc(option) + '"' + (selected.includes(option) ? ' checked' : '') + '><span>' + esc(option) + '</span></label>';
       }).join('') + '</div>';
     } else if (field.type === 'file' || field.type === 'file-multiple') {
       const multiple = field.type === 'file-multiple';
@@ -5625,7 +5625,7 @@
       '<button type="button" class="atlas-modal-close" data-module-action="export-columns-cancel" data-view="' + esc(moduleKey) + '" aria-label="بستن">×</button></div>' +
       '<div class="atlas-modal-body"><div class="module-check-options module-check-people" data-export-columns>' +
       fields.map(function (field) {
-        return '<label><input type="checkbox" value="' + esc(field.key) + '"' + (chosen.indexOf(field.key) >= 0 ? ' checked' : '') + '><span>' + esc(field.label) + '</span></label>';
+        return '<label><input type="checkbox" class="nu-keep-native" value="' + esc(field.key) + '"' + (chosen.indexOf(field.key) >= 0 ? ' checked' : '') + '><span>' + esc(field.label) + '</span></label>';
       }).join('') + '</div>' +
       '<div class="module-form-actions"><span class="module-required-help">حداقل یک ستون لازم است.</span><div>' +
       '<button type="button" class="secondary-btn" data-module-action="export-columns-all" data-view="' + esc(moduleKey) + '">انتخاب همه</button> ' +

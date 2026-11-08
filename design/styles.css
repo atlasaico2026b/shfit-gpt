@@ -364,9 +364,13 @@ body > .drawer-backdrop,body > .drawer,body > .settings-popover,body > .toast{po
 
 /* Operational module controls: layout only, inheriting the current theme tokens. */
 .module-field-hint{display:block;margin-top:5px;color:var(--muted);font-size:10px;line-height:1.8}
-.module-check-options{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-height:38px}
-.module-check-options label{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid var(--line);border-radius:10px;background:rgba(var(--c-white-rgb),.04);font-size:11px}
-.module-check-options input{width:15px!important;height:15px;accent-color:var(--accent)}
+/* گزینه‌های تیک در یک شبکهٔ ستونیِ هم‌تراز می‌نشینند تا برچسب‌ها قاطی نشوند. */
+.module-check-options{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;min-height:38px}
+.module-check-options label{display:flex;align-items:center;gap:8px;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:rgba(var(--c-white-rgb),.04);font-size:11px;line-height:1.6}
+.module-check-options label span{min-width:0;overflow-wrap:anywhere}
+/* این تیک‌ها عمداً بومی می‌مانند (نه کلید کشویی): کلید ۴۰px در این شبکهٔ تنگ
+   از کادر بیرون می‌زد و دسته‌اش روی نوشته می‌افتاد. */
+.module-check-options input{flex:0 0 auto;width:15px!important;height:15px!important;accent-color:var(--accent)}
 /* وقتی هنوز کارمندی ثبت نشده، جای فهرست تیک‌ها راهنما نشان داده می‌شود. */
 .module-check-empty{min-height:52px;padding:9px 12px;font-size:10.5px;text-align:right;line-height:1.9}
 
