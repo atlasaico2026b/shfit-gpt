@@ -538,7 +538,7 @@
       '</div><div class="list-filter-row">' +
       selectChip('city', 'شهر', cities, filters.city) +
       selectChip('station', 'محل خدمت', stations, filters.station) +
-      selectChip('method', 'روش کاری', methods.map(function (m) { return m.name; }), '') +
+      selectChip('method', 'روش کاری', methods.map(function (m) { return [m.id, m.name || 'روش کاری']; }), filters.method) +
       '<button type="button" class="list-chip list-chip-reset" data-sp-reset>پاک‌کردن فیلترها</button>' +
       '<span class="list-filter-count">' + fa(employees.length) + ' نفر</span>' +
       '</div></div>' +
@@ -562,10 +562,14 @@
     return out.sort(function (a, b) { return a.localeCompare(b, 'fa'); });
   }
 
+  // گزینه‌ها یا رشته‌اند یا جفت [مقدار، برچسب]؛ مقدار همان چیزی است که در
+  // filters ذخیره و با شناسه‌ها مقایسه می‌شود، برچسب فقط برای نمایش است.
   function selectChip(key, label, values, current) {
     return '<label class="sp-filter"><span>' + esc(label) + '</span><select data-sp-filter="' + key + '">' +
-      '<option value="">همه</option>' + values.map(function (value) {
-        return '<option value="' + esc(value) + '"' + (String(current) === String(value) ? ' selected' : '') + '>' + esc(value) + '</option>';
+      '<option value="">همه</option>' + values.map(function (pair) {
+        const value = Array.isArray(pair) ? pair[0] : pair;
+        const text = Array.isArray(pair) ? pair[1] : pair;
+        return '<option value="' + esc(value) + '"' + (String(current) === String(value) ? ' selected' : '') + '>' + esc(text) + '</option>';
       }).join('') + '</select></label>';
   }
 
@@ -586,7 +590,7 @@
       '</div><div class="list-filter-row">' +
       selectChip('city', 'شهر', cities, filters.city) +
       selectChip('station', 'محل خدمت', stations, filters.station) +
-      selectChip('method', 'روش کاری', methods.map(function (m) { return m.name; }), filters.method) +
+      selectChip('method', 'روش کاری', methods.map(function (m) { return [m.id, m.name || 'روش کاری']; }), filters.method) +
       selectChip('code', 'نوع شیفت', codes, filters.code) +
       '<button type="button" class="list-chip list-chip-reset" data-sp-reset>پاک‌کردن فیلترها</button>' +
       '</div></div>';
