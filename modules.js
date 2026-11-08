@@ -1724,10 +1724,10 @@
   function renderHistoryButton(moduleKey, record) {
     // در مرخصی‌ها «سوابق» یعنی مرخصی‌های گذشتهٔ همین شخص، نه فقط تاریخچهٔ تغییرات یک رکورد.
     if (moduleKey === 'leaves') {
-      return '<button type="button" class="secondary-btn" data-module-action="leave-history" data-view="leaves" data-id="' + esc(record.id) + '">سوابق</button> ';
+      return '<button type="button" class="secondary-btn module-history-btn" data-module-action="leave-history" data-view="leaves" data-id="' + esc(record.id) + '">سوابق</button> ';
     }
     const hasHistory = appData.history.some(function (item) { return item.module === moduleKey && item.recordId === String(record.id); });
-    return hasHistory ? '<button type="button" class="secondary-btn" data-module-action="history" data-view="' + esc(moduleKey) + '" data-id="' + esc(record.id) + '">سوابق</button> ' : '';
+    return hasHistory ? '<button type="button" class="secondary-btn module-history-btn" data-module-action="history" data-view="' + esc(moduleKey) + '" data-id="' + esc(record.id) + '">سوابق</button> ' : '';
   }
 
   // سرستون قابل‌کلیک: هر «عنوان» جدول با یک کلیک مرتب می‌شود و با کلیک دوباره
@@ -1912,7 +1912,8 @@
       '<section class="module-list-panel" style="width:100%;min-width:0"><div class="module-list-head"><div><h3>فهرست ' + esc(specs[moduleKey].title) + '</h3><p>جست‌وجو، فیلتر، انتخاب چند ردیف و ویرایش از همین بخش انجام می‌شود.</p></div>' +
       '<div class="module-list-tools-slot">' + renderListToolbar(moduleKey) + '</div></div>' +
       '<div class="module-bulk-tools"><label><input type="checkbox" data-module-select-all> انتخاب همه</label>' +
-      '<button type="button" class="secondary-btn" data-module-action="bulk-files" data-view="' + esc(moduleKey) + '" title="پنجرهٔ پرونده‌های انتخاب‌شده: فهرست مرتب در سمت راست و برگهٔ A4 در سمت چپ، با خروجی گروهی">مشاهدهٔ پرونده‌های انتخاب‌شده</button>' +
+      '<button type="button" class="module-file-btn" data-module-action="bulk-files" data-view="' + esc(moduleKey) + '" title="پنجرهٔ پرونده‌های انتخاب‌شده: فهرست مرتب در سمت راست و برگهٔ A4 در سمت چپ، با خروجی گروهی">مشاهدهٔ پرونده‌های انتخاب‌شده</button>' +
+      '<button type="button" class="module-history-btn" data-module-action="bulk-history" data-view="' + esc(moduleKey) + '" title="پنجرهٔ سوابق انتخاب‌شده: همان چیدمان، ولی برگهٔ سوابق هر مورد با خروجی گروهی">مشاهدهٔ سوابق انتخاب‌شده</button>' +
       '<button type="button" class="secondary-btn" data-module-action="bulk-invert" data-view="' + esc(moduleKey) + '">انتخاب معکوس</button>' +
       '<button type="button" class="secondary-btn" data-module-action="bulk-clear" data-view="' + esc(moduleKey) + '">پاک‌کردن انتخاب</button>' +
       '<button type="button" class="module-delete-btn" data-module-action="bulk-delete" data-view="' + esc(moduleKey) + '">حذف انتخاب‌شده‌ها</button>' +
@@ -3352,7 +3353,7 @@
         '<td>' + (record.calibrationEnd ? formatJalali(record.calibrationEnd, false) : '—') + '</td>' +
         '<td>' + statusTag(state.label) + '<div class="cell-sub">' + (state.left == null ? '—' : (state.left < 0 ? faDigits(Math.abs(state.left)) + ' روز گذشته' : faDigits(state.left) + ' روز مانده')) + '</div></td>' +
         '<td>' + faDigits(logs) + ' مورد</td>' +
-        '<td class="module-row-actions"><button type="button" class="secondary-btn" data-module-action="file" data-view="gasmeters" data-id="' + esc(record.id) + '">مشاهدهٔ پرونده</button>' +
+        '<td class="module-row-actions"><button type="button" class="secondary-btn module-file-btn" data-module-action="file" data-view="gasmeters" data-id="' + esc(record.id) + '">مشاهدهٔ پرونده</button>' +
         '<button type="button" class="secondary-btn" data-gas-action="log" data-gas="' + esc(record.id) + '">+ سابقه</button>' +
         '<button type="button" class="secondary-btn" data-module-action="edit" data-view="gasmeters" data-id="' + esc(record.id) + '">ویرایش</button>' +
         '<button type="button" class="module-delete-btn" data-module-action="delete" data-view="gasmeters" data-id="' + esc(record.id) + '">حذف</button></td></tr>';
@@ -7110,11 +7111,15 @@
       appData[moduleKey]=appData[moduleKey].filter(function(item){return String(item.id)!==String(button.dataset.id);});
       addHistory(moduleKey,record,'حذف',[]);
       if(await saveState()){render(moduleKey,section);refreshDashboard();toast('مورد حذف شد.')}
-    }else if(action==='bulk-files'){
+    }else if(action==='bulk-files'||action==='bulk-history'){
       if(!specs[moduleKey])return;
       const selected=Array.from(section.querySelectorAll('[data-record-select]:checked')).map(function(box){return box.value;});
       if(!selected.length){toast('ابتدا یک یا چند ردیف را انتخاب کن.');return;}
-      document.dispatchEvent(new CustomEvent('atlas-open-files',{detail:{module:moduleKey,ids:selected}}));
+      document.dispatchEvent(new CustomEvent('atlas-open-files',{detail:{
+        module:moduleKey,
+        ids:selected,
+        mode:action==='bulk-history'?'history':'files'
+      }}));
     }else if(action==='bulk-invert'){
       section.querySelectorAll('[data-record-select]').forEach(function(box){box.checked=!box.checked;});
       syncSelectAllBoxes(section);

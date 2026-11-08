@@ -594,10 +594,55 @@
     open(moduleSheet(moduleKey, record, data));
   }
 
-  // ── پرونده‌های انتخاب‌شده: فهرست باریک سمت راست + برگهٔ A4 سمت چپ ──────
+  // برگهٔ «سوابق» یک مورد: همان برگهٔ A4، ولی به‌جای اطلاعات پرونده، تاریخچهٔ
+  // تغییرات ثبت‌شده برای همان رکورد را نشان می‌دهد. ساختار مدل عیناً مثل
+  // moduleSheet است تا پیش‌نمایش، چاپ و همهٔ خروجی‌ها از یک مسیر بیایند.
+  function historySheet(moduleKey, record, data) {
+    const api = modules();
+    const spec = api.spec ? api.spec(moduleKey) : null;
+    const entries = (data.history || [])
+      .filter(item => item.module === moduleKey && String(item.recordId) === String(record.id))
+      .sort((a, b) => String(b.at).localeCompare(String(a.at)));
+    const rows = entries.map(item => [
+      jalali(item.at, true),
+      String(item.action || ''),
+      (item.changes || []).map(change =>
+        change.field + ': «' + (change.before || '—') + '» ← «' + (change.after || '—') + '»').join(' · ')
+    ]);
+    return {
+      kind: (spec ? spec.title + ' · سوابق' : 'سوابق'),
+      title: recordTitle(moduleKey, record, data),
+      subtitle: 'تاریخچهٔ تغییرات ثبت‌شده برای همین مورد',
+      stamp: 'تاریخ تهیه: ' + jalali(new Date().toISOString(), true),
+      footNote: 'این برگه فقط سوابق ثبت‌شده در همین برنامه را نشان می‌دهد.',
+      facts: [
+        { label: 'تعداد سوابق', value: fa(entries.length) },
+        { label: 'آخرین تغییر', value: entries.length ? jalali(entries[0].at, true) : '—' }
+      ],
+      tables: [{ title: 'سوابق تغییرات (' + fa(entries.length) + ')', headers: ['تاریخ و ساعت', 'اقدام', 'تغییرات'], rows: rows }]
+    };
+  }
+
+  // ── پرونده‌ها / سوابق انتخاب‌شده: فهرست باریک سمت راست + برگهٔ A4 سمت چپ ──
   // یک پنجره برای همهٔ ردیف‌های مارک‌شده: با کلیک روی هر عنوان، برگهٔ همان
-  // پرونده در کادر سمت چپ نشان داده می‌شود و از نوار پایین، خروجی همهٔ
-  // پرونده‌ها پشت سر هم گرفته می‌شود.
+  // مورد در کادر سمت چپ نشان داده می‌شود و از نوار پایین، خروجی همهٔ برگه‌ها
+  // پشت سر هم گرفته می‌شود. `mode` فقط می‌گوید برگهٔ پرونده ساخته شود یا
+  // برگهٔ سوابق؛ بقیهٔ پنجره یکی است.
+  const BULK_MODES = {
+    files: {
+      title: 'پرونده‌های انتخاب‌شده',
+      hint: 'از فهرست سمت راست یکی را انتخاب کن.',
+      unit: 'پرونده',
+      build: moduleSheet
+    },
+    history: {
+      title: 'سوابق انتخاب‌شده',
+      hint: 'سوابق هر مورد را از فهرست سمت راست انتخاب کن.',
+      unit: 'مورد',
+      build: historySheet
+    }
+  };
+
   let bulk = null;
 
   function closeBulk() {
@@ -606,7 +651,8 @@
     bulk = null;
   }
 
-  function openBulk(moduleKey, ids) {
+  function openBulk(moduleKey, ids, mode) {
+    const config = BULK_MODES[mode] || BULK_MODES.files;
     const data = snapshot();
     const wanted = (ids || []).map(String);
     const records = wanted
@@ -621,18 +667,18 @@
     // فهرست سمت راست بر اساس عنوان پرونده مرتب می‌شود و خروجی گروهی هم به
     // همین ترتیب پشت سر هم می‌آید.
     const models = records
-      .map(record => moduleSheet(moduleKey, record, data))
+      .map(record => config.build(moduleKey, record, data))
       .sort((a, b) => String(a.title).localeCompare(String(b.title), 'fa'));
 
     const backdrop = document.createElement('div');
     backdrop.className = 'rf-bulk-backdrop';
     backdrop.innerHTML =
-      '<div class="rf-bulk-modal" role="dialog" aria-modal="true" aria-label="پرونده‌های انتخاب‌شده">' +
-        '<div class="rf-head"><div><h3>پرونده‌های انتخاب‌شده</h3>' +
-          '<p>' + esc(spec ? spec.title : 'پرونده‌ها') + ' · ' + fa(models.length) + ' مورد — از فهرست سمت راست یکی را انتخاب کن.</p></div>' +
+      '<div class="rf-bulk-modal is-' + (mode === 'history' ? 'history' : 'files') + '" role="dialog" aria-modal="true" aria-label="' + esc(config.title) + '">' +
+        '<div class="rf-head"><div><h3>' + esc(config.title) + '</h3>' +
+          '<p>' + esc(spec ? spec.title : 'پرونده‌ها') + ' · ' + fa(models.length) + ' مورد — ' + esc(config.hint) + '</p></div>' +
           '<button type="button" class="rf-close" data-rf-bulk-close aria-label="بستن پنجره">×</button></div>' +
         '<div class="rf-bulk-body">' +
-          '<aside class="rf-bulk-list" role="listbox" aria-label="فهرست پرونده‌ها">' +
+          '<aside class="rf-bulk-list" role="listbox" aria-label="فهرست موارد">' +
             models.map((model, index) =>
               '<button type="button" class="rf-bulk-item' + (index === 0 ? ' is-active' : '') + '" role="option" aria-selected="' + (index === 0) + '" data-rf-bulk-index="' + index + '">' +
                 '<span class="rf-bulk-item-no">' + fa(index + 1) + '</span>' +
@@ -642,7 +688,7 @@
           '<div class="rf-bulk-sheet" data-rf-bulk-sheet></div>' +
         '</div>' +
         '<div class="rf-bulk-foot">' +
-          '<span class="rf-bulk-foot-label">خروجی همهٔ ' + fa(models.length) + ' پرونده، پشت سر هم:</span>' +
+          '<span class="rf-bulk-foot-label">خروجی همهٔ ' + fa(models.length) + ' ' + esc(config.unit) + '، پشت سر هم:</span>' +
           Object.keys(EXPORT_FORMATS).map(format =>
             '<button type="button" class="secondary-btn" data-rf-bulk-export="' + format + '">' + esc(EXPORT_FORMATS[format].label) + '</button>').join('') +
         '</div>' +
@@ -683,7 +729,7 @@
 
   document.addEventListener('atlas-open-files', event => {
     const detail = event.detail || {};
-    if (detail.module && Array.isArray(detail.ids)) openBulk(detail.module, detail.ids);
+    if (detail.module && Array.isArray(detail.ids)) openBulk(detail.module, detail.ids, detail.mode);
   });
 
   document.addEventListener('keydown', event => {
@@ -699,6 +745,7 @@
     openBulk: openBulk,
     openContact: contact => open(contactSheet(contact)),
     buildSheet: model => buildSheet(model),
+    historySheet: (moduleKey, record, data) => historySheet(moduleKey, record, data || snapshot()),
     buildWord: model => window.AtlasExportDocs.docx(wordSheet(model)),
     buildWordMany: models => window.AtlasExportDocs.docxMany((models || []).map(wordSheet)),
     exportFileName: model => exportFileName(model),

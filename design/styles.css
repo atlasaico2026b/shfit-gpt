@@ -286,6 +286,12 @@ body > .drawer-backdrop,body > .drawer,body > .settings-popover,body > .toast{po
 .module-row-actions{white-space:nowrap!important;min-width:140px}
 .module-row-actions .secondary-btn,.module-delete-btn{padding:7px 9px;border-radius:9px;font:inherit;font-size:10px;cursor:pointer}
 .module-delete-btn{border:1px solid rgba(var(--danger-rgb),.28);background:rgba(var(--danger-rgb),.08);color:var(--danger)}
+/* «مشاهدهٔ پرونده» و «سوابق» رنگ خودشان را دارند تا در سطر عملیات با بقیهٔ
+   دکمه‌ها (ویرایش، کامنت، حذف) اشتباه نشوند: پرونده آبی، سوابق بنفش. */
+.module-file-btn{border:1px solid var(--info-line);background:var(--info-soft);color:var(--info)}
+.module-file-btn:hover{background:rgba(var(--info-rgb),.18)}
+.module-history-btn{border:1px solid var(--special-line);background:var(--special-soft);color:var(--special)}
+.module-history-btn:hover{background:rgba(var(--special-rgb),.18)}
 .module-list-foot{padding-top:10px;color:var(--muted);font-size:10px}
 .module-empty{display:flex;align-items:center;justify-content:center;min-height:95px;padding:18px;border:1px dashed var(--line-hi);border-radius:13px;color:var(--muted);font-size:12px;text-align:center;line-height:1.9}
 .module-form-panel{border-color:rgba(var(--accent-rgb),.32)}
