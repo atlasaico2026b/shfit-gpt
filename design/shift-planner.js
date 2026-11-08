@@ -146,11 +146,13 @@
   }
 
   // کد شیفتِ یک تاریخ در یک قالب چرخشی؛ OFF یعنی استراحت.
-  function rotationCodeAt(template, iso) {
+  // `cycleStart` تاریخ شروع چرخه است و از تخصیص می‌آید، نه از خود قالب؛ اگر داده
+  // نشود، برای سازگاری با دادهٔ قدیمی از cycleStart قالب استفاده می‌شود.
+  function rotationCodeAt(template, iso, cycleStart) {
     const pattern = templatePattern(template);
     const length = pattern.length;
     if (!length) return '';
-    const start = dayNumber(template.cycleStart || iso);
+    const start = dayNumber(cycleStart || template.cycleStart || iso);
     const n = dayNumber(iso);
     if (!isFinite(start) || !isFinite(n)) return '';
     const index = ((n - start) % length + length) % length;
@@ -225,6 +227,12 @@
     return (state.shiftTemplates || []).find(function (t) { return String(t.id) === String(id); }) || null;
   }
 
+  // روش شیفتی = روشی که روزهای کارش را از الگوی یک قالب می‌گیرد.
+  function methodIsShift(state, methodId) {
+    const method = findMethod(state, methodId);
+    return !!method && (method.kind === 'rotating' || method.kind === 'camp');
+  }
+
   // وضعیت یک کارمند در یک روز. ترتیب اولویت: تغییر وضعیت ← مرخصی تأییدشده ←
   // تخصیص (چرخش یا قانون هفتگی) ← بدون تخصیص.
   function resolve(state, employeeId, iso) {
@@ -265,7 +273,7 @@
       if (!template) {
         return { code: '—', label: 'قالب شیفت تعیین نشده', from: '', to: '', kind: 'none', note: '', source: 'none' };
       }
-      const code = rotationCodeAt(template, iso);
+      const code = rotationCodeAt(template, iso, assignment.from);
       if (!code || code === OFF) {
         return { code: 'ا', label: 'استراحت', from: '', to: '', kind: 'off', note: '', source: 'rotation' };
       }
@@ -602,6 +610,17 @@
         people.map(function (employee) {
           const assignment = assignmentFor(state, employee.id, todayIso());
           const methodId = assignment ? String(assignment.methodId) : '';
+          const shiftMethod = assignment ? methodIsShift(state, assignment.methodId) : false;
+          // برای روش شیفتی، ستون بعد از «روش کاری» تاریخ شروع چرخه را می‌گیرد؛
+          // چرخه از همین تاریخ شمرده می‌شود، نه از تاریخی داخل قالب.
+          const rangeCell = !assignment
+            ? '<td>—</td>'
+            : (shiftMethod
+              ? '<td class="sp-cycle-cell"><input type="text" data-jalali-input="jalali" data-sp-cycle-start="' +
+                esc(assignment.id) + '" value="' + esc(bridge.jalaliInputValue(assignment.from, false)) +
+                '" placeholder="۱۴۰۵/۰۸/۰۱" aria-label="شروع چرخهٔ شیفت"><small class="sp-sub">شروع چرخه</small></td>'
+              : '<td>' + esc(bridge.formatJalali(assignment.from, false)) +
+                (assignment.to ? ' تا ' + esc(bridge.formatJalali(assignment.to, false)) : ' · تا اطلاع ثانوی') + '</td>');
           return '<tr>' +
             '<td class="sp-check"><input type="checkbox" data-sp-select="' + esc(employee.id) + '"' +
               (selected[employee.id] ? ' checked' : '') + ' aria-label="انتخاب ' + esc(bridge.employeeName(employee)) + '"></td>' +
@@ -616,8 +635,7 @@
                 return '<option value="' + esc(method.id) + '"' + (methodId === String(method.id) ? ' selected' : '') + '>' +
                   esc(method.name || 'روش کاری') + '</option>';
               }).join('') + '</select></td>' +
-            '<td>' + (assignment ? esc(bridge.formatJalali(assignment.from, false)) +
-              (assignment.to ? ' تا ' + esc(bridge.formatJalali(assignment.to, false)) : ' · تا اطلاع ثانوی') : '—') + '</td>' +
+            rangeCell +
             '</tr>';
         }).join('');
     }).join('');
@@ -645,7 +663,7 @@
       '<span data-sp-selected-count>' + fa(selectedCount) + ' نفر انتخاب شده</span></div>' +
       '<div class="module-table-wrap"><table class="module-table sp-table"><thead><tr>' +
       '<th class="sp-check"></th>' + sortHeader('name', 'نام و نام خانوادگی') + sortHeader('station', 'محل خدمت') +
-      sortHeader('job', 'عنوان شغلی') + sortHeader('method', 'روش کاری') + sortHeader('range', 'بازهٔ اعتبار') +
+      sortHeader('job', 'عنوان شغلی') + sortHeader('method', 'روش کاری') + sortHeader('range', 'شروع چرخه / بازه') +
       '</tr></thead><tbody>' +
       (rows || '<tr><td colspan="6"><div class="module-empty">کارمندی با این فیلترها پیدا نشد.</div></td></tr>') +
       '</tbody></table></div></section>';
@@ -1015,18 +1033,14 @@
     const template = id ? findTemplate(state, id) : null;
     const current = template || {
       name: '', shifts: [{ code: 'ص', label: 'صبح‌کار', from: '07:00', to: '19:00' }, { code: 'ش', label: 'شب‌کار', from: '19:00', to: '07:00' }],
-      rotation: [{ code: 'ص', days: 2 }, { code: 'ش', days: 2 }, { code: OFF, days: 4 }],
-      cycleStart: todayIso()
+      rotation: [{ code: 'ص', days: 2 }, { code: 'ش', days: 2 }, { code: OFF, days: 4 }]
     };
 
     openModal(template ? 'ویرایش قالب شیفت' : 'قالب شیفت جدید',
-      'شیفت‌های روز را تعریف کن، بعد ترتیب چرخش را بنویس (مثلاً ۲ صبح، ۲ شب، ۴ استراحت).',
+      'شیفت‌های روز را تعریف کن، بعد الگوی روزها را بنویس (روز اول، روز دوم … تا آخر قالب).',
       '<form class="module-form" data-sp-form="template" data-sp-id="' + esc(template ? template.id : '') + '">' +
       '<div class="module-fields">' +
       field('نام قالب', input('name', current.name, 'required placeholder="مثلاً ۱۲ ساعته ۲/۲/۴"')) +
-      field('شروع چرخه', '<input type="text" name="cycleStart" data-jalali-input="jalali" value="' +
-        esc(bridge.jalaliInputValue(current.cycleStart || todayIso(), false)) + '" placeholder="۱۴۰۵/۰۸/۰۱">',
-        'از این تاریخ به بعد ترتیب چرخش شمرده می‌شود.') +
       '</div>' +
       '<div class="sp-rows" data-sp-shifts><h4>شیفت‌های روز</h4>' +
       '<p class="sp-hint">هر شیفت یک کد کوتاه، یک نام و ساعت شروع و پایان دارد.</p>' +
@@ -1124,14 +1138,12 @@
     if (!shifts.length) { bridge.toast('حداقل یک شیفت با کد تعریف کن.'); return; }
     const pattern = readPattern();
     if (!pattern.length) { bridge.toast('الگوی روزها را مشخص کن.'); return; }
-    const cycleStart = readJalali(form, 'cycleStart');
     const record = {
       id: id || bridge.createId(),
       name: name,
       shifts: shifts,
       pattern: pattern,
       rotation: compressPattern(pattern),
-      cycleStart: cycleStart || todayIso(),
       active: true
     };
     if (id) {
@@ -1156,8 +1168,9 @@
       '<form class="module-form" data-sp-form="assign">' +
       '<div class="module-fields">' +
       field('روش کاری', select('methodId', methods.map(function (m) { return [m.id, m.name || 'روش کاری']; }), '')) +
-      field('از تاریخ', '<input type="text" name="from" data-jalali-input="jalali" value="' +
-        esc(bridge.jalaliInputValue(todayIso(), false)) + '">') +
+      field('از تاریخ / شروع چرخه', '<input type="text" name="from" data-jalali-input="jalali" value="' +
+        esc(bridge.jalaliInputValue(todayIso(), false)) + '">',
+        'برای روش شیفتی، چرخهٔ الگوی قالب از همین تاریخ شمرده می‌شود.') +
       field('تا تاریخ (اختیاری)', '<input type="text" name="to" data-jalali-input="jalali" value="" placeholder="خالی = تا اطلاع ثانوی">') +
       field('توضیح', '<textarea name="note" rows="2"></textarea>') +
       '</div></form>',
@@ -1312,7 +1325,6 @@
             name: '۱۲ ساعته ۲/۲/۴',
             shifts: [{ code: 'ص', label: 'صبح‌کار', from: '07:00', to: '19:00' }, { code: 'ش', label: 'شب‌کار', from: '19:00', to: '07:00' }],
             rotation: [{ code: 'ص', days: 2 }, { code: 'ش', days: 2 }, { code: OFF, days: 4 }],
-            cycleStart: todayIso()
           },
           method: { name: 'شیفت ۱۲ ساعته روز/شب', kind: 'rotating' }
         };
@@ -1327,7 +1339,6 @@
               { code: 'ش', label: 'شب', from: '22:00', to: '06:00' }
             ],
             rotation: [{ code: 'ص', days: 2 }, { code: 'ع', days: 2 }, { code: 'ش', days: 2 }, { code: OFF, days: 2 }],
-            cycleStart: todayIso()
           },
           method: { name: 'شیفت ۸ ساعته سه‌شیفت', kind: 'rotating' }
         };
@@ -1338,7 +1349,6 @@
             name: '۲ صبح · ۲ شب · ۴ استراحت',
             shifts: [{ code: 'ص', label: 'صبح‌کار', from: '07:00', to: '19:00' }, { code: 'ش', label: 'شب‌کار', from: '19:00', to: '07:00' }],
             rotation: [{ code: 'ص', days: 2 }, { code: 'ش', days: 2 }, { code: OFF, days: 4 }],
-            cycleStart: todayIso()
           }
         };
       },
@@ -1348,7 +1358,6 @@
             name: '۲ صبح · ۲ شب · ۲ استراحت',
             shifts: [{ code: 'ص', label: 'صبح‌کار', from: '07:00', to: '19:00' }, { code: 'ش', label: 'شب‌کار', from: '19:00', to: '07:00' }],
             rotation: [{ code: 'ص', days: 2 }, { code: 'ش', days: 2 }, { code: OFF, days: 2 }],
-            cycleStart: todayIso()
           }
         };
       },
@@ -1358,7 +1367,6 @@
             name: '۳ صبح · ۳ شب · ۳ استراحت',
             shifts: [{ code: 'ص', label: 'صبح‌کار', from: '07:00', to: '19:00' }, { code: 'ش', label: 'شب‌کار', from: '19:00', to: '07:00' }],
             rotation: [{ code: 'ص', days: 3 }, { code: 'ش', days: 3 }, { code: OFF, days: 3 }],
-            cycleStart: todayIso()
           }
         };
       },
@@ -1372,7 +1380,6 @@
               { code: 'ش', label: 'شب', from: '22:00', to: '06:00' }
             ],
             rotation: [{ code: 'ص', days: 2 }, { code: 'ع', days: 2 }, { code: 'ش', days: 2 }, { code: OFF, days: 2 }],
-            cycleStart: todayIso()
           }
         };
       },
@@ -1386,7 +1393,6 @@
             shifts: [{ code: 'ص', label: 'روزکار اقماری', from: '07:00', to: '19:00' }],
             pattern: pattern,
             rotation: compressPattern(pattern),
-            cycleStart: todayIso()
           },
           method: { name: 'اقماری ۱۴ روز کار / ۱۴ روز استراحت', kind: 'camp' }
         };
@@ -1576,6 +1582,15 @@
       return;
     }
 
+    // تاریخ شروع چرخهٔ شیفت، در ستون بعد از «روش کاری» انتخاب می‌شود.
+    const cycleStart = target.closest('[data-sp-cycle-start]');
+    if (cycleStart) {
+      const iso = jalaliToIso(cycleStart.value);
+      if (!iso) return;
+      updateCycleStart(cycleStart.getAttribute('data-sp-cycle-start'), iso);
+      return;
+    }
+
     const rangeFrom = target.closest('[data-sp-range-from]');
     const rangeTo = target.closest('[data-sp-range-to]');
     if (rangeFrom || rangeTo) {
@@ -1643,6 +1658,20 @@
   function readJalali(form, name) {
     const field = form.querySelector('[name="' + name + '"]');
     return field ? jalaliToIso(field.value) : '';
+  }
+
+  // تاریخ شروع چرخهٔ یک تخصیص را عوض می‌کند؛ چرخه از همین تاریخ شمرده می‌شود.
+  async function updateCycleStart(assignmentId, iso) {
+    const state = data();
+    const assignment = (state.shiftAssignments || []).find(function (a) {
+      return String(a.id) === String(assignmentId);
+    });
+    if (!assignment) return;
+    assignment.from = iso;
+    if (await bridge.save()) {
+      refresh();
+      bridge.toast('شروع چرخه ثبت شد.');
+    }
   }
 
   async function quickAssign(employeeId, methodId) {
