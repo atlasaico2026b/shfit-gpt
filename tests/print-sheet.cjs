@@ -44,7 +44,13 @@ check('سطر تاریخ و تعداد ردیف', /تاریخ تهیه: ۱۴۰۵
 check('جدول شبکه‌دار با کلاس چاپ', /<table class="atlas-print-table"/.test(html));
 check('سرستون‌ها th با scope', (html.match(/<th scope="col">/g) || []).length === 3);
 check('سطر ناقص با خانهٔ خالی کامل می‌شود', /<tr><td>سارا محمدی<\/td><td>مالی<\/td><td><\/td><\/tr>/.test(html), html.match(/<tr><td>سارا محمدی.*?<\/tr>/)[0]);
-check('هیچ سطر یا ستون اضافه تولید نمی‌شود', (html.match(/<th /g) || []).length === 3 && (html.match(/<tr>/g) || []).length === 3);
+check('هیچ سطر یا ستون اضافه تولید نمی‌شود', (html.match(/<th /g) || []).length === 3 && (html.match(/<tr><td>/g) || []).length === 2);
+
+// ── سربرگ و حاشیهٔ صفحه در thead/tfoot تکرار می‌شوند ──
+check('سربرگ داخل thead است تا در هر صفحه تکرار شود', /<thead>[\s\S]*<header class="atlas-print-head">[\s\S]*<\/thead>/.test(html));
+check('سطر فاصلهٔ بالای صفحه در thead', /<thead><tr class="atlas-print-pad"><td colspan="3"><\/td><\/tr>/.test(html));
+check('سطر فاصلهٔ پایین صفحه در tfoot', /<tfoot><tr class="atlas-print-pad atlas-print-pad-bottom"><td colspan="3"><\/td><\/tr><\/tfoot>/.test(html));
+check('سرستون‌ها بعد از سربرگ می‌آیند', html.indexOf('atlas-print-head-row') < html.indexOf('atlas-print-cols'));
 
 const empty = sheet.build([['نام', 'واحد']], { title: 'مرخصی‌ها' });
 check('فهرست خالی پیام فارسی می‌دهد', /موردی برای نمایش ثبت نشده است/.test(empty) && /colspan="2"/.test(empty));
@@ -82,6 +88,16 @@ check('سطر و خانه‌ها هر دو break-inside:avoid دارند', /#atl
 check('سرستون تنها در پای صفحه نمی‌ماند', /#atlasPrintArea thead\s*\{[^}]*break-after:\s*avoid/.test(css.replace(/\r/g, '')));
 check('جدول و بدنه اجازهٔ شکستن بین سطرها را دارند', /#atlasPrintArea tbody\s*\{[^}]*break-inside:\s*auto/.test(css.replace(/\r/g, '')));
 
+// ── حذف سرصفحه/پاصفحهٔ مرورگر (آدرس سایت، تاریخ، ساعت، «۱ از ۲») ──
+check('برگهٔ فهرست‌ها روی صفحهٔ نام‌دار چاپ می‌شود', /@page atlas-list\s*\{[^}]*margin:\s*0\s*;/.test(css.replace(/\r/g, '')));
+check('برگهٔ فهرست‌ها به همان صفحهٔ نام‌دار وصل است', /body\.atlas-printing #atlasPrintArea\s*\{[^}]*page:\s*atlas-list/.test(css.replace(/\r/g, '')));
+check('چاپ مستقیم کل صفحه (Ctrl+P) حاشیهٔ خودش را نگه می‌دارد', /@page\s*\{[^}]*size:\s*A4 landscape[^}]*margin:\s*9mm 9mm 11mm/.test(css.replace(/\r/g, '')));
+check('حاشیهٔ افقی برگه از padding خودش می‌آید', /body\.atlas-printing #atlasPrintArea\s*\{[^}]*padding:\s*0 9mm/.test(css.replace(/\r/g, '')));
+check('سطر فاصلهٔ بالای صفحه ۹mm است', /\.atlas-print-pad > td\s*\{[^}]*height:\s*9mm/.test(css.replace(/\r/g, '')));
+check('سطر فاصلهٔ پایین صفحه ۱۱mm است', /\.atlas-print-pad-bottom > td\s*\{[^}]*height:\s*11mm/.test(css.replace(/\r/g, '')));
+check('سطرهای فاصله خط و کادر ندارند', /\.atlas-print-pad > td\s*\{[^}]*border:\s*0/.test(css.replace(/\r/g, '')));
+check('خانهٔ سربرگ کادر و padding جدول را نمی‌گیرد', /\.atlas-print-head-row > td\s*\{[^}]*border:\s*0/.test(css.replace(/\r/g, '')));
+
 // ── چاپ مستقیم صفحه (Ctrl+P) و برگهٔ پرونده هم همان قاعده را دارند ──
 const stylesCss = fs.readFileSync(path.join(root, 'design/styles.css'), 'utf8');
 const recordFileJs = fs.readFileSync(path.join(root, 'design/record-file.js'), 'utf8');
@@ -90,6 +106,8 @@ check('چاپ مستقیم صفحه سرستون را تکرار می‌کند',
 check('چاپ مستقیم صفحه کادر اسکرول جدول را باز می‌کند', /\.module-table-wrap\{overflow:visible!important/.test(stylesCss));
 check('برگهٔ پرونده هم سطرها را نصف نمی‌کند', /\.rf-sheet tr,\.rf-sheet td,\.rf-sheet th\{page-break-inside:avoid;break-inside:avoid\}/.test(recordFileJs));
 check('برگهٔ پرونده سرستون را در هر صفحه تکرار می‌کند', /\.rf-sheet thead\{display:table-header-group/.test(recordFileJs));
+check('برگهٔ پرونده هم سرصفحه/پاصفحهٔ مرورگر را چاپ نمی‌کند', /@page\{size:A4;margin:0\}/.test(recordFileJs));
+check('حاشیهٔ برگهٔ پرونده از padding خودش می‌آید', /\.rf-sheet\{padding:12mm 12mm 14mm\}/.test(recordFileJs));
 
 const failed = checks.filter(c => !c.ok);
 checks.forEach(c => console.log((c.ok ? 'PASS ' : 'FAIL ') + c.name + (c.ok || !c.extra ? '' : ' → ' + c.extra)));

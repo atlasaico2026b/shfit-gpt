@@ -17,9 +17,19 @@
 }
 
 @media print {
+  /* صفحهٔ پیش‌فرض (چاپ مستقیم کل صفحه با Ctrl+P) همان حاشیهٔ قبلی را دارد. */
   @page {
     size: A4 landscape;
     margin: 9mm 9mm 11mm;
+  }
+
+  /* برگهٔ خروجی فهرست‌ها: حاشیهٔ صفحه صفر است تا مرورگر سرصفحه/پاصفحهٔ خودش
+     (آدرس سایت، تاریخ، ساعت و «۱ از ۲») را چاپ نکند؛ آن‌ها فقط در حاشیهٔ صفحه
+     رسم می‌شوند. حاشیهٔ واقعی برگه را سطرهای فاصله‌دهندهٔ thead/tfoot و padding
+     افقی برگه می‌سازند، پس در صفحهٔ دوم به بعد هم تکرار می‌شود. */
+  @page atlas-list {
+    size: A4 landscape;
+    margin: 0;
   }
 
   html,
@@ -43,6 +53,12 @@
     display: block !important;
     width: 100%;
     box-sizing: border-box;
+    /* برگهٔ فهرست‌ها روی صفحهٔ نام‌دار «atlas-list» چاپ می‌شود (حاشیهٔ صفر) تا
+       سرصفحه/پاصفحهٔ مرورگر نیاید؛ چاپ مستقیم کل صفحه دست‌نخورده می‌ماند. */
+    page: atlas-list;
+    /* فقط حاشیهٔ افقی؛ حاشیهٔ عمودی را سطرهای فاصله‌دهندهٔ thead/tfoot می‌سازند
+       تا در صفحهٔ دوم به بعد هم تکرار شود. */
+    padding: 0 9mm;
     color: var(--print-ink) !important;
     background: var(--print-paper) !important;
     font-family: Tahoma, "Vazirmatn", "Segoe UI", sans-serif;
@@ -56,7 +72,7 @@
 
   /* ── سربرگ برگه: نام موضوع، درشت و کلفت، با خط جداکننده ── */
   #atlasPrintArea .atlas-print-head {
-    margin: 0 0 3mm;
+    margin: 0;
     padding: 0 0 2mm;
     border-bottom: 1.4pt solid var(--print-ink);
   }
@@ -213,5 +229,32 @@
   #atlasPrintArea img,
   #atlasPrintArea button {
     display: none !important;
+  }
+
+  /* ── حاشیهٔ هر صفحه و سربرگ تکرارشونده ──
+     این سطرها در thead/tfoot هستند، پس در هر صفحه تکرار می‌شوند و همان حاشیهٔ
+     ۹mm بالا و ۱۱mm پایین را می‌سازند که قبلاً @page می‌داد. */
+  #atlasPrintArea .atlas-print-pad > td {
+    height: 9mm;
+    padding: 0;
+    border: 0;
+    line-height: 0;
+    font-size: 0;
+  }
+
+  #atlasPrintArea .atlas-print-pad-bottom > td {
+    height: 11mm;
+  }
+
+  #atlasPrintArea .atlas-print-head-row > td {
+    padding: 0 0 3mm;
+    border: 0;
+    vertical-align: top;
+  }
+
+  /* سربرگ و سرستون‌ها هرگز از هم جدا نمی‌شوند و در پای صفحه تنها نمی‌مانند. */
+  #atlasPrintArea thead tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }
