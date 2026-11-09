@@ -449,12 +449,12 @@
    ولی هنوز از ردیف کارکنان جدا. شیفت‌ها در محل خدمت برقرار می‌شوند، پس این
    سطح گروه‌بندی داخل هر شهر است و روش کاری همان ایستگاه را هم نشان می‌دهد. */
 .sp-table tbody tr.sp-station-row td {
-  background: #f4f6fb;
+  background: #e8f6ec;
   color: #111;
   font-size: 1.05em;
   font-weight: 600;
   padding: 6px 10px;
-  border-color: #dde2ee;
+  border-color: #cbe7d5;
 }
 
 .sp-station-cell { padding-inline-start: 22px !important; }
