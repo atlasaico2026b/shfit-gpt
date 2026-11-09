@@ -228,15 +228,46 @@ const filterState = {
 };
 
 let bodyHtml = '';
+// چک‌باکس‌های ردیف مثل DOM واقعی شیء پایدارند: تیک زدنشان با بازسازی HTML از
+// بین نمی‌رود، وگرنه syncSelectionUi وضعیت را از دست می‌دهد.
+let rowBoxMap = Object.create(null);
 const fakeBody = {
   get innerHTML() { return bodyHtml; },
-  set innerHTML(value) { bodyHtml = value; }
+  set innerHTML(value) { bodyHtml = value; rowBoxMap = Object.create(null); }
 };
+// چک‌باکس‌ها و شمارنده‌هایی که syncSelectionUi روی DOM واقعی به‌روز می‌کند.
+const fakeSelectAll = { checked: false, indeterminate: false };
+const fakeCount = { textContent: '' };
+const fakeBulk = { disabled: false, textContent: '' };
+function fakeRowBoxes() {
+  const boxes = [];
+  const re = /data-sp-select="([^"]+)"( checked)?/g;
+  let match = re.exec(bodyHtml);
+  while (match) {
+    const id = match[1];
+    const checked = !!match[2];
+    if (!rowBoxMap[id]) {
+      rowBoxMap[id] = { getAttribute: function () { return id; }, checked: checked };
+    }
+    boxes.push(rowBoxMap[id]);
+    match = re.exec(bodyHtml);
+  }
+  return boxes;
+}
 const fakeHost = {
   innerHTML: '',
   contains: function () { return true; },
-  querySelector: function (selector) { return selector === '[data-sp-body]' ? fakeBody : null; },
-  querySelectorAll: function () { return []; }
+  querySelector: function (selector) {
+    if (selector === '[data-sp-body]') return fakeBody;
+    if (selector === '[data-sp-select-all]') return fakeSelectAll;
+    if (selector === '[data-sp-selected-count]') return fakeCount;
+    if (selector === '[data-sp-bulk-assign]') return fakeBulk;
+    return null;
+  },
+  querySelectorAll: function (selector) {
+    if (selector === '[data-sp-select]') return fakeRowBoxes();
+    return [];
+  }
 };
 const exportCalls = [];
 const toasts = [];
@@ -288,6 +319,13 @@ function clickExport(format, scope) {
       return selector === '[data-sp-export]'
         ? { getAttribute: function (key) { return key === 'data-sp-export' ? format : scope; } }
         : null;
+    }
+  });
+}
+function changeSelectAll(checked) {
+  fire('change', {
+    closest: function (selector) {
+      return selector === '[data-sp-select-all]' ? { checked: checked } : null;
     }
   });
 }
@@ -553,6 +591,32 @@ clickExport('csv', 'selected');
 check('خروجی بدون مارک، فایل نمی‌سازد', exportCalls.length === beforeEmpty);
 check('خروجی بدون مارک، پیام راهنما می‌دهد',
   toasts.length > 0 && toasts[toasts.length - 1].indexOf('مارک') >= 0, toasts[toasts.length - 1]);
+
+// ── «انتخاب همه» ────────────────────────────────────────────────────────
+// کلیک تنها نباید انتخاب کند: مرورگر بعد از کلیک رویداد change می‌فرستد و
+// همان مسیر باید همه را مارک کند و چک‌باکس را تیک نگه دارد. (باگ قبلی: هندلر
+// کلیک جدول را بازسازی می‌کرد و چک‌باکس تازه بدون تیک ساخته می‌شد.)
+clickOn('data-sp-select-all');
+check('کلیک تنها روی «انتخاب همه» انتخاب نمی‌کند',
+  planner.buildSelectedRows().length === 1, planner.buildSelectedRows().length);
+
+changeSelectAll(true);
+check('«انتخاب همه» همهٔ کارکنان فیلترشده را مارک می‌کند',
+  planner.buildSelectedRows().length === 5, planner.buildSelectedRows().length);
+check('چک‌باکس «انتخاب همه» بعد از مارک، تیک می‌ماند', fakeSelectAll.checked === true);
+check('شمارندهٔ انتخاب به‌روز می‌شود', fakeCount.textContent.indexOf('۴') >= 0, fakeCount.textContent);
+check('دکمهٔ تخصیص گروهی با انتخاب همه فعال می‌شود', fakeBulk.disabled === false);
+
+// بازسازی جدول (مثلاً با مرتب‌سازی) نباید تیک «انتخاب همه» را پاک کند.
+clickOn('data-sp-sort-key', 'name');
+check('بعد از بازسازی جدول، «انتخاب همه» تیک می‌ماند', fakeSelectAll.checked === true);
+check('بعد از بازسازی جدول، انتخاب‌ها حفظ می‌شوند',
+  planner.buildSelectedRows().length === 5, planner.buildSelectedRows().length);
+
+changeSelectAll(false);
+check('برداشتن «انتخاب همه» همه را آزاد می‌کند',
+  planner.buildSelectedRows().length === 1, planner.buildSelectedRows().length);
+check('چک‌باکس «انتخاب همه» بعد از آزاد کردن، تیک ندارد', fakeSelectAll.checked === false);
 
 // ── ظاهر سطر شهر: سفید، متن مشکی، ۳۰٪ بزرگ‌تر ───────────────────────────
 const plannerCss = fs.readFileSync(path.join(root, 'design/shift-planner.css'), 'utf8');

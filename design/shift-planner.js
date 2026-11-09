@@ -424,6 +424,9 @@
       if (legacyHost) bridge.legacySchedule(legacyHost);
     }
     if (bridge.enhanceJalaliInputs) bridge.enhanceJalaliInputs(section);
+    // وضعیت چک‌باکس‌ها از روی انتخاب فعلی بازسازی می‌شود؛ وگرنه بعد از هر
+    // رندر تازه، «انتخاب همه» و چک‌باکس ایستگاه‌ها بی‌تیک دیده می‌شوند.
+    syncSelectionUi();
   }
 
   function renderTab(state) {
@@ -444,6 +447,7 @@
       if (legacyHost) bridge.legacySchedule(legacyHost);
     }
     if (bridge.enhanceJalaliInputs) bridge.enhanceJalaliInputs(host);
+    syncSelectionUi();
   }
 
   // ── تب ۱: قالب شیفت و روش کاری ──────────────────────────────────────────
@@ -1676,11 +1680,6 @@
       return;
     }
 
-    if (target.closest('[data-sp-select-all]')) {
-      filteredEmployees(data()).forEach(function (employee) { selected[employee.id] = true; });
-      refresh();
-      return;
-    }
     if (target.closest('[data-sp-select-invert]')) {
       filteredEmployees(data()).forEach(function (employee) {
         if (selected[employee.id]) delete selected[employee.id];
