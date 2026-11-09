@@ -77,6 +77,46 @@ check('ستون‌های روز کلاس عمودی می‌گیرند',
   (vertical.match(/class="atlas-print-vert"/g) || []).length >= 3, vertical);
 check('بدون verticalFrom ستون عمودی ساخته نمی‌شود', !/atlas-print-vert/.test(html));
 
+// ── صفت عمودی باید روی خودِ برگه بنشیند، نه فقط روی جدول ──
+// قواعد print.css با #atlasPrintArea[data-vertical="1"] نوشته شده‌اند؛ اگر
+// render این صفت را روی برگه نگذارد، ستون‌ها افقی می‌مانند و فونت به‌هم می‌ریزد.
+function fakeHost() {
+  return {
+    attrs: {},
+    innerHTML: '',
+    setAttribute: function (key, value) { this.attrs[key] = String(value); },
+    removeAttribute: function (key) { delete this.attrs[key]; }
+  };
+}
+const verticalHost = fakeHost();
+sheet.render(verticalHost, [['نام', '۱', '۲'], ['علی', 'روز', 'شب']], { title: 'تقویم', verticalFrom: 1 });
+check('صفت data-vertical روی برگهٔ چاپ ست می‌شود', verticalHost.attrs['data-vertical'] === '1', JSON.stringify(verticalHost.attrs));
+check('برگهٔ چاپ کلاس عمودی را در HTML دارد', /atlas-print-vert/.test(verticalHost.innerHTML));
+
+const plainHost = fakeHost();
+sheet.render(plainHost, [['نام', 'وضعیت'], ['علی', 'فعال']], { title: 'کارکنان' });
+check('برگهٔ بدون ستون عمودی صفت data-vertical ندارد', !('data-vertical' in plainHost.attrs), JSON.stringify(plainHost.attrs));
+
+// ── تشخیص خودکار: وقتی ستون‌ها در عرض A4 جا نشوند، ستون‌های کوتاه عمودی می‌شوند ──
+const calendarSheet = [['کارمند', 'شماره', 'شهر', 'محل خدمت'].concat(Array.from({ length: 31 }, (_, i) => String(i + 1)))];
+calendarSheet.push(['محمدحسین عبداللهی', '101001', 'تهران', 'ایستگاه ۲'].concat(Array.from({ length: 31 }, () => 'روز')));
+check('تقویم ۳۵ ستونه خودکار از ستون چهارم عمودی می‌شود', sheet.resolveVerticalFrom(calendarSheet) === 4, String(sheet.resolveVerticalFrom(calendarSheet)));
+check('verticalFrom دستی بر تشخیص خودکار مقدم است', sheet.resolveVerticalFrom(calendarSheet, 2) === 2);
+
+const shortColumns = [Array.from({ length: 13 }, (_, i) => 'ستون' + (i + 1))];
+shortColumns.push(Array.from({ length: 13 }, () => 'فعال'));
+check('جدول ۱۳ ستونهٔ کوتاه افقی می‌ماند', sheet.resolveVerticalFrom(shortColumns) === -1, String(sheet.resolveVerticalFrom(shortColumns)));
+
+const longColumns = [['نام', 'واحد', 'وضعیت', 'شهر', 'تلفن', 'کد', 'تاریخ', 'شرح', 'محل', 'نوع', 'گروه', 'شیفت', 'توضیح']];
+longColumns.push(['علی رضایی', 'بهره‌برداری', 'فعال', 'تهران', '0912', '1001', '۱۴۰۵/۰۱/۰۱', 'شرح بلند', 'ایستگاه یک', 'نوع', 'گروه', 'شیفت', 'توضیح']);
+check('ستون‌های متنی بلند عمودی نمی‌شوند', sheet.resolveVerticalFrom(longColumns) === -1, String(sheet.resolveVerticalFrom(longColumns)));
+
+// ── پهنای ستون‌ها در جدول چندستونه نباید ستون نام را خرد کند ──
+const wideCalendarWidths = sheet.columnPercents(calendarSheet);
+check('در تقویم ۳۵ ستونه ستون نام خوانا می‌ماند', wideCalendarWidths[0] >= 10, wideCalendarWidths.slice(0, 5).join('+'));
+check('در تقویم ۳۵ ستونه مجموع پهنای ستون‌ها ۱۰۰٪ است', wideCalendarWidths.reduce((a, b) => a + b, 0) === 100, wideCalendarWidths.reduce((a, b) => a + b, 0));
+check('هیچ ستون تقویم باریک‌تر از کف نیست', wideCalendarWidths.every(w => w >= 2), Math.min.apply(null, wideCalendarWidths));
+
 // ستون‌های عمودی کم‌عرض‌اند تا ستون‌های اطلاعاتی خوانا بمانند.
 const vertWidths = sheet.columnPercents([
   ['نام و نام خانوادگی', '۱', '۲', '۳'],
