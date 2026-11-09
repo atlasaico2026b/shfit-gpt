@@ -720,31 +720,16 @@ function clickAttr(selector, value) {
 function currentModal() { return document.body.children[document.body.children.length - 1]; }
 
 clickOn('data-sp-tab', 'methods');
-clickOn('data-sp-pick-template', 't1'); // کلیک دوباره انتخاب را برمی‌دارد
 clickAttr('[data-sp-new="method"]', '');
 let methodModal = currentModal();
 check('پنجرهٔ قالب روزکاری نوع را نمی‌پرسد', methodModal.innerHTML.indexOf('name="kind"') < 0);
-check('پنجرهٔ قالب روزکاری انتخاب قالب شیفت دارد',
-  methodModal.innerHTML.indexOf('data-sp-method-template') >= 0);
-check('گزینهٔ «بدون قالب» در انتخابگر هست',
-  methodModal.innerHTML.indexOf('>بدون قالب — روزکار هفتگی</option>') >= 0);
-check('روزکار قوانین هفتگی را نشان می‌دهد',
+check('پنجرهٔ قالب روزکاری انتخاب قالب شیفت ندارد',
+  methodModal.innerHTML.indexOf('data-sp-method-template') < 0);
+check('پنجرهٔ قالب روزکاری بلوک الگوی شیفت ندارد',
+  methodModal.innerHTML.indexOf('data-sp-pattern-block') < 0);
+check('قالب روزکاری قوانین هفتگی را نشان می‌دهد',
   methodModal.innerHTML.indexOf('data-sp-week-block') >= 0 &&
   methodModal.innerHTML.indexOf('data-sp-week-block hidden') < 0);
-check('روزکار بلوک الگوی شیفت را پنهان می‌کند',
-  methodModal.innerHTML.indexOf('data-sp-pattern-block hidden') >= 0);
-clickAttr('[data-sp-close]', '');
-
-clickOn('data-sp-pick-template', 't1');
-clickAttr('[data-sp-new="method"]', '');
-methodModal = currentModal();
-check('قالب شیفتِ فعال پیش‌انتخاب شده است',
-  methodModal.innerHTML.indexOf('value="t1" selected') >= 0);
-check('قالب روزکاری شیفتی بلوک الگو را نشان می‌دهد',
-  methodModal.innerHTML.indexOf('data-sp-pattern-block') >= 0 &&
-  methodModal.innerHTML.indexOf('data-sp-pattern-block hidden') < 0);
-check('قالب روزکاری شیفتی روزهای هفته را پنهان می‌کند',
-  methodModal.innerHTML.indexOf('data-sp-week-block hidden') >= 0);
 clickAttr('[data-sp-close]', '');
 
 // دکمه‌های خروجی پنجرهٔ «شیفت یک نفر» باید فعال باشند.
@@ -885,30 +870,6 @@ check('راهنما ساعت شیفت چرخشی را دارد',
 check('خروجی تقویم ستون‌های روز را عمودی می‌کند',
   gridCall && gridCall.options && gridCall.options.verticalFrom === 4,
   gridCall && gridCall.options && gridCall.options.verticalFrom);
-
-// ── قالب‌های آماده: قابل ویرایش و حذف ──
-const builtinPresets = e.builtinPresets();
-check('قالب‌های آماده پیش‌فرض ساخته می‌شوند', builtinPresets.length >= 7, builtinPresets.length);
-check('هر قالب آماده شناسه و نام دارد',
-  builtinPresets.every(function (p) { return p.id && p.name && p.spec; }));
-check('بدون ذخیره، فهرست پیش‌فرض برگردانده می‌شود',
-  e.presetList({}).length === builtinPresets.length);
-const presetState = {};
-const materialized = e.materializePresets(presetState);
-check('اولین ویرایش/حذف فهرست را در state می‌نویسد',
-  Array.isArray(presetState.shiftPresets) && materialized.length === builtinPresets.length);
-const edited = e.findPreset(presetState, builtinPresets[0].id);
-edited.name = 'نام تازه';
-check('ویرایش نام قالب آماده در state می‌ماند',
-  e.findPreset(presetState, builtinPresets[0].id).name === 'نام تازه');
-presetState.shiftPresets = presetState.shiftPresets.filter(function (p) {
-  return p.id !== builtinPresets[0].id;
-});
-check('حذف قالب آماده از فهرست کم می‌کند',
-  e.presetList(presetState).length === builtinPresets.length - 1 &&
-  !e.findPreset(presetState, builtinPresets[0].id));
-check('حذف همهٔ قالب‌ها فهرست خالی می‌دهد',
-  e.presetList({ shiftPresets: [] }).length === 0);
 
 // ── گزارش ──
 let failed = 0;

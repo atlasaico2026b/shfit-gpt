@@ -147,64 +147,6 @@
   white-space: nowrap;
 }
 
-/* ── قالب‌های آماده ─────────────────────────────────────────────────────── */
-.sp-presets {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 12px;
-  border: 1px dashed var(--line);
-  border-radius: var(--radius);
-  background: var(--panel);
-  font-size: 12px;
-  color: var(--muted);
-}
-
-/* هر قالب آماده: چیپ + دکمه‌های ویرایش و حذف */
-.sp-preset {
-  display: inline-flex;
-  align-items: stretch;
-  gap: 0;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  overflow: hidden;
-  background: var(--panel-2, var(--panel));
-}
-
-.sp-preset .list-chip {
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-}
-
-.sp-preset-act {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  padding: 0;
-  border: 0;
-  border-inline-start: 1px solid var(--line);
-  background: transparent;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.sp-preset-act:hover,
-.sp-preset-act:focus-visible {
-  background: var(--hover, rgba(0, 0, 0, .06));
-  color: var(--text-bright);
-}
-
-.sp-preset-act.is-danger:hover,
-.sp-preset-act.is-danger:focus-visible {
-  background: var(--danger-soft, rgba(220, 38, 38, .12));
-  color: var(--danger, #dc2626);
-}
-
 /* ── کارت روش کاری / قالب شیفت ──────────────────────────────────────────── */
 .sp-card-grid {
   display: grid;

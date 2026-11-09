@@ -716,11 +716,6 @@
     ['shiftMethods', 'shiftTemplates', 'shiftAssignments', 'shiftOverrides'].forEach(function (key) {
       if (Array.isArray(value[key])) out[key] = value[key].filter(function (item) { return item && typeof item === 'object'; });
     });
-    // قالب‌های آماده فقط وقتی ذخیره می‌شوند که کاربر ویرایش/حذف کرده باشد؛
-    // نبودشان یعنی «همان فهرست پیش‌فرض».
-    if (Array.isArray(value.shiftPresets)) {
-      out.shiftPresets = value.shiftPresets.filter(function (item) { return item && typeof item === 'object'; });
-    }
     out.schemaVersion = 2;
     out.updatedAt = value.updatedAt || '';
     ensureReferenceLists(out);
@@ -6364,11 +6359,6 @@
         ['shiftMethods', 'shiftTemplates', 'shiftAssignments', 'shiftOverrides'].forEach(function (key) {
           state[key] = JSON.parse(JSON.stringify(appData[key] || []));
         });
-        // قالب‌های آماده فقط اگر کاربر تغییرشان داده باشد در پشتیبان می‌آیند؛
-        // نبودشان یعنی فهرست پیش‌فرض و نباید با آرایهٔ خالی بازنویسی شود.
-        if (Array.isArray(appData.shiftPresets)) {
-          state.shiftPresets = JSON.parse(JSON.stringify(appData.shiftPresets));
-        }
       }
       state.history = (appData.history || []).filter(function (item) { return item.module === scope.key; });
       return state;
