@@ -1255,6 +1255,18 @@
     const ids = String(modal.getAttribute('data-sp-ids') || '').split(',').filter(Boolean);
     if (!ids.length) { closeModal(); return; }
     ids.forEach(function (employeeId) {
+      // مثل تخصیص تک‌نفری: اگر کارمند از قبل تخصیص دارد، همان به‌روزرسانی
+      // می‌شود؛ وگرنه تخصیص تازه با همان تاریخ شروع اضافه می‌شد و تخصیص قبلی
+      // (که بازه‌اش باز است) برنده می‌ماند.
+      const current = assignmentFor(state, employeeId, from);
+      if (current) {
+        current.methodId = methodId;
+        current.from = from;
+        current.to = to;
+        current.note = note;
+        current.active = true;
+        return;
+      }
       state.shiftAssignments = (state.shiftAssignments || []).concat([{
         id: bridge.createId(),
         employeeId: employeeId,
@@ -1739,6 +1751,31 @@
     }
   }
 
+  // تغییر روش کاری یک کارمند: همان تخصیص جاری به‌روزرسانی می‌شود، نه اینکه
+  // تخصیص تازه‌ای با همان تاریخ شروع اضافه شود. اگر تخصیص تازه اضافه شود،
+  // `assignmentFor` بین دو تخصیص با تاریخ شروع یکسان اولی را برمی‌گرداند و
+  // تخصیص قبلی (که بازه‌اش باز است) برنده می‌ماند؛ نتیجه: تغییر اعمال نمی‌شد.
+  function setAssignmentMethod(state, employeeId, methodId, iso, id) {
+    const current = assignmentFor(state, employeeId, iso);
+    if (current) {
+      current.methodId = methodId;
+      current.active = true;
+      return current;
+    }
+    const created = {
+      id: id || ('a-' + String(employeeId) + '-' + String(iso)),
+      employeeId: employeeId,
+      methodId: methodId,
+      from: iso,
+      to: '',
+      note: '',
+      active: true,
+      createdAt: new Date().toISOString()
+    };
+    state.shiftAssignments = (state.shiftAssignments || []).concat([created]);
+    return created;
+  }
+
   async function quickAssign(employeeId, methodId) {
     const state = data();
     if (!methodId) {
@@ -1748,17 +1785,12 @@
       if (await bridge.save()) { refresh(); bridge.toast('تخصیص برداشته شد.'); }
       return;
     }
-    state.shiftAssignments = (state.shiftAssignments || []).concat([{
-      id: bridge.createId(),
-      employeeId: employeeId,
-      methodId: methodId,
-      from: todayIso(),
-      to: '',
-      note: '',
-      active: true,
-      createdAt: new Date().toISOString()
-    }]);
-    if (await bridge.save()) { refresh(); bridge.toast('روش کاری تخصیص داده شد.'); }
+    const existing = assignmentFor(state, employeeId, todayIso());
+    setAssignmentMethod(state, employeeId, methodId, todayIso(), bridge.createId());
+    if (await bridge.save()) {
+      refresh();
+      bridge.toast(existing ? 'روش کاری تغییر کرد.' : 'روش کاری تخصیص داده شد.');
+    }
   }
 
   async function removeRecord(kind, id) {
@@ -1894,6 +1926,7 @@
       overrideFor: overrideFor,
       leaveFor: leaveFor,
       resolve: resolve,
+      setAssignmentMethod: setAssignmentMethod,
       methodIsShift: methodIsShift,
       methodRef: methodRef,
       methodLabel: methodLabel,

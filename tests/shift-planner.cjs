@@ -166,6 +166,40 @@ check('گزینهٔ انتخاب‌شده selected می‌شود',
   e.methodOptions(state, 't1').indexOf('value="t1" class="sp-opt-shift" selected') >= 0,
   e.methodOptions(state, 't1').slice(0, 200));
 
+// ── تغییر روش کاری: باید همان تخصیص به‌روزرسانی شود، نه تخصیص تازه ────────
+// باگ: quickAssign تخصیص تازه با همان تاریخ شروع اضافه می‌کرد و چون
+// assignmentFor بین دو تاریخ شروع یکسان اولی را برمی‌گرداند، تخصیص قبلی
+// برنده می‌ماند و تغییر روش کاری هیچ اثری نداشت.
+const changeState = {
+  employees: [{ id: 'e1', firstName: 'علی', lastName: 'رضایی' }],
+  shiftMethods: [office, { id: 'm2', name: 'چرخشی', kind: 'rotating', templateId: 't1' }],
+  shiftTemplates: [template],
+  shiftAssignments: [{ id: 'a1', employeeId: 'e1', methodId: 'm1', from: '2026-11-01', to: '', active: true }],
+  shiftOverrides: [],
+  leaves: []
+};
+check('قبل از تغییر: روزکار', e.resolve(changeState, 'e1', '2026-11-01').label === 'روزکار',
+  e.resolve(changeState, 'e1', '2026-11-01').label);
+e.setAssignmentMethod(changeState, 'e1', 'm2', '2026-11-07', 'a2');
+check('بعد از تغییر: صبح‌کار', e.resolve(changeState, 'e1', '2026-11-01').label === 'صبح‌کار',
+  e.resolve(changeState, 'e1', '2026-11-01').label);
+check('تغییر روش کاری تخصیص تازه اضافه نمی‌کند', changeState.shiftAssignments.length === 1,
+  changeState.shiftAssignments.length);
+check('تغییر روش کاری شناسهٔ تخصیص را حفظ می‌کند', changeState.shiftAssignments[0].id === 'a1',
+  changeState.shiftAssignments[0].id);
+check('تغییر روش کاری تاریخ شروع را دست نمی‌زند', changeState.shiftAssignments[0].from === '2026-11-01',
+  changeState.shiftAssignments[0].from);
+e.setAssignmentMethod(changeState, 'e1', 'm1', '2026-11-07', 'a3');
+check('برگشت به روش قبلی هم اعمال می‌شود', e.resolve(changeState, 'e1', '2026-11-01').label === 'روزکار',
+  e.resolve(changeState, 'e1', '2026-11-01').label);
+check('برگشت هم تخصیص تازه نمی‌سازد', changeState.shiftAssignments.length === 1);
+
+// کارمندی که تخصیص ندارد، تخصیص تازه می‌گیرد.
+const freshState = { employees: [], shiftMethods: [office], shiftTemplates: [], shiftAssignments: [], shiftOverrides: [], leaves: [] };
+e.setAssignmentMethod(freshState, 'e9', 'm1', '2026-11-07', 'a9');
+check('کارمند بدون تخصیص، تخصیص تازه می‌گیرد', freshState.shiftAssignments.length === 1);
+check('تخصیص تازه از تاریخ داده‌شده شروع می‌شود', freshState.shiftAssignments[0].from === '2026-11-07');
+
 // ── رویدادها ثبت شده‌اند ──
 check('گوش‌دهنده‌های سراسری ثبت شدند', listeners.length >= 4, listeners.join(','));
 
