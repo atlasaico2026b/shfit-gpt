@@ -447,6 +447,12 @@
 
 .sp-city-cell { color: var(--muted); white-space: nowrap; }
 
+/* رنگ گزینه‌های کشویی «روش کاری»: قالب شیفت آبی، قالب روزکاری قرمز. */
+.sp-opt-shift { color: #1d4ed8; }
+.sp-opt-method { color: #dc2626; }
+optgroup.sp-opt-shift { color: #1d4ed8; font-weight: 700; }
+optgroup.sp-opt-method { color: #dc2626; font-weight: 700; }
+
 .sp-group-row .sp-check input { cursor: pointer; }
 
 .sp-link {
