@@ -146,7 +146,7 @@ check('ستون‌ها تکرار می‌شوند (thead)', /display:\s*table-he
 check('خط دور همهٔ خانه‌ها', /#atlasPrintArea th,\s*\n\s*#atlasPrintArea td\s*\{[^}]*border:\s*0\.7pt solid/.test(css.replace(/\r/g, '')));
 check('سرستون کلفت‌تر از متن', /#atlasPrintArea th\s*\{[^}]*font-weight:\s*800/.test(css));
 const thSize = Number((css.match(/#atlasPrintArea th\s*\{[^}]*font-size:\s*([\d.]+)pt/) || [])[1]);
-const tdSize = Number((css.match(/body\.atlas-printing #atlasPrintArea\s*\{[^}]*font-size:\s*([\d.]+)pt/) || [])[1]);
+const tdSize = Number((css.match(/#atlasPrintArea\s*\{[^}]*font-size:\s*([\d.]+)pt/) || [])[1]);
 check('سرستون یک پله درشت‌تر از متن', thSize > tdSize, 'th=' + thSize + 'pt td=' + tdSize + 'pt');
 check('سربرگ با خط جداکننده', /\.atlas-print-head\s*\{[^}]*border-bottom:\s*1\.4pt solid/.test(css));
 check('سلول‌ها هنگام شکست صفحه نصف نمی‌شوند', /page-break-inside:\s*avoid/.test(css));
@@ -162,7 +162,7 @@ check('ستون‌های عمودی از بالا به پایین نوشته م�
 check('حاشیهٔ صفحهٔ چاپ صفر است', /@page\s*\{[^}]*size:\s*A4 landscape[^}]*margin:\s*0\s*;/.test(css.replace(/\r/g, '')));
 check('برگهٔ چاپ به صفحهٔ نام‌دار وابسته نیست', !/page:\s*atlas-list/.test(css) && !/@page\s+atlas-list/.test(css));
 check('چاپ مستقیم کل صفحه (Ctrl+P) حاشیه را از padding بدنه می‌گیرد', /body:not\(\.atlas-printing\):not\(\.rf-printing\)\s*\{[^}]*padding:\s*9mm 9mm 11mm/.test(css.replace(/\r/g, '')));
-check('حاشیهٔ افقی برگه از padding خودش می‌آید', /body\.atlas-printing #atlasPrintArea\s*\{[^}]*padding:\s*0 9mm/.test(css.replace(/\r/g, '')));
+check('حاشیهٔ افقی برگه از padding خودش می‌آید', /#atlasPrintArea\s*\{[^}]*padding:\s*0 9mm/.test(css.replace(/\r/g, '')));
 check('سطر فاصلهٔ بالای صفحه ۹mm است', /\.atlas-print-pad > td\s*\{[^}]*height:\s*9mm/.test(css.replace(/\r/g, '')));
 check('سطر فاصلهٔ پایین صفحه ۱۱mm است', /\.atlas-print-pad-bottom > td\s*\{[^}]*height:\s*11mm/.test(css.replace(/\r/g, '')));
 check('سطرهای فاصله خط و کادر ندارند', /\.atlas-print-pad > td\s*\{[^}]*border:\s*0/.test(css.replace(/\r/g, '')));
@@ -195,6 +195,19 @@ const calendarWidths = sheet.columnPercents(calendarRows);
 check('۳۱ ستون تقویم مجموعاً ۱۰۰٪ عرض می‌گیرد',
   calendarWidths.reduce((a, b) => a + b, 0) === 100, calendarWidths.join('+'));
 check('هیچ ستون تقویم باریک‌تر از ۱٪ نیست', calendarWidths.every(w => w >= 1), calendarWidths.join('+'));
+
+// ── صفحه‌بندی از پیش‌محاسبه‌شده: هیچ سطری نصف نمی‌شود ──
+// کروم break-inside:avoid را روی tr پشتیبانی نمی‌کند؛ پس سطرها از پیش بین
+// صفحه‌ها تقسیم می‌شوند و هر صفحه جدول مستقل با سرستون کامل خودش است.
+check('ارتفاع A4 افقی درست تبدیل می‌شود', Math.abs(sheet.mmToPx(210) - 793.7) < 0.5, String(sheet.mmToPx(210)));
+check('سطرهای جا‌شده در یک صفحه می‌مانند', JSON.stringify(sheet.packPages([100, 100], 250)) === '[[0,1]]', JSON.stringify(sheet.packPages([100, 100], 250)));
+check('سطر جا‌نشده به صفحهٔ بعد می‌رود', JSON.stringify(sheet.packPages([100, 100, 100], 250)) === '[[0,1],[2]]', JSON.stringify(sheet.packPages([100, 100, 100], 250)));
+check('سطر بلندتر از صفحه تنها در یک صفحه می‌ماند', JSON.stringify(sheet.packPages([300], 250)) === '[[0]]', JSON.stringify(sheet.packPages([300], 250)));
+check('فهرست خالی صفحه‌ای نمی‌سازد', JSON.stringify(sheet.packPages([], 250)) === '[]');
+check('صفحه‌بندی روی میزبان بدون DOM خطا نمی‌دهد', sheet.paginate({}) === 0);
+check('render صفحه‌بندی را صدا می‌زند', /host\.innerHTML = build\(rows, o\);[\s\S]*?paginate\(host\)/.test(src));
+check('بین جدول‌های صفحه شکست صریح می‌گذارد', /\.atlas-print-page\s*\{[^}]*break-after:\s*page/.test(css.replace(/\r/g, '')));
+check('آخرین صفحه شکست اضافه نمی‌گیرد', /\.atlas-print-page:last-child\s*\{[^}]*break-after:\s*auto/.test(css.replace(/\r/g, '')));
 
 const failed = checks.filter(c => !c.ok);
 checks.forEach(c => console.log((c.ok ? 'PASS ' : 'FAIL ') + c.name + (c.ok || !c.extra ? '' : ' → ' + c.extra)));

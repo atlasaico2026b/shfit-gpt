@@ -16,6 +16,269 @@
   display: none;
 }
 
+/* ── قواعد ظاهر برگه ──────────────────────────────────────────────────────
+   این قواعد عمداً بیرون از @media print هستند: صفحه‌بندی در جاوااسکریپت
+   (design/print-sheet.js) باید ارتفاع واقعی سرستون و سطرها را با همین
+   اندازه‌ها اندازه بگیرد. #atlasPrintArea روی صفحه display:none است، پس
+   این قواعد ظاهر برنامه را عوض نمی‌کنند. */
+#atlasPrintArea {
+  width: 100%;
+  box-sizing: border-box;
+  /* فقط حاشیهٔ افقی؛ حاشیهٔ عمودی را سطرهای فاصله‌دهندهٔ thead/tfoot می‌سازند
+     تا در صفحهٔ دوم به بعد هم تکرار شود. */
+  padding: 0 9mm;
+  color: var(--print-ink) !important;
+  background: var(--print-paper) !important;
+  font-family: Tahoma, "Vazirmatn", "Segoe UI", sans-serif;
+  font-size: 8.5pt;
+  line-height: 1.6;
+  direction: rtl;
+  text-align: right;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* ── سربرگ برگه: نام موضوع، درشت و کلفت، با خط جداکننده ── */
+#atlasPrintArea .atlas-print-head {
+  margin: 0;
+  padding: 0 0 2mm;
+  border-bottom: 1.4pt solid var(--print-ink);
+}
+
+#atlasPrintArea .atlas-print-title,
+#atlasPrintArea h1 {
+  margin: 0;
+  font-family: "B Nazanin", "Vazirmatn", Tahoma, sans-serif;
+  font-size: 15pt;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: 0;
+  color: var(--print-ink);
+  text-align: right;
+}
+
+#atlasPrintArea .atlas-print-meta {
+  margin: 1.2mm 0 0;
+  font-size: 8pt;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--print-ink);
+  text-align: right;
+}
+
+/* راهنمای شیفت و روزکار: یک سطر بالای سرستون‌ها، پیش از جدول روزها. */
+#atlasPrintArea .atlas-print-legend {
+  margin: 1.2mm 0 0;
+  font-size: 8pt;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--print-ink);
+  text-align: right;
+}
+
+/* ── جدول: ستون‌های هم‌عرض، خط کامل بین سطر و ستون ── */
+#atlasPrintArea .atlas-print-table {
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  direction: rtl;
+  font-family: Tahoma, "Vazirmatn", "Segoe UI", sans-serif;
+  font-size: 8.5pt;
+}
+
+/* ── شکستن صفحه: هیچ سطری نصف نمی‌شود ──
+   کروم break-inside:avoid را روی tr پشتیبانی نمی‌کند (باگ ۴۰۴۴۱۹۵۰)، پس
+   صفحه‌بندی واقعی در design/print-sheet.js انجام می‌شود: سطرها از پیش بین
+   صفحه‌ها تقسیم می‌شوند و هر صفحه جدول مستقل با سرستون کامل خودش است.
+   این قواعد فقط تور ایمنی‌اند. */
+#atlasPrintArea table {
+  break-inside: auto;
+  page-break-inside: auto;
+}
+
+#atlasPrintArea tbody {
+  break-inside: auto;
+  page-break-inside: auto;
+}
+
+#atlasPrintArea thead {
+  display: table-header-group;
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+#atlasPrintArea tfoot {
+  display: table-footer-group;
+}
+
+#atlasPrintArea tr,
+#atlasPrintArea td,
+#atlasPrintArea th {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+/* سطر داده هرگز بین دو صفحه نصف نمی‌شود؛ اگر در فضای باقی‌مانده کامل جا
+   نشود، یک‌جا به صفحهٔ بعد می‌رود. */
+#atlasPrintArea tbody tr {
+  page-break-inside: avoid;
+  break-inside: avoid;
+  break-inside: avoid-page;
+}
+
+#atlasPrintArea td,
+#atlasPrintArea th {
+  orphans: 2;
+  widows: 2;
+}
+
+#atlasPrintArea th,
+#atlasPrintArea td {
+  padding: 1.6mm 2mm;
+  border: 0.7pt solid var(--print-grid);
+  color: var(--print-ink);
+  background: var(--print-paper);
+  text-align: right;
+  vertical-align: middle;
+  line-height: 1.6;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: auto;
+}
+
+#atlasPrintArea th {
+  font-size: 9.5pt;
+  font-weight: 800;
+  line-height: 1.45;
+  background: var(--print-head-fill) !important;
+  border-width: 0.9pt;
+  border-bottom-width: 1.5pt;
+  padding: 2mm;
+  text-align: center;
+}
+
+#atlasPrintArea tbody tr:nth-child(even) td {
+  background: var(--print-paper);
+}
+
+#atlasPrintArea .atlas-print-empty {
+  padding: 6mm 2mm;
+  text-align: center;
+  font-size: 9pt;
+  border: 0.7pt solid var(--print-grid);
+}
+
+/* عدد، تاریخ و تلفن وسط عدد شکسته نمی‌شود؛ کمی ریزتر تا در ستون باریک جا شود */
+#atlasPrintArea .atlas-print-num {
+  white-space: nowrap;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.88em;
+  letter-spacing: -0.02em;
+}
+
+/* ── ستون‌های باریک (روزهای تقویم) وقتی جا کم است ──
+   متن از بالا به پایین نوشته می‌شود تا با زیادشدن ستون‌ها فونت به‌هم نریزد و
+   هر ستون فقط به اندازهٔ یک خط جا بگیرد. */
+#atlasPrintArea[data-vertical="1"] .atlas-print-vert {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  white-space: nowrap;
+  text-align: center;
+  vertical-align: middle;
+  padding: 1.2mm 0.5mm;
+  line-height: 1.15;
+  font-size: 0.9em;
+}
+
+#atlasPrintArea[data-vertical="1"] th.atlas-print-vert {
+  height: 18mm;
+  font-size: 0.95em;
+  font-weight: 800;
+}
+
+/* ── تناسب خودکار با تعداد ستون‌ها ── */
+#atlasPrintArea[data-density="compact"] .atlas-print-table {
+  font-size: 8pt;
+}
+
+#atlasPrintArea[data-density="compact"] th,
+#atlasPrintArea[data-density="compact"] td {
+  padding: 1.3mm 1.6mm;
+  line-height: 1.5;
+}
+
+#atlasPrintArea[data-density="compact"] th {
+  font-size: 8.8pt;
+  padding: 1.6mm;
+}
+
+#atlasPrintArea[data-density="tight"] .atlas-print-table {
+  font-size: 7pt;
+}
+
+#atlasPrintArea[data-density="tight"] th,
+#atlasPrintArea[data-density="tight"] td {
+  padding: 1mm 1.2mm;
+  line-height: 1.45;
+}
+
+#atlasPrintArea[data-density="tight"] th {
+  font-size: 7.8pt;
+  padding: 1.2mm;
+}
+
+#atlasPrintArea a {
+  color: var(--print-ink);
+  text-decoration: none;
+}
+
+#atlasPrintArea img,
+#atlasPrintArea button {
+  display: none !important;
+}
+
+/* ── حاشیهٔ هر صفحه و سربرگ تکرارشونده ──
+   این سطرها در thead/tfoot هستند، پس در هر صفحه تکرار می‌شوند و همان حاشیهٔ
+   ۹mm بالا و ۱۱mm پایین را می‌سازند که قبلاً @page می‌داد. */
+#atlasPrintArea .atlas-print-pad > td {
+  height: 9mm;
+  padding: 0;
+  border: 0;
+  line-height: 0;
+  font-size: 0;
+}
+
+#atlasPrintArea .atlas-print-pad-bottom > td {
+  height: 11mm;
+}
+
+#atlasPrintArea .atlas-print-head-row > td {
+  padding: 0 0 3mm;
+  border: 0;
+  vertical-align: top;
+}
+
+/* سربرگ و سرستون‌ها هرگز از هم جدا نمی‌شوند و در پای صفحه تنها نمی‌مانند. */
+#atlasPrintArea thead tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* ── صفحه‌بندی از پیش‌محاسبه‌شده ──
+   هر صفحه یک جدول مستقل است؛ بین جدول‌ها شکست صفحهٔ صریح می‌گذاریم تا هیچ
+   سطری نصف نشود و سرستون در بالای هر صفحه تکرار شود. */
+#atlasPrintArea .atlas-print-page {
+  break-after: page;
+  page-break-after: always;
+}
+
+#atlasPrintArea .atlas-print-page:last-child {
+  break-after: auto;
+  page-break-after: auto;
+}
+
 @media print {
   /* حاشیهٔ صفحه صفر است تا مرورگر سرصفحه/پاصفحهٔ خودش (آدرس سایت، تاریخ، ساعت
      و «۱ از ۲») را چاپ نکند؛ آن‌ها فقط داخل حاشیهٔ صفحه رسم می‌شوند و با
@@ -56,245 +319,5 @@
 
   body.atlas-printing #atlasPrintArea {
     display: block !important;
-    width: 100%;
-    box-sizing: border-box;
-    /* فقط حاشیهٔ افقی؛ حاشیهٔ عمودی را سطرهای فاصله‌دهندهٔ thead/tfoot می‌سازند
-       تا در صفحهٔ دوم به بعد هم تکرار شود. */
-    padding: 0 9mm;
-    color: var(--print-ink) !important;
-    background: var(--print-paper) !important;
-    font-family: Tahoma, "Vazirmatn", "Segoe UI", sans-serif;
-    font-size: 8.5pt;
-    line-height: 1.6;
-    direction: rtl;
-    text-align: right;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  /* ── سربرگ برگه: نام موضوع، درشت و کلفت، با خط جداکننده ── */
-  #atlasPrintArea .atlas-print-head {
-    margin: 0;
-    padding: 0 0 2mm;
-    border-bottom: 1.4pt solid var(--print-ink);
-  }
-
-  #atlasPrintArea .atlas-print-title,
-  #atlasPrintArea h1 {
-    margin: 0;
-    font-family: "B Nazanin", "Vazirmatn", Tahoma, sans-serif;
-    font-size: 15pt;
-    font-weight: 800;
-    line-height: 1.35;
-    letter-spacing: 0;
-    color: var(--print-ink);
-    text-align: right;
-  }
-
-  #atlasPrintArea .atlas-print-meta {
-    margin: 1.2mm 0 0;
-    font-size: 8pt;
-    font-weight: 400;
-    line-height: 1.5;
-    color: var(--print-ink);
-    text-align: right;
-  }
-
-  /* راهنمای شیفت و روزکار: یک سطر بالای سرستون‌ها، پیش از جدول روزها. */
-  #atlasPrintArea .atlas-print-legend {
-    margin: 1.2mm 0 0;
-    font-size: 8pt;
-    font-weight: 600;
-    line-height: 1.5;
-    color: var(--print-ink);
-    text-align: right;
-  }
-
-  /* ── جدول: ستون‌های هم‌عرض، خط کامل بین سطر و ستون ── */
-  #atlasPrintArea .atlas-print-table {
-    width: 100%;
-    max-width: 100%;
-    table-layout: fixed;
-    border-collapse: collapse;
-    direction: rtl;
-    font-family: Tahoma, "Vazirmatn", "Segoe UI", sans-serif;
-    font-size: 8.5pt;
-  }
-
-  /* ── شکستن صفحه: هیچ سطری نصف نمی‌شود ──
-     سطری که در فضای باقی‌ماندهٔ صفحه کامل جا نشود، یک‌جا به صفحهٔ بعد می‌رود؛
-     سرستون هم در بالای هر صفحه تکرار می‌شود و تنها نمی‌ماند. */
-  #atlasPrintArea table {
-    break-inside: auto;
-    page-break-inside: auto;
-  }
-
-  #atlasPrintArea tbody {
-    break-inside: auto;
-    page-break-inside: auto;
-  }
-
-  #atlasPrintArea thead {
-    display: table-header-group;
-    break-after: avoid;
-    page-break-after: avoid;
-  }
-
-  #atlasPrintArea tfoot {
-    display: table-footer-group;
-  }
-
-  #atlasPrintArea tr,
-  #atlasPrintArea td,
-  #atlasPrintArea th {
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
-
-  /* سطر داده هرگز بین دو صفحه نصف نمی‌شود؛ اگر در فضای باقی‌مانده کامل جا
-     نشود، یک‌جا به صفحهٔ بعد می‌رود. */
-  #atlasPrintArea tbody tr {
-    page-break-inside: avoid;
-    break-inside: avoid;
-    break-inside: avoid-page;
-  }
-
-  #atlasPrintArea td,
-  #atlasPrintArea th {
-    orphans: 2;
-    widows: 2;
-  }
-
-  #atlasPrintArea th,
-  #atlasPrintArea td {
-    padding: 1.6mm 2mm;
-    border: 0.7pt solid var(--print-grid);
-    color: var(--print-ink);
-    background: var(--print-paper);
-    text-align: right;
-    vertical-align: middle;
-    line-height: 1.6;
-    overflow-wrap: break-word;
-    word-break: normal;
-    hyphens: auto;
-  }
-
-  #atlasPrintArea th {
-    font-size: 9.5pt;
-    font-weight: 800;
-    line-height: 1.45;
-    background: var(--print-head-fill) !important;
-    border-width: 0.9pt;
-    border-bottom-width: 1.5pt;
-    padding: 2mm;
-    text-align: center;
-  }
-
-  #atlasPrintArea tbody tr:nth-child(even) td {
-    background: var(--print-paper);
-  }
-
-  #atlasPrintArea .atlas-print-empty {
-    padding: 6mm 2mm;
-    text-align: center;
-    font-size: 9pt;
-    border: 0.7pt solid var(--print-grid);
-  }
-
-  /* عدد، تاریخ و تلفن وسط عدد شکسته نمی‌شود؛ کمی ریزتر تا در ستون باریک جا شود */
-  #atlasPrintArea .atlas-print-num {
-    white-space: nowrap;
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-    font-size: 0.88em;
-    letter-spacing: -0.02em;
-  }
-
-  /* ── ستون‌های باریک (روزهای تقویم) وقتی جا کم است ──
-     متن از بالا به پایین نوشته می‌شود تا با زیادشدن ستون‌ها فونت به‌هم نریزد و
-     هر ستون فقط به اندازهٔ یک خط جا بگیرد. */
-  #atlasPrintArea[data-vertical="1"] .atlas-print-vert {
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    white-space: nowrap;
-    text-align: center;
-    vertical-align: middle;
-    padding: 1.2mm 0.5mm;
-    line-height: 1.15;
-    font-size: 0.9em;
-  }
-
-  #atlasPrintArea[data-vertical="1"] th.atlas-print-vert {
-    height: 18mm;
-    font-size: 0.95em;
-    font-weight: 800;
-  }
-
-  /* ── تناسب خودکار با تعداد ستون‌ها ── */
-  #atlasPrintArea[data-density="compact"] .atlas-print-table {
-    font-size: 8pt;
-  }
-
-  #atlasPrintArea[data-density="compact"] th,
-  #atlasPrintArea[data-density="compact"] td {
-    padding: 1.3mm 1.6mm;
-    line-height: 1.5;
-  }
-
-  #atlasPrintArea[data-density="compact"] th {
-    font-size: 8.8pt;
-    padding: 1.6mm;
-  }
-
-  #atlasPrintArea[data-density="tight"] .atlas-print-table {
-    font-size: 7pt;
-  }
-
-  #atlasPrintArea[data-density="tight"] th,
-  #atlasPrintArea[data-density="tight"] td {
-    padding: 1mm 1.2mm;
-    line-height: 1.45;
-  }
-
-  #atlasPrintArea[data-density="tight"] th {
-    font-size: 7.8pt;
-    padding: 1.2mm;
-  }
-
-  #atlasPrintArea a {
-    color: var(--print-ink);
-    text-decoration: none;
-  }
-
-  #atlasPrintArea img,
-  #atlasPrintArea button {
-    display: none !important;
-  }
-
-  /* ── حاشیهٔ هر صفحه و سربرگ تکرارشونده ──
-     این سطرها در thead/tfoot هستند، پس در هر صفحه تکرار می‌شوند و همان حاشیهٔ
-     ۹mm بالا و ۱۱mm پایین را می‌سازند که قبلاً @page می‌داد. */
-  #atlasPrintArea .atlas-print-pad > td {
-    height: 9mm;
-    padding: 0;
-    border: 0;
-    line-height: 0;
-    font-size: 0;
-  }
-
-  #atlasPrintArea .atlas-print-pad-bottom > td {
-    height: 11mm;
-  }
-
-  #atlasPrintArea .atlas-print-head-row > td {
-    padding: 0 0 3mm;
-    border: 0;
-    vertical-align: top;
-  }
-
-  /* سربرگ و سرستون‌ها هرگز از هم جدا نمی‌شوند و در پای صفحه تنها نمی‌مانند. */
-  #atlasPrintArea thead tr {
-    break-inside: avoid;
-    page-break-inside: avoid;
   }
 }

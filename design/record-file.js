@@ -390,6 +390,9 @@
       '.rf-sheet .rf-table th{background:#eef1f8;font-weight:600}' +
       // هیچ سطری بین دو صفحه نصف نمی‌شود و سرستون جدول در هر صفحه تکرار می‌شود.
       '.rf-sheet tr,.rf-sheet td,.rf-sheet th{page-break-inside:avoid;break-inside:avoid}' +
+      // جدول کوتاه یک‌جا می‌ماند؛ اگر در فضای باقی‌ماندهٔ صفحه کامل جا نشود،
+      // یک‌جا به صفحهٔ بعد می‌رود و زیر سرستون‌های تازه می‌نشیند.
+      '.rf-sheet .rf-table{page-break-inside:avoid;break-inside:avoid}' +
       '.rf-sheet thead{display:table-header-group;break-after:avoid;page-break-after:avoid}' +
       '.rf-sheet tfoot{display:table-footer-group}' +
       '.rf-sheet .rf-sheet-foot{margin-top:6mm;border-top:1px solid #c7cede;padding-top:3mm}' +

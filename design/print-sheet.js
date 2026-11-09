@@ -156,6 +156,91 @@
     return value.length > 0 && value.length <= 18 && /^[\d۰-۹][\d۰-۹\s/:\-—.]*$/.test(value);
   }
 
+  // ── صفحه‌بندی از پیش‌محاسبه‌شده ─────────────────────────────────────────
+  // کروم break-inside:avoid را روی tr پشتیبانی نمی‌کند (باگ ۴۰۴۴۱۹۵۰)؛ پس
+  // نمی‌توان به مرورگر تکیه کرد که سطر را نصف نکند. اینجا ارتفاع واقعی
+  // سرستون و سطرها اندازه‌گیری می‌شود و سطرها از پیش بین صفحه‌ها تقسیم
+  // می‌شوند: هر صفحه یک جدول مستقل با سرستون کامل خودش. نتیجه: هیچ سطری
+  // نصف نمی‌شود و سطری که در فضای باقی‌مانده جا نشود، اولین سطر صفحهٔ بعد و
+  // زیر همان سرستون‌ها می‌نشیند.
+  const MM_PER_PX = 25.4 / 96;
+  const PAGE_HEIGHT_MM = 210;   // A4 افقی
+  const PAGE_WIDTH_MM = 297;
+  const SAFETY_MM = 3;          // حاشیهٔ اطمینان برای خطاهای گرد کردن
+
+  function mmToPx(mm) {
+    return mm / MM_PER_PX;
+  }
+
+  // تقسیم حریصانهٔ سطرها بین صفحه‌ها: هر سطر کامل در یک صفحه می‌ماند و اگر
+  // در فضای باقی‌مانده جا نشود، به صفحهٔ بعد می‌رود.
+  function packPages(heights, avail) {
+    const pages = [];
+    let current = [];
+    let used = 0;
+    (heights || []).forEach(function (h, index) {
+      if (current.length && used + h > avail) {
+        pages.push(current);
+        current = [];
+        used = 0;
+      }
+      current.push(index);
+      used += h;
+    });
+    if (current.length) pages.push(current);
+    return pages;
+  }
+
+  function paginate(host) {
+    if (!host || typeof host.querySelector !== 'function' || !host.parentNode) return 0;
+    const table = host.querySelector('table.atlas-print-table');
+    if (!table || !table.tBodies || !table.tBodies.length) return 0;
+    const tbody = table.tBodies[0];
+    const rows = Array.prototype.slice.call(tbody.rows);
+    if (rows.length < 2) return 0;
+
+    // اندازه‌گیری خارج از صفحه با همان عرض و همان قواعد ظاهر برگه.
+    const prevStyle = host.getAttribute('style');
+    host.setAttribute('style', 'display:block;visibility:hidden;position:absolute;left:-10000px;top:0;width:' + PAGE_WIDTH_MM + 'mm;');
+    void host.offsetHeight;
+
+    const thead = table.tHead;
+    const tfoot = table.tFoot;
+    const theadH = thead ? thead.getBoundingClientRect().height : 0;
+    const tfootH = tfoot ? tfoot.getBoundingClientRect().height : 0;
+    const heights = rows.map(function (row) { return row.getBoundingClientRect().height; });
+
+    if (prevStyle == null) host.removeAttribute('style');
+    else host.setAttribute('style', prevStyle);
+
+    const avail = mmToPx(PAGE_HEIGHT_MM) - theadH - tfootH - mmToPx(SAFETY_MM);
+    if (!(avail > 0)) return 0;
+
+    const total = heights.reduce(function (sum, h) { return sum + h; }, 0);
+    if (total <= avail) return 0;
+
+    const pages = packPages(heights, avail);
+    if (pages.length <= 1) return 0;
+
+    const colgroup = table.querySelector('colgroup');
+    const fragment = document.createDocumentFragment();
+    pages.forEach(function (pageRows, pageIndex) {
+      const clone = table.cloneNode(false);
+      if (pageIndex < pages.length - 1) clone.classList.add('atlas-print-page');
+      if (colgroup) clone.appendChild(colgroup.cloneNode(true));
+      if (thead) clone.appendChild(thead.cloneNode(true));
+      const body = document.createElement('tbody');
+      pageRows.forEach(function (index) { body.appendChild(rows[index].cloneNode(true)); });
+      clone.appendChild(body);
+      if (tfoot) clone.appendChild(tfoot.cloneNode(true));
+      fragment.appendChild(clone);
+    });
+
+    host.innerHTML = '';
+    host.appendChild(fragment);
+    return pages.length;
+  }
+
   function build(rows, options) {
     const o = options || {};
     const table = (rows || []).filter(row => Array.isArray(row) && row.length);
@@ -228,11 +313,17 @@
     if (verticalFrom >= 0 && verticalFrom < columns) host.setAttribute('data-vertical', '1');
     else host.removeAttribute('data-vertical');
     host.innerHTML = build(rows, o);
+    // سطرها از پیش بین صفحه‌ها تقسیم می‌شوند تا هیچ سطری نصف نشود و سرستون
+    // در بالای هر صفحه تکرار شود.
+    paginate(host);
   }
 
   window.AtlasPrintSheet = {
     build: build,
     render: render,
+    paginate: paginate,
+    packPages: packPages,
+    mmToPx: mmToPx,
     subject: subject,
     densityFor: densityFor,
     columnPercents: function (rows, verticalFrom) {
