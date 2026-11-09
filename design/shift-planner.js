@@ -543,6 +543,17 @@
       '</button></th>';
   }
 
+  // سرستون «مکان»: مثل بقیهٔ سرستون‌ها در بالای جدول است و ترتیب گروه‌های شهر
+  // را برمی‌گرداند (قبلاً دکمه‌اش داخل سطر عنوان شهر بود).
+  function cityHeader() {
+    const ascending = citySort === 'asc';
+    return '<th class="module-sort-th is-sorted" aria-sort="' + (ascending ? 'ascending' : 'descending') + '">' +
+      '<button type="button" class="module-sort-btn" data-sp-sort-city title="مرتب‌سازی بر اساس مکان">' +
+      '<span class="module-sort-label">مکان</span>' +
+      '<span class="module-sort-caret" aria-hidden="true">' + (ascending ? '↑' : '↓') + '</span>' +
+      '</button></th>';
+  }
+
   // مقداری که سرستون فعال بر اساسش مرتب می‌کند.
   function assignSortValue(state, employee) {
     const assignment = assignmentFor(state, employee.id, todayIso());
@@ -587,13 +598,9 @@
       return '<tr class="sp-group-row">' +
         '<td class="sp-check"><input type="checkbox" data-sp-select-city="' + esc(city) + '"' +
           (allPicked ? ' checked' : '') + ' aria-label="انتخاب همهٔ کارکنان ' + esc(city) + '"></td>' +
-        '<td colspan="5">' +
-          '<button type="button" class="sp-group-title" data-sp-sort-city aria-label="مرتب‌سازی شهرها">' +
-            'مکان<span class="sp-sort-arrow" aria-hidden="true">' + (citySort === 'asc' ? '▲' : '▼') + '</span>' +
-          '</button>' +
-          '<b class="sp-group-city">' + esc(city) + '</b>' +
-          '<span class="sp-group-count">· ' + fa(people.length) + ' نفر</span>' +
-        '</td></tr>' +
+        '<td class="sp-group-city">' + esc(city) +
+          '<span class="sp-group-count">· ' + fa(people.length) + ' نفر</span></td>' +
+        '<td colspan="5"></td></tr>' +
         people.map(function (employee) {
           const assignment = assignmentFor(state, employee.id, todayIso());
           const methodId = assignment ? String(assignment.methodId) : '';
@@ -611,6 +618,7 @@
           return '<tr>' +
             '<td class="sp-check"><input type="checkbox" data-sp-select="' + esc(employee.id) + '"' +
               (selected[employee.id] ? ' checked' : '') + ' aria-label="انتخاب ' + esc(bridge.employeeName(employee)) + '"></td>' +
+            '<td class="sp-city-cell">' + esc(city) + '</td>' +
             '<td><button type="button" class="sp-link" data-sp-person="' + esc(employee.id) + '">' +
               esc(bridge.employeeName(employee) || 'بدون نام') + '</button>' +
               (employee.personnelId ? '<small class="sp-sub">' + esc(employee.personnelId) + '</small>' : '') + '</td>' +
@@ -649,10 +657,10 @@
       '<button type="button" class="secondary-btn" data-sp-select-clear>پاک‌کردن انتخاب</button>' +
       '<span data-sp-selected-count>' + fa(selectedCount) + ' نفر انتخاب شده</span></div>' +
       '<div class="module-table-wrap"><table class="module-table sp-table"><thead><tr>' +
-      '<th class="sp-check"></th>' + sortHeader('name', 'نام و نام خانوادگی') + sortHeader('station', 'محل خدمت') +
+      '<th class="sp-check"></th>' + cityHeader() + sortHeader('name', 'نام و نام خانوادگی') + sortHeader('station', 'محل خدمت') +
       sortHeader('job', 'عنوان شغلی') + sortHeader('method', 'روش کاری') + sortHeader('range', 'شروع چرخه / بازه') +
       '</tr></thead><tbody>' +
-      (rows || '<tr><td colspan="6"><div class="module-empty">کارمندی با این فیلترها پیدا نشد.</div></td></tr>') +
+      (rows || '<tr><td colspan="7"><div class="module-empty">کارمندی با این فیلترها پیدا نشد.</div></td></tr>') +
       '</tbody></table></div></section>';
   }
 

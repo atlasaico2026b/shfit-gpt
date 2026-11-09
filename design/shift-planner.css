@@ -429,7 +429,7 @@
 }
 
 /* سطر عنوان هر شهر: سفید با متن مشکی و ۳۰٪ بزرگ‌تر از متن جدول، تا از
-   ردیف‌های کارکنان جدا دیده شود. عنوان «مکان» با کلیک، ترتیب را برمی‌گرداند.
+   ردیف‌های کارکنان جدا دیده شود. عنوان «مکان» سرستون جدول است (cityHeader).
    انتخابگر عمداً `tbody tr.sp-group-row` است تا از قاعدهٔ راه‌راه
    `.module-table tbody tr:nth-child(even) td` در spectrum.css قوی‌تر باشد؛
    وگرنه سطرهای زوجِ شهرها پس‌زمینهٔ تیرهٔ خود را نگه می‌داشتند. */
@@ -441,29 +441,11 @@
   border-color: #d5d9e4;
 }
 
-.sp-group-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-inline-end: 8px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: #000;
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-  text-decoration: underline dotted;
-  text-underline-offset: 3px;
-}
-
-.sp-group-title:hover { text-decoration: underline solid; }
-
-.sp-sort-arrow { font-size: 0.75em; line-height: 1; }
-
 .sp-group-city { font-weight: 700; }
 
 .sp-group-count { margin-inline-start: 4px; color: #333; }
+
+.sp-city-cell { color: var(--muted); white-space: nowrap; }
 
 .sp-group-row .sp-check input { cursor: pointer; }
 
