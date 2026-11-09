@@ -871,6 +871,15 @@ check('خروجی تقویم ستون‌های روز را عمودی می‌ک�
   gridCall && gridCall.options && gridCall.options.verticalFrom === 4,
   gridCall && gridCall.options && gridCall.options.verticalFrom);
 
+// ── سرستون عمودی تقویم روی صفحه ──
+// اصل: نوشتار افقی. فقط وقتی روزها زیاد می‌شوند و ستون باریک می‌شود، سرستون
+// روزها از بالا به پایین نوشته می‌شود تا کلمه نشکند.
+const gridHtml = planner.buildGridHtml();
+check('تقویم ۳۰ روزه سرستون روزها را عمودی می‌کند',
+  /class="sp-day-head is-vert"/.test(gridHtml), gridHtml.slice(0, 160));
+check('جدول تقویم نشانهٔ حالت عمودی می‌گیرد', /sp-grid sp-grid-vert/.test(gridHtml));
+check('ستون کارمند افقی می‌ماند', /<th class="sp-sticky-col">کارمند<\/th>/.test(gridHtml));
+
 // ── گزارش ──
 let failed = 0;
 checks.forEach(function (item) {

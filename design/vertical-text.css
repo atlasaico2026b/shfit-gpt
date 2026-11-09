@@ -1,0 +1,43 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   نوشتار عمودی (از بالا به پایین)
+   اصل برنامه نوشتار افقی است. این کلاس فقط جایی به کار می‌رود که ستون باریک
+   است و نوشتار افقی کلمه را می‌شکند؛ آن‌وقت متن از بالا به پایین نوشته
+   می‌شود تا کلمه سالم و خوانا بماند.
+   ───────────────────────────────────────────────────────────────────────── */
+
+.atlas-vert {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  white-space: nowrap;
+  text-align: center;
+  vertical-align: middle;
+  line-height: 1.15;
+}
+
+/* سرستون جدول: دکمهٔ مرتب‌سازی هم ستونی می‌شود تا برچسب و فلش روی هم نیفتند. */
+th.atlas-vert {
+  padding: 6px 3px;
+}
+
+th.atlas-vert .module-sort-btn {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+}
+
+th.atlas-vert .module-sort-label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  white-space: nowrap;
+}
+
+th.atlas-vert .module-sort-caret {
+  writing-mode: horizontal-tb;
+}
+
+/* خانهٔ دادهٔ عمودی: فقط برای خانه‌هایی که با data-vert-fit علامت خورده‌اند. */
+td.atlas-vert {
+  padding: 4px 2px;
+}

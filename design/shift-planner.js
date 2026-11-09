@@ -838,9 +838,12 @@
     if (!dates.length) return '<div class="module-empty">بازهٔ تاریخ معتبر نیست.</div>';
     if (!employees.length) return '<div class="module-empty">کارمندی با این فیلترها پیدا نشد.</div>';
 
+    // با زیادشدن روزها، ستون هر روز باریک می‌شود و نوشتار افقی سرستون را
+    // می‌شکند؛ از این تعداد به بعد سرستون روزها از بالا به پایین نوشته می‌شود.
+    const vertical = dates.length >= 16;
     const head = '<tr><th class="sp-sticky-col">کارمند</th>' + dates.map(function (iso) {
       const weekday = weekdayIndex(iso);
-      return '<th class="sp-day-head"><span>' + esc(WEEKDAYS_SHORT[weekday] || '') + '</span>' +
+      return '<th class="sp-day-head' + (vertical ? ' is-vert' : '') + '"><span>' + esc(WEEKDAYS_SHORT[weekday] || '') + '</span>' +
         '<b>' + esc(bridge.formatJalali(iso, false).split('/').slice(1).join('/')) + '</b></th>';
     }).join('') + '</tr>';
 
@@ -861,7 +864,7 @@
         '<small class="sp-sub">' + esc(employeeStation(employee) || '—') + '</small></th>' + cells + '</tr>';
     }).join('');
 
-    return '<div class="module-table-wrap sp-grid-wrap"><table class="module-table sp-grid">' +
+    return '<div class="module-table-wrap sp-grid-wrap"><table class="module-table sp-grid' + (vertical ? ' sp-grid-vert' : '') + '">' +
       '<thead>' + head + '</thead><tbody>' + rows + '</tbody></table></div>';
   }
 
@@ -873,8 +876,11 @@
       return out;
     }, []));
 
+    // با زیادشدن نوع شیفت‌ها، عنوان هر ستون باریک می‌شود؛ از این تعداد به بعد
+    // عنوان‌ها از بالا به پایین نوشته می‌شوند تا کلمه نشکند.
+    const vertical = columns.length >= 8;
     const head = '<tr><th class="sp-sticky-col">تاریخ</th><th>روز</th>' + columns.map(function (label) {
-      return '<th>' + esc(label) + '</th>';
+      return '<th' + (vertical ? ' class="is-vert"' : '') + '>' + esc(label) + '</th>';
     }).join('') + '</tr>';
 
     const rows = dates.map(function (iso) {
@@ -1943,6 +1949,15 @@
     render: render,
     // سازندهٔ ردیف‌های خروجی؛ برای آزمون و برای هر مصرف‌کنندهٔ دیگر.
     buildGridRows: function () { return gridRows(data()); },
+    // سازندهٔ HTML تقویم روی صفحه؛ برای آزمون چیدمان سرستون‌ها.
+    buildGridHtml: function () {
+      const state = data();
+      const dates = rangeDates(range.from, range.to);
+      const employees = filteredEmployees(state);
+      return gridMode === 'station'
+        ? stationGrid(state, dates, employees)
+        : employeeGrid(state, dates, employees);
+    },
     buildPersonRows: function (employeeId) { return personRows(data(), employeeId); },
     buildSelectedRows: function () { return selectedRows(data()); },
     engine: {
