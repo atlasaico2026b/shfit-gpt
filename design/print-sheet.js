@@ -42,11 +42,17 @@
 
   // پهنای ستون‌ها به اندازهٔ محتوایشان: ستون نام و محل خدمت پهن‌تر، ستون‌های
   // کوتاه (وضعیت، تعداد) باریک‌تر. مجموع همیشه ۱۰۰٪ عرض برگه است.
-  function columnWeights(table, columns) {
+  function columnWeights(table, columns, verticalFrom) {
     const weights = [];
     const header = table[0] || [];
     const body = table.slice(1);
     for (let i = 0; i < columns; i++) {
+      // ستون‌های عمودی (روزهای تقویم) فقط به اندازهٔ یک خط جا می‌گیرند؛ وزن
+      // کوچک می‌گیرند تا ستون‌های اطلاعاتی (نام، محل خدمت) پهن و خوانا بمانند.
+      if (verticalFrom >= 0 && i >= verticalFrom) {
+        weights.push(2);
+        continue;
+      }
       // سرستون کمی سنگین‌تر حساب می‌شود تا عنوان‌ها در دو خط نشکنند.
       let weight = String(header[i] == null ? '' : header[i]).trim().length * 1.4;
       body.forEach(row => {
@@ -61,8 +67,8 @@
     return weights;
   }
 
-  function columnPercents(table, columns) {
-    const weights = columnWeights(table, columns);
+  function columnPercents(table, columns, verticalFrom) {
+    const weights = columnWeights(table, columns, verticalFrom);
     const total = weights.reduce((sum, w) => sum + w, 0) || 1;
     // کف ۵٪ برای جدول‌های چندستونه (تقویم شیفت: یک ستون برای هر روز) مجموع را
     // از ۱۰۰٪ رد می‌کرد و جدول از عرض A4 بیرون می‌زد؛ کف با تعداد ستون‌ها
@@ -102,32 +108,41 @@
     const body = table.slice(1);
     const title = subject(o.title, o.fallback);
     const stamp = o.stamp || '';
+    const legend = String(o.legend == null ? '' : o.legend).trim();
+    // ستون‌هایی که از این شماره به بعد باریک‌اند (روزهای تقویم) به‌صورت عمودی
+    // نوشته می‌شوند تا با زیادشدن ستون‌ها فونت به‌هم نریزد.
+    const verticalFrom = Number.isInteger(o.verticalFrom) ? o.verticalFrom : -1;
+    const vertical = verticalFrom >= 0 && verticalFrom < columns;
     const meta = [ORG, stamp ? 'تاریخ تهیه: ' + stamp : '', fa(body.length) + ' ردیف']
       .filter(Boolean)
       .join(' · ');
 
     const headCells = [];
     for (let i = 0; i < columns; i++) {
-      headCells.push('<th scope="col">' + esc(head[i] == null ? '' : head[i]) + '</th>');
+      const cls = vertical && i >= verticalFrom ? ' class="atlas-print-vert"' : '';
+      headCells.push('<th scope="col"' + cls + '>' + esc(head[i] == null ? '' : head[i]) + '</th>');
     }
 
     const bodyRows = body.map(row => {
       const cells = [];
       for (let i = 0; i < columns; i++) {
         const value = row[i] == null ? '' : row[i];
-        cells.push('<td' + (isNumericText(value) ? ' class="atlas-print-num"' : '') + '>' + esc(value) + '</td>');
+        const classes = [];
+        if (isNumericText(value)) classes.push('atlas-print-num');
+        if (vertical && i >= verticalFrom) classes.push('atlas-print-vert');
+        cells.push('<td' + (classes.length ? ' class="' + classes.join(' ') + '"' : '') + '>' + esc(value) + '</td>');
       }
       return '<tr>' + cells.join('') + '</tr>';
     }).join('');
 
-    const colgroup = '<colgroup>' + columnPercents(table, columns)
+    const colgroup = '<colgroup>' + columnPercents(table, columns, vertical ? verticalFrom : -1)
       .map(percent => '<col style="width:' + percent + '%">').join('') + '</colgroup>';
 
     // سربرگ و حاشیهٔ بالا/پایین برگه داخل thead و tfoot می‌نشینند تا در هر صفحه
     // تکرار شوند. دلیل: با @page margin:0 (که سرصفحه/پاصفحهٔ مرورگر — آدرس سایت،
     // تاریخ و شمارهٔ صفحه — را حذف می‌کند) فاصلهٔ بالای صفحهٔ دوم به بعد از بین
     // می‌رفت؛ سطرهای فاصله‌دهندهٔ thead/tfoot همان حاشیه را در هر صفحه می‌سازند.
-    return '<table class="atlas-print-table" data-columns="' + columns + '">' +
+    return '<table class="atlas-print-table" data-columns="' + columns + '"' + (vertical ? ' data-vertical="1"' : '') + '>' +
         colgroup +
         '<thead>' +
           '<tr class="atlas-print-pad"><td colspan="' + columns + '"></td></tr>' +
@@ -135,6 +150,7 @@
             '<header class="atlas-print-head">' +
               '<h1 class="atlas-print-title">' + esc(title) + '</h1>' +
               '<p class="atlas-print-meta">' + esc(meta) + '</p>' +
+              (legend ? '<p class="atlas-print-legend">' + esc(legend) + '</p>' : '') +
             '</header>' +
           '</td></tr>' +
           '<tr class="atlas-print-cols">' + headCells.join('') + '</tr>' +
@@ -157,9 +173,9 @@
     render: render,
     subject: subject,
     densityFor: densityFor,
-    columnPercents: function (rows) {
+    columnPercents: function (rows, verticalFrom) {
       const table = (rows || []).filter(row => Array.isArray(row) && row.length);
-      return columnPercents(table, Math.max(1, columnCount(table)));
+      return columnPercents(table, Math.max(1, columnCount(table)), Number.isInteger(verticalFrom) ? verticalFrom : -1);
     },
     isNumericText: isNumericText,
     fa: fa

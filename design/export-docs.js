@@ -404,6 +404,7 @@
       : normalizeRows(rows);
     var lines = [];
     if (o.title) lines.push(csvCell(subject(o.title)));
+    if (o.legend) lines.push(csvCell(o.legend));
     if (!o.ragged) {
       var meta = [o.stamp ? 'تاریخ تهیه: ' + o.stamp : '', table.length > 1 ? (table.length - 1) + ' ردیف' : '']
         .filter(Boolean).join(' · ');

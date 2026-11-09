@@ -5929,15 +5929,21 @@
   }
 
   // برگهٔ اکسل با سرستون رنگی، ارتفاع سطر متناسب، عرض ستون و سطر عنوان.
-  function xlsxSheetXml(rows, title) {
+  function xlsxSheetXml(rows, title, legend) {
     const columns = Math.max(1, Math.max.apply(null, rows.map(function (row) { return (row || []).length; })));
     const titleRow = title ? 1 : 0;
+    const legendRow = legend ? 1 : 0;
+    const offset = titleRow + legendRow;
     const parts = [];
     if (title) {
       parts.push('<row r="1" ht="34" customHeight="1"><c r="A1" s="1" t="inlineStr"><is><t xml:space="preserve">' + xmlEscape(title) + '</t></is></c></row>');
     }
+    if (legend) {
+      const legendNumber = titleRow + 1;
+      parts.push('<row r="' + legendNumber + '" ht="24" customHeight="1"><c r="A' + legendNumber + '" s="3" t="inlineStr"><is><t xml:space="preserve">' + xmlEscape(legend) + '</t></is></c></row>');
+    }
     rows.forEach(function (row, index) {
-      const rowNumber = index + 1 + titleRow;
+      const rowNumber = index + 1 + offset;
       const header = index === 0;
       const cells = (row || []).map(function (value, columnIndex) {
         return '<c r="' + excelColumn(columnIndex) + rowNumber + '" s="' + (header ? 2 : 3) + '" t="inlineStr"><is><t xml:space="preserve">' + xmlEscape(value) + '</t></is></c>';
@@ -5947,11 +5953,11 @@
     const cols = '<cols>' + Array.apply(null, Array(columns)).map(function (_, i) {
       return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + (i === 0 ? 24 : 20) + '" customWidth="1"/>';
     }).join('') + '</cols>';
-    const lastRow = rows.length + titleRow;
-    const split = titleRow ? 2 : 1;
-    // سرستون همیشه یک ردیف پایین‌تر از عنوان است؛ فیلتر/آیکون مرتب‌سازی اکسل
-    // باید روی همان ردیف سرستون بنشیند، نه روی اولین ردیف داده.
-    const headerRow = titleRow + 1;
+    const lastRow = rows.length + offset;
+    const split = offset + 1;
+    // سرستون همیشه یک ردیف پایین‌تر از عنوان/راهنما است؛ فیلتر/آیکون مرتب‌سازی
+    // اکسل باید روی همان ردیف سرستون بنشیند، نه روی اولین ردیف داده.
+    const headerRow = offset + 1;
     return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
       '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
       '<dimension ref="A1:' + excelColumn(columns - 1) + Math.max(1, lastRow) + '"/>' +
@@ -5973,13 +5979,16 @@
     ];
   }
 
-  function exportRowsXlsx(rows, filename, sheetName) {
-    downloadBlob(filename, zipStored(xlsxPackage(sheetName || 'ATLAS SHIFT', xlsxSheetXml(rows, ''))));
+  function exportRowsXlsx(rows, filename, sheetName, options) {
+    const legend = (options || {}).legend || '';
+    downloadBlob(filename, zipStored(xlsxPackage(sheetName || 'ATLAS SHIFT', xlsxSheetXml(rows, '', legend))));
   }
 
-  function exportRowsDocx(rows, title, filename) {
+  function exportRowsDocx(rows, title, filename, options) {
+    const legend = (options || {}).legend || '';
     downloadBlob(filename, window.AtlasExportDocs.docx({
       title: title,
+      subtitle: legend,
       stamp: formatJalali(new Date().toISOString(), true),
       meta: 'تعداد ردیف‌ها: ' + faDigits(Math.max(0, rows.length - 1)),
       landscape: true,
@@ -5990,7 +5999,8 @@
 
   // تصویر: همان قالب جدول روی کاغذ سفید؛ عنوان، سرستون و بدنه هر سه فونت و
   // اندازهٔ خودشان را دارند و فاصلهٔ سطر/ستون متناسب همان اندازه است.
-  function exportRowsPng(rows, title, filename) {
+  function exportRowsPng(rows, title, filename, options) {
+    const legend = (options || {}).legend || '';
     const scale = 2, pad = 30, rowH = 40, gutter = 40;
     const titleSize = 22, metaSize = 12, headSize = 15, bodySize = 14;
     const bodyFamily = 'Vazirmatn, Tahoma, sans-serif';
@@ -6009,7 +6019,7 @@
     });
     const totalWidth = widths.reduce(function (a, b) { return a + b; }, 0);
     const width = Math.max(760, totalWidth + pad * 2);
-    const tableTop = pad + 62;
+    const tableTop = pad + (legend ? 84 : 62);
     const height = tableTop + rows.length * rowH + pad;
     const canvas = document.createElement('canvas');
     canvas.width = Math.round(width * scale);
@@ -6029,6 +6039,11 @@
     ctx.fillStyle = '#4B5563';
     ctx.font = '400 ' + metaSize + 'px ' + bodyFamily;
     ctx.fillText('ATLAS SHIFT · ' + formatJalali(new Date().toISOString(), true), width - pad, pad + 42);
+    if (legend) {
+      ctx.fillStyle = '#14304F';
+      ctx.font = '600 ' + metaSize + 'px ' + bodyFamily;
+      ctx.fillText(legend, width - pad, pad + 62);
+    }
 
     rows.forEach(function (row, rowIndex) {
       const header = rowIndex === 0;
@@ -6073,7 +6088,8 @@
 
   // خروجی چاپ فهرست‌ها: برگهٔ A4 افقی با عنوان موضوع، سرستون درشت و جدول شبکه‌دار.
   // ظاهر برگه در design/print.css و ساخت HTML آن در design/print-sheet.js است.
-  function printRows(rows, title) {
+  function printRows(rows, title, options) {
+    const o = options || {};
     let host = document.getElementById('atlasPrintArea');
     if (!host) {
       host = document.createElement('div');
@@ -6086,7 +6102,12 @@
     if (staleRecordSheet) staleRecordSheet.innerHTML = '';
     const stamp = formatJalali(new Date().toISOString(), true);
     if (window.AtlasPrintSheet) {
-      window.AtlasPrintSheet.render(host, rows, { title: title, stamp: stamp });
+      window.AtlasPrintSheet.render(host, rows, {
+        title: title,
+        stamp: stamp,
+        legend: o.legend,
+        verticalFrom: o.verticalFrom
+      });
     } else {
       // پشتیبان: اگر فایل برگهٔ چاپ بارگذاری نشده بود، ساده‌ترین جدول ساخته می‌شود.
       // سربرگ و سطرهای فاصله هم داخل thead/tfoot می‌روند تا مثل مسیر اصلی در هر
@@ -6121,14 +6142,16 @@
     return ascii || String(fallback || 'export');
   }
 
-  function runExport(rows, title, base, format) {
-    if (format === 'xlsx') exportRowsXlsx(rows, base + '.xlsx', title);
-    else if (format === 'docx') exportRowsDocx(rows, title, base + '.docx');
-    else if (format === 'png') exportRowsPng(rows, title, base + '.png');
-    else if (format === 'print') printRows(rows, title);
+  function runExport(rows, title, base, format, options) {
+    const o = options || {};
+    if (format === 'xlsx') exportRowsXlsx(rows, base + '.xlsx', title, o);
+    else if (format === 'docx') exportRowsDocx(rows, title, base + '.docx', o);
+    else if (format === 'png') exportRowsPng(rows, title, base + '.png', o);
+    else if (format === 'print') printRows(rows, title, o);
     else downloadFile(base + '.csv', window.AtlasExportDocs.csv(rows, {
       title: title,
-      stamp: formatJalali(new Date().toISOString(), true)
+      stamp: formatJalali(new Date().toISOString(), true),
+      legend: o.legend
     }), 'text/csv;charset=utf-8;');
   }
 
