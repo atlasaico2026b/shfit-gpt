@@ -238,6 +238,8 @@ const fakeHost = {
   querySelector: function (selector) { return selector === '[data-sp-body]' ? fakeBody : null; },
   querySelectorAll: function () { return []; }
 };
+const exportCalls = [];
+const toasts = [];
 const fakeBridge = {
   esc: function (value) {
     return String(value == null ? '' : value)
@@ -255,7 +257,10 @@ const fakeBridge = {
   employeeName: function (employee) { return [employee.firstName, employee.lastName].filter(Boolean).join(' '); },
   enhanceJalaliInputs: function () {},
   legacySchedule: function () {},
-  toast: function () {},
+  toast: function (message) { toasts.push(message); },
+  runExport: function (rows, title, base, format) {
+    exportCalls.push({ rows: rows, title: title, base: base, format: format });
+  },
   save: function () { return Promise.resolve(true); },
   confirm: function () { return Promise.resolve(true); }
 };
@@ -274,6 +279,15 @@ function changeFilter(key, value) {
   fire('change', {
     closest: function (selector) {
       return selector === '[data-sp-filter]' ? { getAttribute: function () { return key; }, value: value } : null;
+    }
+  });
+}
+function clickExport(format, scope) {
+  fire('click', {
+    closest: function (selector) {
+      return selector === '[data-sp-export]'
+        ? { getAttribute: function (key) { return key === 'data-sp-export' ? format : scope; } }
+        : null;
     }
   });
 }
@@ -481,6 +495,55 @@ fire('change', {
 check('برداشتن تیک ایستگاه، نفراتش را آزاد می‌کند',
   bodyHtml.indexOf('data-sp-select="e2" checked') < 0 && bodyHtml.indexOf('data-sp-select="e4" checked') < 0);
 
+// ── سطر محل خدمت: مارک‌شدنی و خروجی مارک‌شده‌ها ──────────────────────────
+check('سطر محل خدمت نشانهٔ مارک دارد',
+  bodyHtml.indexOf('data-sp-mark-station="تهران\u0000ایستگاه ۲"') >= 0);
+check('سطر محل خدمت بدون انتخاب، مارک‌نشده است',
+  bodyHtml.indexOf('sp-station-row is-marked') < 0);
+check('دکمه‌های خروجی مارک‌شده‌ها در نوار انتخاب هست',
+  bodyHtml.indexOf('data-sp-scope="selected"') >= 0 && bodyHtml.indexOf('خروجی مارک‌شده‌ها') >= 0);
+check('بدون انتخاب، خروجی مارک‌شده‌ها غیرفعال است',
+  /data-sp-marked-export disabled/.test(bodyHtml));
+
+// کلیک روی خود سطر (نه چک‌باکس) ایستگاه را مارک می‌کند.
+clickOn('data-sp-mark-station', 'تهران\u0000ایستگاه ۲');
+check('کلیک روی سطر محل خدمت نفراتش را مارک می‌کند',
+  bodyHtml.indexOf('data-sp-select="e2" checked') >= 0 && bodyHtml.indexOf('data-sp-select="e4" checked') >= 0);
+check('سطر مارک‌شده نشانهٔ is-marked می‌گیرد',
+  bodyHtml.indexOf('sp-station-row is-marked') >= 0);
+check('با انتخاب، خروجی مارک‌شده‌ها فعال می‌شود',
+  /data-sp-marked-export disabled/.test(bodyHtml) === false);
+
+const markedRows = planner.buildSelectedRows();
+check('خروجی مارک‌شده‌ها فقط نفرات مارک‌شده را دارد', markedRows.length === 3, markedRows.length);
+check('خروجی مارک‌شده‌ها نام و محل خدمت را دارد',
+  markedRows.some(function (row) {
+    return row.indexOf('سارا احمدی') >= 0 && row.indexOf('ایستگاه ۲') >= 0;
+  }),
+  JSON.stringify(markedRows));
+check('خروجی مارک‌شده‌ها کارمند مارک‌نشده را ندارد',
+  JSON.stringify(markedRows).indexOf('علی رضایی') < 0);
+
+clickExport('xlsx', 'selected');
+check('خروجی مارک‌شده‌ها با قالب انتخابی گرفته می‌شود',
+  exportCalls.length === 1 && exportCalls[0].format === 'xlsx', exportCalls.length);
+check('خروجی مارک‌شده‌ها فقط ردیف‌های مارک‌شده را می‌فرستد',
+  exportCalls[0] && exportCalls[0].rows.length === 3, exportCalls[0] && exportCalls[0].rows.length);
+check('نام فایل خروجی مارک‌شده‌ها مشخص است',
+  exportCalls[0] && exportCalls[0].base.indexOf('marked-assignments') >= 0, exportCalls[0] && exportCalls[0].base);
+
+// کلیک دوم روی سطر، مارک را برمی‌دارد.
+clickOn('data-sp-mark-station', 'تهران\u0000ایستگاه ۲');
+check('کلیک دوم روی سطر مارک را برمی‌دارد',
+  bodyHtml.indexOf('data-sp-select="e2" checked') < 0 && bodyHtml.indexOf('sp-station-row is-marked') < 0);
+
+// بدون انتخاب، خروجی گرفتن پیام راهنما می‌دهد و فایلی نمی‌سازد.
+const beforeEmpty = exportCalls.length;
+clickExport('csv', 'selected');
+check('خروجی بدون مارک، فایل نمی‌سازد', exportCalls.length === beforeEmpty);
+check('خروجی بدون مارک، پیام راهنما می‌دهد',
+  toasts.length > 0 && toasts[toasts.length - 1].indexOf('مارک') >= 0, toasts[toasts.length - 1]);
+
 // ── ظاهر سطر شهر: سفید، متن مشکی، ۳۰٪ بزرگ‌تر ───────────────────────────
 const plannerCss = fs.readFileSync(path.join(root, 'design/shift-planner.css'), 'utf8');
 const groupRule = (plannerCss.match(/\.sp-table tbody tr\.sp-group-row td\s*\{[^}]*\}/) || [''])[0];
@@ -489,6 +552,14 @@ check('سطر شهر متن مشکی دارد', /color:\s*#000/.test(groupRule),
 check('سطر شهر ۳۰٪ بزرگ‌تر از متن جدول است', /font-size:\s*1\.3em/.test(groupRule), groupRule);
 check('انتخابگر از قاعدهٔ راه‌راه جدول قوی‌تر است',
   /\.sp-table tbody tr\.sp-group-row td/.test(groupRule), groupRule);
+
+// ── ظاهر سطر محل خدمت: سبز کم‌رنگ و پررنگ ────────────────────────────────
+const stationRule = (plannerCss.match(/\.sp-table tbody tr\.sp-station-row td\s*\{[^}]*\}/) || [''])[0];
+check('سطر محل خدمت سبز کم‌رنگ است', /background:\s*#d5efdf/.test(stationRule), stationRule);
+check('سطر محل خدمت پررنگ است', /font-weight:\s*700/.test(stationRule), stationRule);
+check('سطر محل خدمت از ردیف کارکنان بزرگ‌تر است', /font-size:\s*1\.08em/.test(stationRule), stationRule);
+check('سطر مارک‌شده سبز پررنگ‌تر دارد',
+  /tr\.sp-station-row\.is-marked td\s*\{[^}]*background:\s*#b6e6c8/.test(plannerCss));
 
 // ── الگوی روزبه‌روز قالب: «روز اول، روز دوم … تا آخر قالب» ──────────────
 check('الگو از rotation فشرده باز می‌شود', e.templatePattern(template).length === 8, e.templatePattern(template).length);
@@ -598,11 +669,12 @@ clickAttr('[data-sp-close]', '');
 // دکمه‌های خروجی پنجرهٔ «شیفت یک نفر» باید فعال باشند.
 // ریشهٔ باگ: onSectionClick فقط کلیک داخل بخش را می‌گرفت و پنجره بیرون آن است،
 // پس هیچ‌کدام از دکمه‌های خروجی پنجره کار نمی‌کردند.
-const exportCalls = [];
 fakeBridge.runExport = function (rows, title, base, format) {
-  exportCalls.push({ rows: rows, title: title, format: format });
+  exportCalls.push({ rows: rows, title: title, base: base, format: format });
 };
 fakeBridge.exportSlug = function () { return 'person'; };
+// آزمون‌های خروجی مارک‌شده‌ها قبلاً یک فراخوانی ثبت کرده‌اند؛ این بخش از صفر می‌شمارد.
+exportCalls.length = 0;
 
 clickOn('data-sp-person', 'e1');
 const personModal = currentModal();

@@ -445,17 +445,29 @@
 
 .sp-group-count { margin-inline-start: 4px; color: #333; }
 
-/* سطر محل خدمت (ایستگاه) زیر هر شهر: یک پله کوچک‌تر و کم‌رنگ‌تر از سطر شهر،
-   ولی هنوز از ردیف کارکنان جدا. شیفت‌ها در محل خدمت برقرار می‌شوند، پس این
-   سطح گروه‌بندی داخل هر شهر است و روش کاری همان ایستگاه را هم نشان می‌دهد. */
+/* سطر محل خدمت (ایستگاه) زیر هر شهر: سبز کم‌رنگ ولی پررنگ‌تر از ردیف کارکنان،
+   تا هم از سطر شهر و هم از ردیف‌های زیرش جدا دیده شود. شیفت‌ها در محل خدمت
+   برقرار می‌شوند، پس این سطح گروه‌بندی داخل هر شهر است و روش کاری همان
+   ایستگاه را هم نشان می‌دهد. کل سطر مارک‌شدنی است (کلیک روی سطر یا چک‌باکس). */
 .sp-table tbody tr.sp-station-row td {
-  background: #e8f6ec;
-  color: #111;
-  font-size: 1.05em;
-  font-weight: 600;
-  padding: 6px 10px;
-  border-color: #cbe7d5;
+  background: #d5efdf;
+  color: #0b3d22;
+  font-size: 1.08em;
+  font-weight: 700;
+  padding: 7px 10px;
+  border-color: #a8d8ba;
+  border-top: 1px solid #a8d8ba;
 }
+
+.sp-table tbody tr.sp-station-row { cursor: pointer; }
+
+/* سطر مارک‌شده: سبز پررنگ‌تر تا معلوم باشد کدام ایستگاه‌ها انتخاب شده‌اند. */
+.sp-table tbody tr.sp-station-row.is-marked td {
+  background: #b6e6c8;
+  border-color: #7cc79a;
+}
+
+.sp-table tbody tr.sp-station-row.is-marked .sp-station-cell { color: #06401f; }
 
 .sp-station-cell { padding-inline-start: 22px !important; }
 
@@ -471,6 +483,21 @@
 }
 
 .sp-station-row .sp-check input { cursor: pointer; }
+
+/* خروجی گرفتن از کارکنان مارک‌شده، کنار شمارندهٔ انتخاب. */
+.sp-mark-export {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-inline-start: auto;
+}
+
+.sp-mark-export-label { color: var(--muted); font-size: 12px; }
+
+.sp-mark-export-btn { padding: 4px 10px; font-size: 12px; }
+
+.sp-mark-export-btn:disabled { opacity: .5; cursor: not-allowed; }
 
 .sp-city-cell { color: var(--muted); white-space: nowrap; }
 

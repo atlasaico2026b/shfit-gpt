@@ -662,9 +662,10 @@
         });
         const stationPicked = people.filter(function (employee) { return selected[employee.id]; }).length;
         const stationAll = people.length > 0 && stationPicked === people.length;
-        return '<tr class="sp-station-row">' +
+        return '<tr class="sp-station-row' + (stationAll ? ' is-marked' : '') + '"' +
+          ' data-sp-mark-station="' + esc(city + '\u0000' + station) + '">' +
           '<td class="sp-check"><input type="checkbox" data-sp-select-station="' + esc(city + '\u0000' + station) + '"' +
-            (stationAll ? ' checked' : '') + ' aria-label="انتخاب همهٔ کارکنان ' + esc(station) + '"></td>' +
+            (stationAll ? ' checked' : '') + ' aria-label="مارک کردن همهٔ کارکنان ' + esc(station) + '"></td>' +
           '<td></td><td></td>' +
           '<td class="sp-station-cell" colspan="2">' + esc(station) +
             '<span class="sp-group-count">· ' + fa(people.length) + ' نفر</span>' +
@@ -729,13 +730,26 @@
       '<div class="module-bulk-tools"><label><input type="checkbox" data-sp-select-all> انتخاب همه</label>' +
       '<button type="button" class="secondary-btn" data-sp-select-invert>انتخاب معکوس</button>' +
       '<button type="button" class="secondary-btn" data-sp-select-clear>پاک‌کردن انتخاب</button>' +
-      '<span data-sp-selected-count>' + fa(selectedCount) + ' نفر انتخاب شده</span></div>' +
+      '<span data-sp-selected-count>' + fa(selectedCount) + ' نفر انتخاب شده</span>' +
+      markedExportButtons(selectedCount) + '</div>' +
       '<div class="module-table-wrap"><table class="module-table sp-table"><thead><tr>' +
       '<th class="sp-check"></th>' + cityHeader() + sortHeader('name', 'نام و نام خانوادگی') + sortHeader('station', 'محل خدمت', stationSort) +
       sortHeader('job', 'عنوان شغلی') + sortHeader('method', 'روش کاری') + sortHeader('range', 'شروع چرخه / بازه') +
       '</tr></thead><tbody>' +
       (rows || '<tr><td colspan="7"><div class="module-empty">کارمندی با این فیلترها پیدا نشد.</div></td></tr>') +
       '</tbody></table></div></section>';
+  }
+
+  // خروجی فقط از کارکنان مارک‌شده؛ همان قالب‌های خروجی بقیهٔ بخش‌ها.
+  function markedExportButtons(count) {
+    const off = count ? '' : ' disabled';
+    const button = function (format, label) {
+      return '<button type="button" class="secondary-btn sp-mark-export-btn" data-sp-export="' + format +
+        '" data-sp-scope="selected" data-sp-marked-export' + off + '>' + label + '</button>';
+    };
+    return '<span class="sp-mark-export"><span class="sp-mark-export-label">خروجی مارک‌شده‌ها:</span>' +
+      button('print', 'چاپ / PDF') + button('xlsx', 'Excel') + button('docx', 'Word') + button('csv', 'CSV') +
+      '</span>';
   }
 
   function uniqueOf(values) {
@@ -959,8 +973,48 @@
     return { rows: rows, title: 'شیفت ' + (employee ? bridge.employeeName(employee) : '') };
   }
 
+  // ردیف‌های خروجی «مارک‌شده‌ها»: همان ستون‌های جدول تخصیص، فقط برای
+  // کارکنانی که مارک شده‌اند و به همان ترتیبی که در جدول دیده می‌شوند.
+  function selectedRows(state) {
+    const rows = [['مکان', 'نام و نام خانوادگی', 'محل خدمت', 'عنوان شغلی', 'روش کاری', 'شروع چرخه / بازه']];
+    const people = filteredEmployees(state).filter(function (employee) { return selected[employee.id]; });
+    people.sort(function (a, b) {
+      const cityOrder = (employeeCity(a) || '').localeCompare(employeeCity(b) || '', 'fa');
+      if (cityOrder) return cityOrder;
+      const stationOrder = (employeeStation(a) || '').localeCompare(employeeStation(b) || '', 'fa');
+      if (stationOrder) return stationOrder;
+      return assignSortValue(state, a).localeCompare(assignSortValue(state, b), 'fa');
+    });
+    people.forEach(function (employee) {
+      const assignment = assignmentFor(state, employee.id, todayIso());
+      const methodId = assignment ? String(assignment.methodId) : '';
+      const rangeText = !assignment
+        ? ''
+        : (methodIsShift(state, assignment.methodId)
+          ? 'شروع چرخه ' + bridge.formatJalali(assignment.from, false)
+          : bridge.formatJalali(assignment.from, false) +
+            (assignment.to ? ' تا ' + bridge.formatJalali(assignment.to, false) : ' · تا اطلاع ثانوی'));
+      rows.push([
+        employeeCity(employee),
+        bridge.employeeName(employee) || 'بدون نام',
+        employeeStation(employee),
+        employee.jobTitle || '',
+        methodLabel(state, methodId),
+        rangeText
+      ]);
+    });
+    return rows;
+  }
+
   function runExport(format, scope) {
     const state = data();
+    if (scope === 'selected') {
+      const marked = selectedRows(state);
+      if (marked.length < 2) { bridge.toast('اول چند نفر را مارک کن، بعد خروجی بگیر.'); return; }
+      bridge.runExport(marked, 'کارکنان مارک‌شده · تخصیص روش کاری',
+        'ATLAS-SHIFT-marked-assignments-' + todayIso(), format);
+      return;
+    }
     if (scope === 'person' && personId) {
       const sheet = personRows(state, personId);
       bridge.runExport(sheet.rows, sheet.title, 'ATLAS-SHIFT-' + bridge.exportSlug(sheet.title, 'person') + '-' + todayIso(), format);
@@ -1637,6 +1691,14 @@
     }
     if (target.closest('[data-sp-select-clear]')) { selected = Object.create(null); refresh(); return; }
 
+    // کلیک روی خود سطر محل خدمت هم همان ایستگاه را مارک/آزاد می‌کند؛
+    // کلیک روی چک‌باکس را رویداد change جداگانه رسیدگی می‌کند.
+    const markRow = target.closest('[data-sp-mark-station]');
+    if (markRow && !target.closest('input')) {
+      toggleStationMark(markRow.getAttribute('data-sp-mark-station'));
+      return;
+    }
+
     if (target.closest('[data-sp-bulk-assign]')) {
       const ids = Object.keys(selected).filter(function (id) { return selected[id]; });
       if (!ids.length) { bridge.toast('اول چند نفر را تیک بزن.'); return; }
@@ -1670,14 +1732,7 @@
 
     const stationBox = target.closest('[data-sp-select-station]');
     if (stationBox) {
-      const key = stationBox.getAttribute('data-sp-select-station');
-      filteredEmployees(data()).forEach(function (employee) {
-        const city = employeeCity(employee) || 'بدون شهر';
-        const station = employeeStation(employee) || 'بدون محل خدمت';
-        if (city + '\u0000' + station !== key) return;
-        if (stationBox.checked) selected[employee.id] = true;
-        else delete selected[employee.id];
-      });
+      setStationSelection(stationBox.getAttribute('data-sp-select-station'), stationBox.checked);
       refresh();
       syncSelectionUi();
       return;
@@ -1763,6 +1818,31 @@
     }
   }
 
+  // کارکنان یک ایستگاه (کلید = «شهر\u0000محل خدمت») در فهرست فیلترشده.
+  function stationPeople(state, key) {
+    return filteredEmployees(state).filter(function (employee) {
+      return (employeeCity(employee) || 'بدون شهر') + '\u0000' +
+        (employeeStation(employee) || 'بدون محل خدمت') === key;
+    });
+  }
+
+  function setStationSelection(key, on) {
+    stationPeople(data(), key).forEach(function (employee) {
+      if (on) selected[employee.id] = true;
+      else delete selected[employee.id];
+    });
+  }
+
+  // مارک کردن سطر محل خدمت: اگر همهٔ نفراتش مارک باشند آزاد می‌شوند، وگرنه
+  // همه مارک می‌شوند. خروجی «مارک‌شده‌ها» از همین انتخاب ساخته می‌شود.
+  function toggleStationMark(key) {
+    const people = stationPeople(data(), key);
+    const all = people.length > 0 && people.every(function (employee) { return selected[employee.id]; });
+    setStationSelection(key, !all);
+    refresh();
+    syncSelectionUi();
+  }
+
   // ورودی تاریخ شمسی مقدار «۱۴۰۵/۰۸/۱۰» می‌دهد؛ ذخیره همیشه ISO است.
   // شمارنده‌ها و دکمهٔ تخصیص گروهی را بدون بازسازی جدول هم‌گام می‌کند.
   function syncSelectionUi() {
@@ -1775,6 +1855,8 @@
       button.disabled = !count;
       button.textContent = 'تخصیص گروهی (' + fa(count) + ')';
     }
+    const markedButtons = host.querySelectorAll('[data-sp-marked-export]');
+    Array.prototype.forEach.call(markedButtons, function (markedButton) { markedButton.disabled = !count; });
     const all = host.querySelector('[data-sp-select-all]');
     if (all) {
       const boxes = host.querySelectorAll('[data-sp-select]');
@@ -1803,6 +1885,20 @@
         const picked = group.filter(function (employee) { return selected[employee.id]; }).length;
         box.checked = group.length > 0 && picked === group.length;
         box.indeterminate = picked > 0 && picked < group.length;
+      });
+    }
+    // سطر محل خدمت وقتی همهٔ نفراتش مارک باشند، سبز پررنگ‌تر می‌شود.
+    const stationRows = host.querySelectorAll('[data-sp-mark-station]');
+    if (stationRows.length) {
+      const people = filteredEmployees(data());
+      Array.prototype.forEach.call(stationRows, function (row) {
+        const key = row.getAttribute('data-sp-mark-station');
+        const group = people.filter(function (employee) {
+          return (employeeCity(employee) || 'بدون شهر') + '\u0000' +
+            (employeeStation(employee) || 'بدون محل خدمت') === key;
+        });
+        const picked = group.filter(function (employee) { return selected[employee.id]; }).length;
+        if (row.classList) row.classList.toggle('is-marked', group.length > 0 && picked === group.length);
       });
     }
   }
@@ -1986,6 +2082,7 @@
     // سازندهٔ ردیف‌های خروجی؛ برای آزمون و برای هر مصرف‌کنندهٔ دیگر.
     buildGridRows: function () { return gridRows(data()); },
     buildPersonRows: function (employeeId) { return personRows(data(), employeeId); },
+    buildSelectedRows: function () { return selectedRows(data()); },
     engine: {
       WEEKDAYS: WEEKDAYS,
       OFF: OFF,
