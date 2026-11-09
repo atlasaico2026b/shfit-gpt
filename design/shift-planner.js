@@ -227,10 +227,41 @@
     return (state.shiftTemplates || []).find(function (t) { return String(t.id) === String(id); }) || null;
   }
 
-  // روش شیفتی = روشی که روزهای کارش را از الگوی یک قالب می‌گیرد.
+  // روش شیفتی = روشی که روزهای کارش را از الگوی یک قالب می‌گیرد. خودِ قالب
+  // شیفت هم می‌تواند مستقیم روش کاری یک کارمند باشد، پس شناسهٔ قالب هم شیفتی است.
   function methodIsShift(state, methodId) {
+    if (findTemplate(state, methodId)) return true;
     const method = findMethod(state, methodId);
     return !!method && (method.kind === 'rotating' || method.kind === 'camp');
+  }
+
+  // شناسهٔ «روش کاری» یک تخصیص یا به یک قالب روزکاری اشاره می‌کند یا مستقیم به
+  // یک قالب شیفت. این تابع هر دو حالت را به یک شکل برمی‌گرداند.
+  function methodRef(state, id) {
+    const method = findMethod(state, id);
+    if (method) return { method: method, template: findTemplate(state, method.templateId) };
+    const template = findTemplate(state, id);
+    return { method: null, template: template };
+  }
+
+  function methodLabel(state, id) {
+    const method = findMethod(state, id);
+    if (method) return method.name || 'قالب روزکاری';
+    const template = findTemplate(state, id);
+    return template ? (template.name || 'قالب شیفت') : '';
+  }
+
+  // گزینه‌های کشویی «روش کاری»: قالب‌های شیفت (آبی) و قالب‌های روزکاری (قرمز).
+  function methodOptions(state, current) {
+    const group = function (label, cls, items, nameOf) {
+      if (!items.length) return '';
+      return '<optgroup label="' + esc(label) + '" class="' + cls + '">' + items.map(function (item) {
+        return '<option value="' + esc(item.id) + '" class="' + cls + '"' +
+          (String(current) === String(item.id) ? ' selected' : '') + '>' + esc(nameOf(item)) + '</option>';
+      }).join('') + '</optgroup>';
+    };
+    return group('قالب شیفت', 'sp-opt-shift', state.shiftTemplates || [], function (t) { return t.name || 'قالب شیفت'; }) +
+      group('قالب روزکاری', 'sp-opt-method', state.shiftMethods || [], function (m) { return m.name || 'قالب روزکاری'; });
   }
 
   // وضعیت یک کارمند در یک روز. ترتیب اولویت: تغییر وضعیت ← مرخصی تأییدشده ←
@@ -263,13 +294,15 @@
       return { code: '—', label: 'بدون تخصیص', from: '', to: '', kind: 'none', note: '', source: 'none' };
     }
 
-    const method = findMethod(state, assignment.methodId);
-    if (!method) {
+    const ref = methodRef(state, assignment.methodId);
+    const method = ref.method;
+    if (!method && !ref.template) {
       return { code: '—', label: 'روش کاری حذف‌شده', from: '', to: '', kind: 'none', note: '', source: 'none' };
     }
 
-    if (method.kind === 'rotating' || method.kind === 'camp') {
-      const template = findTemplate(state, assignment.templateId || method.templateId);
+    const shiftKind = !!ref.template || (method && (method.kind === 'rotating' || method.kind === 'camp'));
+    if (shiftKind) {
+      const template = ref.template || findTemplate(state, assignment.templateId || method.templateId);
       if (!template) {
         return { code: '—', label: 'قالب شیفت تعیین نشده', from: '', to: '', kind: 'none', note: '', source: 'none' };
       }
@@ -561,17 +594,13 @@
     if (assignSort.key === 'job') return employee.jobTitle || '';
     if (assignSort.key === 'method') {
       if (!assignment) return '';
-      const method = (state.shiftMethods || []).find(function (item) {
-        return String(item.id) === String(assignment.methodId);
-      });
-      return method ? (method.name || '') : '';
+      return methodLabel(state, assignment.methodId);
     }
     if (assignSort.key === 'range') return assignment ? String(assignment.from || '') : '';
     return bridge.employeeName(employee) || '';
   }
 
   function renderAssign(state) {
-    const methods = state.shiftMethods || [];
     const employees = filteredEmployees(state);
     const cities = uniqueOf((state.employees || []).map(employeeCity));
     const stations = uniqueOf((state.employees || []).map(employeeStation));
@@ -626,10 +655,7 @@
             '<td>' + esc(employee.jobTitle || '—') + '</td>' +
             '<td><select data-sp-assign-method="' + esc(employee.id) + '" aria-label="روش کاری">' +
               '<option value="">— بدون تخصیص —</option>' +
-              methods.map(function (method) {
-                return '<option value="' + esc(method.id) + '"' + (methodId === String(method.id) ? ' selected' : '') + '>' +
-                  esc(method.name || 'روش کاری') + '</option>';
-              }).join('') + '</select></td>' +
+              methodOptions(state, methodId) + '</select></td>' +
             rangeCell +
             '</tr>';
         }).join('');
@@ -648,7 +674,7 @@
       '</div><div class="list-filter-row">' +
       selectChip('city', 'شهر', cities, filters.city) +
       selectChip('station', 'محل خدمت', stations, filters.station) +
-      selectChip('method', 'روش کاری', methods.map(function (m) { return [m.id, m.name || 'روش کاری']; }), filters.method) +
+      methodFilterChip(state, filters.method) +
       '<button type="button" class="list-chip list-chip-reset" data-sp-reset>پاک‌کردن فیلترها</button>' +
       '<span class="list-filter-count">' + fa(employees.length) + ' نفر</span>' +
       '</div></div>' +
@@ -684,6 +710,12 @@
       }).join('') + '</select></label>';
   }
 
+  // فیلتر «روش کاری» هم قالب‌های شیفت و هم قالب‌های روزکاری را دارد.
+  function methodFilterChip(state, current) {
+    return '<label class="sp-filter"><span>روش کاری</span><select data-sp-filter="method">' +
+      '<option value="">همه</option>' + methodOptions(state, current) + '</select></label>';
+  }
+
   // ── تب ۳: تقویم شیفت ────────────────────────────────────────────────────
   function renderCalendar(state) {
     const dates = rangeDates(range.from, range.to);
@@ -701,7 +733,7 @@
       '</div><div class="list-filter-row">' +
       selectChip('city', 'شهر', cities, filters.city) +
       selectChip('station', 'محل خدمت', stations, filters.station) +
-      selectChip('method', 'روش کاری', methods.map(function (m) { return [m.id, m.name || 'روش کاری']; }), filters.method) +
+      methodFilterChip(state, filters.method) +
       selectChip('code', 'نوع شیفت', codes, filters.code) +
       '<button type="button" class="list-chip list-chip-reset" data-sp-reset>پاک‌کردن فیلترها</button>' +
       '</div></div>';
@@ -1192,12 +1224,14 @@
   function openAssignModal(employeeIds) {
     const state = data();
     const methods = state.shiftMethods || [];
-    if (!methods.length) { bridge.toast('اول یک روش کاری تعریف کن.'); return; }
+    const templates = state.shiftTemplates || [];
+    if (!methods.length && !templates.length) { bridge.toast('اول یک قالب شیفت یا قالب روزکاری بساز.'); return; }
     openModal('تخصیص روش کاری',
       'برای ' + fa(employeeIds.length) + ' نفر انتخاب‌شده، روش کاری و بازهٔ اعتبار را مشخص کن.',
       '<form class="module-form" data-sp-form="assign">' +
       '<div class="module-fields">' +
-      field('روش کاری', select('methodId', methods.map(function (m) { return [m.id, m.name || 'روش کاری']; }), '')) +
+      field('روش کاری', '<select name="methodId"><option value="">— انتخاب کن —</option>' +
+        methodOptions(state, '') + '</select>') +
       field('از تاریخ / شروع چرخه', '<input type="text" name="from" data-jalali-input="jalali" value="' +
         esc(bridge.jalaliInputValue(todayIso(), false)) + '">',
         'برای روش شیفتی، چرخهٔ الگوی قالب از همین تاریخ شمرده می‌شود.') +
@@ -1860,6 +1894,10 @@
       overrideFor: overrideFor,
       leaveFor: leaveFor,
       resolve: resolve,
+      methodIsShift: methodIsShift,
+      methodRef: methodRef,
+      methodLabel: methodLabel,
+      methodOptions: methodOptions,
       methodSummary: methodSummary,
       templateSummary: templateSummary,
       defaultWeekly: defaultWeekly

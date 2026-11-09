@@ -125,6 +125,47 @@ check('تخصیص غیرفعال', e.resolve(state, 'e1', '2026-11-07').kind ===
 check('خلاصهٔ روش اداری', e.methodSummary(office).indexOf('08:00–14:00') >= 0, e.methodSummary(office));
 check('خلاصهٔ چرخش', e.templateSummary(template).indexOf('استراحت') >= 0, e.templateSummary(template));
 
+// ── قالب شیفت به‌عنوان روش کاری مستقیم ──────────────────────────────────
+// کشویی «روش کاری» هر دو نوع قالب را دارد؛ اگر کارمند مستقیم به قالب شیفت
+// وصل شود، روزهای کارش از الگوی همان قالب می‌آید.
+check('شناسهٔ قالب شیفت هم روش شیفتی است', e.methodIsShift(state, 't1') === true);
+check('قالب روزکاری شیفتی نیست', e.methodIsShift(state, 'm1') === false);
+check('methodRef قالب را برمی‌گرداند', (e.methodRef(state, 't1').template || {}).id === 't1');
+check('methodRef روش را برمی‌گرداند', (e.methodRef(state, 'm1').method || {}).id === 'm1');
+check('methodLabel نام قالب شیفت', e.methodLabel(state, 't1') === '۲/۲/۴', e.methodLabel(state, 't1'));
+check('methodLabel نام قالب روزکاری', e.methodLabel(state, 'm1') === 'اداری', e.methodLabel(state, 'm1'));
+
+const directState = {
+  employees: [{ id: 'e1', firstName: 'علی', lastName: 'رضایی' }],
+  shiftMethods: [office],
+  shiftTemplates: [template],
+  shiftAssignments: [{ id: 'a9', employeeId: 'e1', methodId: 't1', from: '2026-11-07', to: '', active: true }],
+  shiftOverrides: [],
+  leaves: []
+};
+check('تخصیص مستقیم قالب شیفت: روز اول صبح‌کار',
+  e.resolve(directState, 'e1', '2026-11-07').label === 'صبح‌کار', e.resolve(directState, 'e1', '2026-11-07').label);
+check('تخصیص مستقیم قالب شیفت: روز سوم شب‌کار',
+  e.resolve(directState, 'e1', '2026-11-09').label === 'شب‌کار', e.resolve(directState, 'e1', '2026-11-09').label);
+check('تخصیص مستقیم قالب شیفت: روز پنجم استراحت',
+  e.resolve(directState, 'e1', '2026-11-11').kind === 'off');
+check('تخصیص مستقیم قالب شیفت: چرخه از تاریخ تخصیص شمرده می‌شود',
+  e.resolve(directState, 'e1', '2026-11-15').label === 'صبح‌کار', e.resolve(directState, 'e1', '2026-11-15').label);
+
+// ── گزینه‌های کشویی «روش کاری»: هر دو نوع، با رنگ جدا ──
+const optionsHtml = e.methodOptions(state, '');
+check('کشویی روش کاری گروه قالب شیفت دارد', optionsHtml.indexOf('sp-opt-shift') >= 0);
+check('کشویی روش کاری گروه قالب روزکاری دارد', optionsHtml.indexOf('sp-opt-method') >= 0);
+check('گزینهٔ قالب شیفت با کلاس آبی', optionsHtml.indexOf('class="sp-opt-shift"') >= 0);
+check('گزینهٔ قالب روزکاری با کلاس قرمز', optionsHtml.indexOf('class="sp-opt-method"') >= 0);
+check('قالب شیفت پیش از قالب روزکاری می‌آید',
+  optionsHtml.indexOf('sp-opt-shift') < optionsHtml.indexOf('sp-opt-method'));
+check('هر دو قالب در کشویی هستند',
+  optionsHtml.indexOf('value="t1"') >= 0 && optionsHtml.indexOf('value="m1"') >= 0);
+check('گزینهٔ انتخاب‌شده selected می‌شود',
+  e.methodOptions(state, 't1').indexOf('value="t1" class="sp-opt-shift" selected') >= 0,
+  e.methodOptions(state, 't1').slice(0, 200));
+
 // ── رویدادها ثبت شده‌اند ──
 check('گوش‌دهنده‌های سراسری ثبت شدند', listeners.length >= 4, listeners.join(','));
 
