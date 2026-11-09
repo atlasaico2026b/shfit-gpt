@@ -360,20 +360,28 @@ check('فشرده‌سازی الگو',
 clickOn('data-sp-tab', 'methods');
 check('تب جداگانهٔ قالب‌ها حذف شده است', fakeHost.innerHTML.indexOf('data-sp-tab="templates"') < 0);
 check('عنوان تب هر دو را دارد', fakeHost.innerHTML.indexOf('قالب شیفت و روش کاری') >= 0);
-check('انتخابگر قالب پیش از روش‌های کاری می‌آید',
-  fakeHost.innerHTML.indexOf('sp-template-picker') >= 0 &&
-  fakeHost.innerHTML.indexOf('sp-template-picker') < fakeHost.innerHTML.indexOf('sp-section-head'));
-check('گزینهٔ «بدون قالب» هست', fakeHost.innerHTML.indexOf('data-sp-pick-template=""') >= 0);
-check('قالب موجود در انتخابگر هست', fakeHost.innerHTML.indexOf('data-sp-pick-template="t1"') >= 0);
+check('سطر یک دو دکمهٔ ساخت دارد',
+  fakeHost.innerHTML.indexOf('data-sp-new="template"') >= 0 &&
+  fakeHost.innerHTML.indexOf('data-sp-new="method"') >= 0);
+check('دکمهٔ ساخت قالب شیفت برچسب درست دارد',
+  fakeHost.innerHTML.indexOf('+ ساخت قالب شیفت') >= 0);
+check('دکمهٔ ساخت قالب روزکاری برچسب درست دارد',
+  fakeHost.innerHTML.indexOf('+ ساخت قالب روزکاری') >= 0);
+check('انتخابگر قرصی قدیمی حذف شده است', fakeHost.innerHTML.indexOf('sp-template-picker') < 0);
+check('پنل الگوی قالب قدیمی حذف شده است', fakeHost.innerHTML.indexOf('sp-pattern-head') < 0);
+check('دو کادر چپ و راست وجود دارد', fakeHost.innerHTML.indexOf('sp-split') >= 0);
+check('کادر قالب‌های شیفت هست', fakeHost.innerHTML.indexOf('قالب‌های شیفت') >= 0);
+check('کادر قالب‌های روزکاری هست', fakeHost.innerHTML.indexOf('قالب‌های روزکاری') >= 0);
+check('کادر شیفت پیش از کادر روزکاری می‌آید',
+  fakeHost.innerHTML.indexOf('قالب‌های شیفت') < fakeHost.innerHTML.indexOf('قالب‌های روزکاری'));
+check('قالب موجود در کادر شیفت هست', fakeHost.innerHTML.indexOf('data-sp-pick-template="t1"') >= 0);
+check('هر دو قالب روزکاری هم‌زمان دیده می‌شوند',
+  bodyHtml.indexOf('چرخشی') >= 0 && bodyHtml.indexOf('اداری') >= 0);
 
 clickOn('data-sp-pick-template', 't1');
-check('انتخاب قالب، روش‌های همان قالب را نشان می‌دهد',
-  bodyHtml.indexOf('چرخشی') >= 0 && bodyHtml.indexOf('اداری') < 0);
-check('الگوی قالب انتخاب‌شده نمایش داده می‌شود', bodyHtml.indexOf('sp-day-chip') >= 0);
-
-clickOn('data-sp-pick-template', '');
-check('بدون قالب، روش روزکار دیده می‌شود',
-  bodyHtml.indexOf('اداری') >= 0 && bodyHtml.indexOf('چرخشی') < 0);
+check('کلیک روی کارت قالب آن را فعال می‌کند', bodyHtml.indexOf('sp-pick-card is-active') >= 0);
+check('انتخاب قالب فهرست روزکاری را فیلتر نمی‌کند',
+  bodyHtml.indexOf('چرخشی') >= 0 && bodyHtml.indexOf('اداری') >= 0);
 
 // ── پنجره‌ها: نوع روش کاری پرسیده نمی‌شود و خروجی فرد کار می‌کند ─────────
 function makeElement() {
@@ -406,20 +414,31 @@ function clickAttr(selector, value) {
 function currentModal() { return document.body.children[document.body.children.length - 1]; }
 
 clickOn('data-sp-tab', 'methods');
-clickOn('data-sp-pick-template', '');
+clickOn('data-sp-pick-template', 't1'); // کلیک دوباره انتخاب را برمی‌دارد
 clickAttr('[data-sp-new="method"]', '');
 let methodModal = currentModal();
-check('پنجرهٔ روش کاری نوع روش را نمی‌پرسد', methodModal.innerHTML.indexOf('name="kind"') < 0);
-check('پنجرهٔ روش کاری قالب را در خود دارد', methodModal.innerHTML.indexOf('name="templateId"') >= 0);
-check('روش روزکار قوانین هفتگی دارد', methodModal.innerHTML.indexOf('data-sp-week-block') >= 0);
+check('پنجرهٔ قالب روزکاری نوع را نمی‌پرسد', methodModal.innerHTML.indexOf('name="kind"') < 0);
+check('پنجرهٔ قالب روزکاری انتخاب قالب شیفت دارد',
+  methodModal.innerHTML.indexOf('data-sp-method-template') >= 0);
+check('گزینهٔ «بدون قالب» در انتخابگر هست',
+  methodModal.innerHTML.indexOf('>بدون قالب — روزکار هفتگی</option>') >= 0);
+check('روزکار قوانین هفتگی را نشان می‌دهد',
+  methodModal.innerHTML.indexOf('data-sp-week-block') >= 0 &&
+  methodModal.innerHTML.indexOf('data-sp-week-block hidden') < 0);
+check('روزکار بلوک الگوی شیفت را پنهان می‌کند',
+  methodModal.innerHTML.indexOf('data-sp-pattern-block hidden') >= 0);
 clickAttr('[data-sp-close]', '');
 
 clickOn('data-sp-pick-template', 't1');
 clickAttr('[data-sp-new="method"]', '');
 methodModal = currentModal();
-check('روش شیفتی الگوی قالب را نشان می‌دهد', methodModal.innerHTML.indexOf('data-sp-pattern-block') >= 0);
-check('روش شیفتی روزهای هفته را نمی‌پرسد', methodModal.innerHTML.indexOf('data-sp-week-block') < 0);
-check('روش شیفتی به قالب وصل است', methodModal.innerHTML.indexOf('name="templateId" value="t1"') >= 0);
+check('قالب شیفتِ فعال پیش‌انتخاب شده است',
+  methodModal.innerHTML.indexOf('value="t1" selected') >= 0);
+check('قالب روزکاری شیفتی بلوک الگو را نشان می‌دهد',
+  methodModal.innerHTML.indexOf('data-sp-pattern-block') >= 0 &&
+  methodModal.innerHTML.indexOf('data-sp-pattern-block hidden') < 0);
+check('قالب روزکاری شیفتی روزهای هفته را پنهان می‌کند',
+  methodModal.innerHTML.indexOf('data-sp-week-block hidden') >= 0);
 clickAttr('[data-sp-close]', '');
 
 // دکمه‌های خروجی پنجرهٔ «شیفت یک نفر» باید فعال باشند.
@@ -484,6 +503,21 @@ const templateModal = currentModal();
 check('پنجرهٔ قالب فیلد شروع چرخه ندارد', templateModal.innerHTML.indexOf('name="cycleStart"') < 0);
 check('پنجرهٔ قالب الگوی روزها دارد', templateModal.innerHTML.indexOf('data-sp-pattern') >= 0);
 clickAttr('[data-sp-close]', '');
+
+// ریشهٔ باگ: گزینه‌های «الگوی روزها» فقط هنگام باز شدن پنجره ساخته می‌شدند،
+// پس شیفتی که در «شیفت‌های روز» اضافه می‌شد تا بستن و باز کردن دوباره در
+// انتخابگر روزها دیده نمی‌شد. حالا هر افزودن/حذف/تایپ شیفت آن را هم‌گام می‌کند.
+const plannerSource = fs.readFileSync(path.join(root, 'design/shift-planner.js'), 'utf8');
+const addShiftBranch = (plannerSource.match(/target\.closest\('\[data-sp-add-shift\]'\)[\s\S]{0,400}?\n    \}/) || [''])[0];
+const delShiftBranch = (plannerSource.match(/target\.closest\('\[data-sp-del-shift\]'\)[\s\S]{0,300}?\n    \}/) || [''])[0];
+check('افزودن شیفت، انتخابگر روزها را هم‌گام می‌کند',
+  addShiftBranch.indexOf('syncPatternOptions()') >= 0, addShiftBranch.slice(0, 120));
+check('حذف شیفت، انتخابگر روزها را هم‌گام می‌کند',
+  delShiftBranch.indexOf('syncPatternOptions()') >= 0, delShiftBranch.slice(0, 120));
+check('تایپ کد شیفت، انتخابگر روزها را هم‌گام می‌کند',
+  /onModalInput[\s\S]{0,300}?syncPatternOptions\(\)/.test(plannerSource));
+check('هم‌گام‌سازی گزینه‌ها را از شیفت‌های روز می‌سازد',
+  /function syncPatternOptions\(\)[\s\S]{0,400}?readShifts\(\)/.test(plannerSource));
 
 // ستون بعد از «روش کاری» برای روش شیفتی تاریخ شروع چرخه می‌گیرد
 clickOn('data-sp-tab', 'assign');
