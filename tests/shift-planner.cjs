@@ -253,21 +253,38 @@ clickOn('data-sp-reset', '');
 
 // ── سطر شهر: عنوان «مکان»، انتخاب گروهی و مرتب‌سازی ─────────────────────
 clickOn('data-sp-tab', 'assign');
-check('سطر شهر عنوان «مکان» دارد', fakeHost.innerHTML.indexOf('data-sp-sort-city') >= 0 && fakeHost.innerHTML.indexOf('مکان') >= 0);
+check('عنوان «مکان» در سرستون جدول است',
+  fakeHost.innerHTML.indexOf('data-sp-sort-city') >= 0 && fakeHost.innerHTML.indexOf('مکان') >= 0);
+check('سرستون «مکان» پیش از سطرهای شهر می‌آید',
+  fakeHost.innerHTML.indexOf('data-sp-sort-city') < fakeHost.innerHTML.indexOf('sp-group-city'));
+check('سرستون «مکان» در thead است',
+  fakeHost.innerHTML.indexOf('data-sp-sort-city') < fakeHost.innerHTML.indexOf('</thead>'));
+check('دکمهٔ «مکان» دیگر داخل سطر شهر نیست',
+  fakeHost.innerHTML.indexOf('sp-group-title') < 0);
+
+// ستون‌ها باید با سرستون‌ها هم‌شمار باشند، وگرنه جدول به‌هم می‌ریزد.
+const assignThead = (fakeHost.innerHTML.match(/<thead>[\s\S]*?<\/thead>/) || [''])[0];
+const thCount = (assignThead.match(/<th\b/g) || []).length;
+check('سرستون‌های تخصیص ۷ ستون دارند', thCount === 7, thCount);
+const e1At = fakeHost.innerHTML.indexOf('data-sp-select="e1"');
+const e1Row = fakeHost.innerHTML.slice(fakeHost.innerHTML.lastIndexOf('<tr>', e1At), fakeHost.innerHTML.indexOf('</tr>', e1At));
+const e1Cells = (e1Row.match(/<td\b/g) || []).length;
+check('ردیف کارمند هم ۷ ستون دارد', e1Cells === 7, e1Cells);
+check('ردیف کارمند ستون مکان را پر می‌کند', e1Row.indexOf('sp-city-cell') >= 0);
 check('سطر شهر چک‌باکس انتخاب گروهی دارد', fakeHost.innerHTML.indexOf('data-sp-select-city="تهران"') >= 0);
 check('سطر شهر کرج هم چک‌باکس دارد', fakeHost.innerHTML.indexOf('data-sp-select-city="کرج"') >= 0);
 
 let tehranAt = fakeHost.innerHTML.indexOf('sp-group-city">تهران');
 let karajAt = fakeHost.innerHTML.indexOf('sp-group-city">کرج');
 check('ترتیب پیش‌فرض صعودی است', tehranAt >= 0 && karajAt >= 0 && tehranAt < karajAt, tehranAt + '/' + karajAt);
-check('فلش صعودی نشان داده می‌شود', fakeHost.innerHTML.indexOf('▲') >= 0);
+check('فلش صعودی نشان داده می‌شود', fakeHost.innerHTML.indexOf('↑') >= 0);
 
 // refresh() فقط بدنهٔ تب را دوباره می‌سازد، پس از این به بعد bodyHtml را می‌خوانیم.
 clickOn('data-sp-sort-city', '');
 tehranAt = bodyHtml.indexOf('sp-group-city">تهران');
 karajAt = bodyHtml.indexOf('sp-group-city">کرج');
 check('کلیک روی عنوان، ترتیب را نزولی می‌کند', karajAt >= 0 && karajAt < tehranAt, karajAt + '/' + tehranAt);
-check('فلش نزولی نشان داده می‌شود', bodyHtml.indexOf('▼') >= 0);
+check('فلش نزولی نشان داده می‌شود', bodyHtml.indexOf('↓') >= 0);
 
 clickOn('data-sp-sort-city', '');
 tehranAt = bodyHtml.indexOf('sp-group-city">تهران');
