@@ -353,7 +353,15 @@ body > .drawer-backdrop,body > .drawer,body > .settings-popover,body > .toast{po
 .module-table{break-inside:auto;page-break-inside:auto}
 .module-table thead{display:table-header-group;break-after:avoid;page-break-after:avoid}
 .module-table tr,.module-table td,.module-table th{break-inside:avoid;page-break-inside:avoid}
-.module-table td,.module-table th{orphans:2;widows:2}}
+.module-table td,.module-table th{orphans:2;widows:2}
+/* تقویم شیفت کادر اسکرول خودش را دارد (.sp-grid-wrap) و کلاس module-table-wrap
+   را نمی‌گیرد؛ بدون این قاعده، چاپ در همان کادر ۶۸vh بریده می‌شد و سطر آخر
+   هر صفحه نصف می‌ماند. */
+.sp-grid-wrap{overflow:visible!important;max-height:none!important;border:0!important}
+.sp-grid{break-inside:auto;page-break-inside:auto}
+.sp-grid thead{display:table-header-group;break-after:avoid;page-break-after:avoid}
+.sp-grid tr,.sp-grid td,.sp-grid th{break-inside:avoid;page-break-inside:avoid}
+.sp-grid thead th,.sp-grid .sp-sticky-col{position:static!important}}
 
 /* Main module page must span the entire 12-column section grid. */
 .section-view > .module-wrap{grid-column:1 / -1;width:100%;min-width:0}

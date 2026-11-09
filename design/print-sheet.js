@@ -53,6 +53,9 @@
         const length = Math.min(String(row[i] == null ? '' : row[i]).trim().length, 34);
         weight = Math.max(weight, length);
       });
+      // ستون اول (نام کارمند / تاریخ) باید خوانا بماند؛ در جدول‌های چندستونه
+      // مثل تقویم شیفت، سرستون بلند تاریخ‌ها آن را به چند میلی‌متر می‌رساند.
+      if (i === 0) weight *= 1.5;
       weights.push(Math.max(6, Math.min(30, weight)));
     }
     return weights;
@@ -61,13 +64,26 @@
   function columnPercents(table, columns) {
     const weights = columnWeights(table, columns);
     const total = weights.reduce((sum, w) => sum + w, 0) || 1;
-    const percents = weights.map(w => Math.max(5, Math.round((w / total) * 100)));
-    // باقی‌ماندهٔ گِردکردن به پهن‌ترین ستون اضافه می‌شود تا مجموع دقیقاً ۱۰۰ شود.
-    const diff = 100 - percents.reduce((sum, p) => sum + p, 0);
-    if (diff) {
+    // کف ۵٪ برای جدول‌های چندستونه (تقویم شیفت: یک ستون برای هر روز) مجموع را
+    // از ۱۰۰٪ رد می‌کرد و جدول از عرض A4 بیرون می‌زد؛ کف با تعداد ستون‌ها
+    // کوچک می‌شود تا مجموع همیشه دقیقاً ۱۰۰ بماند.
+    const floor = Math.max(1, Math.min(5, Math.floor(100 / columns)));
+    const percents = weights.map(w => Math.max(floor, Math.round((w / total) * 100)));
+    let sum = percents.reduce((acc, p) => acc + p, 0);
+    const widestIndex = () => {
       let widest = 0;
       percents.forEach((value, index) => { if (value > percents[widest]) widest = index; });
-      percents[widest] = Math.max(5, percents[widest] + diff);
+      return widest;
+    };
+    while (sum > 100) {
+      const widest = widestIndex();
+      if (percents[widest] <= floor) break;
+      percents[widest] -= 1;
+      sum -= 1;
+    }
+    while (sum < 100) {
+      percents[widestIndex()] += 1;
+      sum += 1;
     }
     return percents;
   }

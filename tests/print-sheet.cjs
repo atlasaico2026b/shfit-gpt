@@ -109,6 +109,23 @@ check('برگهٔ پرونده سرستون را در هر صفحه تکرار �
 check('برگهٔ پرونده هم سرصفحه/پاصفحهٔ مرورگر را چاپ نمی‌کند', /@page\{size:A4;margin:0\}/.test(recordFileJs));
 check('حاشیهٔ برگهٔ پرونده از padding خودش می‌آید', /\.rf-sheet\{padding:12mm 12mm 14mm\}/.test(recordFileJs));
 
+// ── تقویم شیفت: کادر با فهرست کارکنان رشد می‌کند و چاپ سطرها را نمی‌شکند ──
+const plannerCss = fs.readFileSync(path.join(root, 'design/shift-planner.css'), 'utf8');
+check('کادر تقویم سقف ارتفاع ندارد و با فهرست رشد می‌کند', /\.sp-grid-wrap\s*\{[^}]*max-height:\s*none/.test(plannerCss));
+check('سقف ۶۸vh قبلی کادر تقویم حذف شده', !/\.sp-grid-wrap\s*\{[^}]*max-height:\s*68vh/.test(plannerCss));
+check('چاپ تقویم کادر اسکرول را باز می‌کند', /\.sp-grid-wrap\{overflow:visible!important/.test(stylesCss));
+check('چاپ تقویم سطرها را نصف نمی‌کند', /\.sp-grid tr,\.sp-grid td,\.sp-grid th\{break-inside:avoid;page-break-inside:avoid\}/.test(stylesCss));
+check('چاپ تقویم سرستون را در هر صفحه تکرار می‌کند', /\.sp-grid thead\{display:table-header-group/.test(stylesCss));
+check('چاپ تقویم ستون چسبان را آزاد می‌کند', /\.sp-grid thead th,\.sp-grid \.sp-sticky-col\{position:static!important\}/.test(stylesCss));
+
+// جدول چندستونه (تقویم: یک ستون برای هر روز) نباید از عرض A4 بیرون بزند.
+const calendarRows = [['کارمند'].concat(Array.from({ length: 30 }, (_, i) => '۱۴۰۵/۰۸/' + (i + 1)))];
+calendarRows.push(['علی رضایی'].concat(Array.from({ length: 30 }, () => 'روزکار')));
+const calendarWidths = sheet.columnPercents(calendarRows);
+check('۳۱ ستون تقویم مجموعاً ۱۰۰٪ عرض می‌گیرد',
+  calendarWidths.reduce((a, b) => a + b, 0) === 100, calendarWidths.join('+'));
+check('هیچ ستون تقویم باریک‌تر از ۱٪ نیست', calendarWidths.every(w => w >= 1), calendarWidths.join('+'));
+
 const failed = checks.filter(c => !c.ok);
 checks.forEach(c => console.log((c.ok ? 'PASS ' : 'FAIL ') + c.name + (c.ok || !c.extra ? '' : ' → ' + c.extra)));
 console.log('\n' + (checks.length - failed.length) + '/' + checks.length + ' بررسی موفق');

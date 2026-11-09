@@ -285,9 +285,11 @@
 }
 
 /* ── جدول تقویم ─────────────────────────────────────────────────────────── */
+/* ارتفاع کادر با تعداد کارکنان رشد می‌کند؛ سقف ۶۸vh قبلی باعث می‌شد فهرست
+   بلند داخل کادر اسکرول بخورد و در چاپ هم سطر آخر بریده شود. */
 .sp-grid-wrap {
   overflow: auto;
-  max-height: 68vh;
+  max-height: none;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   overscroll-behavior: contain;
