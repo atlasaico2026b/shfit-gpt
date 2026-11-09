@@ -40,6 +40,55 @@
     return 'normal';
   }
 
+  // ستون‌هایی که از این شماره به بعد عمودی نوشته می‌شوند.
+  // اگر خروجی‌گیرنده خودش verticalFrom بدهد، همان ملاک است. وگرنه خودکار
+  // تصمیم گرفته می‌شود: اگر ستون‌ها با فونت افقی در عرض A4 جا نشوند (پهنای
+  // سهم هر ستون از محتوایش کمتر شود)، ستون‌های کوتاه (روز، وضعیت، تعداد) از
+  // بالا به پایین نوشته می‌شوند تا فونت به‌هم نریزد. ستون‌های متنی بلند
+  // (نام، محل خدمت) هرگز عمودی نمی‌شوند.
+  const AUTO_VERTICAL_MAX_TEXT = 8;
+  // عرض قابل استفادهٔ A4 افقی: ۲۹۷mm منهای حاشیهٔ ۹mm دو طرف.
+  const PAGE_CONTENT_MM = 279;
+  // پهنای تقریبی هر نویسه در فونت ۷pt برگه، به‌علاوهٔ padding دو طرف خانه.
+  const CHAR_MM = 1.2;
+  const CELL_PAD_MM = 2.4;
+
+  function columnMaxLength(table, index) {
+    let longest = 0;
+    (table || []).forEach(row => {
+      const length = String(row[index] == null ? '' : row[index]).trim().length;
+      if (length > longest) longest = length;
+    });
+    return longest;
+  }
+
+  function requiredWidthMm(table, index) {
+    return columnMaxLength(table, index) * CHAR_MM + CELL_PAD_MM;
+  }
+
+  function autoVerticalFrom(table, columns) {
+    if (columns < 2) return -1;
+    // پهنای واقعی هر ستون با تقسیم فعلی؛ اگر همه جا می‌شوند، افقی می‌مانند.
+    const percents = columnPercents(table, columns, -1);
+    const tooNarrow = percents.some((percent, index) =>
+      (percent / 100) * PAGE_CONTENT_MM < requiredWidthMm(table, index));
+    if (!tooNarrow) return -1;
+    // ستون اول (نام کارمند / تاریخ) همیشه افقی می‌ماند.
+    for (let i = 1; i < columns; i++) {
+      let allShort = true;
+      for (let j = i; j < columns; j++) {
+        if (columnMaxLength(table, j) > AUTO_VERTICAL_MAX_TEXT) { allShort = false; break; }
+      }
+      if (allShort) return i;
+    }
+    return -1;
+  }
+
+  function resolveVerticalFrom(table, columns, requested) {
+    if (Number.isInteger(requested) && requested >= 0 && requested < columns) return requested;
+    return autoVerticalFrom(table, columns);
+  }
+
   // پهنای ستون‌ها به اندازهٔ محتوایشان: ستون نام و محل خدمت پهن‌تر، ستون‌های
   // کوتاه (وضعیت، تعداد) باریک‌تر. مجموع همیشه ۱۰۰٪ عرض برگه است.
   function columnWeights(table, columns, verticalFrom) {
@@ -74,22 +123,29 @@
     // از ۱۰۰٪ رد می‌کرد و جدول از عرض A4 بیرون می‌زد؛ کف با تعداد ستون‌ها
     // کوچک می‌شود تا مجموع همیشه دقیقاً ۱۰۰ بماند.
     const floor = Math.max(1, Math.min(5, Math.floor(100 / columns)));
-    const percents = weights.map(w => Math.max(floor, Math.round((w / total) * 100)));
+    // سهم دقیق هر ستون، بعد گرد کردن با «بزرگ‌ترین باقیمانده»: مجموع دقیقاً
+    // ۱۰۰ می‌شود و نسبت‌ها حفظ می‌مانند. روش قبلی (کم‌کردن از پهن‌ترین ستون)
+    // در جدول‌های چندستونه ستون نام را تا کف ۲٪ خرد می‌کرد و فونت به‌هم می‌ریخت.
+    const exact = weights.map(w => (w / total) * 100);
+    const percents = exact.map(value => Math.max(floor, Math.floor(value)));
     let sum = percents.reduce((acc, p) => acc + p, 0);
-    const widestIndex = () => {
+    const byRemainder = exact
+      .map((value, index) => ({ index: index, remainder: value - Math.floor(value) }))
+      .sort((a, b) => b.remainder - a.remainder);
+    let cursor = 0;
+    while (sum < 100 && byRemainder.length) {
+      percents[byRemainder[cursor % byRemainder.length].index] += 1;
+      sum += 1;
+      cursor += 1;
+    }
+    // اگر کف، مجموع را از ۱۰۰ رد کرد، از پهن‌ترین ستون‌ها کم می‌شود (نه از
+    // ستون نام) تا هیچ ستونی زیر کف نرود.
+    while (sum > 100) {
       let widest = 0;
       percents.forEach((value, index) => { if (value > percents[widest]) widest = index; });
-      return widest;
-    };
-    while (sum > 100) {
-      const widest = widestIndex();
       if (percents[widest] <= floor) break;
       percents[widest] -= 1;
       sum -= 1;
-    }
-    while (sum < 100) {
-      percents[widestIndex()] += 1;
-      sum += 1;
     }
     return percents;
   }
@@ -111,7 +167,7 @@
     const legend = String(o.legend == null ? '' : o.legend).trim();
     // ستون‌هایی که از این شماره به بعد باریک‌اند (روزهای تقویم) به‌صورت عمودی
     // نوشته می‌شوند تا با زیادشدن ستون‌ها فونت به‌هم نریزد.
-    const verticalFrom = Number.isInteger(o.verticalFrom) ? o.verticalFrom : -1;
+    const verticalFrom = resolveVerticalFrom(table, columns, o.verticalFrom);
     const vertical = verticalFrom >= 0 && verticalFrom < columns;
     const meta = [ORG, stamp ? 'تاریخ تهیه: ' + stamp : '', fa(body.length) + ' ردیف']
       .filter(Boolean)
@@ -162,10 +218,16 @@
 
   function render(host, rows, options) {
     if (!host) return;
+    const o = options || {};
     const table = (rows || []).filter(row => Array.isArray(row) && row.length);
     const columns = Math.max(1, columnCount(table));
+    const verticalFrom = resolveVerticalFrom(table, columns, o.verticalFrom);
     host.setAttribute('data-density', densityFor(columns));
-    host.innerHTML = build(rows, options);
+    // قواعد عمودی‌نویسی در print.css روی خودِ برگه (#atlasPrintArea) است، نه
+    // روی جدول؛ اگر اینجا ست نشود، ستون‌ها افقی می‌مانند و فونت به‌هم می‌ریزد.
+    if (verticalFrom >= 0 && verticalFrom < columns) host.setAttribute('data-vertical', '1');
+    else host.removeAttribute('data-vertical');
+    host.innerHTML = build(rows, o);
   }
 
   window.AtlasPrintSheet = {
@@ -178,6 +240,10 @@
       return columnPercents(table, Math.max(1, columnCount(table)), Number.isInteger(verticalFrom) ? verticalFrom : -1);
     },
     isNumericText: isNumericText,
+    resolveVerticalFrom: function (rows, requested) {
+      const table = (rows || []).filter(row => Array.isArray(row) && row.length);
+      return resolveVerticalFrom(table, Math.max(1, columnCount(table)), requested);
+    },
     fa: fa
   };
 })();
