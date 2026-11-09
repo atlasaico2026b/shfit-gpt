@@ -210,7 +210,9 @@ const filterState = {
   employees: [
     { id: 'e1', firstName: 'علی', lastName: 'رضایی', workplace: 'تهران', assignedWorkplace: 'ایستگاه ۹' },
     { id: 'e2', firstName: 'سارا', lastName: 'احمدی', workplace: 'تهران', assignedWorkplace: 'ایستگاه ۲' },
-    { id: 'e3', firstName: 'مریم', lastName: 'کریمی', workplace: 'کرج', assignedWorkplace: 'ایستگاه ۳' }
+    { id: 'e3', firstName: 'مریم', lastName: 'کریمی', workplace: 'کرج', assignedWorkplace: 'ایستگاه ۳' },
+    // هم‌ایستگاهی با سارا: برای آزمودن مرتب‌سازی کارکنان داخل یک محل خدمت.
+    { id: 'e4', firstName: 'حسن', lastName: 'موسوی', workplace: 'تهران', assignedWorkplace: 'ایستگاه ۲' }
   ],
   shiftMethods: [
     { id: 'm1', name: 'اداری', kind: 'office', weekly: e.defaultWeekly('08:00', '14:00') },
@@ -385,39 +387,99 @@ check('سرستون‌ها از کلاس‌های استاندارد منوها 
   fakeHost.innerHTML.indexOf('module-sort-th') >= 0 && fakeHost.innerHTML.indexOf('module-sort-btn') >= 0 &&
   fakeHost.innerHTML.indexOf('module-sort-caret') >= 0);
 
-// پیش‌فرض: نام، صعودی. در ترتیب الفبای فارسی «س» پیش از «ع» می‌آید.
+// پیش‌فرض: نام، صعودی — داخل هر محل خدمت. «ح» پیش از «س» می‌آید.
 check('ترتیب پیش‌فرض بر اساس نام است',
-  bodyHtml.indexOf('سارا احمدی') < bodyHtml.indexOf('علی رضایی'),
-  bodyHtml.indexOf('سارا احمدی') + '/' + bodyHtml.indexOf('علی رضایی'));
+  bodyHtml.indexOf('حسن موسوی') < bodyHtml.indexOf('سارا احمدی'),
+  bodyHtml.indexOf('حسن موسوی') + '/' + bodyHtml.indexOf('سارا احمدی'));
 
 // کلیک روی «نام» جهت را برمی‌گرداند
 clickOn('data-sp-sort-key', 'name');
 check('کلیک دوباره روی «نام» نزولی می‌کند',
-  bodyHtml.indexOf('علی رضایی') < bodyHtml.indexOf('سارا احمدی'),
-  bodyHtml.indexOf('علی رضایی') + '/' + bodyHtml.indexOf('سارا احمدی'));
+  bodyHtml.indexOf('سارا احمدی') < bodyHtml.indexOf('حسن موسوی'),
+  bodyHtml.indexOf('سارا احمدی') + '/' + bodyHtml.indexOf('حسن موسوی'));
 
-// «محل خدمت»: ایستگاه ۱ (سارا) پیش از ایستگاه ۹ (علی) — برخلاف ترتیب نام
+// «محل خدمت» گروه‌های ایستگاه را داخل هر شهر مرتب می‌کند. پیش‌فرض صعودی است،
+// پس کلیک اول نزولی می‌کند: ایستگاه ۹ پیش از ایستگاه ۲.
 clickOn('data-sp-sort-key', 'station');
-check('مرتب‌سازی بر اساس محل خدمت کار می‌کند',
-  bodyHtml.indexOf('سارا احمدی') < bodyHtml.indexOf('علی رضایی'),
-  bodyHtml.indexOf('سارا احمدی') + '/' + bodyHtml.indexOf('علی رضایی'));
-check('سرستون فعال نشانه‌گذاری می‌شود', bodyHtml.indexOf('is-sorted') >= 0 && bodyHtml.indexOf('↑') >= 0);
-
-clickOn('data-sp-sort-key', 'station');
-check('کلیک دوم روی محل خدمت نزولی می‌کند',
-  bodyHtml.indexOf('علی رضایی') < bodyHtml.indexOf('سارا احمدی'),
-  bodyHtml.indexOf('علی رضایی') + '/' + bodyHtml.indexOf('سارا احمدی'));
+check('کلیک روی محل خدمت نزولی می‌کند',
+  bodyHtml.indexOf('sp-station-cell" colspan="2">ایستگاه ۹') <
+    bodyHtml.indexOf('sp-station-cell" colspan="2">ایستگاه ۲'),
+  bodyHtml.indexOf('sp-station-cell" colspan="2">ایستگاه ۹') + '/' +
+    bodyHtml.indexOf('sp-station-cell" colspan="2">ایستگاه ۲'));
 check('فلش نزولی روی سرستون', bodyHtml.indexOf('↓') >= 0);
 
-// «روش کاری»: اداری (علی) پیش از چرخشی (سارا)
+clickOn('data-sp-sort-key', 'station');
+check('کلیک دوم روی محل خدمت دوباره صعودی می‌کند',
+  bodyHtml.indexOf('sp-station-cell" colspan="2">ایستگاه ۲') <
+    bodyHtml.indexOf('sp-station-cell" colspan="2">ایستگاه ۹'),
+  bodyHtml.indexOf('sp-station-cell" colspan="2">ایستگاه ۲') + '/' +
+    bodyHtml.indexOf('sp-station-cell" colspan="2">ایستگاه ۹'));
+check('سرستون فعال نشانه‌گذاری می‌شود', bodyHtml.indexOf('is-sorted') >= 0 && bodyHtml.indexOf('↑') >= 0);
+
+// «روش کاری»: کارمند بدون روش پیش از چرخشی می‌آید (هر دو در ایستگاه ۲).
 clickOn('data-sp-sort-key', 'method');
 check('مرتب‌سازی بر اساس روش کاری کار می‌کند',
-  bodyHtml.indexOf('علی رضایی') < bodyHtml.indexOf('سارا احمدی'),
-  bodyHtml.indexOf('علی رضایی') + '/' + bodyHtml.indexOf('سارا احمدی'));
+  bodyHtml.indexOf('حسن موسوی') < bodyHtml.indexOf('سارا احمدی'),
+  bodyHtml.indexOf('حسن موسوی') + '/' + bodyHtml.indexOf('سارا احمدی'));
 
 // مرتب‌سازی داخل هر گروه شهر اعمال می‌شود، نه روی کل جدول
 check('گروه‌بندی شهر با مرتب‌سازی حفظ می‌شود',
-  bodyHtml.indexOf('sp-group-city">تهران') >= 0 && bodyHtml.indexOf('sp-group-city">کرج') >= 0);
+  bodyHtml.indexOf('sp-group-city\">تهران') >= 0 && bodyHtml.indexOf('sp-group-city\">کرج') >= 0);
+
+// ── گروه‌بندی دوسطحی: شهر ← محل خدمت ← کارکنان ──────────────────────────
+// شیفت‌ها در محل خدمت برقرار می‌شوند و یک شهر می‌تواند چند ایستگاه با نفرات و
+// نوع شیفت جدا داشته باشد، پس محل خدمت سطح گروه‌بندی داخل هر شهر است.
+clickOn('data-sp-tab', 'assign');
+check('سطر محل خدمت رندر می‌شود', bodyHtml.indexOf('sp-station-row') >= 0);
+check('سطر محل خدمت چک‌باکس انتخاب گروهی دارد',
+  bodyHtml.indexOf('data-sp-select-station="تهران\u0000ایستگاه ۲"') >= 0,
+  bodyHtml.indexOf('data-sp-select-station'));
+check('سطر محل خدمت نام ایستگاه را نشان می‌دهد',
+  bodyHtml.indexOf('sp-station-cell" colspan="2">ایستگاه ۲') >= 0);
+check('سطر محل خدمت تعداد نفرات را نشان می‌دهد',
+  /sp-station-cell" colspan="2">ایستگاه ۲<span class="sp-group-count">· ۲ نفر/.test(bodyHtml));
+check('سطر محل خدمت روش کاری همان ایستگاه را نشان می‌دهد',
+  bodyHtml.indexOf('sp-station-method') >= 0 && bodyHtml.indexOf('چرخشی') >= 0);
+
+// سطر شهر پیش از سطرهای ایستگاه‌هایش می‌آید و ایستگاه‌ها پیش از کارکنانشان.
+const tehranRowAt = bodyHtml.indexOf('sp-group-city\">تهران');
+const station2At = bodyHtml.indexOf('sp-station-cell" colspan="2">ایستگاه ۲');
+const station9At = bodyHtml.indexOf('sp-station-cell" colspan="2">ایستگاه ۹');
+const saraAt = bodyHtml.indexOf('سارا احمدی');
+const aliAt = bodyHtml.indexOf('علی رضایی');
+check('سطر شهر پیش از سطر ایستگاه‌ها می‌آید', tehranRowAt >= 0 && tehranRowAt < station2At,
+  tehranRowAt + '/' + station2At);
+check('هر ایستگاه پیش از کارکنان خودش می‌آید',
+  station2At < saraAt && station9At < aliAt, station2At + '/' + saraAt + '/' + station9At + '/' + aliAt);
+check('کارکنان یک ایستگاه زیر همان ایستگاه می‌مانند',
+  station2At < saraAt && saraAt < station9At, station2At + '/' + saraAt + '/' + station9At);
+
+// انتخاب یک ایستگاه فقط نفرات همان ایستگاه را تیک می‌زند.
+fire('change', {
+  closest: function (selector) {
+    return selector === '[data-sp-select-station]'
+      ? { getAttribute: function () { return 'تهران\u0000ایستگاه ۲'; }, checked: true }
+      : null;
+  }
+});
+check('انتخاب ایستگاه، هر دو کارمندش را تیک می‌زند',
+  bodyHtml.indexOf('data-sp-select="e2" checked') >= 0 && bodyHtml.indexOf('data-sp-select="e4" checked') >= 0);
+check('انتخاب ایستگاه، کارمند ایستگاه دیگر را تیک نمی‌زند',
+  bodyHtml.indexOf('data-sp-select="e1" checked') < 0);
+check('چک‌باکس ایستگاه پس از انتخاب کامل، تیک‌خورده است',
+  bodyHtml.indexOf('data-sp-select-station="تهران\u0000ایستگاه ۲" checked') >= 0);
+check('چک‌باکس شهر با انتخاب یک ایستگاه کامل تیک نمی‌خورد',
+  bodyHtml.indexOf('data-sp-select-city="تهران" checked') < 0);
+
+fire('change', {
+  closest: function (selector) {
+    return selector === '[data-sp-select-station]'
+      ? { getAttribute: function () { return 'تهران\u0000ایستگاه ۲'; }, checked: false }
+      : null;
+  }
+});
+check('برداشتن تیک ایستگاه، نفراتش را آزاد می‌کند',
+  bodyHtml.indexOf('data-sp-select="e2" checked') < 0 && bodyHtml.indexOf('data-sp-select="e4" checked') < 0);
 
 // ── ظاهر سطر شهر: سفید، متن مشکی، ۳۰٪ بزرگ‌تر ───────────────────────────
 const plannerCss = fs.readFileSync(path.join(root, 'design/shift-planner.css'), 'utf8');
