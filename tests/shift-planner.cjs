@@ -837,6 +837,13 @@ fire('change', {
 });
 check('تغییر تاریخ شروع چرخه روی تخصیص می‌نشیند', a2.from === '2026-11-10', a2.from);
 
+// ── کادر خروجی کلی بالای منوی شیفت حذف شده ──
+// خروجی هر بخش دکمهٔ خودش را دارد؛ دکمه‌های سرصفحه فقط تکرار بودند.
+const gridScopeButtons = (src.match(/data-sp-scope="grid"/g) || []).length;
+check('دکمه‌های خروجی سرصفحهٔ منوی شیفت حذف شده‌اند', gridScopeButtons === 5, gridScopeButtons);
+check('سرصفحهٔ منوی شیفت بدون دکمهٔ خروجی ساخته می‌شود', /const actions = '';/.test(src));
+check('خروجی تقویم شیفت سر جای خودش مانده', /data-sp-scope="grid">PNG/.test(src));
+
 // ── گزارش ──
 let failed = 0;
 checks.forEach(function (item) {

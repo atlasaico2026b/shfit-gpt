@@ -404,11 +404,7 @@
       ['calendar', 'تقویم شیفت'],
       ['legacy', 'برنامه‌های ثبت‌شده']
     ];
-    const actions =
-      '<button type="button" class="secondary-btn" data-sp-export="print" data-sp-scope="grid">چاپ / PDF</button> ' +
-      '<button type="button" class="secondary-btn" data-sp-export="xlsx" data-sp-scope="grid">Excel</button> ' +
-      '<button type="button" class="secondary-btn" data-sp-export="docx" data-sp-scope="grid">Word</button> ' +
-      '<button type="button" class="secondary-btn" data-sp-export="csv" data-sp-scope="grid">CSV</button>';
+    const actions = '';
 
     section.innerHTML = bridge.rootWrap(
       bridge.pageHead('برنامه‌ریزی شیفت', 'روش کاری، ساعت کاری، قالب چرخش، تخصیص کارکنان و تقویم بازه‌ای', actions) +
