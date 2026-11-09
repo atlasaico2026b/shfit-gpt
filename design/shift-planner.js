@@ -914,12 +914,40 @@
   }
 
   // ═══ ۵. خروجی ═══════════════════════════════════════════════════════════
+  // در خروجی، بازهٔ تاریخ بالای سرستون‌ها ذکر می‌شود؛ پس در هر ستون فقط شمارهٔ
+  // روز نوشته می‌شود، نه ماه و سال.
+  function jalaliDay(iso) {
+    const parts = String(bridge.formatJalali(iso, false) || '').split('/');
+    return parts.length > 1 ? parts[parts.length - 1] : parts[0];
+  }
+
+  // راهنمای یک‌سطری شیفت و روزکار: ساعت هر شیفت یک‌بار بالای جدول می‌آید تا
+  // تکرار ساعت شروع/پایان در همهٔ خانه‌ها لازم نباشد.
+  function exportLegend(state) {
+    const dates = rangeDates(range.from, range.to);
+    const employees = filteredEmployees(state);
+    const seen = Object.create(null);
+    const items = [];
+    employees.forEach(function (employee) {
+      dates.forEach(function (iso) {
+        const status = resolve(state, employee.id, iso);
+        if (status.kind !== 'shift' || !status.from || !status.to) return;
+        const key = status.label + '|' + status.from + '|' + status.to;
+        if (seen[key]) return;
+        seen[key] = true;
+        items.push(status.label + ' ' + fa(status.from) + '–' + fa(status.to));
+      });
+    });
+    return items.length ? 'راهنما: ' + items.join(' · ') : '';
+  }
+
   function gridRows(state) {
     const dates = rangeDates(range.from, range.to);
     const employees = filteredEmployees(state);
     if (gridMode === 'station') {
+      const cellLabel = function (status) { return status.kind === 'none' ? '–' : status.label; };
       const columns = uniqueOf(employees.reduce(function (out, employee) {
-        dates.forEach(function (iso) { out.push(resolve(state, employee.id, iso).label); });
+        dates.forEach(function (iso) { out.push(cellLabel(resolve(state, employee.id, iso))); });
         return out;
       }, []));
       const rows = [['تاریخ', 'روز'].concat(columns)];
@@ -928,17 +956,18 @@
         employees.forEach(function (employee) {
           const status = resolve(state, employee.id, iso);
           if (!cellMatchesCode(status, filters.code)) return;
-          if (!buckets[status.label]) buckets[status.label] = [];
-          buckets[status.label].push(bridge.employeeName(employee) || 'بدون نام');
+          const label = cellLabel(status);
+          if (!buckets[label]) buckets[label] = [];
+          buckets[label].push(bridge.employeeName(employee) || 'بدون نام');
         });
-        rows.push([bridge.formatJalali(iso, false), WEEKDAYS[weekdayIndex(iso)] || ''].concat(
+        rows.push([jalaliDay(iso), WEEKDAYS[weekdayIndex(iso)] || ''].concat(
           columns.map(function (label) { return (buckets[label] || []).join('، '); })
         ));
       });
       return rows;
     }
     const rows = [['کارمند', 'شمارهٔ پرسنلی', 'شهر', 'محل خدمت'].concat(dates.map(function (iso) {
-      return bridge.formatJalali(iso, false);
+      return jalaliDay(iso);
     }))];
     employees.forEach(function (employee) {
       rows.push([
@@ -949,7 +978,9 @@
       ].concat(dates.map(function (iso) {
         const status = resolve(state, employee.id, iso);
         if (!cellMatchesCode(status, filters.code)) return '';
-        return status.label + (status.from ? ' ' + status.from + '–' + status.to : '');
+        // «بدون تخصیص» در خروجی نوشته نمی‌شود؛ فقط یک خط تیره.
+        if (status.kind === 'none') return '–';
+        return status.label;
       })));
     });
     return rows;
@@ -1023,7 +1054,15 @@
     const rows = gridRows(state);
     if (rows.length < 2) { bridge.toast('برای خروجی، بازه و فیلترها را طوری تنظیم کن که حداقل یک ردیف داشته باشد.'); return; }
     const title = 'تقویم شیفت · ' + bridge.formatJalali(range.from, false) + ' تا ' + bridge.formatJalali(range.to, false);
-    bridge.runExport(rows, title, 'ATLAS-SHIFT-shift-calendar-' + todayIso(), format);
+    // ستون‌های اطلاعاتی (کارمند/شماره/شهر/محل خدمت یا تاریخ/روز) افقی می‌مانند؛
+    // ستون‌های روز وقتی تعدادشان زیاد شود عمودی نوشته می‌شوند.
+    const totalColumns = (rows[0] || []).length;
+    const infoColumns = gridMode === 'station' ? 2 : 4;
+    const verticalFrom = totalColumns >= 16 ? infoColumns : -1;
+    bridge.runExport(rows, title, 'ATLAS-SHIFT-shift-calendar-' + todayIso(), format, {
+      legend: exportLegend(state),
+      verticalFrom: verticalFrom
+    });
   }
 
   // ═══ ۶. پنجره‌ها ═════════════════════════════════════════════════════════

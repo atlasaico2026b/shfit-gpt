@@ -283,14 +283,21 @@ const fakeBridge = {
   todayIso: function () { return '2026-11-07'; },
   rootWrap: function (html) { return html; },
   pageHead: function () { return ''; },
-  formatJalali: function (iso) { return iso; },
+  formatJalali: function (iso) {
+    // تاریخ شمسی ساختگی برای آزمون: سال/ماه/روز از خود ISO تا خروجی روزانه
+    // (فقط شمارهٔ روز) قابل بررسی باشد.
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso));
+    if (!m) return iso;
+    const fa = function (value) { return String(value).replace(/[0-9]/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[Number(d)]; }); };
+    return '۱۴۰۵/۰۸/' + fa(m[3]);
+  },
   jalaliInputValue: function (iso) { return iso; },
   employeeName: function (employee) { return [employee.firstName, employee.lastName].filter(Boolean).join(' '); },
   enhanceJalaliInputs: function () {},
   legacySchedule: function () {},
   toast: function (message) { toasts.push(message); },
-  runExport: function (rows, title, base, format) {
-    exportCalls.push({ rows: rows, title: title, base: base, format: format });
+  runExport: function (rows, title, base, format, options) {
+    exportCalls.push({ rows: rows, title: title, base: base, format: format, options: options });
   },
   save: function () { return Promise.resolve(true); },
   confirm: function () { return Promise.resolve(true); }
@@ -743,8 +750,8 @@ clickAttr('[data-sp-close]', '');
 // دکمه‌های خروجی پنجرهٔ «شیفت یک نفر» باید فعال باشند.
 // ریشهٔ باگ: onSectionClick فقط کلیک داخل بخش را می‌گرفت و پنجره بیرون آن است،
 // پس هیچ‌کدام از دکمه‌های خروجی پنجره کار نمی‌کردند.
-fakeBridge.runExport = function (rows, title, base, format) {
-  exportCalls.push({ rows: rows, title: title, base: base, format: format });
+fakeBridge.runExport = function (rows, title, base, format, options) {
+  exportCalls.push({ rows: rows, title: title, base: base, format: format, options: options });
 };
 fakeBridge.exportSlug = function () { return 'person'; };
 // آزمون‌های خروجی مارک‌شده‌ها قبلاً یک فراخوانی ثبت کرده‌اند؛ این بخش از صفر می‌شمارد.
@@ -843,6 +850,41 @@ const gridScopeButtons = (src.match(/data-sp-scope="grid"/g) || []).length;
 check('دکمه‌های خروجی سرصفحهٔ منوی شیفت حذف شده‌اند', gridScopeButtons === 5, gridScopeButtons);
 check('سرصفحهٔ منوی شیفت بدون دکمهٔ خروجی ساخته می‌شود', /const actions = '';/.test(src));
 check('خروجی تقویم شیفت سر جای خودش مانده', /data-sp-scope="grid">PNG/.test(src));
+
+// ── خروجی تقویم: فقط روز، بدون ساعت، بدون «بدون تخصیص»، با راهنما ──
+// فیلترهای آزمون‌های پیشین را پاک می‌کنیم تا همهٔ کارکنان در خروجی باشند.
+['city', 'station', 'method', 'code', 'status'].forEach(function (key) { changeFilter(key, ''); });
+const exportGridRows = planner.buildGridRows();
+const exportHead = exportGridRows[0];
+check('سرستون خروجی فقط شمارهٔ روز است',
+  exportHead.slice(4).every(function (cell) { return /^[۰-۹]{1,2}$/.test(cell); }),
+  exportHead.slice(4).join(','));
+check('سرستون خروجی ماه و سال ندارد',
+  exportHead.slice(4).every(function (cell) { return cell.indexOf('/') < 0; }));
+const aliExportRow = exportGridRows.find(function (row) { return row[0] === 'علی رضایی'; });
+check('خانهٔ خروجی ساعت شروع/پایان ندارد',
+  aliExportRow && aliExportRow.slice(4).every(function (cell) { return cell.indexOf(':') < 0; }),
+  aliExportRow && aliExportRow.slice(4).join(','));
+check('خانهٔ روزکار فقط برچسب است', aliExportRow && aliExportRow.slice(4).indexOf('روزکار') >= 0);
+const maryamExportRow = exportGridRows.find(function (row) { return row[0] === 'مریم کریمی'; });
+check('کارمند بدون تخصیص فقط خط تیره دارد',
+  maryamExportRow && maryamExportRow.slice(4).every(function (cell) { return cell === '–'; }),
+  maryamExportRow && maryamExportRow.slice(4).join(','));
+check('«بدون تخصیص» در خروجی نوشته نمی‌شود',
+  JSON.stringify(exportGridRows).indexOf('بدون تخصیص') < 0);
+
+clickExport('print', 'grid');
+const gridCall = exportCalls[exportCalls.length - 1];
+check('خروجی تقویم راهنمای شیفت دارد',
+  gridCall && gridCall.options && /راهنما:/.test(gridCall.options.legend),
+  gridCall && gridCall.options && gridCall.options.legend);
+check('راهنما ساعت روزکار را دارد',
+  gridCall && gridCall.options && gridCall.options.legend.indexOf('روزکار') >= 0);
+check('راهنما ساعت شیفت چرخشی را دارد',
+  gridCall && gridCall.options && gridCall.options.legend.indexOf('صبح‌کار') >= 0);
+check('خروجی تقویم ستون‌های روز را عمودی می‌کند',
+  gridCall && gridCall.options && gridCall.options.verticalFrom === 4,
+  gridCall && gridCall.options && gridCall.options.verticalFrom);
 
 // ── گزارش ──
 let failed = 0;

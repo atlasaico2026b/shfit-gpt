@@ -59,6 +59,32 @@ const injected = sheet.build([['عنوان'], ['<script>alert(1)</script>']], { 
 check('متن سلول escape می‌شود', !/<script>/.test(injected), '');
 check('عنوان هم escape می‌شود', /&lt;b&gt;x&lt;\/b&gt;/.test(injected));
 
+// ── راهنمای شیفت و ستون‌های عمودی ──
+const withLegend = sheet.build([['نام', '۱', '۲'], ['علی', 'روزکار', '–']], {
+  title: 'تقویم شیفت', legend: 'راهنما: روزکار ۰۸:۰۰–۱۴:۰۰'
+});
+check('راهنما بالای سرستون‌ها می‌آید',
+  /<p class="atlas-print-legend">راهنما: روزکار ۰۸:۰۰–۱۴:۰۰<\/p>/.test(withLegend) &&
+  withLegend.indexOf('atlas-print-legend') < withLegend.indexOf('atlas-print-cols'));
+check('بدون راهنما، سطر راهنما ساخته نمی‌شود', !/atlas-print-legend/.test(html));
+
+const vertical = sheet.build([['نام', '۱', '۲', '۳'], ['علی', 'الف', 'ب', 'ج']], {
+  title: 'تقویم', verticalFrom: 1
+});
+check('جدول با ستون عمودی نشانه‌گذاری می‌شود', /data-vertical="1"/.test(vertical));
+check('ستون‌های اطلاعاتی افقی می‌مانند', /<th scope="col">نام<\/th>/.test(vertical));
+check('ستون‌های روز کلاس عمودی می‌گیرند',
+  (vertical.match(/class="atlas-print-vert"/g) || []).length >= 3, vertical);
+check('بدون verticalFrom ستون عمودی ساخته نمی‌شود', !/atlas-print-vert/.test(html));
+
+// ستون‌های عمودی کم‌عرض‌اند تا ستون‌های اطلاعاتی خوانا بمانند.
+const vertWidths = sheet.columnPercents([
+  ['نام و نام خانوادگی', '۱', '۲', '۳'],
+  ['محمدحسین عبداللهی', 'روزکار', 'روزکار', 'استراحت']
+], 1);
+check('در حالت عمودی، ستون اطلاعاتی پهن و خوانا می‌ماند', vertWidths[0] >= 20, vertWidths.join('+'));
+check('در حالت عمودی، مجموع پهنای ستون‌ها ۱۰۰٪ است', vertWidths.reduce((a, b) => a + b, 0) === 100, vertWidths.join('+'));
+
 // ── پهنای ستون‌ها و خانه‌های عددی ──
 const widths = sheet.columnPercents([
   ['نام و نام خانوادگی', 'وضعیت', 'تلفن همراه'],
@@ -87,6 +113,10 @@ check('سلول‌ها هنگام شکست صفحه نصف نمی‌شوند', /
 check('سطر و خانه‌ها هر دو break-inside:avoid دارند', /#atlasPrintArea tr,\s*\n\s*#atlasPrintArea td,\s*\n\s*#atlasPrintArea th\s*\{[^}]*break-inside:\s*avoid/.test(css.replace(/\r/g, '')));
 check('سرستون تنها در پای صفحه نمی‌ماند', /#atlasPrintArea thead\s*\{[^}]*break-after:\s*avoid/.test(css.replace(/\r/g, '')));
 check('جدول و بدنه اجازهٔ شکستن بین سطرها را دارند', /#atlasPrintArea tbody\s*\{[^}]*break-inside:\s*auto/.test(css.replace(/\r/g, '')));
+check('سطر داده هرگز بین دو صفحه نصف نمی‌شود', /#atlasPrintArea tbody tr\s*\{[^}]*break-inside:\s*avoid/.test(css.replace(/\r/g, '')));
+check('راهنمای شیفت در چاپ استایل دارد', /#atlasPrintArea \.atlas-print-legend\s*\{/.test(css));
+check('ستون‌های عمودی از بالا به پایین نوشته می‌شوند',
+  /#atlasPrintArea\[data-vertical="1"\] \.atlas-print-vert\s*\{[^}]*writing-mode:\s*vertical-rl/.test(css.replace(/\r/g, '')));
 
 // ── حذف سرصفحه/پاصفحهٔ مرورگر (آدرس سایت، تاریخ، ساعت، «۱ از ۲») ──
 check('حاشیهٔ صفحهٔ چاپ صفر است', /@page\s*\{[^}]*size:\s*A4 landscape[^}]*margin:\s*0\s*;/.test(css.replace(/\r/g, '')));

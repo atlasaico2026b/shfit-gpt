@@ -100,6 +100,16 @@
     text-align: right;
   }
 
+  /* راهنمای شیفت و روزکار: یک سطر بالای سرستون‌ها، پیش از جدول روزها. */
+  #atlasPrintArea .atlas-print-legend {
+    margin: 1.2mm 0 0;
+    font-size: 8pt;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--print-ink);
+    text-align: right;
+  }
+
   /* ── جدول: ستون‌های هم‌عرض، خط کامل بین سطر و ستون ── */
   #atlasPrintArea .atlas-print-table {
     width: 100%;
@@ -139,6 +149,14 @@
   #atlasPrintArea th {
     page-break-inside: avoid;
     break-inside: avoid;
+  }
+
+  /* سطر داده هرگز بین دو صفحه نصف نمی‌شود؛ اگر در فضای باقی‌مانده کامل جا
+     نشود، یک‌جا به صفحهٔ بعد می‌رود. */
+  #atlasPrintArea tbody tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    break-inside: avoid-page;
   }
 
   #atlasPrintArea td,
@@ -190,6 +208,26 @@
     font-variant-numeric: tabular-nums;
     font-size: 0.88em;
     letter-spacing: -0.02em;
+  }
+
+  /* ── ستون‌های باریک (روزهای تقویم) وقتی جا کم است ──
+     متن از بالا به پایین نوشته می‌شود تا با زیادشدن ستون‌ها فونت به‌هم نریزد و
+     هر ستون فقط به اندازهٔ یک خط جا بگیرد. */
+  #atlasPrintArea[data-vertical="1"] .atlas-print-vert {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    white-space: nowrap;
+    text-align: center;
+    vertical-align: middle;
+    padding: 1.2mm 0.5mm;
+    line-height: 1.15;
+    font-size: 0.9em;
+  }
+
+  #atlasPrintArea[data-vertical="1"] th.atlas-print-vert {
+    height: 18mm;
+    font-size: 0.95em;
+    font-weight: 800;
   }
 
   /* ── تناسب خودکار با تعداد ستون‌ها ── */
