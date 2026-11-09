@@ -366,7 +366,9 @@
   let search = '';
   // ترتیب گروه‌های شهر در تب تخصیص؛ با کلیک روی عنوان «مکان» جابه‌جا می‌شود.
   let citySort = 'asc';
-  // ترتیب کارکنان داخل هر گروه شهر؛ با کلیک روی سرستون‌ها عوض می‌شود.
+  // ترتیب گروه‌های محل خدمت داخل هر شهر؛ با کلیک روی سرستون «محل خدمت».
+  let stationSort = { key: 'station', direction: 'asc' };
+  // ترتیب کارکنان داخل هر گروه محل خدمت؛ با کلیک روی سرستون‌ها عوض می‌شود.
   let assignSort = { key: 'name', direction: 'asc' };
   let selected = Object.create(null);
   let personId = '';
@@ -565,9 +567,12 @@
   }
 
   // سرستون قابل‌کلیک، هم‌شکل با سرستون‌های سایر منوها (module-sort-th/btn/caret).
-  function sortHeader(key, label) {
-    const active = assignSort.key === key;
-    const ascending = assignSort.direction === 'asc';
+  // `sortState` تعیین می‌کند این سرستون کدام سطح را مرتب می‌کند: کارکنان داخل
+  // گروه (پیش‌فرض) یا گروه‌های محل خدمت داخل شهر.
+  function sortHeader(key, label, sortState) {
+    const sort = sortState || assignSort;
+    const active = sort.key === key;
+    const ascending = sort.direction === 'asc';
     return '<th class="module-sort-th' + (active ? ' is-sorted' : '') + '" aria-sort="' +
       (active ? (ascending ? 'ascending' : 'descending') : 'none') + '">' +
       '<button type="button" class="module-sort-btn" data-sp-sort-key="' + esc(key) + '" title="مرتب‌سازی بر اساس ' + esc(label) + '">' +
@@ -590,7 +595,6 @@
   // مقداری که سرستون فعال بر اساسش مرتب می‌کند.
   function assignSortValue(state, employee) {
     const assignment = assignmentFor(state, employee.id, todayIso());
-    if (assignSort.key === 'station') return employeeStation(employee) || '';
     if (assignSort.key === 'job') return employee.jobTitle || '';
     if (assignSort.key === 'method') {
       if (!assignment) return '';
@@ -600,16 +604,36 @@
     return bridge.employeeName(employee) || '';
   }
 
+  // برچسب روش‌های کاری رایج در یک محل خدمت. شیفت‌ها در محل خدمت برقرار
+  // می‌شوند، پس سطر هر ایستگاه باید نشان دهد آن ایستگاه با چه روشی کار می‌کند.
+  function stationMethodBadge(state, people) {
+    const labels = [];
+    people.forEach(function (employee) {
+      const assignment = assignmentFor(state, employee.id, todayIso());
+      const label = assignment ? methodLabel(state, assignment.methodId) : 'بدون روش';
+      if (labels.indexOf(label) < 0) labels.push(label);
+    });
+    if (!labels.length) return '';
+    const shown = labels.slice(0, 3).join(' · ');
+    const more = labels.length > 3 ? ' +' + fa(labels.length - 3) : '';
+    return '<span class="sp-station-method">' + esc(shown + more) + '</span>';
+  }
+
   function renderAssign(state) {
     const employees = filteredEmployees(state);
     const cities = uniqueOf((state.employees || []).map(employeeCity));
     const stations = uniqueOf((state.employees || []).map(employeeStation));
 
+    // گروه‌بندی دوسطحی: شهر ← محل خدمت ← کارکنان. یک شهر می‌تواند چند ایستگاه
+    // آتش‌نشانی با نفرات و نوع شیفت جدا داشته باشد و شیفت‌ها در محل خدمت
+    // برقرار می‌شوند، پس محل خدمت سطح اصلی گروه‌بندی داخل هر شهر است.
     const groups = Object.create(null);
     employees.forEach(function (employee) {
       const city = employeeCity(employee) || 'بدون شهر';
-      if (!groups[city]) groups[city] = [];
-      groups[city].push(employee);
+      const station = employeeStation(employee) || 'بدون محل خدمت';
+      if (!groups[city]) groups[city] = Object.create(null);
+      if (!groups[city][station]) groups[city][station] = [];
+      groups[city][station].push(employee);
     });
 
     const cityKeys = Object.keys(groups).sort(function (a, b) {
@@ -618,19 +642,35 @@
     });
 
     const rows = cityKeys.map(function (city) {
-      const people = groups[city].slice().sort(function (a, b) {
-        const order = assignSortValue(state, a).localeCompare(assignSortValue(state, b), 'fa');
-        return assignSort.direction === 'desc' ? -order : order;
+      const stationGroups = groups[city];
+      const cityPeople = [];
+      Object.keys(stationGroups).forEach(function (station) {
+        cityPeople.push.apply(cityPeople, stationGroups[station]);
       });
-      const picked = people.filter(function (employee) { return selected[employee.id]; }).length;
-      const allPicked = people.length > 0 && picked === people.length;
-      return '<tr class="sp-group-row">' +
-        '<td class="sp-check"><input type="checkbox" data-sp-select-city="' + esc(city) + '"' +
-          (allPicked ? ' checked' : '') + ' aria-label="انتخاب همهٔ کارکنان ' + esc(city) + '"></td>' +
-        '<td class="sp-group-city">' + esc(city) +
-          '<span class="sp-group-count">· ' + fa(people.length) + ' نفر</span></td>' +
-        '<td colspan="5"></td></tr>' +
-        people.map(function (employee) {
+      const picked = cityPeople.filter(function (employee) { return selected[employee.id]; }).length;
+      const allPicked = cityPeople.length > 0 && picked === cityPeople.length;
+
+      const stationKeys = Object.keys(stationGroups).sort(function (a, b) {
+        const order = a.localeCompare(b, 'fa');
+        return stationSort.direction === 'desc' ? -order : order;
+      });
+
+      const stationRows = stationKeys.map(function (station) {
+        const people = stationGroups[station].slice().sort(function (a, b) {
+          const order = assignSortValue(state, a).localeCompare(assignSortValue(state, b), 'fa');
+          return assignSort.direction === 'desc' ? -order : order;
+        });
+        const stationPicked = people.filter(function (employee) { return selected[employee.id]; }).length;
+        const stationAll = people.length > 0 && stationPicked === people.length;
+        return '<tr class="sp-station-row">' +
+          '<td class="sp-check"><input type="checkbox" data-sp-select-station="' + esc(city + '\u0000' + station) + '"' +
+            (stationAll ? ' checked' : '') + ' aria-label="انتخاب همهٔ کارکنان ' + esc(station) + '"></td>' +
+          '<td></td><td></td>' +
+          '<td class="sp-station-cell" colspan="2">' + esc(station) +
+            '<span class="sp-group-count">· ' + fa(people.length) + ' نفر</span>' +
+            stationMethodBadge(state, people) + '</td>' +
+          '<td colspan="2"></td></tr>' +
+          people.map(function (employee) {
           const assignment = assignmentFor(state, employee.id, todayIso());
           const methodId = assignment ? String(assignment.methodId) : '';
           const shiftMethod = assignment ? methodIsShift(state, assignment.methodId) : false;
@@ -658,13 +698,21 @@
               methodOptions(state, methodId) + '</select></td>' +
             rangeCell +
             '</tr>';
-        }).join('');
+          }).join('');
+      }).join('');
+
+      return '<tr class="sp-group-row">' +
+        '<td class="sp-check"><input type="checkbox" data-sp-select-city="' + esc(city) + '"' +
+          (allPicked ? ' checked' : '') + ' aria-label="انتخاب همهٔ کارکنان ' + esc(city) + '"></td>' +
+        '<td class="sp-group-city">' + esc(city) +
+          '<span class="sp-group-count">· ' + fa(cityPeople.length) + ' نفر</span></td>' +
+        '<td colspan="5"></td></tr>' + stationRows;
     }).join('');
 
     const selectedCount = Object.keys(selected).filter(function (id) { return selected[id]; }).length;
 
     return '<section class="module-list-panel"><div class="module-list-head"><div>' +
-      '<h3>تخصیص روش کاری به کارکنان</h3><p>کارکنان بر اساس شهر و محل خدمت گروه‌بندی شده‌اند. تخصیص تا وقتی وضعیت کارمند عوض نشود پابرجاست.</p></div>' +
+      '<h3>تخصیص روش کاری به کارکنان</h3><p>کارکنان بر اساس شهر و سپس محل خدمت (ایستگاه) گروه‌بندی شده‌اند؛ شیفت‌ها در محل خدمت برقرار می‌شوند. تخصیص تا وقتی وضعیت کارمند عوض نشود پابرجاست.</p></div>' +
       '<div class="module-page-actions">' +
       '<button type="button" class="primary-btn" data-sp-bulk-assign' + (selectedCount ? '' : ' disabled') + '>تخصیص گروهی (' + fa(selectedCount) + ')</button>' +
       '</div></div>' +
@@ -683,7 +731,7 @@
       '<button type="button" class="secondary-btn" data-sp-select-clear>پاک‌کردن انتخاب</button>' +
       '<span data-sp-selected-count>' + fa(selectedCount) + ' نفر انتخاب شده</span></div>' +
       '<div class="module-table-wrap"><table class="module-table sp-table"><thead><tr>' +
-      '<th class="sp-check"></th>' + cityHeader() + sortHeader('name', 'نام و نام خانوادگی') + sortHeader('station', 'محل خدمت') +
+      '<th class="sp-check"></th>' + cityHeader() + sortHeader('name', 'نام و نام خانوادگی') + sortHeader('station', 'محل خدمت', stationSort) +
       sortHeader('job', 'عنوان شغلی') + sortHeader('method', 'روش کاری') + sortHeader('range', 'شروع چرخه / بازه') +
       '</tr></thead><tbody>' +
       (rows || '<tr><td colspan="7"><div class="module-empty">کارمندی با این فیلترها پیدا نشد.</div></td></tr>') +
@@ -1519,8 +1567,11 @@
     const sortButton = target.closest('[data-sp-sort-key]');
     if (sortButton) {
       const key = sortButton.getAttribute('data-sp-sort-key');
-      if (assignSort.key === key) assignSort.direction = assignSort.direction === 'asc' ? 'desc' : 'asc';
-      else assignSort = { key: key, direction: 'asc' };
+      // «محل خدمت» گروه‌های ایستگاه را مرتب می‌کند، بقیه سرستون‌ها کارکنان
+      // داخل هر گروه را.
+      const sort = key === 'station' ? stationSort : assignSort;
+      if (sort.key === key) sort.direction = sort.direction === 'asc' ? 'desc' : 'asc';
+      else { sort.key = key; sort.direction = 'asc'; }
       refresh();
       return;
     }
@@ -1614,6 +1665,21 @@
     if (filter) {
       filters[filter.getAttribute('data-sp-filter')] = filter.value;
       refresh();
+      return;
+    }
+
+    const stationBox = target.closest('[data-sp-select-station]');
+    if (stationBox) {
+      const key = stationBox.getAttribute('data-sp-select-station');
+      filteredEmployees(data()).forEach(function (employee) {
+        const city = employeeCity(employee) || 'بدون شهر';
+        const station = employeeStation(employee) || 'بدون محل خدمت';
+        if (city + '\u0000' + station !== key) return;
+        if (stationBox.checked) selected[employee.id] = true;
+        else delete selected[employee.id];
+      });
+      refresh();
+      syncSelectionUi();
       return;
     }
 
@@ -1720,6 +1786,20 @@
       Array.prototype.forEach.call(cityBoxes, function (box) {
         const city = box.getAttribute('data-sp-select-city');
         const group = people.filter(function (employee) { return (employeeCity(employee) || 'بدون شهر') === city; });
+        const picked = group.filter(function (employee) { return selected[employee.id]; }).length;
+        box.checked = group.length > 0 && picked === group.length;
+        box.indeterminate = picked > 0 && picked < group.length;
+      });
+    }
+    const stationBoxes = host.querySelectorAll('[data-sp-select-station]');
+    if (stationBoxes.length) {
+      const people = filteredEmployees(data());
+      Array.prototype.forEach.call(stationBoxes, function (box) {
+        const key = box.getAttribute('data-sp-select-station');
+        const group = people.filter(function (employee) {
+          return (employeeCity(employee) || 'بدون شهر') + '\u0000' +
+            (employeeStation(employee) || 'بدون محل خدمت') === key;
+        });
         const picked = group.filter(function (employee) { return selected[employee.id]; }).length;
         box.checked = group.length > 0 && picked === group.length;
         box.indeterminate = picked > 0 && picked < group.length;

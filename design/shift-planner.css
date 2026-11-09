@@ -445,6 +445,33 @@
 
 .sp-group-count { margin-inline-start: 4px; color: #333; }
 
+/* سطر محل خدمت (ایستگاه) زیر هر شهر: یک پله کوچک‌تر و کم‌رنگ‌تر از سطر شهر،
+   ولی هنوز از ردیف کارکنان جدا. شیفت‌ها در محل خدمت برقرار می‌شوند، پس این
+   سطح گروه‌بندی داخل هر شهر است و روش کاری همان ایستگاه را هم نشان می‌دهد. */
+.sp-table tbody tr.sp-station-row td {
+  background: #f4f6fb;
+  color: #111;
+  font-size: 1.05em;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-color: #dde2ee;
+}
+
+.sp-station-cell { padding-inline-start: 22px !important; }
+
+.sp-station-method {
+  margin-inline-start: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #e3e9f7;
+  color: #1d4ed8;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sp-station-row .sp-check input { cursor: pointer; }
+
 .sp-city-cell { color: var(--muted); white-space: nowrap; }
 
 /* رنگ گزینه‌های کشویی «روش کاری»: قالب شیفت آبی، قالب روزکاری قرمز. */
