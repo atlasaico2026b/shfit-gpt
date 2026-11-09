@@ -358,6 +358,16 @@ function optionValueFor(html, key, label) {
 }
 
 planner.render(fakeHost, fakeBridge);
+
+// ترتیب تب‌ها: تخصیص کارکنان اول، بعد قالب شیفت و روش کاری.
+const assignTabAt = fakeHost.innerHTML.indexOf('data-sp-tab="assign"');
+const methodsTabAt = fakeHost.innerHTML.indexOf('data-sp-tab="methods"');
+check('تب تخصیص کارکنان پیش از تب قالب شیفت و روش کاری می‌آید',
+  assignTabAt >= 0 && methodsTabAt >= 0 && assignTabAt < methodsTabAt,
+  assignTabAt + ' / ' + methodsTabAt);
+check('تب تخصیص کارکنان تب پیش‌فرض است',
+  /class="sp-tab is-active"[^>]*data-sp-tab="assign"/.test(fakeHost.innerHTML));
+
 clickOn('data-sp-tab', 'assign');
 
 check('تب تخصیص رندر شد', fakeHost.innerHTML.indexOf('تخصیص روش کاری به کارکنان') >= 0);
