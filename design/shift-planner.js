@@ -359,7 +359,7 @@
   // ═══ ۳. وضعیت رابط ══════════════════════════════════════════════════════
   let bridge = null;
   let host = null;
-  let tab = 'methods';
+  let tab = 'assign';
   let range = { from: '', to: '' };
   let gridMode = 'employee';
   let filters = { city: '', station: '', method: '', code: '', status: '' };
@@ -399,15 +399,15 @@
     ensureRange();
     const state = data();
     const tabs = [
-      ['methods', 'قالب شیفت و روش کاری'],
       ['assign', 'تخصیص کارکنان'],
+      ['methods', 'قالب شیفت و روش کاری'],
       ['calendar', 'تقویم شیفت'],
       ['legacy', 'برنامه‌های ثبت‌شده']
     ];
     const actions = '';
 
     section.innerHTML = bridge.rootWrap(
-      bridge.pageHead('برنامه‌ریزی شیفت', 'روش کاری، ساعت کاری، قالب چرخش، تخصیص کارکنان و تقویم بازه‌ای', actions) +
+      bridge.pageHead('برنامه‌ریزی شیفت', 'تخصیص کارکنان، روش کاری، ساعت کاری، قالب چرخش و تقویم بازه‌ای', actions) +
       '<div class="sp-tabs" role="tablist">' + tabs.map(function (pair) {
         return '<button type="button" role="tab" class="sp-tab' + (tab === pair[0] ? ' is-active' : '') +
           '" aria-selected="' + (tab === pair[0] ? 'true' : 'false') + '" data-sp-tab="' + pair[0] + '">' + esc(pair[1]) + '</button>';
@@ -446,7 +446,7 @@
     syncSelectionUi();
   }
 
-  // ── تب ۱: قالب شیفت و روش کاری ──────────────────────────────────────────
+  // ── تب ۲: قالب شیفت و روش کاری ──────────────────────────────────────────
   // ترتیب کار عمداً همین است: اول قالب شیفتی مشخص می‌شود، بعد روش‌های کاری
   // زیر همان قالب تعریف می‌شوند. «بدون قالب» یعنی روش روزکار هفتگی.
   function methodKindLabel(method, state) {
@@ -524,7 +524,7 @@
       '</div></section>';
   }
 
-  // ── تب ۲: تخصیص کارکنان ─────────────────────────────────────────────────
+  // ── تب ۱: تخصیص کارکنان ─────────────────────────────────────────────────
   // شهر از «محل سمت سازمانی» می‌آید و محل خدمت از «محل خدمت فعلی»؛ اگر یکی خالی
   // بود، دیگری جای آن می‌نشیند تا هیچ کارمندی از فهرست بیرون نیفتد.
   function employeeCity(employee) {
