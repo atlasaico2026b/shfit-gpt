@@ -886,6 +886,30 @@ check('خروجی تقویم ستون‌های روز را عمودی می‌ک�
   gridCall && gridCall.options && gridCall.options.verticalFrom === 4,
   gridCall && gridCall.options && gridCall.options.verticalFrom);
 
+// ── قالب‌های آماده: قابل ویرایش و حذف ──
+const builtinPresets = e.builtinPresets();
+check('قالب‌های آماده پیش‌فرض ساخته می‌شوند', builtinPresets.length >= 7, builtinPresets.length);
+check('هر قالب آماده شناسه و نام دارد',
+  builtinPresets.every(function (p) { return p.id && p.name && p.spec; }));
+check('بدون ذخیره، فهرست پیش‌فرض برگردانده می‌شود',
+  e.presetList({}).length === builtinPresets.length);
+const presetState = {};
+const materialized = e.materializePresets(presetState);
+check('اولین ویرایش/حذف فهرست را در state می‌نویسد',
+  Array.isArray(presetState.shiftPresets) && materialized.length === builtinPresets.length);
+const edited = e.findPreset(presetState, builtinPresets[0].id);
+edited.name = 'نام تازه';
+check('ویرایش نام قالب آماده در state می‌ماند',
+  e.findPreset(presetState, builtinPresets[0].id).name === 'نام تازه');
+presetState.shiftPresets = presetState.shiftPresets.filter(function (p) {
+  return p.id !== builtinPresets[0].id;
+});
+check('حذف قالب آماده از فهرست کم می‌کند',
+  e.presetList(presetState).length === builtinPresets.length - 1 &&
+  !e.findPreset(presetState, builtinPresets[0].id));
+check('حذف همهٔ قالب‌ها فهرست خالی می‌دهد',
+  e.presetList({ shiftPresets: [] }).length === 0);
+
 // ── گزارش ──
 let failed = 0;
 checks.forEach(function (item) {

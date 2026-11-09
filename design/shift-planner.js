@@ -508,15 +508,7 @@
         '</dl></article>';
     }).join('') : '<div class="module-empty">هنوز قالب روزکاری ساخته نشده است. با «+ ساخت قالب روزکاری» شروع کن.</div>';
 
-    const presets = [
-      ['office-8-14', 'روزکار ۸ تا ۱۴'],
-      ['office-7-15', 'روزکار ۷ تا ۱۵'],
-      ['fixed-8-16', 'روزکار شیفتی ۸ تا ۱۶'],
-      ['fixed-7-19', 'روزکار شیفتی ۷ تا ۱۹'],
-      ['rotating-12', '۱۲ ساعته روز/شب'],
-      ['rotating-8', '۸ ساعته سه‌شیفت'],
-      ['camp-14-14', 'اقماری ۱۴/۱۴']
-    ];
+    const presets = presetList(state);
 
     return '<section class="module-list-panel"><div class="module-list-head"><div>' +
       '<h3>قالب شیفت و روش کاری</h3><p>قالب شیفت را بساز، بعد قالب روزکاری را روی آن تعریف کن.</p></div>' +
@@ -528,9 +520,13 @@
       '<div class="sp-split-col"><div class="sp-split-head"><h4>قالب‌های شیفت</h4>' +
       '<span class="sp-split-count">' + fa(templates.length) + '</span></div>' +
       '<div class="sp-split-list">' + templateCards + '</div>' +
-      '<div class="sp-presets"><span>قالب آماده:</span>' + presets.map(function (pair) {
-        return '<button type="button" class="list-chip" data-sp-preset="' + pair[0] + '">' + esc(pair[1]) + '</button>';
-      }).join('') + '</div></div>' +
+      '<div class="sp-presets"><span>قالب آماده:</span>' + (presets.length ? presets.map(function (preset) {
+        return '<span class="sp-preset">' +
+          '<button type="button" class="list-chip" data-sp-preset="' + esc(preset.id) + '">' + esc(preset.name) + '</button>' +
+          '<button type="button" class="sp-preset-act" data-sp-preset-edit="' + esc(preset.id) + '" aria-label="ویرایش قالب آماده" title="ویرایش">✎</button>' +
+          '<button type="button" class="sp-preset-act is-danger" data-sp-preset-del="' + esc(preset.id) + '" aria-label="حذف قالب آماده" title="حذف">×</button>' +
+          '</span>';
+      }).join('') : '<span class="sp-hint">قالب آماده‌ای نمانده است.</span>') + '</div></div>' +
       '<div class="sp-split-col"><div class="sp-split-head"><h4>قالب‌های روزکاری</h4>' +
       '<span class="sp-split-count">' + fa(methods.length) + '</span></div>' +
       '<div class="sp-split-list">' + methodCards + '</div></div>' +
@@ -1521,33 +1517,30 @@
   }
 
   // ═══ ۷. قالب‌های آماده ═══════════════════════════════════════════════════
-  async function applyPreset(key) {
-    const state = data();
-    const presets = {
-      'office-8-14': function () {
-        return { method: { name: 'روزکار اداری ۸ تا ۱۴', kind: 'office', weekly: defaultWeekly('08:00', '14:00') } };
-      },
-      'office-7-15': function () {
-        return { method: { name: 'روزکار اداری ۷ تا ۱۵', kind: 'office', weekly: defaultWeekly('07:00', '15:00') } };
-      },
-      'fixed-8-16': function () {
-        return { method: { name: 'روزکار شیفتی ۸ تا ۱۶', kind: 'fixedShift', weekly: defaultWeekly('08:00', '16:00') } };
-      },
-      'fixed-7-19': function () {
-        return { method: { name: 'روزکار شیفتی ۷ تا ۱۹', kind: 'fixedShift', weekly: defaultWeekly('07:00', '19:00') } };
-      },
-      'rotating-12': function () {
-        return {
+  // فهرست قالب‌های آماده در state ذخیره می‌شود تا کاربر بتواند نام و ساختار هر
+  // کدام را ویرایش یا خودش را حذف کند. تا اولین ویرایش/حذف، همان فهرست پیش‌فرض
+  // استفاده می‌شود و دست‌نخورده می‌ماند.
+  function builtinPresets() {
+    const campPattern = [];
+    for (let i = 0; i < 14; i++) campPattern.push('ص');
+    for (let i = 0; i < 14; i++) campPattern.push(OFF);
+    return [
+      { id: 'office-8-14', name: 'روزکار ۸ تا ۱۴', spec: { method: { name: 'روزکار اداری ۸ تا ۱۴', kind: 'office', weekly: defaultWeekly('08:00', '14:00') } } },
+      { id: 'office-7-15', name: 'روزکار ۷ تا ۱۵', spec: { method: { name: 'روزکار اداری ۷ تا ۱۵', kind: 'office', weekly: defaultWeekly('07:00', '15:00') } } },
+      { id: 'fixed-8-16', name: 'روزکار شیفتی ۸ تا ۱۶', spec: { method: { name: 'روزکار شیفتی ۸ تا ۱۶', kind: 'fixedShift', weekly: defaultWeekly('08:00', '16:00') } } },
+      { id: 'fixed-7-19', name: 'روزکار شیفتی ۷ تا ۱۹', spec: { method: { name: 'روزکار شیفتی ۷ تا ۱۹', kind: 'fixedShift', weekly: defaultWeekly('07:00', '19:00') } } },
+      {
+        id: 'rotating-12', name: '۱۲ ساعته روز/شب', spec: {
           template: {
             name: '۱۲ ساعته ۲/۲/۴',
             shifts: [{ code: 'ص', label: 'صبح‌کار', from: '07:00', to: '19:00' }, { code: 'ش', label: 'شب‌کار', from: '19:00', to: '07:00' }],
-            rotation: [{ code: 'ص', days: 2 }, { code: 'ش', days: 2 }, { code: OFF, days: 4 }],
+            rotation: [{ code: 'ص', days: 2 }, { code: 'ش', days: 2 }, { code: OFF, days: 4 }]
           },
           method: { name: 'شیفت ۱۲ ساعته روز/شب', kind: 'rotating' }
-        };
+        }
       },
-      'rotating-8': function () {
-        return {
+      {
+        id: 'rotating-8', name: '۸ ساعته سه‌شیفت', spec: {
           template: {
             name: '۸ ساعته سه‌شیفت',
             shifts: [
@@ -1555,69 +1548,43 @@
               { code: 'ع', label: 'عصر', from: '14:00', to: '22:00' },
               { code: 'ش', label: 'شب', from: '22:00', to: '06:00' }
             ],
-            rotation: [{ code: 'ص', days: 2 }, { code: 'ع', days: 2 }, { code: 'ش', days: 2 }, { code: OFF, days: 2 }],
+            rotation: [{ code: 'ص', days: 2 }, { code: 'ع', days: 2 }, { code: 'ش', days: 2 }, { code: OFF, days: 2 }]
           },
           method: { name: 'شیفت ۸ ساعته سه‌شیفت', kind: 'rotating' }
-        };
+        }
       },
-      '2-2-4': function () {
-        return {
-          template: {
-            name: '۲ صبح · ۲ شب · ۴ استراحت',
-            shifts: [{ code: 'ص', label: 'صبح‌کار', from: '07:00', to: '19:00' }, { code: 'ش', label: 'شب‌کار', from: '19:00', to: '07:00' }],
-            rotation: [{ code: 'ص', days: 2 }, { code: 'ش', days: 2 }, { code: OFF, days: 4 }],
-          }
-        };
-      },
-      '2-2-2': function () {
-        return {
-          template: {
-            name: '۲ صبح · ۲ شب · ۲ استراحت',
-            shifts: [{ code: 'ص', label: 'صبح‌کار', from: '07:00', to: '19:00' }, { code: 'ش', label: 'شب‌کار', from: '19:00', to: '07:00' }],
-            rotation: [{ code: 'ص', days: 2 }, { code: 'ش', days: 2 }, { code: OFF, days: 2 }],
-          }
-        };
-      },
-      '3-3-3': function () {
-        return {
-          template: {
-            name: '۳ صبح · ۳ شب · ۳ استراحت',
-            shifts: [{ code: 'ص', label: 'صبح‌کار', from: '07:00', to: '19:00' }, { code: 'ش', label: 'شب‌کار', from: '19:00', to: '07:00' }],
-            rotation: [{ code: 'ص', days: 3 }, { code: 'ش', days: 3 }, { code: OFF, days: 3 }],
-          }
-        };
-      },
-      'three-8': function () {
-        return {
-          template: {
-            name: '۸ ساعته سه‌شیفت',
-            shifts: [
-              { code: 'ص', label: 'صبح', from: '06:00', to: '14:00' },
-              { code: 'ع', label: 'عصر', from: '14:00', to: '22:00' },
-              { code: 'ش', label: 'شب', from: '22:00', to: '06:00' }
-            ],
-            rotation: [{ code: 'ص', days: 2 }, { code: 'ع', days: 2 }, { code: 'ش', days: 2 }, { code: OFF, days: 2 }],
-          }
-        };
-      },
-      'camp-14-14': function () {
-        const pattern = [];
-        for (let i = 0; i < 14; i++) pattern.push('ص');
-        for (let i = 0; i < 14; i++) pattern.push(OFF);
-        return {
+      {
+        id: 'camp-14-14', name: 'اقماری ۱۴/۱۴', spec: {
           template: {
             name: 'اقماری ۱۴/۱۴',
             shifts: [{ code: 'ص', label: 'روزکار اقماری', from: '07:00', to: '19:00' }],
-            pattern: pattern,
-            rotation: compressPattern(pattern),
+            pattern: campPattern,
+            rotation: compressPattern(campPattern)
           },
           method: { name: 'اقماری ۱۴ روز کار / ۱۴ روز استراحت', kind: 'camp' }
-        };
+        }
       }
-    };
-    const build = presets[key];
-    if (!build) return;
-    const spec = build();
+    ];
+  }
+
+  function presetList(state) {
+    return Array.isArray(state.shiftPresets) ? state.shiftPresets : builtinPresets();
+  }
+
+  function materializePresets(state) {
+    if (!Array.isArray(state.shiftPresets)) state.shiftPresets = builtinPresets();
+    return state.shiftPresets;
+  }
+
+  function findPreset(state, id) {
+    return presetList(state).find(function (p) { return String(p.id) === String(id); }) || null;
+  }
+
+  async function applyPreset(key) {
+    const state = data();
+    const preset = findPreset(state, key);
+    if (!preset || !preset.spec) return;
+    const spec = JSON.parse(JSON.stringify(preset.spec));
     let templateId = '';
     if (spec.template) {
       const record = Object.assign({ id: bridge.createId(), active: true }, spec.template);
@@ -1637,6 +1604,88 @@
       refresh();
       bridge.toast('قالب آماده اضافه شد.');
     }
+  }
+
+  // ── ویرایش و حذف قالب آماده ──
+  function openPresetModal(id) {
+    const state = data();
+    const preset = findPreset(state, id);
+    if (!preset) return;
+    const spec = preset.spec || {};
+    const template = spec.template || null;
+    const method = spec.method || null;
+    const body =
+      '<form class="module-form" data-sp-form="preset" data-sp-id="' + esc(preset.id) + '">' +
+      '<div class="module-fields">' +
+      field('نام قالب آماده', input('name', preset.name, 'required placeholder="مثلاً ۱۲ ساعته ۲/۲/۴"')) +
+      '</div>' +
+      (template ?
+        '<div class="sp-rows" data-sp-shifts><h4>شیفت‌های روز</h4>' +
+        '<p class="sp-hint">هر شیفت یک کد کوتاه، یک نام و ساعت شروع و پایان دارد.</p>' +
+        '<div class="sp-rows-body">' + shiftRows(template.shifts) + '</div>' +
+        '<button type="button" class="secondary-btn" data-sp-add-shift>+ افزودن شیفت</button></div>' +
+        '<div class="sp-rows" data-sp-pattern><h4>الگوی روزها</h4>' +
+        '<p class="sp-hint">روز اول کاری، روز دوم کاری … تا آخر قالب. هر روز یک شیفت یا استراحت.</p>' +
+        '<div class="sp-rows-body">' + patternRows(templatePattern(template), template.shifts) + '</div>' +
+        '<button type="button" class="secondary-btn" data-sp-add-day>+ افزودن روز</button>' +
+        '<div class="sp-cycle" data-sp-cycle></div></div>'
+        : '') +
+      (method && !template ?
+        '<div class="sp-week" data-sp-week-block>' + weeklyBlockInner(methodWeekly(method)) + '</div>'
+        : '') +
+      '</form>';
+    openModal('ویرایش قالب آماده',
+      'نام و ساختار این قالب آماده را تغییر بده. قالب‌هایی که قبلاً از آن ساخته شده‌اند دست‌نخورده می‌مانند.',
+      body,
+      '<button type="button" class="secondary-btn" data-sp-close>انصراف</button> ' +
+      '<button type="button" class="primary-btn" data-sp-save="preset">ذخیرهٔ تغییرات</button>');
+    if (template) updateCycle();
+  }
+
+  async function savePreset() {
+    const state = data();
+    const form = modal.querySelector('[data-sp-form="preset"]');
+    const id = form.getAttribute('data-sp-id');
+    const name = String(form.querySelector('[name="name"]').value || '').trim();
+    if (!name) { bridge.toast('نام قالب آماده را بنویس.'); return; }
+    const list = materializePresets(state);
+    const preset = list.find(function (p) { return String(p.id) === String(id); });
+    if (!preset) return;
+    const spec = JSON.parse(JSON.stringify(preset.spec || {}));
+    if (spec.template) {
+      const shifts = readShifts();
+      if (!shifts.length) { bridge.toast('حداقل یک شیفت با کد تعریف کن.'); return; }
+      const pattern = readPattern();
+      if (!pattern.length) { bridge.toast('الگوی روزها را مشخص کن.'); return; }
+      spec.template = Object.assign({}, spec.template, {
+        shifts: shifts, pattern: pattern, rotation: compressPattern(pattern)
+      });
+    } else if (spec.method) {
+      spec.method = Object.assign({}, spec.method, { weekly: readWeekly() });
+    }
+    preset.name = name;
+    preset.spec = spec;
+    if (await bridge.save()) {
+      closeModal();
+      refresh();
+      bridge.toast('قالب آماده به‌روزرسانی شد.');
+    }
+  }
+
+  async function removePreset(id) {
+    const state = data();
+    const preset = findPreset(state, id);
+    if (!preset) return;
+    const ok = await bridge.confirm({
+      title: 'حذف قالب آماده',
+      message: '«' + (preset.name || '') + '» از فهرست قالب‌های آماده حذف شود؟ قالب‌های ساخته‌شده دست‌نخورده می‌مانند.',
+      confirmLabel: 'حذف',
+      danger: true
+    });
+    if (!ok) return;
+    const list = materializePresets(state);
+    state.shiftPresets = list.filter(function (p) { return String(p.id) !== String(id); });
+    if (await bridge.save()) { refresh(); bridge.toast('قالب آماده حذف شد.'); }
   }
 
   // ═══ ۸. رویدادها ═════════════════════════════════════════════════════════
@@ -1689,6 +1738,12 @@
 
     const del = target.closest('[data-sp-del]');
     if (del) { removeRecord(del.getAttribute('data-sp-del'), del.getAttribute('data-sp-id')); return; }
+
+    const presetEdit = target.closest('[data-sp-preset-edit]');
+    if (presetEdit) { openPresetModal(presetEdit.getAttribute('data-sp-preset-edit')); return; }
+
+    const presetDel = target.closest('[data-sp-preset-del]');
+    if (presetDel) { removePreset(presetDel.getAttribute('data-sp-preset-del')); return; }
 
     const preset = target.closest('[data-sp-preset]');
     if (preset) { applyPreset(preset.getAttribute('data-sp-preset')); return; }
@@ -2065,6 +2120,7 @@
       const kind = save.getAttribute('data-sp-save');
       if (kind === 'method') saveMethod();
       else if (kind === 'template') saveTemplate();
+      else if (kind === 'preset') savePreset();
       else if (kind === 'assign') saveAssign();
       else if (kind === 'override') saveOverride();
     }
@@ -2141,7 +2197,11 @@
       methodOptions: methodOptions,
       methodSummary: methodSummary,
       templateSummary: templateSummary,
-      defaultWeekly: defaultWeekly
+      defaultWeekly: defaultWeekly,
+      builtinPresets: builtinPresets,
+      presetList: presetList,
+      materializePresets: materializePresets,
+      findPreset: findPreset
     }
   };
 })();
