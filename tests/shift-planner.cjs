@@ -443,10 +443,12 @@ check('گروه‌بندی شهر با مرتب‌سازی حفظ می‌شود'
 // ── گروه‌بندی دوسطحی: شهر ← محل خدمت ← کارکنان ──────────────────────────
 // شیفت‌ها در محل خدمت برقرار می‌شوند و یک شهر می‌تواند چند ایستگاه با نفرات و
 // نوع شیفت جدا داشته باشد، پس محل خدمت سطح گروه‌بندی داخل هر شهر است.
+// کلید ایستگاه در صفت HTML کد می‌شود؛ NUL در تجزیهٔ HTML به U+FFFD تبدیل می‌شد.
+const station2Key = encodeURIComponent('تهران') + '|' + encodeURIComponent('ایستگاه ۲');
 clickOn('data-sp-tab', 'assign');
 check('سطر محل خدمت رندر می‌شود', bodyHtml.indexOf('sp-station-row') >= 0);
 check('سطر محل خدمت چک‌باکس انتخاب گروهی دارد',
-  bodyHtml.indexOf('data-sp-select-station="تهران\u0000ایستگاه ۲"') >= 0,
+  bodyHtml.indexOf('data-sp-select-station="' + station2Key + '"') >= 0,
   bodyHtml.indexOf('data-sp-select-station'));
 check('سطر محل خدمت نام ایستگاه را نشان می‌دهد',
   bodyHtml.indexOf('sp-station-cell" colspan="2">ایستگاه ۲') >= 0);
@@ -472,7 +474,7 @@ check('کارکنان یک ایستگاه زیر همان ایستگاه می‌
 fire('change', {
   closest: function (selector) {
     return selector === '[data-sp-select-station]'
-      ? { getAttribute: function () { return 'تهران\u0000ایستگاه ۲'; }, checked: true }
+      ? { getAttribute: function () { return station2Key; }, checked: true }
       : null;
   }
 });
@@ -481,14 +483,14 @@ check('انتخاب ایستگاه، هر دو کارمندش را تیک می�
 check('انتخاب ایستگاه، کارمند ایستگاه دیگر را تیک نمی‌زند',
   bodyHtml.indexOf('data-sp-select="e1" checked') < 0);
 check('چک‌باکس ایستگاه پس از انتخاب کامل، تیک‌خورده است',
-  bodyHtml.indexOf('data-sp-select-station="تهران\u0000ایستگاه ۲" checked') >= 0);
+  bodyHtml.indexOf('data-sp-select-station="' + station2Key + '" checked') >= 0);
 check('چک‌باکس شهر با انتخاب یک ایستگاه کامل تیک نمی‌خورد',
   bodyHtml.indexOf('data-sp-select-city="تهران" checked') < 0);
 
 fire('change', {
   closest: function (selector) {
     return selector === '[data-sp-select-station]'
-      ? { getAttribute: function () { return 'تهران\u0000ایستگاه ۲'; }, checked: false }
+      ? { getAttribute: function () { return station2Key; }, checked: false }
       : null;
   }
 });
@@ -497,7 +499,15 @@ check('برداشتن تیک ایستگاه، نفراتش را آزاد می‌
 
 // ── سطر محل خدمت: مارک‌شدنی و خروجی مارک‌شده‌ها ──────────────────────────
 check('سطر محل خدمت نشانهٔ مارک دارد',
-  bodyHtml.indexOf('data-sp-mark-station="تهران\u0000ایستگاه ۲"') >= 0);
+  bodyHtml.indexOf('data-sp-mark-station="' + station2Key + '"') >= 0);
+
+// ریشهٔ باگ: کلید ایستگاه با NUL ساخته می‌شد و تجزیه‌گر HTML هر U+0000 را با
+// U+FFFD عوض می‌کند؛ در نتیجه مارک کردن ایستگاه هیچ کارمندی را انتخاب نمی‌کرد.
+const stationAttr = (bodyHtml.match(/data-sp-select-station="([^"]*)"/) || [])[1] || '';
+check('کلید ایستگاه کاراکتر کنترلی ندارد',
+  stationAttr.length > 0 && !/[\u0000-\u001f]/.test(stationAttr), JSON.stringify(stationAttr));
+check('کلید ایستگاه به شهر و محل خدمت برمی‌گردد',
+  stationAttr.split('|').map(decodeURIComponent).join(' / ') === 'تهران / ایستگاه ۲', stationAttr);
 check('سطر محل خدمت بدون انتخاب، مارک‌نشده است',
   bodyHtml.indexOf('sp-station-row is-marked') < 0);
 check('دکمه‌های خروجی مارک‌شده‌ها در نوار انتخاب هست',
@@ -506,7 +516,7 @@ check('بدون انتخاب، خروجی مارک‌شده‌ها غیرفعا�
   /data-sp-marked-export disabled/.test(bodyHtml));
 
 // کلیک روی خود سطر (نه چک‌باکس) ایستگاه را مارک می‌کند.
-clickOn('data-sp-mark-station', 'تهران\u0000ایستگاه ۲');
+clickOn('data-sp-mark-station', station2Key);
 check('کلیک روی سطر محل خدمت نفراتش را مارک می‌کند',
   bodyHtml.indexOf('data-sp-select="e2" checked') >= 0 && bodyHtml.indexOf('data-sp-select="e4" checked') >= 0);
 check('سطر مارک‌شده نشانهٔ is-marked می‌گیرد',
@@ -533,7 +543,7 @@ check('نام فایل خروجی مارک‌شده‌ها مشخص است',
   exportCalls[0] && exportCalls[0].base.indexOf('marked-assignments') >= 0, exportCalls[0] && exportCalls[0].base);
 
 // کلیک دوم روی سطر، مارک را برمی‌دارد.
-clickOn('data-sp-mark-station', 'تهران\u0000ایستگاه ۲');
+clickOn('data-sp-mark-station', station2Key);
 check('کلیک دوم روی سطر مارک را برمی‌دارد',
   bodyHtml.indexOf('data-sp-select="e2" checked') < 0 && bodyHtml.indexOf('sp-station-row is-marked') < 0);
 

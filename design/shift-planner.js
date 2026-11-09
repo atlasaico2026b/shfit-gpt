@@ -663,8 +663,8 @@
         const stationPicked = people.filter(function (employee) { return selected[employee.id]; }).length;
         const stationAll = people.length > 0 && stationPicked === people.length;
         return '<tr class="sp-station-row' + (stationAll ? ' is-marked' : '') + '"' +
-          ' data-sp-mark-station="' + esc(city + '\u0000' + station) + '">' +
-          '<td class="sp-check"><input type="checkbox" data-sp-select-station="' + esc(city + '\u0000' + station) + '"' +
+          ' data-sp-mark-station="' + esc(stationKey(city, station)) + '">' +
+          '<td class="sp-check"><input type="checkbox" data-sp-select-station="' + esc(stationKey(city, station)) + '"' +
             (stationAll ? ' checked' : '') + ' aria-label="مارک کردن همهٔ کارکنان ' + esc(station) + '"></td>' +
           '<td></td><td></td>' +
           '<td class="sp-station-cell" colspan="2">' + esc(station) +
@@ -1818,11 +1818,18 @@
     }
   }
 
-  // کارکنان یک ایستگاه (کلید = «شهر\u0000محل خدمت») در فهرست فیلترشده.
+  // کلید ایستگاه داخل صفت HTML می‌رود. NUL نمی‌تواند جداکننده باشد: تجزیه‌گر
+  // HTML هر U+0000 را با U+FFFD عوض می‌کند و مقایسهٔ کلید می‌شکند، پس هر بخش
+  // را جدا کد می‌کنیم و با «|» می‌چسبانیم (encodeURIComponent خودِ «|» را %7C می‌کند).
+  function stationKey(city, station) {
+    return encodeURIComponent(city) + '|' + encodeURIComponent(station);
+  }
+
+  // کارکنان یک ایستگاه (کلید = stationKey) در فهرست فیلترشده.
   function stationPeople(state, key) {
     return filteredEmployees(state).filter(function (employee) {
-      return (employeeCity(employee) || 'بدون شهر') + '\u0000' +
-        (employeeStation(employee) || 'بدون محل خدمت') === key;
+      return stationKey(employeeCity(employee) || 'بدون شهر',
+        employeeStation(employee) || 'بدون محل خدمت') === key;
     });
   }
 
@@ -1875,13 +1882,8 @@
     }
     const stationBoxes = host.querySelectorAll('[data-sp-select-station]');
     if (stationBoxes.length) {
-      const people = filteredEmployees(data());
       Array.prototype.forEach.call(stationBoxes, function (box) {
-        const key = box.getAttribute('data-sp-select-station');
-        const group = people.filter(function (employee) {
-          return (employeeCity(employee) || 'بدون شهر') + '\u0000' +
-            (employeeStation(employee) || 'بدون محل خدمت') === key;
-        });
+        const group = stationPeople(data(), box.getAttribute('data-sp-select-station'));
         const picked = group.filter(function (employee) { return selected[employee.id]; }).length;
         box.checked = group.length > 0 && picked === group.length;
         box.indeterminate = picked > 0 && picked < group.length;
@@ -1890,13 +1892,8 @@
     // سطر محل خدمت وقتی همهٔ نفراتش مارک باشند، سبز پررنگ‌تر می‌شود.
     const stationRows = host.querySelectorAll('[data-sp-mark-station]');
     if (stationRows.length) {
-      const people = filteredEmployees(data());
       Array.prototype.forEach.call(stationRows, function (row) {
-        const key = row.getAttribute('data-sp-mark-station');
-        const group = people.filter(function (employee) {
-          return (employeeCity(employee) || 'بدون شهر') + '\u0000' +
-            (employeeStation(employee) || 'بدون محل خدمت') === key;
-        });
+        const group = stationPeople(data(), row.getAttribute('data-sp-mark-station'));
         const picked = group.filter(function (employee) { return selected[employee.id]; }).length;
         if (row.classList) row.classList.toggle('is-marked', group.length > 0 && picked === group.length);
       });
