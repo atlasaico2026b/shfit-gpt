@@ -220,3 +220,213 @@
   }
 }
 
+
+/* ── تاریخچهٔ اشکال: پنجرهٔ مراحل و ثبت وضعیت ─────────────────────────────
+   هر اشکال یک پروندهٔ مستقل است؛ مراحل از ثبت تا رفع و برگشت به سرویس در
+   همین پنجره به‌صورت خط زمانی دیده و چاپ می‌شوند. */
+.fault-detail-modal {
+  width: min(760px, 100%);
+}
+
+.fault-detail-modal:focus {
+  outline: none;
+}
+
+.fault-detail-facts {
+  margin: 0 0 12px;
+}
+
+.fault-detail-progress {
+  margin-bottom: 12px;
+}
+
+.fault-detail-desc {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(var(--navy-rgb), .24);
+  font-size: .84rem;
+  line-height: 1.9;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.fault-detail-section {
+  margin-top: 16px;
+}
+
+.fault-detail-section h4 {
+  margin: 0 0 10px;
+  font-size: .84rem;
+  color: var(--text);
+}
+
+.fault-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.fault-timeline-item {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  padding: 0 0 14px 0;
+}
+
+.fault-timeline-item::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 5px;
+  top: 14px;
+  bottom: 0;
+  width: 1px;
+  background: var(--line);
+}
+
+.fault-timeline-item:last-child::before {
+  display: none;
+}
+
+.fault-timeline-dot {
+  flex: 0 0 auto;
+  width: 11px;
+  height: 11px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: var(--muted);
+  box-shadow: 0 0 0 3px rgba(var(--navy-rgb), .5);
+}
+
+.fault-timeline-dot[data-tone="ok"] { background: var(--tone-ok, #3fbf7f); }
+.fault-timeline-dot[data-tone="warn"] { background: var(--tone-warn, #e0a63a); }
+.fault-timeline-dot[data-tone="danger"] { background: var(--tone-danger, #e05a5a); }
+.fault-timeline-dot[data-tone="info"] { background: var(--tone-info, #4a9fe0); }
+.fault-timeline-dot[data-tone="attention"] { background: var(--tone-attention, #e08a3a); }
+
+.fault-timeline-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.fault-timeline-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.fault-timeline-head strong {
+  font-size: .82rem;
+  color: var(--text);
+}
+
+.fault-timeline-at {
+  font-size: .72rem;
+  color: var(--muted);
+}
+
+.fault-timeline-body p {
+  margin: 4px 0 0;
+  font-size: .8rem;
+  line-height: 1.85;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.fault-timeline-body small {
+  display: block;
+  margin-top: 3px;
+  font-size: .7rem;
+  color: var(--muted);
+}
+
+.fault-stage-form {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(var(--navy-rgb), .2);
+}
+
+.fault-stage-grid {
+  display: grid;
+  grid-template-columns: minmax(150px, 220px) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.fault-stage-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  font-size: .76rem;
+  color: var(--muted);
+}
+
+.fault-stage-field select,
+.fault-stage-field textarea {
+  width: 100%;
+  font: inherit;
+  font-size: .82rem;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.fault-stage-field textarea {
+  resize: vertical;
+  min-height: 58px;
+}
+
+.fault-stage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.fault-detail-foot {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 9px 13px;
+  border-top: 1px solid var(--line);
+  background: var(--panel-2);
+}
+
+.fault-open-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-align: start;
+  cursor: pointer;
+}
+
+.fault-open-btn:hover,
+.fault-open-btn:focus-visible {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .fault-stage-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fault-detail-foot > * {
+    flex: 1 1 auto;
+  }
+}
