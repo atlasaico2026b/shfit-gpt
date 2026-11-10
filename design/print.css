@@ -267,16 +267,17 @@
 }
 
 /* ── صفحه‌بندی از پیش‌محاسبه‌شده ──
-   هر صفحه یک جدول مستقل است؛ بین جدول‌ها شکست صفحهٔ صریح می‌گذاریم تا هیچ
-   سطری نصف نشود و سرستون در بالای هر صفحه تکرار شود. */
+   هر صفحه یک جدول مستقل داخل یک div است. شکست صفحه روی div گذاشته می‌شود،
+   نه روی جدول: کروم break-after را روی table (و روی آیتم‌های flex/grid)
+   نادیده می‌گیرد و سرستون صفحهٔ بعد وسط صفحهٔ قبل می‌افتاد و نصفه می‌شد. */
 #atlasPrintArea .atlas-print-page {
-  break-after: page;
-  page-break-after: always;
+  break-inside: auto;
+  page-break-inside: auto;
 }
 
-#atlasPrintArea .atlas-print-page:last-child {
-  break-after: auto;
-  page-break-after: auto;
+#atlasPrintArea .atlas-print-page:not(:first-child) {
+  break-before: page;
+  page-break-before: always;
 }
 
 @media print {
@@ -311,6 +312,9 @@
   body.atlas-printing {
     margin: 0;
     padding: 0;
+    /* اگر پوسته بدنه را flex/grid کند، برگهٔ چاپ یک آیتم flex/grid می‌شود و
+       کروم آن را یک‌تکه می‌بیند: شکست صفحه بین صفحه‌ها نادیده گرفته می‌شد. */
+    display: block !important;
   }
 
   body.atlas-printing > *:not(#atlasPrintArea) {

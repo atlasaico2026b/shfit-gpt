@@ -45,6 +45,10 @@ function makeNode(tag, height) {
       add: function (name) { if (node.classes.indexOf(name) < 0) node.classes.push(name); }
     }
   };
+  Object.defineProperty(node, 'className', {
+    get: function () { return this.classes.join(' '); },
+    set: function (value) { this.classes = String(value).split(/\s+/).filter(Boolean); }
+  });
   Object.defineProperty(node, 'innerHTML', {
     get: function () { return ''; },
     set: function () { this.children = []; }
@@ -98,31 +102,33 @@ const sheet = globalThis.AtlasPrintSheet;
 const checks = [];
 const check = (name, ok, extra) => checks.push({ name: name, ok: !!ok, extra: extra === undefined ? '' : String(extra) });
 
-// ارتفاع قابل استفاده: ۲۱۰mm منهای سرستون ۱۰۰px، پاصفحه ۴۰px و ۳mm اطمینان.
-const avail = sheet.mmToPx(210) - 100 - 40 - sheet.mmToPx(3);
+// ارتفاع قابل استفاده: ۲۱۰mm منهای سرستون ۱۰۰px، پاصفحه ۴۰px و ۸mm اطمینان.
+const avail = sheet.mmToPx(210) - 100 - 40 - sheet.mmToPx(8);
 const rowH = Math.floor(avail / 3) + 10; // سه سطر در صفحه جا نمی‌شوند، دو سطر جا می‌شوند
 
 // ── جدول بلند: باید به چند صفحه تقسیم شود ──
 const longTable = makeTable([rowH, rowH, rowH, rowH, rowH], 100, 40);
 const longHost = makeHost(longTable);
 const pageCount = sheet.paginate(longHost);
+// هر صفحه یک div است و جدول داخل آن می‌نشیند.
+const pageTables = longHost.children.map(page => page.children[0]);
 
 check('جدول بلند به بیش از یک صفحه تقسیم می‌شود', pageCount >= 2, pageCount);
-check('هر صفحه یک جدول مستقل است', longHost.children.length === pageCount, longHost.children.length);
+check('هر صفحه یک div مستقل است', longHost.children.length === pageCount, longHost.children.length);
+check('هر صفحه یک جدول مستقل دارد', pageTables.every(t => t && t.tagName === 'table'));
 check('همهٔ سطرها حفظ می‌شوند',
-  longHost.children.reduce((sum, table) => sum + table.tBodies[0].rows.length, 0) === 5,
-  longHost.children.map(t => t.tBodies[0].rows.length).join('+'));
+  pageTables.reduce((sum, table) => sum + table.tBodies[0].rows.length, 0) === 5,
+  pageTables.map(t => t.tBodies[0].rows.length).join('+'));
 check('هر صفحه سرستون کامل خودش را دارد',
-  longHost.children.every(table => table.tHead && table.tHead._height === 100));
-check('هر صفحه پاصفحهٔ خودش را دارد', longHost.children.every(table => table.tFoot && table.tFoot._height === 40));
-check('هر صفحه colgroup خودش را دارد', longHost.children.every(table => table.children[0].tagName === 'colgroup'));
-check('همهٔ صفحه‌ها جز آخری شکست صفحه دارند',
-  longHost.children.slice(0, -1).every(table => table.classes.indexOf('atlas-print-page') >= 0));
-check('صفحهٔ آخر شکست اضافه ندارد',
-  longHost.children[longHost.children.length - 1].classes.indexOf('atlas-print-page') < 0);
+  pageTables.every(table => table.tHead && table.tHead._height === 100));
+check('هر صفحه پاصفحهٔ خودش را دارد', pageTables.every(table => table.tFoot && table.tFoot._height === 40));
+check('هر صفحه colgroup خودش را دارد', pageTables.every(table => table.children[0].tagName === 'colgroup'));
+check('همهٔ صفحه‌ها کلاس شکست صفحه دارند',
+  longHost.children.every(page => page.classes.indexOf('atlas-print-page') >= 0),
+  longHost.children.map(p => p.classes.join(',')).join('|'));
 check('هیچ صفحه‌ای بیش از ظرفیت سطر ندارد',
-  longHost.children.every(table => table.tBodies[0].rows.length * rowH <= avail + 1),
-  longHost.children.map(t => t.tBodies[0].rows.length).join('+'));
+  pageTables.every(table => table.tBodies[0].rows.length * rowH <= avail + 1),
+  pageTables.map(t => t.tBodies[0].rows.length).join('+'));
 check('سبک اندازه‌گیری بعد از صفحه‌بندی پاک می‌شود', !('style' in longHost.attrs), JSON.stringify(longHost.attrs));
 
 // ── جدول کوتاه: دست‌نخورده می‌ماند ──

@@ -206,8 +206,13 @@ check('سطر بلندتر از صفحه تنها در یک صفحه می‌ما
 check('فهرست خالی صفحه‌ای نمی‌سازد', JSON.stringify(sheet.packPages([], 250)) === '[]');
 check('صفحه‌بندی روی میزبان بدون DOM خطا نمی‌دهد', sheet.paginate({}) === 0);
 check('render صفحه‌بندی را صدا می‌زند', /host\.innerHTML = build\(rows, o\);[\s\S]*?paginate\(host\)/.test(src));
-check('بین جدول‌های صفحه شکست صریح می‌گذارد', /\.atlas-print-page\s*\{[^}]*break-after:\s*page/.test(css.replace(/\r/g, '')));
-check('آخرین صفحه شکست اضافه نمی‌گیرد', /\.atlas-print-page:last-child\s*\{[^}]*break-after:\s*auto/.test(css.replace(/\r/g, '')));
+check('شکست صفحه روی div صفحه است، نه روی جدول',
+  /\.atlas-print-page:not\(:first-child\)\s*\{[^}]*break-before:\s*page/.test(css.replace(/\r/g, '')));
+check('صفحهٔ اول شکست اضافه نمی‌گیرد', !/\.atlas-print-page\s*\{[^}]*break-after:\s*page/.test(css.replace(/\r/g, '')));
+check('هر صفحه یک div است و جدول داخلش می‌نشیند',
+  /createElement\('div'\)[\s\S]*?className = 'atlas-print-page'[\s\S]*?page\.appendChild\(clone\)/.test(src));
+check('بدنهٔ چاپ بلوک می‌شود تا آیتم flex/grid نباشد',
+  /body\.atlas-printing\s*\{[^}]*display:\s*block\s*!important/.test(css.replace(/\r/g, '')));
 
 const failed = checks.filter(c => !c.ok);
 checks.forEach(c => console.log((c.ok ? 'PASS ' : 'FAIL ') + c.name + (c.ok || !c.extra ? '' : ' → ' + c.extra)));

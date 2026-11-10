@@ -166,7 +166,7 @@
   const MM_PER_PX = 25.4 / 96;
   const PAGE_HEIGHT_MM = 210;   // A4 افقی
   const PAGE_WIDTH_MM = 297;
-  const SAFETY_MM = 3;          // حاشیهٔ اطمینان برای خطاهای گرد کردن
+  const SAFETY_MM = 8;          // حاشیهٔ اطمینان: جدول هرگز بلندتر از یک صفحه نشود
 
   function mmToPx(mm) {
     return mm / MM_PER_PX;
@@ -224,16 +224,21 @@
 
     const colgroup = table.querySelector('colgroup');
     const fragment = document.createDocumentFragment();
-    pages.forEach(function (pageRows, pageIndex) {
+    pages.forEach(function (pageRows) {
+      // هر صفحه داخل یک div می‌نشیند، نه روی خودِ جدول: کروم شکست صفحه را روی
+      // جدول (و روی آیتم‌های flex/grid) نادیده می‌گیرد و همان‌جا سرستون صفحهٔ
+      // بعد را وسط صفحهٔ قبل می‌انداخت و نصفه می‌برید.
+      const page = document.createElement('div');
+      page.className = 'atlas-print-page';
       const clone = table.cloneNode(false);
-      if (pageIndex < pages.length - 1) clone.classList.add('atlas-print-page');
       if (colgroup) clone.appendChild(colgroup.cloneNode(true));
       if (thead) clone.appendChild(thead.cloneNode(true));
       const body = document.createElement('tbody');
       pageRows.forEach(function (index) { body.appendChild(rows[index].cloneNode(true)); });
       clone.appendChild(body);
       if (tfoot) clone.appendChild(tfoot.cloneNode(true));
-      fragment.appendChild(clone);
+      page.appendChild(clone);
+      fragment.appendChild(page);
     });
 
     host.innerHTML = '';
