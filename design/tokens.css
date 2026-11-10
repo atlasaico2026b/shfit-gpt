@@ -90,6 +90,10 @@
   --special: var(--c-purple);
   --special-rgb: var(--c-purple-rgb);
 
+  /* هالهٔ نورانی سرستونِ مرتب‌شده. عمداً رنگی بیرون از شش رنگ ستون‌ها
+     (--th-hue) است تا با رنگ ثابت ستون اشتباه گرفته نشود. */
+  --sort-halo-rgb: var(--c-yellow-rgb);
+
   /* رنگ آماده برای واژهٔ تأکید عنوان هر صفحه */
   --tone-1: var(--c-cyan);
   --tone-2: var(--c-green);
