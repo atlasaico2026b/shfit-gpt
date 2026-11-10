@@ -1,0 +1,38 @@
+/* ============================================================================
+   آرم شرکت ملی نفت ایران
+   ----------------------------------------------------------------------------
+   آرم در بالاترین بخش برنامه و دقیقاً وسط نوار بالا می‌نشیند. تصویر PNG با
+   پس‌زمینهٔ شفاف است (design/icons/nioc-logo.png)، پس هیچ کادر یا پرده‌ای
+   پشتش نیست. جای‌گیری مطلق است تا با «برند» سمت راست و «کنش‌های بالا» سمت
+   چپ قفل نشود و همیشه روی مرکز نوار بماند.
+   ========================================================================== */
+
+.topbar-logo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.topbar-logo img {
+  display: block;
+  height: 38px;
+  width: auto;
+  /* آبیِ تیرهٔ آرم روی زمینهٔ تیرهٔ نوار گم می‌شود. این دو هالهٔ نرم فقط لبهٔ
+     شکل‌ها را روشن می‌کنند تا آرم خوانا شود؛ پس‌زمینه‌ای نمی‌سازند. */
+  filter:
+    drop-shadow(0 0 1px rgba(var(--c-white-rgb), .95))
+    drop-shadow(0 0 7px rgba(var(--c-white-rgb), .45));
+}
+
+@media (max-width: 780px) {
+  .topbar-logo img { height: 28px; }
+}
+
+@media print {
+  .topbar-logo { display: none; }
+}
