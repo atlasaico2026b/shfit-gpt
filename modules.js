@@ -607,7 +607,7 @@
         {key:'reportedAt',label:'تاریخ ثبت شمسی',type:'jalali',required:true},
         {key:'reportedById',label:'ثبت‌کننده',type:'select',source:'employees'},
         {key:'description',label:'شرح اشکال',type:'textarea',wide:true,required:true},
-        {key:'status',label:'وضعیت رفع',type:'select',required:true,listKey:'faultStatuses',options:['ثبت‌شده','در حال بررسی','در حال تعمیر','رفع شد','بسته‌شده']},
+        {key:'status',label:'وضعیت رفع',type:'select',required:true,listKey:'faultStatuses',options:['ثبت‌شده','در حال بررسی','در حال تعمیر','رفع شد','در سرویس','بسته‌شده']},
         {key:'progress',label:'درصد پیشرفت رفع',type:'number',min:0,max:100},
         {key:'steps',label:'روند رفع اشکال (هر مورد در یک خط)',type:'textarea',wide:true,placeholder:'تاریخ | اقدام انجام‌شده | انجام‌دهنده | وضعیت'},
         {key:'resolvedAt',label:'تاریخ رفع شمسی',type:'jalali'},
@@ -3164,10 +3164,67 @@
   function faultProgress(record) {
     const raw = Number(record.progress);
     if (!Number.isNaN(raw) && record.progress !== '' && record.progress != null) return Math.max(0, Math.min(100, Math.round(raw)));
-    if (record.status === 'رفع شد' || record.status === 'بسته‌شده') return 100;
+    if (record.status === 'بسته‌شده' || record.status === 'در سرویس') return 100;
+    if (record.status === 'رفع شد') return 90;
     if (record.status === 'در حال تعمیر') return 60;
     if (record.status === 'در حال بررسی') return 25;
     return 5;
+  }
+
+  // وضعیت‌های چرخهٔ اشکال: از ثبت تا رفع و برگشت به سرویس. فهرست مرجع کاربر
+  // ممکن است قدیمی باشد و «در سرویس» را نداشته باشد؛ پس همیشه با گزینه‌های
+  // تعریف‌شده در فرم ادغام می‌شود تا این مرحله از قلم نیفتد.
+  const FAULT_STATUS_FLOW = ['ثبت‌شده', 'در حال بررسی', 'در حال تعمیر', 'رفع شد', 'در سرویس', 'بسته‌شده'];
+
+  function faultStatusOptions() {
+    const out = [];
+    const push = function (value) {
+      const text = String(value == null ? '' : value).trim();
+      if (text && out.indexOf(text) < 0) out.push(text);
+    };
+    FAULT_STATUS_FLOW.forEach(push);
+    (appData.references.faultStatuses || []).forEach(push);
+    return out;
+  }
+
+  function isFaultOpen(record) {
+    return record.status !== 'رفع شد' && record.status !== 'در سرویس' && record.status !== 'بسته‌شده';
+  }
+
+  // مراحل ثبت‌شدهٔ یک اشکال: ثبت اولیه + مراحل دستی. رکوردهای قدیمی که فقط
+  // «روند رفع» متنی دارند هم به همان شکل خوانده می‌شوند.
+  function faultTimelineEntries(record) {
+    const entries = [];
+    if (record.reportedAt) {
+      entries.push({
+        at: record.reportedAt,
+        status: 'ثبت‌شده',
+        note: 'ثبت اولیهٔ اشکال',
+        by: record.reportedById || ''
+      });
+    }
+    const stored = Array.isArray(record.timeline) ? record.timeline : [];
+    if (stored.length) {
+      stored.forEach(function (entry) {
+        entries.push({
+          at: entry.at || '',
+          status: entry.status || '',
+          note: entry.note || '',
+          by: entry.by || ''
+        });
+      });
+    } else {
+      faultSteps(record).forEach(function (line) {
+        const parts = line.split('|').map(function (part) { return part.trim(); });
+        entries.push({
+          at: parts.length > 1 ? parts[0] : '',
+          status: parts.length > 2 ? parts[parts.length - 1] : '',
+          note: parts.length > 1 ? parts.slice(1, parts.length > 2 ? -1 : undefined).join(' | ') : line,
+          by: ''
+        });
+      });
+    }
+    return entries;
   }
 
   function faultSteps(record) {
@@ -3189,12 +3246,12 @@
   function renderFaultCard(record) {
     const pct = faultProgress(record);
     const steps = faultSteps(record);
-    const open = record.status !== 'رفع شد' && record.status !== 'بسته‌شده';
+    const open = isFaultOpen(record);
     const stepsHtml = steps.length
       ? '<ol class="fault-steps">' + steps.map(function (line) { return '<li>' + esc(line) + '</li>'; }).join('') + '</ol>'
       : '<div class="fault-steps-empty">اقدامی ثبت نشده است.</div>';
     return '<article class="fault-card' + (open ? '' : ' is-resolved') + '" data-tone="' + (record.priority === 'بحرانی' ? 'danger' : record.priority === 'زیاد' ? 'attention' : open ? 'warn' : 'ok') + '">' +
-      '<header class="fault-card-head"><div><h3>' + esc(record.title || 'اشکال') + '</h3>' +
+      '<header class="fault-card-head"><div><h3><button type="button" class="fault-open-btn" data-fault-open="' + esc(record.id) + '">' + esc(record.title || 'اشکال') + '</button></h3>' +
       '<p>' + esc(faultAssetLabel(record)) + (record.category ? ' · ' + esc(record.category) : '') + (record.reportedAt ? ' · ' + formatJalali(record.reportedAt, false) : '') + '</p></div>' +
       statusTag(record.status || 'ثبت‌شده') + '</header>' +
       '<div class="fault-progress"><div class="progress-track"><div class="progress-bar" style="width:' + pct + '%"></div></div><strong>' + faDigits(pct) + '٪</strong></div>' +
@@ -3202,7 +3259,7 @@
       stepsHtml +
       '<div class="fault-card-foot"><span class="fault-priority" data-tone="' + (record.priority === 'بحرانی' ? 'danger' : record.priority === 'زیاد' ? 'attention' : 'info') + '">اولویت: ' + esc(record.priority || '—') + '</span>' +
       (open ? '<div class="fault-step-add"><input type="text" data-fault-step-input="' + esc(record.id) + '" placeholder="اقدام انجام‌شده را بنویس و Enter بزن"><button type="button" class="secondary-btn" data-fault-action="add-step" data-fault="' + esc(record.id) + '">+ اقدام</button></div>' : '') +
-      '<div class="fault-card-actions">' + renderCommentButton('faults', record) + '<button type="button" class="secondary-btn" data-module-action="edit" data-view="faults" data-id="' + esc(record.id) + '">ویرایش</button>' +
+      '<div class="fault-card-actions"><button type="button" class="secondary-btn" data-fault-open="' + esc(record.id) + '">تاریخچه</button>' + renderCommentButton('faults', record) + '<button type="button" class="secondary-btn" data-module-action="edit" data-view="faults" data-id="' + esc(record.id) + '">ویرایش</button>' +
       (open ? '<button type="button" class="secondary-btn" data-fault-action="resolve" data-fault="' + esc(record.id) + '">علامت‌گذاری رفع شد</button>' : '') +
       '<button type="button" class="module-delete-btn" data-module-action="delete" data-view="faults" data-id="' + esc(record.id) + '">حذف</button></div></div></article>';
   }
@@ -3210,8 +3267,8 @@
   // ترتیب دفتر اشکالات: بازها اول، بعد اولویت، بعد تازه‌ترین گزارش.
   function faultBoardOrder(a, b) {
     const rank = { 'بحرانی': 0, 'زیاد': 1, 'متوسط': 2, 'کم': 3 };
-    const openA = a.status === 'رفع شد' || a.status === 'بسته‌شده' ? 1 : 0;
-    const openB = b.status === 'رفع شد' || b.status === 'بسته‌شده' ? 1 : 0;
+    const openA = isFaultOpen(a) ? 0 : 1;
+    const openB = isFaultOpen(b) ? 0 : 1;
     if (openA !== openB) return openA - openB;
     const pa = rank[a.priority] == null ? 9 : rank[a.priority];
     const pb = rank[b.priority] == null ? 9 : rank[b.priority];
@@ -3249,10 +3306,6 @@
   }
 
   // ── سوابق اشکالات: فهرست همهٔ خودروها، مرتب‌سازی و سابقهٔ اشکال هر خودرو ──
-  function isFaultOpen(fault) {
-    return fault.status !== 'رفع شد' && fault.status !== 'بسته‌شده';
-  }
-
   function faultsOfVehicle(vehicleId) {
     return (appData.faults || []).filter(function (fault) { return String(fault.vehicleId || '') === String(vehicleId); })
       .sort(function (a, b) { return String(b.reportedAt || '').localeCompare(String(a.reportedAt || '')); });
@@ -3431,6 +3484,122 @@
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>سوابق ثبت‌شده</h3><p>هر ردیف یک اشکال با تاریخ و روند رفع خودش.</p></div><span class="module-tag">' + faDigits(list.length) + ' مورد</span></div>' +
       cards + '</section>'
     );
+  }
+
+  // ── تاریخچهٔ اشکال: پنجرهٔ مراحل، ثبت وضعیت با هر کامنت و چاپ سابقه ──
+  // هر اشکال یک پروندهٔ مستقل دارد: مراحل از «ثبت» تا «رفع» و «در سرویس» با
+  // تاریخ، وضعیت و شرح در همین پنجره ثبت و در یک برگهٔ چاپی هم بیرون می‌آید.
+  function faultTimelineMarkup(record) {
+    const entries = faultTimelineEntries(record);
+    if (!entries.length) return '<p class="module-local-note">هنوز مرحله‌ای برای این اشکال ثبت نشده است.</p>';
+    return '<ol class="fault-timeline">' + entries.map(function (entry) {
+      const person = entry.by ? (appData.employees || []).find(function (item) { return String(item.id) === String(entry.by); }) : null;
+      return '<li class="fault-timeline-item">' +
+        '<span class="fault-timeline-dot" data-tone="' + statusTone(entry.status || '') + '"></span>' +
+        '<div class="fault-timeline-body">' +
+        '<div class="fault-timeline-head"><strong>' + esc(entry.status || 'مرحله') + '</strong>' +
+        '<span class="fault-timeline-at">' + esc(entry.at ? formatJalali(entry.at, true) : '—') + '</span></div>' +
+        (entry.note ? '<p>' + esc(entry.note) + '</p>' : '') +
+        (person ? '<small>ثبت‌کننده: ' + esc(employeeName(person)) + '</small>' : '') +
+        '</div></li>';
+    }).join('') + '</ol>';
+  }
+
+  function faultDetailBody(record) {
+    const pct = faultProgress(record);
+    const vehicle = record.vehicleId ? (appData.vehicles || []).find(function (item) { return String(item.id) === String(record.vehicleId); }) : null;
+    const person = record.responsibleId ? (appData.employees || []).find(function (item) { return String(item.id) === String(record.responsibleId); }) : null;
+    const facts = [
+      ['وضعیت فعلی', record.status || 'ثبت‌شده'],
+      ['اولویت', record.priority || '—'],
+      ['دستهٔ اشکال', record.category || '—'],
+      ['تاریخ ثبت', record.reportedAt ? formatJalali(record.reportedAt, false) : '—'],
+      ['مسئول رفع', person ? employeeName(person) : '—'],
+      ['تاریخ رفع', record.resolvedAt ? formatJalali(record.resolvedAt, false) : '—'],
+      ['خودرو', vehicle ? (vehicle.name || 'خودرو') : (record.assetType || '—')],
+      ['پلاک', vehicle ? (vehicle.companyPlate || vehicle.policePlate || '—') : '—']
+    ].map(function (pair) { return vtabFact(pair[0], pair[1]); }).join('');
+    const statusOptions = faultStatusOptions().map(function (value) {
+      return '<option value="' + esc(value) + '"' + (value === (record.status || 'ثبت‌شده') ? ' selected' : '') + '>' + esc(value) + '</option>';
+    }).join('');
+    return '<dl class="vtab-facts vtab-facts-wide fault-detail-facts">' + facts + '</dl>' +
+      '<div class="fault-progress fault-detail-progress"><div class="progress-track"><div class="progress-bar" style="width:' + pct + '%"></div></div><strong>' + faDigits(pct) + '٪ پیشرفت</strong></div>' +
+      (record.description ? '<p class="fault-detail-desc">' + esc(record.description) + '</p>' : '') +
+      '<section class="fault-detail-section"><h4>مراحل و سابقهٔ اشکال</h4>' + faultTimelineMarkup(record) + '</section>' +
+      '<section class="fault-detail-section fault-stage-form">' +
+      '<h4>ثبت مرحلهٔ تازه</h4>' +
+      '<div class="fault-stage-grid">' +
+      '<label class="fault-stage-field"><span>وضعیت این مرحله</span><select data-fault-stage-status>' + statusOptions + '</select></label>' +
+      '<label class="fault-stage-field fault-stage-note"><span>شرح اقدام یا کامنت</span><textarea rows="2" data-fault-stage-note placeholder="مثلاً: قطعه تعویض شد و خودرو به سرویس برگشت"></textarea></label>' +
+      '</div>' +
+      '<div class="fault-stage-actions"><button type="button" class="primary-btn" data-fault-stage-save>ثبت مرحله</button>' +
+      '<span class="module-field-hint">هر مرحله با تاریخ و ساعت شمسی در تاریخچهٔ همین اشکال ذخیره می‌شود.</span></div>' +
+      '</section>';
+  }
+
+  function openFaultDetail(faultId) {
+    const record = (appData.faults || []).find(function (item) { return String(item.id) === String(faultId); });
+    if (!record) { toast('این اشکال پیدا نشد.'); return; }
+    closeFaultDetail();
+    const backdrop = document.createElement('div');
+    backdrop.className = 'atlas-modal-backdrop fault-detail-backdrop';
+    backdrop.setAttribute('data-fault-detail-dialog', '');
+    backdrop.setAttribute('data-fault', String(record.id));
+    backdrop.innerHTML = '<div class="atlas-modal fault-detail-modal" role="dialog" aria-modal="true" aria-labelledby="faultDetailTitle">' +
+      '<div class="atlas-modal-head"><div><h3 id="faultDetailTitle">تاریخچهٔ اشکال · ' + esc(record.title || 'اشکال') + '</h3>' +
+      '<p>' + esc(faultAssetLabel(record)) + '</p></div>' +
+      '<button type="button" class="atlas-modal-close" data-fault-detail-close aria-label="بستن">×</button></div>' +
+      '<div class="atlas-modal-body" data-fault-detail-body></div>' +
+      '<div class="fault-detail-foot">' +
+      '<button type="button" class="secondary-btn" data-fault-detail-print>چاپ تاریخچه</button>' +
+      '<button type="button" class="secondary-btn" data-fault-detail-edit data-id="' + esc(record.id) + '">ویرایش اشکال</button>' +
+      '<button type="button" class="secondary-btn" data-fault-detail-close>بستن</button>' +
+      '</div></div>';
+    document.body.appendChild(backdrop);
+    refreshFaultDetail();
+    const modal = backdrop.querySelector('.fault-detail-modal');
+    if (modal) { modal.setAttribute('tabindex', '-1'); modal.focus(); }
+  }
+
+  function refreshFaultDetail() {
+    const backdrop = document.querySelector('[data-fault-detail-dialog]');
+    if (!backdrop) return;
+    const body = backdrop.querySelector('[data-fault-detail-body]');
+    const record = (appData.faults || []).find(function (item) { return String(item.id) === String(backdrop.dataset.fault); });
+    if (!body) return;
+    if (!record) { closeFaultDetail(); return; }
+    body.innerHTML = faultDetailBody(record);
+  }
+
+  function closeFaultDetail() {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-fault-detail-dialog]'), function (node) { node.remove(); });
+  }
+
+  function faultHistoryExportRows(record) {
+    const rows = [['تاریخ و ساعت', 'وضعیت', 'شرح مرحله', 'ثبت‌کننده']];
+    faultTimelineEntries(record).forEach(function (entry) {
+      const person = entry.by ? (appData.employees || []).find(function (item) { return String(item.id) === String(entry.by); }) : null;
+      rows.push([
+        entry.at ? formatJalali(entry.at, true) : '',
+        entry.status || '',
+        entry.note || '',
+        person ? employeeName(person) : ''
+      ]);
+    });
+    return rows;
+  }
+
+  function printFaultHistory(record) {
+    const vehicle = record.vehicleId ? (appData.vehicles || []).find(function (item) { return String(item.id) === String(record.vehicleId); }) : null;
+    const legend = [
+      'خودرو: ' + (vehicle ? (vehicle.name || 'خودرو') + (vehicle.companyPlate ? ' · ' + vehicle.companyPlate : '') : (record.assetType || '—')),
+      'دسته: ' + (record.category || '—'),
+      'اولویت: ' + (record.priority || '—'),
+      'وضعیت فعلی: ' + (record.status || 'ثبت‌شده'),
+      'تاریخ ثبت: ' + (record.reportedAt ? formatJalali(record.reportedAt, false) : '—')
+    ].join(' · ');
+    runExport(faultHistoryExportRows(record), 'تاریخچهٔ اشکال · ' + (record.title || 'اشکال'),
+      'ATLAS-SHIFT-fault-history-' + exportSlug(record.title, record.id) + '-' + todayIso(), 'print', { legend: legend });
   }
 
   // ── دفتر گازسنج‌ها: وضعیت سلامت، محل، کالیبراسیون و مانده روز ──
@@ -4058,6 +4227,41 @@
     return rows;
   }
 
+  // کارتکس سرویس هر خودرو: یک برگهٔ چاپی با همهٔ سرویس‌ها به ترتیب تاریخ و
+  // کیلومتر سرویس بعدی، تا پروندهٔ کاغذی خودرو از همین‌جا گرفته شود.
+  function serviceCardexRows(vehicle) {
+    const list = serviceLogsOfVehicle(vehicle.id).slice().sort(function (a, b) {
+      return String(a.date || '').localeCompare(String(b.date || ''));
+    });
+    const rows = [['ردیف', 'تاریخ سرویس', 'کیلومتر', 'نوع اقدام', 'شرح اقدام و قطعات', 'کیلومتر سرویس بعدی', 'تاریخ سرویس بعدی', 'وضعیت']];
+    list.forEach(function (item, index) {
+      rows.push([
+        faDigits(index + 1),
+        item.date ? formatJalali(item.date, false) : '',
+        item.km ? faDigits(item.km) : '',
+        item.type || '',
+        item.description || '',
+        item.nextServiceKm ? faDigits(item.nextServiceKm) : '',
+        item.nextServiceDate ? formatJalali(item.nextServiceDate, false) : '',
+        item.status || ''
+      ]);
+    });
+    return rows;
+  }
+
+  function printServiceCardex(vehicle) {
+    const stats = serviceStatsByVehicle()[vehicle.id] || {};
+    const legend = [
+      'خودرو: ' + (vehicle.name || 'خودرو'),
+      'پلاک: ' + (vehicle.companyPlate || vehicle.policePlate || '—'),
+      'کیلومتر فعلی: ' + (vehicle.currentKm ? faDigits(vehicle.currentKm) : '—'),
+      'آخرین سرویس: ' + (stats.last ? formatJalali(stats.last, false) : '—'),
+      'سرویس بعدی: ' + (stats.nextDate ? formatJalali(stats.nextDate, false) : '—') + (stats.nextKm ? ' · ' + faDigits(stats.nextKm) + ' کیلومتر' : '')
+    ].join(' · ');
+    runExport(serviceCardexRows(vehicle), 'کارتکس سرویس · ' + (vehicle.name || 'خودرو'),
+      'ATLAS-SHIFT-cardex-' + exportSlug(vehicle.companyPlate || vehicle.name, vehicle.id) + '-' + todayIso(), 'print', { legend: legend });
+  }
+
   function serviceRow(item) {
     return '<div class="service-row"><div class="service-date">' + (item.date ? formatJalali(item.date, false) : '—') + '</div>' +
       '<div class="service-main"><strong>' + esc(item.type || 'سرویس') + '</strong><span>' + esc(item.description || '') + '</span></div>' +
@@ -4152,6 +4356,7 @@
       '<div class="atlas-modal-body" data-service-records-body></div>' +
       '<div class="service-records-foot">' +
       '<button type="button" class="primary-btn" data-service-action="add" data-vehicle="' + esc(vehicle.id) + '">+ ثبت سرویس برای این خودرو</button>' +
+      '<button type="button" class="secondary-btn" data-service-cardex="' + esc(vehicle.id) + '">چاپ کارتکس</button>' +
       customExportMenu('service-vehicle', vehicle.id, 'vehicle') +
       '<button type="button" class="secondary-btn" data-service-records-close>بستن</button>' +
       '</div></div>';
@@ -4177,8 +4382,8 @@
 
   document.addEventListener('keydown', function (event) {
     if (event.key !== 'Escape') return;
-    if (!document.querySelector('[data-service-records-dialog]')) return;
-    closeServiceRecordsDialog();
+    if (document.querySelector('[data-service-records-dialog]')) { closeServiceRecordsDialog(); return; }
+    if (document.querySelector('[data-fault-detail-dialog]')) closeFaultDetail();
   });
 
   // ── اقدام‌های نقشه، اطلاعات مکان و مدیریت مکان‌ها ──
@@ -4638,6 +4843,68 @@
     enhanceJalaliInputs(document.body);
     const first = document.querySelector('[data-modal-backdrop] [name]');
     if (first) first.focus();
+  });
+
+  // ── پنجرهٔ تاریخچهٔ اشکال و کارتکس سرویس ──
+  document.addEventListener('click', async function (event) {
+    const openBtn = event.target.closest('[data-fault-open]');
+    if (openBtn) { event.preventDefault(); openFaultDetail(openBtn.dataset.faultOpen); return; }
+
+    const cardexBtn = event.target.closest('[data-service-cardex]');
+    if (cardexBtn) {
+      const vehicle = (appData.vehicles || []).find(function (item) { return String(item.id) === String(cardexBtn.dataset.serviceCardex); });
+      if (vehicle) printServiceCardex(vehicle);
+      return;
+    }
+
+    const detail = document.querySelector('[data-fault-detail-dialog]');
+    if (!detail) return;
+
+    if (event.target.closest('[data-fault-detail-close]') || event.target === detail) { closeFaultDetail(); return; }
+
+    const record = (appData.faults || []).find(function (item) { return String(item.id) === String(detail.dataset.fault); });
+    if (!record) { closeFaultDetail(); return; }
+
+    if (event.target.closest('[data-fault-detail-print]')) { printFaultHistory(record); return; }
+
+    if (event.target.closest('[data-fault-detail-edit]')) {
+      closeFaultDetail();
+      formState.faults = { open: true, id: record.id };
+      render('faults', document.getElementById('sectionView'));
+      return;
+    }
+
+    if (event.target.closest('[data-fault-stage-save]')) {
+      const statusSelect = detail.querySelector('[data-fault-stage-status]');
+      const noteBox = detail.querySelector('[data-fault-stage-note]');
+      const status = String(statusSelect && statusSelect.value || '').trim();
+      const note = String(noteBox && noteBox.value || '').trim();
+      if (!note && status === (record.status || 'ثبت‌شده')) {
+        toast('شرح مرحله یا وضعیت تازه را وارد کن.');
+        if (noteBox) noteBox.focus();
+        return;
+      }
+      const at = new Date().toISOString();
+      const entry = { id: createId(), at: at, status: status || record.status || 'ثبت‌شده', note: note, by: '' };
+      record.timeline = (Array.isArray(record.timeline) ? record.timeline : []).concat([entry]);
+      const line = [formatJalali(at, true), note || 'بدون شرح', entry.status].filter(Boolean).join(' | ');
+      record.steps = [String(record.steps || '').trim(), line].filter(Boolean).join('\n');
+      if (status && status !== record.status) {
+        addHistory('faults', record, 'تغییر وضعیت', [{ field: 'وضعیت', before: record.status || '—', after: status }]);
+        record.status = status;
+        if (status === 'رفع شد' || status === 'در سرویس' || status === 'بسته‌شده') {
+          record.progress = 100;
+          if (!record.resolvedAt) record.resolvedAt = todayIso();
+        }
+      }
+      record.updatedAt = at;
+      if (await saveState()) {
+        refreshFaultDetail();
+        render('faults', document.getElementById('sectionView'));
+        toast('مرحله در تاریخچهٔ اشکال ثبت شد.');
+      }
+      return;
+    }
   });
 
   // ── اقدام‌های دفتر اشکالات، دفتر گازسنج و دفتر سرویس ──
