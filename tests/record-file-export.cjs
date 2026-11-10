@@ -93,6 +93,17 @@ check('نام فایل خروجی پسوندپذیر است', fileName.indexOf('
   check('پیش‌نمایش «' + format + '» برگهٔ A4 را نشان می‌دهد', !!overlay && /class="rf-sheet/.test(overlay.innerHTML));
 });
 
+// چاپ گروهی: هر برگه باید از صفحهٔ تازه شروع شود. شکست صفحه روی خودِ برگه
+// گذاشته می‌شود، نه روی یک div خالیِ جداکننده — فایرفاکس شکست را روی عنصر
+// تهیِ بدون ارتفاع نادیده می‌گیرد و برگه‌ها از وسط صفحه بریده می‌شدند.
+const rfSource = fs.readFileSync(path.join(root, 'design/record-file.js'), 'utf8');
+check('شکست صفحه روی خودِ برگه گذاشته می‌شود',
+  /\.rf-sheet \+ \.rf-sheet\{break-before:page;page-break-before:always\}/.test(rfSource));
+check('جداکنندهٔ div خالی برای شکست صفحه حذف شده',
+  rfSource.indexOf('rf-page-break') < 0);
+check('چاپ گروهی برگه‌ها را بدون جداکننده به هم می‌چسباند',
+  /function printSheets\(list\) \{\s*printSheet\(\(list \|\| \[\]\)\.join\(''\)\);/.test(rfSource));
+
 (async () => {
   const bytes = Buffer.from(await api.buildWord(model).arrayBuffer());
   fs.mkdirSync(path.join(root, '.tmp'), { recursive: true });

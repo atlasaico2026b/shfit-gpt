@@ -318,6 +318,12 @@
     display: none !important;
   }
 
+  /* اگر پوسته بدنه را flex/grid کند، برگهٔ چاپ یک آیتم flex/grid می‌شود و
+     مرورگر آن را یک‌تکه می‌بیند: شکست صفحه بین برگه‌ها نادیده گرفته می‌شد. */
+  body.rf-printing {
+    display: block !important;
+  }
+
   body.rf-printing #rfPrintArea {
     display: block !important;
   }

@@ -353,8 +353,11 @@
   }
 
   // چند برگه در یک چاپ: هر برگه از صفحهٔ تازه شروع می‌شود.
+  // شکست صفحه روی خودِ برگه گذاشته می‌شود (`.rf-sheet + .rf-sheet`)، نه روی یک
+  // div خالیِ جداکننده: فایرفاکس شکست را روی عنصر تهیِ بدون ارتفاع نادیده
+  // می‌گیرد و برگه‌ها پشت سر هم می‌افتادند و از وسط صفحه بریده می‌شدند.
   function printSheets(list) {
-    printSheet((list || []).join('<div class="rf-page-break"></div>'));
+    printSheet((list || []).join(''));
   }
 
   // ── استایل برگه: تنها منبع ظاهر برگه ───────────────────────────────
@@ -400,7 +403,9 @@
       '.rf-sheet .rf-foot-note{text-align:right}' +
       '.rf-sheet .rf-foot-stamp{text-align:left}' +
       // جداکنندهٔ برگه‌ها در خروجی گروهی: هر برگه از صفحهٔ تازه شروع می‌شود.
-      '.rf-page-break{page-break-after:always;break-after:page;height:0;line-height:0;font-size:0}';
+      // روی خودِ برگه اعمال می‌شود تا فایرفاکس هم آن را جدی بگیرد.
+      '.rf-sheet + .rf-sheet{break-before:page;page-break-before:always}' +
+      '.rf-sheet{break-inside:auto;page-break-inside:auto}';
   }
 
   // پیش‌نمایش روی صفحه: همان برگه، به‌اندازهٔ یک صفحهٔ A4 روی میز
