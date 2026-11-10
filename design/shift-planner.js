@@ -404,10 +404,8 @@
       ['calendar', 'تقویم شیفت'],
       ['legacy', 'برنامه‌های ثبت‌شده']
     ];
-    const actions = '';
-
     section.innerHTML = bridge.rootWrap(
-      bridge.pageHead('برنامه‌ریزی شیفت', 'تخصیص کارکنان، روش کاری، ساعت کاری، قالب چرخش و تقویم بازه‌ای', actions) +
+      bridge.pageHead('برنامه‌ریزی شیفت', 'تخصیص کارکنان، روش کاری، ساعت کاری، قالب چرخش و تقویم بازه‌ای', '') +
       '<div class="sp-tabs" role="tablist">' + tabs.map(function (pair) {
         return '<button type="button" role="tab" class="sp-tab' + (tab === pair[0] ? ' is-active' : '') +
           '" aria-selected="' + (tab === pair[0] ? 'true' : 'false') + '" data-sp-tab="' + pair[0] + '">' + esc(pair[1]) + '</button>';
@@ -1640,7 +1638,7 @@
         if (selectAll.checked) selected[employee.id] = true;
         else delete selected[employee.id];
       });
-      host.querySelectorAll('[data-sp-select]').forEach(function (box) {
+      Array.prototype.forEach.call(host.querySelectorAll('[data-sp-select]'), function (box) {
         box.checked = !!selected[box.getAttribute('data-sp-select')];
       });
       syncSelectionUi();
