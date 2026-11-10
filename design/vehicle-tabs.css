@@ -151,3 +151,72 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── پنجرهٔ سوابق سرویس یک خودرو ─────────────────────────────────────────
+   انتخاب خودرو در دفتر سرویس، سوابقش را در همین پنجره باز می‌کند. سرصفحه و
+   نوار دکمه‌ها ثابت‌اند و فقط فهرست سوابق اسکرول می‌خورد. */
+.service-records-modal {
+  width: min(820px, 100%);
+}
+
+.service-records-modal:focus {
+  outline: none;
+}
+
+/* شش قلم اطلاعات خودرو در دو ردیف سه‌تایی می‌نشیند، نه پنج‌تایی ناقص. */
+.service-records-modal .vtab-facts-wide {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.service-records-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 14px 0 6px;
+}
+
+.service-records-head h4 {
+  margin: 0;
+  font-size: .82rem;
+  color: var(--text);
+}
+
+.service-records-head select {
+  min-width: 190px;
+  max-width: 100%;
+}
+
+.service-records-foot {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 9px 13px;
+  border-top: 1px solid var(--line);
+  background: var(--panel-2);
+}
+
+@media (max-width: 640px) {
+  .service-records-head select {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .service-records-foot > * {
+    flex: 1 1 auto;
+  }
+
+  /* چهار کارت آماری در عرض گوشی جا نمی‌شوند؛ دو در دو می‌نشینند. */
+  .service-records-modal .stat-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .service-records-modal .vtab-facts-wide {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+

@@ -3133,7 +3133,6 @@
   let vehicleTab = 'registry';
   let faultVehicleId = '';
   let faultVehicleSort = 'open';
-  let serviceVehicleId = '';
   let serviceVehicleSort = 'last';
   let serviceLogSort = 'date-desc';
   // در مسیر خودرو، «نوع دارایی» و «گازسنج» پرسیده نمی‌شود؛ دفتر کلی همان فرم کامل را دارد.
@@ -3142,7 +3141,7 @@
   function setVehicleTab(tab) {
     vehicleTab = ['service', 'history', 'board'].indexOf(tab) >= 0 ? tab : 'registry';
     if (vehicleTab !== 'history') faultVehicleId = '';
-    if (vehicleTab !== 'service') serviceVehicleId = '';
+    if (vehicleTab !== 'service') closeServiceRecordsDialog();
   }
 
   function vehicleTabBar() {
@@ -4070,11 +4069,6 @@
   }
 
   function renderServiceBook(section) {
-    if (serviceVehicleId) {
-      const vehicle = (appData.vehicles || []).find(function (item) { return String(item.id) === String(serviceVehicleId); });
-      if (vehicle) { renderServiceVehicle(section, vehicle, serviceLogsOfVehicle(vehicle.id)); return; }
-      serviceVehicleId = '';
-    }
     const stats = serviceStatsByVehicle();
     const logs = appData.maintenance || [];
     const vehicles = sortedServiceVehicles(stats);
@@ -4112,9 +4106,14 @@
       '<div class="module-list-tools"><select data-service-sort aria-label="مرتب‌سازی فهرست خودروها">' + sortOptions + '</select></div></div>' +
       '<div class="vtab-list">' + cards + '</div></section>'
     );
+    refreshServiceRecordsDialog();
   }
 
-  function renderServiceVehicle(section, vehicle, list) {
+  // ── پنجرهٔ سوابق سرویس یک خودرو ──────────────────────────────
+  // انتخاب هر خودرو در دفتر سرویس، سوابقش را در یک پنجرهٔ پاپ‌آپ باز می‌کند تا
+  // فهرست خودروها و مرتب‌سازی‌اش زیر پنجره بماند و کاربر مسیرش را گم نکند.
+  function serviceRecordsBody(vehicle) {
+    const list = serviceLogsOfVehicle(vehicle.id);
     const stats = serviceStatsByVehicle()[vehicle.id] || {};
     const done = list.filter(function (item) { return item.status === 'انجام‌شده'; }).length;
     const waiting = list.filter(function (item) { return item.status === 'در انتظار قطعه' || item.status === 'در حال انجام'; }).length;
@@ -4124,15 +4123,7 @@
       return '<option value="' + key + '"' + (serviceLogSort === key ? ' selected' : '') + '>مرتب‌سازی: ' + SERVICE_LOG_SORTS[key].label + '</option>';
     }).join('');
     const rows = list.length ? sortedServiceLogs(list).map(serviceRow).join('') : '<div class="service-empty">برای این خودرو سرویسی ثبت نشده است.</div>';
-    section.innerHTML = rootWrap(
-      pageHead('سوابق سرویس <span style="color:var(--tone-7)">' + esc([vehicle.name, vehicle.companyPlate].filter(Boolean).join(' · ')) + '</span>', 'هر سابقه با تاریخ، کیلومتر، نوع اقدام و سرویس بعدی خودش', customExportMenu('service-vehicle', vehicle.id, 'vehicle')) +
-      vehicleTabBar() +
-      '<div class="vtab-bar"><button type="button" class="secondary-btn" data-vtab-back>‹ بازگشت به فهرست خودروها</button>' +
-      '<button type="button" class="primary-btn" data-service-action="add" data-vehicle="' + esc(vehicle.id) + '">+ ثبت سرویس برای این خودرو</button></div>' +
-      renderForm('maintenance', appData) +
-      '<div class="stat-row fault-kpis">' + kpis + '</div>' +
-      '<section class="module-list-panel vtab-snapshot"><div class="module-list-head"><div><h3>وضعیت فعلی ' + esc(vehicle.name || 'خودرو') + '</h3>' +
-      '<p>سرویس بعدی از تاریخ‌های آیندهٔ همین سوابق خوانده می‌شود.</p></div>' + statusTag(vehicle.status || '—') + '</div>' +
+    return '<div class="stat-row fault-kpis">' + kpis + '</div>' +
       '<dl class="vtab-facts vtab-facts-wide">' +
       vtabFact('پلاک سازمانی', vehicle.companyPlate || '') +
       vtabFact('پلاک انتظامی', plateLabel(vehicle.policePlate || '')) +
@@ -4140,12 +4131,55 @@
       vtabFact('کیلومتر فعلی', vehicle.currentKm ? faDigits(vehicle.currentKm) : '') +
       vtabFact('سرویس بعدی', stats.nextDate ? formatJalali(stats.nextDate, false) + (stats.nextKm ? ' · ' + faDigits(stats.nextKm) + ' کیلومتر' : '') : '') +
       vtabFact('آخرین سرویس', stats.last ? formatJalali(stats.last, false) + (stats.lastType ? ' · ' + stats.lastType : '') : '') +
-      '</dl></section>' +
-      '<section class="module-list-panel"><div class="module-list-head"><div><h3>سوابق ثبت‌شده</h3><p>هر ردیف یک سرویس با تاریخ و کیلومتر خودش.</p></div>' +
-      '<div class="module-list-tools"><select data-service-log-sort aria-label="مرتب‌سازی سوابق سرویس">' + sortOptions + '</select></div></div>' +
-      '<div class="service-book">' + rows + '</div></section>'
-    );
+      '</dl>' +
+      '<div class="service-records-head"><h4>سوابق ثبت‌شده</h4>' +
+      '<select data-service-log-sort aria-label="مرتب‌سازی سوابق سرویس">' + sortOptions + '</select></div>' +
+      '<div class="service-book">' + rows + '</div>';
   }
+
+  function openServiceRecordsDialog(vehicleId) {
+    const vehicle = (appData.vehicles || []).find(function (item) { return String(item.id) === String(vehicleId); });
+    if (!vehicle) { toast('این خودرو پیدا نشد.'); return; }
+    closeServiceRecordsDialog();
+    const backdrop = document.createElement('div');
+    backdrop.className = 'atlas-modal-backdrop service-records-backdrop';
+    backdrop.setAttribute('data-service-records-dialog', '');
+    backdrop.setAttribute('data-vehicle', String(vehicle.id));
+    backdrop.innerHTML = '<div class="atlas-modal service-records-modal" role="dialog" aria-modal="true" aria-labelledby="serviceRecordsTitle">' +
+      '<div class="atlas-modal-head"><div><h3 id="serviceRecordsTitle">سوابق سرویس ' + esc(vehicle.name || 'خودرو') + '</h3>' +
+      '<p>' + esc([vehicle.companyPlate || vehicle.policePlate, vehicle.vehicleType].filter(Boolean).join(' · ') || 'بدون پلاک ثبت‌شده') + '</p></div>' +
+      '<button type="button" class="atlas-modal-close" data-service-records-close aria-label="بستن">×</button></div>' +
+      '<div class="atlas-modal-body" data-service-records-body></div>' +
+      '<div class="service-records-foot">' +
+      '<button type="button" class="primary-btn" data-service-action="add" data-vehicle="' + esc(vehicle.id) + '">+ ثبت سرویس برای این خودرو</button>' +
+      customExportMenu('service-vehicle', vehicle.id, 'vehicle') +
+      '<button type="button" class="secondary-btn" data-service-records-close>بستن</button>' +
+      '</div></div>';
+    document.body.appendChild(backdrop);
+    refreshServiceRecordsDialog();
+    const modal = backdrop.querySelector('.service-records-modal');
+    if (modal) { modal.setAttribute('tabindex', '-1'); modal.focus(); }
+  }
+
+  function refreshServiceRecordsDialog() {
+    const backdrop = document.querySelector('[data-service-records-dialog]');
+    if (!backdrop) return;
+    const body = backdrop.querySelector('[data-service-records-body]');
+    const vehicle = (appData.vehicles || []).find(function (item) { return String(item.id) === String(backdrop.dataset.vehicle); });
+    if (!body) return;
+    if (!vehicle) { closeServiceRecordsDialog(); return; }
+    body.innerHTML = serviceRecordsBody(vehicle);
+  }
+
+  function closeServiceRecordsDialog() {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-service-records-dialog]'), function (node) { node.remove(); });
+  }
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape') return;
+    if (!document.querySelector('[data-service-records-dialog]')) return;
+    closeServiceRecordsDialog();
+  });
 
   // ── اقدام‌های نقشه، اطلاعات مکان و مدیریت مکان‌ها ──
   document.addEventListener('click', async function (event) {
@@ -4688,15 +4722,19 @@
     }
     const entityOpen = event.target.closest('[data-vtab-open]');
     if (entityOpen) {
-      if (vehicleTab === 'service') serviceVehicleId = entityOpen.dataset.vtabOpen || '';
-      else { vehicleTab = 'history'; faultVehicleId = entityOpen.dataset.vtabOpen || ''; }
+      if (vehicleTab === 'service') { openServiceRecordsDialog(entityOpen.dataset.vtabOpen || ''); return; }
+      vehicleTab = 'history';
+      faultVehicleId = entityOpen.dataset.vtabOpen || '';
       renderVehicles(section);
       if (section) section.scrollIntoView({ block: 'start' });
       return;
     }
+    if (event.target.closest('[data-service-records-close]') || event.target.matches('[data-service-records-dialog]')) {
+      closeServiceRecordsDialog();
+      return;
+    }
     if (event.target.closest('[data-vtab-back]')) {
       faultVehicleId = '';
-      serviceVehicleId = '';
       renderVehicles(section);
       return;
     }
