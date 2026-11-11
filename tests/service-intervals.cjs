@@ -47,8 +47,12 @@ check('نوع ثابت (مثل تعویض روغن) پشتیبانی می‌شو
   /data-service-type-fixed="' \+ esc\(field\.serviceType\)/.test(modules));
 check('دکمهٔ «پیشنهاد» کنار کادر ساخته می‌شود',
   /data-service-suggest-for="' \+ esc\(field\.key\) \+ '" hidden>'[\s\S]{0,200}data-service-apply/.test(modules));
-check('فاصلهٔ استاندارد کنار نام نوع سرویس در فهرست کشویی دیده می‌شود',
-  /if \(field\.serviceInterval\) \{[\s\S]{0,220}option\.label = option\.label \+ ' · ' \+ label;/.test(modules));
+check('فاصلهٔ استاندارد داخل فهرست «نوع اقدام» نوشته نمی‌شود',
+  !/option\.label = option\.label \+ ' · ' \+ label;/.test(modules));
+check('فرم سرویس: «کیلومتر سرویس بعدی» و «تاریخ سرویس بعدی» یک ردیف جدا و روبروی هم دارند',
+  /layout: \[\s*\['vehicleId','date','km'\],\s*\['type'\],\s*\['description'\],\s*\['nextServiceKm','nextServiceDate'\]/.test(modules));
+check('دکمهٔ پیشنهاد بعد از پرشدن کادر هم پنهان نمی‌شود',
+  !/applied \? 0 : suggested/.test(modules) && /show\('بر اساس «' \+ type[\s\S]{0,200}suggested\);/.test(modules));
 
 // ── فرم خودرو ──
 check('فرم خودرو: «کیلومتر سرویس بعدی» از «کیلومتر فعلی» پیشنهاد می‌گیرد',
@@ -66,7 +70,9 @@ check('پیشنهاد = کیلومتر مبنا + فاصلهٔ استاندار�
 check('عدد پیشنهادی در همان کادر نوشته می‌شود', /nextControl\.value = String\(suggested\);/.test(modules));
 check('عدد دستی کاربر با تغییر کیلومتر پاک نمی‌شود', /const untouched = !current \|\| current === autoValue;/.test(modules));
 check('تغییر نوع سرویس پیشنهاد را دوباره می‌سازد',
-  /control\.matches\('\[data-service-type\]'\)\) applyServiceSuggestion\(form, true\)/.test(modules));
+  /control\.matches\('\[data-service-type\]'\)\) applyServiceSuggestion\(form, false\)/.test(modules));
+check('تغییر نوع سرویس عدد دستی کاربر را پاک نمی‌کند',
+  !/control\.matches\('\[data-service-type\]'\)\) applyServiceSuggestion\(form, true\)/.test(modules));
 check('تغییر کیلومتر مبنا پیشنهاد را تازه می‌کند',
   /else if \(serviceBaseNames\(form\)\[control\.name\]\) applyServiceSuggestion\(form, false\)/.test(modules));
 check('تایپ دستی در کادر کیلومتر بعدی، پیشنهاد را متوقف می‌کند',

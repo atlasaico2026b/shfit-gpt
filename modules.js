@@ -630,6 +630,16 @@
         {key:'status',label:'وضعیت',type:'select',required:true,listKey:'maintenanceStatuses',options:['انجام‌شده','در انتظار قطعه','در حال انجام','لغوشده']},
         {key:'attachments',label:'پیوست‌ها (فاکتور، رسید)',type:'file-multiple',accept:'.pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx'}
       ],
+      // چیدمان پنجرهٔ ثبت سرویس: «کیلومتر سرویس بعدی» و «تاریخ سرویس بعدی» یک ردیف
+      // مستقل می‌سازند و از بلوک «اقدام» جدا می‌مانند؛ پیشنهاد کیلومتر هم همان‌جا
+      // روبروی سرویس بعدی می‌نشیند.
+      layout: [
+        ['vehicleId','date','km'],
+        ['type'],
+        ['description'],
+        ['nextServiceKm','nextServiceDate'],
+        ['status','attachments']
+      ],
       columns: ['vehicleId','date','type','km','nextServiceDate','status']
     },
     gaslogs: {
@@ -1329,6 +1339,8 @@
       const autoValue = String(nextControl.dataset.autoValue || '');
       const current = String(nextControl.value || '').trim();
       const untouched = !current || current === autoValue;
+      // دکمهٔ «پیشنهاد» همیشه دیده می‌شود (حتی وقتی عدد از قبل در کادر نشسته)
+      // تا کلیک روی آن همان عدد را دوباره در کادر کیلومتر بگذارد.
       const show = function (text, suggested) {
         if (box) box.hidden = !text;
         if (hint) hint.textContent = text || '';
@@ -1354,8 +1366,7 @@
         nextControl.value = String(suggested);
         nextControl.dataset.autoValue = String(suggested);
       }
-      const applied = String(nextControl.value || '').trim() === String(suggested);
-      show('پیشنهاد: ' + faDigits(suggested) + ' کیلومتر = ' + faDigits(base) + ' + ' + faDigits(interval) + ' کیلومتر فاصلهٔ استاندارد «' + type + '». می‌توانی همین عدد را نگه داری یا عدد خودت را بنویسی.', applied ? 0 : suggested);
+      show('بر اساس «' + type + '» (' + serviceIntervalLabel(type) + ') و کیلومتر ' + faDigits(base) + '؛ روی پیشنهاد بزن تا در کادر کیلومتر بنشیند.', suggested);
     });
   }
 
@@ -1564,13 +1575,8 @@
     let control = '';
     if (field.type === 'select') {
       const options = getSelectOptions(field, data);
-      // فاصلهٔ استاندارد هر نوع سرویس کنار نامش در فهرست کشویی دیده می‌شود.
-      if (field.serviceInterval) {
-        options.forEach(function (option) {
-          const label = serviceIntervalLabel(option.value);
-          if (label) option.label = option.label + ' · ' + label;
-        });
-      }
+      // فاصلهٔ استاندارد داخل فهرست «نوع اقدام» نوشته نمی‌شود؛ فقط در ردیف
+      // «سرویس بعدی» به‌صورت پیشنهاد قابل‌کلیک نشان داده می‌شود.
       const chosenList = Array.isArray(value) ? value.map(String) : String(value || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean);
       if (field.multiple && field.source === 'employees') {
         control = !options.length
@@ -4808,7 +4814,7 @@
     const form = control.closest('[data-module-form]');
     if (!form) return;
     refreshDependentFields(form);
-    if (control.matches('[data-service-type]')) applyServiceSuggestion(form, true);
+    if (control.matches('[data-service-type]')) applyServiceSuggestion(form, false);
     else if (control.matches('[data-service-next-km]')) { delete control.dataset.autoValue; applyServiceSuggestion(form, false); }
     else if (serviceBaseNames(form)[control.name]) applyServiceSuggestion(form, false);
   });
