@@ -134,6 +134,40 @@
 .reference-add .primary-btn { flex: 0 0 auto; padding: 8px 13px; font-size: 10.5px; }
 
 /* ─────────────────────────────────────────────────────────────
+   ۲ب · تنظیمات سرویس‌های خودرو: فاصلهٔ پیشنهادی هر نوع سرویس
+   ───────────────────────────────────────────────────────────── */
+.service-interval-list { display: grid; grid-template-columns: 1fr; gap: 6px; }
+.service-interval-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 10px;
+  border: 1px solid rgba(var(--c-white-rgb), 0.07);
+  border-radius: 10px;
+  background: rgba(var(--c-white-rgb), 0.02);
+}
+.service-interval-name { font-size: 11px; min-width: 0; }
+.service-interval-input { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.service-interval-input input {
+  width: 96px;
+  padding: 6px 9px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: rgba(var(--c-white-rgb), 0.04);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 11px;
+  text-align: center;
+}
+.service-interval-input input:focus { outline: none; border-color: rgba(var(--accent-rgb), 0.55); }
+.service-interval-unit { font-size: 9.5px; color: var(--muted); }
+@media (max-width: 480px) {
+  .service-interval-row { flex-wrap: wrap; }
+  .service-interval-input { width: 100%; justify-content: flex-end; }
+}
+
+/* ─────────────────────────────────────────────────────────────
    ۳ · تنظیمات داشبورد: شبکهٔ ویرایش چیدمان
    ───────────────────────────────────────────────────────────── */
 .dash-editor {
