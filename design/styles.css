@@ -495,7 +495,7 @@ body > .drawer-backdrop,body > .drawer,body > .settings-popover,body > .toast{po
 .jalali-day.is-today{border-color:rgba(var(--accent-rgb),.45)}
 .jalali-day.is-selected{background:rgba(var(--accent-rgb),.35);border-color:rgba(var(--accent-rgb),.65);font-weight:700}
 .jalali-pop-foot{display:flex;gap:6px;margin-top:10px}
-.jalali-pop-foot button{flex:1;padding:7px 10px;font-size:10.5px}
+.jalali-pop-foot button{flex:1;padding:7px 10px;font-size:10.5px;white-space:nowrap}
 /* انتخاب سال با چرخ محدود ۱۳۰۰ تا ۱۵۰۰ */
 .jalali-year-btn{border:1px dashed rgba(var(--accent-rgb),.5);background:rgba(var(--accent-rgb),.12);color:inherit;font:inherit;font-weight:700;padding:2px 8px;border-radius:8px;cursor:pointer}
 .jalali-year-btn:hover,.jalali-year-btn.is-active{background:rgba(var(--accent-rgb),.28);border-style:solid}

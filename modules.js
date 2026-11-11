@@ -8622,6 +8622,10 @@
         '<button type="button" class="jalali-open" data-jalali-open aria-label="باز کردن سالنامه" title="انتخاب از سالنامه"><span aria-hidden="true">▦</span></button>';
       input.parentNode.insertBefore(wrap, input);
       input.type = 'hidden';
+      // فیلد اجباری تاریخ (مثل «تاریخ سرویس») نباید دکمهٔ «بدون تاریخ» بگیرد؛
+      // چون خالی‌شدنش به‌هرحال در ذخیره رد می‌شود. علامت را پیش از حذف ویژگی
+      // required نگه می‌داریم تا سالنامه بداند این فیلد اجباری است.
+      if (input.hasAttribute('required')) wrap.setAttribute('data-jalali-required', '1');
       input.removeAttribute('required');
       input.removeAttribute('data-jalali-input');
       input.classList.add('jalali-value');
@@ -9128,10 +9132,17 @@
       const isSelected = Number(selected.year) === jalaliView.year && Number(selected.month) === jalaliView.month && Number(selected.day) === day;
       cells += '<button type="button" class="jalali-day' + (isToday ? ' is-today' : '') + (isSelected ? ' is-selected' : '') + '" data-jalali-day="' + day + '">' + faDigits(day) + '</button>';
     }
+    // «بدون تاریخ» فقط برای فیلدهای اختیاری (مثل تاریخ رفع یا تاریخ سرویس بعدی):
+    // تاریخ همین‌جا برداشته می‌شود و کاربر مجبور نیست فرم را ببندد و از نو باز کند.
+    const allowClear = jalaliTarget && !jalaliTarget.hasAttribute('data-jalali-required');
     pop.innerHTML = head +
       '<div class="jalali-week">' + JALALI_WEEK.map(function (label) { return '<span>' + label + '</span>'; }).join('') + '</div>' +
       '<div class="jalali-grid">' + cells + '</div>' +
-      '<div class="jalali-pop-foot"><button type="button" class="secondary-btn" data-jalali-action="today">امروز</button><button type="button" class="secondary-btn" data-jalali-action="close">بستن</button></div>';
+      '<div class="jalali-pop-foot">' +
+        (allowClear ? '<button type="button" class="secondary-btn" data-jalali-action="clear" title="تاریخ این فیلد برداشته می‌شود">بدون تاریخ</button>' : '') +
+        '<button type="button" class="secondary-btn" data-jalali-action="today">امروز</button>' +
+        '<button type="button" class="secondary-btn" data-jalali-action="close">بستن</button>' +
+      '</div>';
   }
 
   function openJalaliPopover(wrap, opener) {
@@ -9184,6 +9195,19 @@
     if (timeBox && !timeBox.value) timeBox.value = '08:30';
     syncJalaliField(wrap);
     jalaliFocusDay = null;
+    closeJalaliPopover();
+    if (jalaliOpener && document.contains(jalaliOpener)) jalaliOpener.focus();
+    const hidden = wrap.querySelector('input.jalali-value');
+    if (hidden) hidden.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  // «بدون تاریخ»: همهٔ بخش‌های سال/ماه/روز/ساعت فیلد اختیاری را خالی می‌کند تا
+  // مقدار ذخیره‌شده همان «هیچ» باشد؛ به‌جای بستن فرم و بازکردن دوبارهٔ آن.
+  function clearJalaliField() {
+    if (!jalaliTarget) return;
+    const wrap = jalaliTarget;
+    Array.prototype.forEach.call(wrap.querySelectorAll('[data-jalali-seg]'), function (box) { box.value = ''; });
+    syncJalaliField(wrap);
     closeJalaliPopover();
     if (jalaliOpener && document.contains(jalaliOpener)) jalaliOpener.focus();
     const hidden = wrap.querySelector('input.jalali-value');
@@ -9311,6 +9335,8 @@
         const today = intlJalaliParts(new Date());
         jalaliView = { year: today.year, month: today.month };
         pickJalaliDay(today.day);
+      } else if (action.dataset.jalaliAction === 'clear') {
+        clearJalaliField();
       } else {
         closeJalaliPopover();
         if (jalaliOpener && document.contains(jalaliOpener)) jalaliOpener.focus();
