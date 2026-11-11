@@ -8,6 +8,8 @@ const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
 
 const modules = read('modules.js');
 const css = read('design/vehicle-tabs.css');
+const styles = read('design/styles.css');
+const exportCss = read('design/modals-export.css');
 
 const checks = [];
 const check = (name, ok, extra) => checks.push({ name: name, ok: !!ok, extra: extra === undefined ? '' : String(extra) });
@@ -31,6 +33,8 @@ check('پنجره دکمهٔ بستن دارد', /data-service-records-close/.te
 check('پنجره دکمهٔ ثبت سرویس برای همان خودرو دارد',
   /data-service-action="add" data-vehicle="' \+ esc\(vehicle\.id\)/.test(modules));
 check('پنجره خروجی و چاپ همان خودرو را دارد', /customExportMenu\('service-vehicle', vehicle\.id, 'vehicle'\)/.test(modules));
+check('منوی خروجی نوار پایین پنجره به بالا باز می‌شود (داخل کادر می‌ماند)',
+  /\.service-records-foot \.module-export-list[\s\S]{0,200}bottom:\s*calc\(100% \+ 6px\)/.test(exportCss));
 
 // ── بستن ──
 check('دکمهٔ بستن پنجره را می‌بندد', /closest\('\[data-service-records-close\]'\)/.test(modules));
@@ -45,12 +49,22 @@ check('رندر دوبارهٔ دفتر سرویس، پنجره را تازه م
 check('مرتب‌سازی سوابق داخل پنجره کار می‌کند', /customSortHeader\(serviceLogSort, 'date'/.test(modules));
 
 // ── استایل ──
-check('عرض پنجره محدود شده است', /\.service-records-modal\s*\{[^}]*width:\s*min\(820px, 100%\)/.test(css));
+check('عرض پنجره با سایر پنجره‌ها هم‌اندازه است (۹۸۰px)',
+  /\.service-records-modal\s*\{[^}]*width:\s*min\(980px, 100%\)/.test(css));
 check('نوار دکمه‌های پایین ثابت است', /\.service-records-foot\s*\{[^}]*flex:\s*0 0 auto/.test(css));
 check('کارت‌های آماری در گوشی دوستونی می‌شوند',
   /@media \(max-width: 640px\)[\s\S]*?\.service-records-modal \.stat-row\s*\{\s*grid-template-columns:\s*repeat\(2/.test(css));
 check('اطلاعات خودرو در دسکتاپ سه‌ستونه است',
   /\.service-records-modal \.vtab-facts-wide\s*\{\s*grid-template-columns:\s*repeat\(3/.test(css));
+
+// ── سطرها و ستون‌های جدول سوابق مرتب می‌مانند ──
+check('جدول سوابق چیدمان ثابت دارد', /\.service-table\s*\{[^}]*table-layout:\s*fixed/.test(css));
+check('جدول سوابق colgroup با عرض ستون‌ها دارد',
+  /service-table"><colgroup>[\s\S]{0,220}<col style="width:12%">/.test(modules));
+check('استایل قدیمی گرید روی سطر جدول حذف شده است',
+  !/\.service-row\s*\{[^}]*display:\s*grid/.test(styles));
+check('کیلومتر سرویس بعدی زیر تاریخ می‌نشیند، نه در همان خط',
+  /'<div class="cell-sub">' \+ faDigits\(item\.nextServiceKm\) \+ ' کیلومتر<\/div>'/.test(modules));
 
 let failed = 0;
 checks.forEach(function (item) {

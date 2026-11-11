@@ -539,18 +539,13 @@ body > .drawer-backdrop,body > .drawer,body > .settings-popover,body > .toast{po
 .fault-card-actions{display:flex;gap:6px;flex-wrap:wrap}
 
 /* ── دفتر سرویس خودرو ── */
+/* ردیف سوابق سرویس سطرِ جدول است و استایلش در design/vehicle-tabs.css می‌آید؛
+   استایل قدیمیِ گرید کارت‌ها حذف شد چون display:grid روی <tr> ستون‌های جدول
+   را می‌شکست و اعداد را در ستون‌های ۱۶ پیکسلی عمودی می‌کرد. */
 .service-book{display:flex;flex-direction:column;gap:10px}
-.service-row{display:grid;grid-template-columns:92px 1fr auto auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px dashed var(--line);font-size:11.5px}
-.service-row:last-of-type{border-bottom:0}
-.service-date{font-variant-numeric:tabular-nums;color:var(--muted)}
-.service-main strong{display:block;font-size:12px}
-.service-main span{display:block;color:rgba(var(--c-white-rgb),.72);font-size:11px;margin-top:2px}
-.service-meta{color:var(--muted);font-size:10.5px;white-space:nowrap}
-.service-actions{display:flex;gap:5px}
 .service-empty{font-size:11px;color:var(--muted);padding:6px 0}
 .cell-sub{font-size:10px;color:var(--muted);margin-top:2px}
 @media (max-width:640px){
-  .service-row{grid-template-columns:1fr;gap:4px}
   .fault-grid{grid-template-columns:1fr}
   .quick-add-grid{grid-template-columns:repeat(2,1fr)}
 }

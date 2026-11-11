@@ -3131,7 +3131,6 @@
 
   // ── زیرتب‌های خودرو: دفتر خودرو، سوابق اشکالات هر خودرو و دفتر اشکالات ──
   let vehicleTab = 'registry';
-  let faultVehicleId = '';
   let faultVehicleSort = { key: 'open', dir: 'desc' };
   let serviceVehicleSort = { key: 'last', dir: 'desc' };
   let serviceLogSort = { key: 'date', dir: 'desc' };
@@ -3159,8 +3158,8 @@
 
   function setVehicleTab(tab) {
     vehicleTab = ['service', 'history', 'board'].indexOf(tab) >= 0 ? tab : 'registry';
-    if (vehicleTab !== 'history') faultVehicleId = '';
     if (vehicleTab !== 'service') closeServiceRecordsDialog();
+    if (vehicleTab !== 'history') closeFaultRecordsDialog();
   }
 
   function vehicleTabBar() {
@@ -3451,12 +3450,6 @@
 
   function renderFaultHistory(section) {
     const counts = faultCountsByVehicle();
-    if (faultVehicleId === '__none__') { renderFaultVehicle(section, null, orphanFaults()); return; }
-    if (faultVehicleId) {
-      const vehicle = (appData.vehicles || []).find(function (item) { return String(item.id) === String(faultVehicleId); });
-      if (vehicle) { renderFaultVehicle(section, vehicle, faultsOfVehicle(vehicle.id)); return; }
-      faultVehicleId = '';
-    }
     const vehicles = sortedFaultVehicles(counts);
     const faults = appData.faults || [];
     const openFaults = faults.filter(isFaultOpen).length;
@@ -3500,19 +3493,23 @@
       : '<div class="module-empty">اول خودروها را ثبت کن؛ بعد سوابق اشکالات هر خودرو اینجا باز می‌شود.</div>';
     faultFormScope = 'vehicle';
     section.innerHTML = rootWrap(
-      pageHead('سوابق <span style="color:var(--tone-7)">اشکالات خودروها</span>', 'روی هر خودرو بزن تا سوابق اشکالات همان خودرو باز شود؛ هر عنوان خودش مرتب می‌کند', customExportMenu('faults-vehicles')) +
+      pageHead('سوابق <span style="color:var(--tone-7)">اشکالات خودروها</span>', 'روی هر خودرو بزن تا سوابق اشکالات همان خودرو در پنجره باز شود؛ هر عنوان خودش مرتب می‌کند', customExportMenu('faults-vehicles')) +
       vehicleTabBar() +
       '<div class="stat-row fault-kpis">' + kpis + '</div>' +
       renderForm('faults', appData) +
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>خودروهای ناوگان</h3><p>با کلیک روی هر عنوان، فهرست را بر اساس همان ستون مرتب کن.</p></div></div>' +
       table + '</section>'
     );
+    refreshFaultRecordsDialog();
   }
 
-  function renderFaultVehicle(section, vehicle, list) {
+  // ── پنجرهٔ سوابق اشکالات یک خودرو ──────────────────────────────
+  // انتخاب خودرو در تب «سوابق اشکالات»، اشکالاتش را در یک پنجرهٔ پاپ‌آپ باز
+  // می‌کند تا فهرست خودروها و مرتب‌سازی‌اش زیر پنجره بماند؛ الگوی پنجرهٔ سوابق
+  // سرویس است و عرض آن با بقیهٔ پنجره‌ها (۹۸۰px) هم‌اندازه است.
+  function faultRecordsBody(vehicle, list) {
     const openList = list.filter(isFaultOpen);
     const critical = openList.filter(function (fault) { return fault.priority === 'بحرانی'; }).length;
-    const title = vehicle ? [vehicle.name, vehicle.companyPlate].filter(Boolean).join(' · ') : 'اشکالات ثبت‌شده بدون خودرو';
     const kpis = [['کل اشکال', faDigits(list.length), 'info'], ['باز', faDigits(openList.length), 'warn'], ['بحرانی باز', faDigits(critical), 'danger'], ['رفع‌شده', faDigits(list.length - openList.length), 'ok']]
       .map(function (pair) { return '<div class="mini-stat" data-tone="' + pair[2] + '"><div class="value">' + pair[1] + '</div><div class="label"><i class="tiny-dot"></i>' + pair[0] + '</div></div>'; }).join('');
     const snapshot = vehicle
@@ -3532,18 +3529,50 @@
     const table = list.length
       ? '<div class="module-table-wrap"><table class="module-table fault-table">' + faultBoardHead() + '<tbody>' + sortedFaultBoard(list).map(renderFaultRow).join('') + '</tbody></table></div>'
       : '<div class="module-empty">برای این خودرو هنوز اشکالی ثبت نشده است.</div>';
-    faultFormScope = 'vehicle';
-    section.innerHTML = rootWrap(
-      pageHead('سوابق اشکالات <span style="color:var(--tone-7)">' + esc(title) + '</span>', 'هر اشکال یک ردیف با تاریخ، اولویت، وضعیت، درصد پیشرفت و روند رفع خودش', customExportMenu('faults-vehicle', vehicle ? vehicle.id : '__none__', 'vehicle')) +
-      vehicleTabBar() +
-      '<div class="vtab-bar"><button type="button" class="secondary-btn" data-vtab-back>‹ بازگشت به فهرست خودروها</button>' +
-      (vehicle ? '<button type="button" class="primary-btn" data-fault-new data-vehicle="' + esc(vehicle.id) + '">+ ثبت اشکال برای این خودرو</button>' : '') + '</div>' +
-      renderForm('faults', appData) +
-      '<div class="stat-row fault-kpis">' + kpis + '</div>' +
+    return '<div class="stat-row fault-kpis">' + kpis + '</div>' +
       snapshot +
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>سوابق ثبت‌شده</h3><p>هر ردیف یک اشکال با تاریخ و روند رفع خودش.</p></div><span class="module-tag">' + faDigits(list.length) + ' مورد</span></div>' +
-      table + '</section>'
-    );
+      table + '</section>';
+  }
+
+  function openFaultRecordsDialog(vehicleId) {
+    const wanted = String(vehicleId || '');
+    const vehicle = wanted === '__none__' ? null : (appData.vehicles || []).find(function (item) { return String(item.id) === wanted; });
+    if (!wanted || (wanted !== '__none__' && !vehicle)) { toast('این خودرو پیدا نشد.'); return; }
+    closeFaultRecordsDialog();
+    const backdrop = document.createElement('div');
+    backdrop.className = 'atlas-modal-backdrop fault-records-backdrop';
+    backdrop.setAttribute('data-fault-records-dialog', '');
+    backdrop.setAttribute('data-vehicle', wanted);
+    backdrop.innerHTML = '<div class="atlas-modal fault-records-modal" role="dialog" aria-modal="true" aria-labelledby="faultRecordsTitle">' +
+      '<div class="atlas-modal-head"><div><h3 id="faultRecordsTitle">' + (vehicle ? 'سوابق اشکالات ' + esc(vehicle.name || 'خودرو') : 'اشکالات ثبت‌شده بدون خودرو') + '</h3>' +
+      '<p>' + esc(vehicle ? [vehicle.companyPlate || vehicle.policePlate, vehicle.vehicleType].filter(Boolean).join(' · ') || 'بدون پلاک ثبت‌شده' : 'اشکال‌هایی که هنوز خودرویی برایشان انتخاب نشده است') + '</p></div>' +
+      '<button type="button" class="atlas-modal-close" data-fault-records-close aria-label="بستن">×</button></div>' +
+      '<div class="atlas-modal-body" data-fault-records-body></div>' +
+      '<div class="fault-records-foot">' +
+      (vehicle ? '<button type="button" class="primary-btn" data-fault-new data-vehicle="' + esc(vehicle.id) + '">+ ثبت اشکال برای این خودرو</button>' : '') +
+      customExportMenu('faults-vehicle', wanted, 'vehicle') +
+      '<button type="button" class="secondary-btn" data-fault-records-close>بستن</button>' +
+      '</div></div>';
+    document.body.appendChild(backdrop);
+    refreshFaultRecordsDialog();
+    const modal = backdrop.querySelector('.fault-records-modal');
+    if (modal) { modal.setAttribute('tabindex', '-1'); modal.focus(); }
+  }
+
+  function refreshFaultRecordsDialog() {
+    const backdrop = document.querySelector('[data-fault-records-dialog]');
+    if (!backdrop) return;
+    const body = backdrop.querySelector('[data-fault-records-body]');
+    const wanted = String(backdrop.dataset.vehicle || '');
+    const vehicle = wanted === '__none__' ? null : (appData.vehicles || []).find(function (item) { return String(item.id) === wanted; });
+    if (!body) return;
+    if (wanted !== '__none__' && !vehicle) { closeFaultRecordsDialog(); return; }
+    body.innerHTML = faultRecordsBody(vehicle, wanted === '__none__' ? orphanFaults() : faultsOfVehicle(wanted));
+  }
+
+  function closeFaultRecordsDialog() {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-fault-records-dialog]'), function (node) { node.remove(); });
   }
 
   // ── تاریخچهٔ اشکال: پنجرهٔ مراحل، ثبت وضعیت با هر کامنت و چاپ سابقه ──
@@ -3611,6 +3640,7 @@
       '<button type="button" class="atlas-modal-close" data-fault-detail-close aria-label="بستن">×</button></div>' +
       '<div class="atlas-modal-body" data-fault-detail-body></div>' +
       '<div class="fault-detail-foot">' +
+      customExportMenu('fault-history', record.id, 'fault') +
       '<button type="button" class="secondary-btn" data-fault-detail-print>چاپ تاریخچه</button>' +
       '<button type="button" class="secondary-btn" data-fault-detail-edit data-id="' + esc(record.id) + '">ویرایش اشکال</button>' +
       '<button type="button" class="secondary-btn" data-fault-detail-close>بستن</button>' +
@@ -3649,7 +3679,9 @@
     return rows;
   }
 
-  function printFaultHistory(record) {
+  // خروجی تاریخچهٔ اشکال در همهٔ قالب‌ها (CSV/Excel/Word/PNG/چاپ): سربرگ مشترک،
+  // همان ردیف‌های مراحل و همان نام فایل؛ دکمهٔ «چاپ تاریخچه» فقط میان‌بر همین است.
+  function faultHistoryExport(record, format) {
     const vehicle = record.vehicleId ? (appData.vehicles || []).find(function (item) { return String(item.id) === String(record.vehicleId); }) : null;
     const legend = [
       'خودرو: ' + (vehicle ? (vehicle.name || 'خودرو') + (vehicle.companyPlate ? ' · ' + vehicle.companyPlate : '') : (record.assetType || '—')),
@@ -3659,7 +3691,11 @@
       'تاریخ ثبت: ' + (record.reportedAt ? formatJalali(record.reportedAt, false) : '—')
     ].join(' · ');
     runExport(faultHistoryExportRows(record), 'تاریخچهٔ اشکال · ' + (record.title || 'اشکال'),
-      'ATLAS-SHIFT-fault-history-' + exportSlug(record.title, record.id) + '-' + todayIso(), 'print', { legend: legend });
+      'ATLAS-SHIFT-fault-history-' + exportSlug(record.title, record.id) + '-' + todayIso(), format || 'print', { legend: legend });
+  }
+
+  function printFaultHistory(record) {
+    faultHistoryExport(record, 'print');
   }
 
   // ── دفتر گازسنج‌ها: وضعیت سلامت، محل، کالیبراسیون و مانده روز ──
@@ -4324,7 +4360,7 @@
       '<td>' + esc(item.type || 'سرویس') + '</td>' +
       '<td>' + esc(item.description || '—') + '</td>' +
       '<td>' + statusTag(item.status || '—') + '</td>' +
-      '<td>' + (item.nextServiceDate ? formatJalali(item.nextServiceDate, false) : '—') + (item.nextServiceKm ? ' · ' + faDigits(item.nextServiceKm) + ' کیلومتر' : '') + '</td>' +
+      '<td>' + (item.nextServiceDate ? formatJalali(item.nextServiceDate, false) : '—') + (item.nextServiceKm ? '<div class="cell-sub">' + faDigits(item.nextServiceKm) + ' کیلومتر</div>' : '') + '</td>' +
       '<td class="module-row-actions">' +
       '<button type="button" class="secondary-btn" data-module-action="edit" data-view="maintenance" data-id="' + esc(item.id) + '">ویرایش</button>' +
       '<button type="button" class="module-delete-btn" data-module-action="delete" data-view="maintenance" data-id="' + esc(item.id) + '">حذف</button></td></tr>';
@@ -4388,7 +4424,9 @@
     const kpis = [['کل سوابق', faDigits(list.length), 'info'], ['انجام‌شده', faDigits(done), 'ok'], ['در جریان یا منتظر قطعه', faDigits(waiting), 'warn'], ['آخرین سرویس', stats.last ? formatJalali(stats.last, false) : '—', 'special']]
       .map(function (pair) { return '<div class="mini-stat" data-tone="' + pair[2] + '"><div class="value">' + pair[1] + '</div><div class="label"><i class="tiny-dot"></i>' + pair[0] + '</div></div>'; }).join('');
     const rows = list.length
-      ? '<div class="module-table-wrap"><table class="module-table service-table"><thead><tr>' +
+      ? '<div class="module-table-wrap"><table class="module-table service-table"><colgroup>' +
+        '<col style="width:12%"><col style="width:10%"><col style="width:15%"><col style="width:25%"><col style="width:12%"><col style="width:13%"><col style="width:13%">' +
+        '</colgroup><thead><tr>' +
         customSortHeader(serviceLogSort, 'date', 'تاریخ سرویس', 'service-logs') +
         customSortHeader(serviceLogSort, 'km', 'کیلومتر', 'service-logs') +
         customSortHeader(serviceLogSort, 'type', 'نوع اقدام', 'service-logs') +
@@ -4452,7 +4490,8 @@
   document.addEventListener('keydown', function (event) {
     if (event.key !== 'Escape') return;
     if (document.querySelector('[data-service-records-dialog]')) { closeServiceRecordsDialog(); return; }
-    if (document.querySelector('[data-fault-detail-dialog]')) closeFaultDetail();
+    if (document.querySelector('[data-fault-detail-dialog]')) { closeFaultDetail(); return; }
+    if (document.querySelector('[data-fault-records-dialog]')) closeFaultRecordsDialog();
   });
 
   // ── اقدام‌های نقشه، اطلاعات مکان و مدیریت مکان‌ها ──
@@ -5050,20 +5089,18 @@
     }
     const entityOpen = event.target.closest('[data-vtab-open]');
     if (entityOpen) {
+      // انتخاب خودرو در دفتر سرویس یا سوابق اشکالات، پنجرهٔ همان خودرو را باز
+      // می‌کند؛ فهرست و مرتب‌سازی صفحهٔ زیر پنجره سر جایش می‌ماند.
       if (vehicleTab === 'service') { openServiceRecordsDialog(entityOpen.dataset.vtabOpen || ''); return; }
-      vehicleTab = 'history';
-      faultVehicleId = entityOpen.dataset.vtabOpen || '';
-      renderVehicles(section);
-      if (section) section.scrollIntoView({ block: 'start' });
+      openFaultRecordsDialog(entityOpen.dataset.vtabOpen || '');
       return;
     }
     if (event.target.closest('[data-service-records-close]') || event.target.matches('[data-service-records-dialog]')) {
       closeServiceRecordsDialog();
       return;
     }
-    if (event.target.closest('[data-vtab-back]')) {
-      faultVehicleId = '';
-      renderVehicles(section);
+    if (event.target.closest('[data-fault-records-close]') || event.target.matches('[data-fault-records-dialog]')) {
+      closeFaultRecordsDialog();
       return;
     }
     const tab = event.target.closest('[data-gas-tab]');
@@ -5115,6 +5152,11 @@
         const list = vehicleId === '__none__' ? orphanFaults() : faultsOfVehicle(vehicleId);
         const label = vehicle ? [vehicle.name, vehicle.companyPlate].filter(Boolean).join(' · ') : 'بدون خودرو';
         runExport(faultDetailExportRows(list), 'سوابق اشکالات ' + label + ' · ATLAS SHIFT', 'ATLAS-SHIFT-faults-' + exportSlug(vehicle ? (vehicle.companyPlate || vehicle.name) : '', vehicle ? vehicle.id : 'unassigned') + '-' + todayIso(), format);
+      } else if (kind === 'fault-history') {
+        // تاریخچهٔ یک اشکال: همان ردیف‌ها و همان نام فایل مسیر چاپ قدیمی، در همهٔ قالب‌ها.
+        const fault = (appData.faults || []).find(function (item) { return String(item.id) === String(custom.dataset.fault); });
+        if (!fault) return;
+        faultHistoryExport(fault, format);
       }
     }
   });
