@@ -154,9 +154,16 @@
 
 /* ── پنجرهٔ سوابق سرویس یک خودرو ─────────────────────────────────────────
    انتخاب خودرو در دفتر سرویس، سوابقش را در همین پنجره باز می‌کند. سرصفحه و
-   نوار دکمه‌ها ثابت‌اند و فقط فهرست سوابق اسکرول می‌خورد. */
+   نوار دکمه‌ها ثابت‌اند و فقط فهرست سوابق اسکرول می‌خورد. عرض پنجره با
+   پوستهٔ مشترک (۹۸۰px) هم‌اندازه است تا با بقیهٔ پنجره‌ها هم‌قدم باشد. */
 .service-records-modal {
-  width: min(820px, 100%);
+  width: min(980px, 100%);
+}
+
+/* جدول سوابق سرویس: چیدمان ثابت با colgroup تا ستون‌ها همیشه همان‌اندازهٔ
+   خودشان بمانند، ردیف‌ها هم‌قد شوند و اعداد و تاریخ‌ها در یک خط بمانند. */
+.service-table {
+  table-layout: fixed;
 }
 
 .service-records-modal:focus {
@@ -221,11 +228,56 @@
 }
 
 
+/* ── پنجرهٔ سوابق اشکالات یک خودرو ─────────────────────────────────────
+   انتخاب خودرو در تب «سوابق اشکالات»، اشکالاتش را در همین پنجره باز می‌کند؛
+   الگوی پنجرهٔ سوابق سرویس است و عرضش با پوستهٔ مشترک (۹۸۰px) هم‌اندازهٔ
+   بقیهٔ پنجره‌هاست. هشت قلم اطلاعات خودرو در دو ردیف چهارتایی می‌نشیند. */
+.fault-records-modal {
+  width: min(980px, 100%);
+}
+
+.fault-records-modal:focus {
+  outline: none;
+}
+
+.fault-records-modal .vtab-facts-wide {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.fault-records-foot {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 9px 13px;
+  border-top: 1px solid var(--line);
+  background: var(--panel-2);
+}
+
+@media (max-width: 640px) {
+  .fault-records-foot > * {
+    flex: 1 1 auto;
+  }
+
+  /* چهار کارت آماری در عرض گوشی جا نمی‌شوند؛ دو در دو می‌نشینند. */
+  .fault-records-modal .stat-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fault-records-modal .vtab-facts-wide {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+
 /* ── تاریخچهٔ اشکال: پنجرهٔ مراحل و ثبت وضعیت ─────────────────────────────
    هر اشکال یک پروندهٔ مستقل است؛ مراحل از ثبت تا رفع و برگشت به سرویس در
-   همین پنجره به‌صورت خط زمانی دیده و چاپ می‌شوند. */
+   همین پنجره به‌صورت خط زمانی دیده و چاپ می‌شوند. عرض پنجره با پوستهٔ
+   مشترک (۹۸۰px) هم‌اندازه است تا با بقیهٔ پنجره‌ها هم‌قدم باشد. */
 .fault-detail-modal {
-  width: min(760px, 100%);
+  width: min(980px, 100%);
 }
 
 .fault-detail-modal:focus {
