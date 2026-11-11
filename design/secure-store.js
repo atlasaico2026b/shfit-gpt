@@ -85,6 +85,10 @@
         return crypto.subtle.importKey('raw', bytes, 'AES-GCM', false, ['encrypt', 'decrypt']);
       }
     })();
+    // شکستِ ساخت یا خواندن کلید کش نمی‌شود؛ فراخوانی بعدی از نو تلاش می‌کند تا
+    // یک خطای گذرا (مثل در دسترس نبودن موقت IndexedDB) ذخیره‌سازیِ کل صفحه را تا
+    // بازخوانی بعدی از کار نیندازد.
+    keyPromise.catch(function () { keyPromise = null; });
     return keyPromise;
   }
 

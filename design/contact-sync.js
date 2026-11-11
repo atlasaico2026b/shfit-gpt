@@ -166,9 +166,13 @@
   }
 
   document.addEventListener('atlas-record-saved', event => {
-    const detail = event.detail || {};
-    if (detail.module !== 'employees' || !detail.record) return;
-    syncEmployee(detail.record);
+    // همگام‌سازی مخاطب نباید ثبتِ موفق کارمند را با پیام خطای نادرست خراب کند؛
+    // اگر ذخیره‌سازی مخاطب موقتاً نشد، خودِ ثبت کارمند از قبل انجام شده است.
+    try {
+      const detail = event.detail || {};
+      if (detail.module !== 'employees' || !detail.record) return;
+      syncEmployee(detail.record);
+    } catch (error) {}
   });
 
   window.AtlasContactSync = {
