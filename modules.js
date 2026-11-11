@@ -1878,8 +1878,8 @@
             return '<td>' + displayValue(moduleKey, key, value, data) + '</td>';
           }).join('') +
           '<td class="module-row-actions">' + (moduleKey === 'employees' ? renderContactActions(record) : '') +
-          '<button type="button" class="secondary-btn module-file-btn" data-module-action="file" data-view="' + esc(moduleKey) + '" data-id="' + esc(record.id) + '">مشاهدهٔ پرونده</button> ' +
-          renderCommentButton(moduleKey, record) + renderHistoryButton(moduleKey, record) +
+          '<button type="button" class="secondary-btn module-file-btn" data-module-action="file" data-view="' + esc(moduleKey) + '" data-id="' + esc(record.id) + '" title="پرونده، سوابق و کامنت‌ها در یک پنجره">پرونده</button> ' +
+          (moduleKey === 'leaves' ? renderHistoryButton(moduleKey, record) : '') +
           '<button type="button" class="secondary-btn" data-module-action="edit" data-view="' + esc(moduleKey) + '" data-id="' + esc(record.id) + '">ویرایش</button> ' +
           '<button type="button" class="module-delete-btn" data-module-action="delete" data-view="' + esc(moduleKey) + '" data-id="' + esc(record.id) + '">حذف</button></td></tr>';
       }).join('') + '</tbody></table></div>';
@@ -3132,11 +3132,30 @@
   // ── زیرتب‌های خودرو: دفتر خودرو، سوابق اشکالات هر خودرو و دفتر اشکالات ──
   let vehicleTab = 'registry';
   let faultVehicleId = '';
-  let faultVehicleSort = 'open';
-  let serviceVehicleSort = 'last';
-  let serviceLogSort = 'date-desc';
+  let faultVehicleSort = { key: 'open', dir: 'desc' };
+  let serviceVehicleSort = { key: 'last', dir: 'desc' };
+  let serviceLogSort = { key: 'date', dir: 'desc' };
   // در مسیر خودرو، «نوع دارایی» و «گازسنج» پرسیده نمی‌شود؛ دفتر کلی همان فرم کامل را دارد.
   let faultFormScope = 'general';
+
+  // سرستون قابل‌کلیک برای جدول‌های اختصاصی همین بخش (دفتر سرویس و دفتر اشکالات).
+  // «مدیریت مرتب‌سازی» داخل خود عنوان‌هاست، نه یک کشوی جدا.
+  function customSortHeader(state, key, label, action) {
+    const active = state.key === key;
+    const dir = state.dir || 'asc';
+    return '<th class="module-sort-th' + (active ? ' is-sorted' : '') + '" aria-sort="' +
+      (active ? (dir === 'asc' ? 'ascending' : 'descending') : 'none') + '">' +
+      '<button type="button" class="module-sort-btn" data-csort="' + esc(action) + '" data-csort-key="' + esc(key) + '" title="مرتب‌سازی بر اساس ' + esc(label) + '">' +
+      '<span class="module-sort-label">' + esc(label) + '</span>' +
+      '<span class="module-sort-caret" aria-hidden="true">' + (active ? (dir === 'asc' ? '↑' : '↓') : '↕') + '</span></button></th>';
+  }
+
+  function compareBySortSpec(spec, dir, a, b) {
+    const va = spec.value(a), vb = spec.value(b);
+    if (spec.numeric) return (va - vb) * (dir === 'asc' ? 1 : -1);
+    const cmp = String(va).localeCompare(String(vb), 'fa', { numeric: true });
+    return dir === 'asc' ? cmp : -cmp;
+  }
 
   function setVehicleTab(tab) {
     vehicleTab = ['service', 'history', 'board'].indexOf(tab) >= 0 ? tab : 'registry';
@@ -3158,8 +3177,8 @@
     renderCrud('vehicles', section);
   }
 
-  // ── دفتر اشکالات: کارت‌های اشکال با روند رفع، درصد پیشرفت و سابقهٔ اقدام ──
-  let faultFilter = 'all';
+  // ── دفتر اشکالات: ردیف‌های اشکال با روند رفع، درصد پیشرفت و سابقهٔ اقدام ──
+  let faultFilter = 'open';
 
   function faultProgress(record) {
     const raw = Number(record.progress);
@@ -3243,28 +3262,7 @@
     return record.assetType || 'بدون دارایی';
   }
 
-  function renderFaultCard(record) {
-    const pct = faultProgress(record);
-    const steps = faultSteps(record);
-    const open = isFaultOpen(record);
-    const stepsHtml = steps.length
-      ? '<ol class="fault-steps">' + steps.map(function (line) { return '<li>' + esc(line) + '</li>'; }).join('') + '</ol>'
-      : '<div class="fault-steps-empty">اقدامی ثبت نشده است.</div>';
-    return '<article class="fault-card' + (open ? '' : ' is-resolved') + '" data-tone="' + (record.priority === 'بحرانی' ? 'danger' : record.priority === 'زیاد' ? 'attention' : open ? 'warn' : 'ok') + '">' +
-      '<header class="fault-card-head"><div><h3><button type="button" class="fault-open-btn" data-fault-open="' + esc(record.id) + '">' + esc(record.title || 'اشکال') + '</button></h3>' +
-      '<p>' + esc(faultAssetLabel(record)) + (record.category ? ' · ' + esc(record.category) : '') + (record.reportedAt ? ' · ' + formatJalali(record.reportedAt, false) : '') + '</p></div>' +
-      statusTag(record.status || 'ثبت‌شده') + '</header>' +
-      '<div class="fault-progress"><div class="progress-track"><div class="progress-bar" style="width:' + pct + '%"></div></div><strong>' + faDigits(pct) + '٪</strong></div>' +
-      (record.description ? '<p class="fault-desc">' + esc(record.description) + '</p>' : '') +
-      stepsHtml +
-      '<div class="fault-card-foot"><span class="fault-priority" data-tone="' + (record.priority === 'بحرانی' ? 'danger' : record.priority === 'زیاد' ? 'attention' : 'info') + '">اولویت: ' + esc(record.priority || '—') + '</span>' +
-      (open ? '<div class="fault-step-add"><input type="text" data-fault-step-input="' + esc(record.id) + '" placeholder="اقدام انجام‌شده را بنویس و Enter بزن"><button type="button" class="secondary-btn" data-fault-action="add-step" data-fault="' + esc(record.id) + '">+ اقدام</button></div>' : '') +
-      '<div class="fault-card-actions"><button type="button" class="secondary-btn" data-fault-open="' + esc(record.id) + '">تاریخچه</button>' + renderCommentButton('faults', record) + '<button type="button" class="secondary-btn" data-module-action="edit" data-view="faults" data-id="' + esc(record.id) + '">ویرایش</button>' +
-      (open ? '<button type="button" class="secondary-btn" data-fault-action="resolve" data-fault="' + esc(record.id) + '">علامت‌گذاری رفع شد</button>' : '') +
-      '<button type="button" class="module-delete-btn" data-module-action="delete" data-view="faults" data-id="' + esc(record.id) + '">حذف</button></div></div></article>';
-  }
-
-  // ترتیب دفتر اشکالات: بازها اول، بعد اولویت، بعد تازه‌ترین گزارش.
+  // ترتیب پیش‌فرض دفتر اشکالات: بازها اول، بعد اولویت، بعد تازه‌ترین گزارش.
   function faultBoardOrder(a, b) {
     const rank = { 'بحرانی': 0, 'زیاد': 1, 'متوسط': 2, 'کم': 3 };
     const openA = isFaultOpen(a) ? 0 : 1;
@@ -3276,32 +3274,89 @@
     return String(b.reportedAt || '').localeCompare(String(a.reportedAt || ''));
   }
 
+  // ستون‌های دفتر اشکالات؛ هر عنوان خودش مرتب‌سازی می‌کند.
+  const FAULT_BOARD_SORTS = {
+    open: { label: 'وضعیت', numeric: false, defaultDir: 'asc', value: function (r) { return isFaultOpen(r) ? 0 : 1; } },
+    title: { label: 'عنوان اشکال', numeric: false, defaultDir: 'asc', value: function (r) { return String(r.title || ''); } },
+    vehicle: { label: 'خودرو', numeric: false, defaultDir: 'asc', value: function (r) { return faultAssetLabel(r); } },
+    category: { label: 'دسته', numeric: false, defaultDir: 'asc', value: function (r) { return String(r.category || ''); } },
+    priority: { label: 'اولویت', numeric: true, defaultDir: 'asc', value: function (r) { const rank = { 'بحرانی': 0, 'زیاد': 1, 'متوسط': 2, 'کم': 3 }; return rank[r.priority] == null ? 9 : rank[r.priority]; } },
+    status: { label: 'وضعیت رفع', numeric: false, defaultDir: 'asc', value: function (r) { return String(r.status || 'ثبت‌شده'); } },
+    progress: { label: 'پیشرفت', numeric: true, defaultDir: 'desc', value: function (r) { return faultProgress(r); } },
+    reportedAt: { label: 'تاریخ ثبت', numeric: false, defaultDir: 'desc', value: function (r) { return String(r.reportedAt || ''); } }
+  };
+  let faultBoardSort = { key: 'open', dir: 'asc' };
+
+  function sortedFaultBoard(records) {
+    if (faultBoardSort.key === 'open') return records.slice().sort(faultBoardOrder);
+    const spec = FAULT_BOARD_SORTS[faultBoardSort.key] || FAULT_BOARD_SORTS.open;
+    return records.slice().sort(function (a, b) { return compareBySortSpec(spec, faultBoardSort.dir, a, b); });
+  }
+
+  function faultBoardHead() {
+    return '<thead><tr>' +
+      customSortHeader(faultBoardSort, 'title', 'عنوان اشکال', 'fault-board') +
+      customSortHeader(faultBoardSort, 'vehicle', 'خودرو', 'fault-board') +
+      customSortHeader(faultBoardSort, 'category', 'دسته', 'fault-board') +
+      customSortHeader(faultBoardSort, 'priority', 'اولویت', 'fault-board') +
+      customSortHeader(faultBoardSort, 'status', 'وضعیت رفع', 'fault-board') +
+      customSortHeader(faultBoardSort, 'progress', 'پیشرفت', 'fault-board') +
+      customSortHeader(faultBoardSort, 'reportedAt', 'تاریخ ثبت', 'fault-board') +
+      '<th>عملیات</th></tr></thead>';
+  }
+
+  // هر اشکال یک ردیف است، نه کارت؛ ردیف‌ها زیر هم می‌نشینند تا فهرست بلند
+  // خوانا بماند و مقایسهٔ وضعیت‌ها آسان شود.
+  function renderFaultRow(record) {
+    const pct = faultProgress(record);
+    const open = isFaultOpen(record);
+    const tone = record.priority === 'بحرانی' ? 'danger' : record.priority === 'زیاد' ? 'attention' : open ? 'warn' : 'ok';
+    return '<tr class="fault-row' + (open ? '' : ' is-resolved') + '" data-tone="' + tone + '">' +
+      '<td><button type="button" class="fault-open-btn" data-fault-open="' + esc(record.id) + '">' + esc(record.title || 'اشکال') + '</button>' +
+      (record.description ? '<div class="cell-sub">' + esc(record.description) + '</div>' : '') + '</td>' +
+      '<td>' + esc(faultAssetLabel(record)) + '</td>' +
+      '<td>' + esc(record.category || '—') + '</td>' +
+      '<td><span class="fault-priority" data-tone="' + (record.priority === 'بحرانی' ? 'danger' : record.priority === 'زیاد' ? 'attention' : 'info') + '">' + esc(record.priority || '—') + '</span></td>' +
+      '<td>' + statusTag(record.status || 'ثبت‌شده') + '</td>' +
+      '<td><div class="fault-progress"><div class="progress-track"><div class="progress-bar" style="width:' + pct + '%"></div></div><strong>' + faDigits(pct) + '٪</strong></div></td>' +
+      '<td>' + (record.reportedAt ? formatJalali(record.reportedAt, false) : '—') + '</td>' +
+      '<td class="module-row-actions">' +
+      '<button type="button" class="secondary-btn" data-fault-open="' + esc(record.id) + '">تاریخچه</button>' +
+      '<button type="button" class="secondary-btn" data-module-action="edit" data-view="faults" data-id="' + esc(record.id) + '">ویرایش</button>' +
+      (open ? '<button type="button" class="secondary-btn" data-fault-action="resolve" data-fault="' + esc(record.id) + '">رفع شد</button>' : '') +
+      '<button type="button" class="module-delete-btn" data-module-action="delete" data-view="faults" data-id="' + esc(record.id) + '">حذف</button></td></tr>';
+  }
+
   function renderFaults(section) {
-    const records = (appData.faults || []).slice().sort(faultBoardOrder);
-    const open = records.filter(function (r) { return r.status !== 'رفع شد' && r.status !== 'بسته‌شده'; });
+    const records = (appData.faults || []).slice();
+    const open = records.filter(isFaultOpen);
     const critical = open.filter(function (r) { return r.priority === 'بحرانی'; }).length;
     const repairing = records.filter(function (r) { return r.status === 'در حال تعمیر'; }).length;
-    const resolved = records.filter(function (r) { return r.status === 'رفع شد' || r.status === 'بسته‌شده'; }).length;
-    const statuses = ['all'].concat((appData.references.faultStatuses || []));
-    const visible = faultFilter === 'all' ? records : records.filter(function (r) { return (r.status || 'ثبت‌شده') === faultFilter; });
-    const kpis = [['اشکال باز', faDigits(open.length), 'warn'], ['بحرانی', faDigits(critical), 'danger'], ['در حال تعمیر', faDigits(repairing), 'info'], ['رفع‌شده', faDigits(resolved), 'ok']]
+    const resolved = records.filter(function (r) { return !isFaultOpen(r); }).length;
+    const statuses = ['open', 'all'].concat(faultStatusOptions());
+    const visible = faultFilter === 'all' ? records
+      : faultFilter === 'open' ? open
+      : records.filter(function (r) { return (r.status || 'ثبت‌شده') === faultFilter; });
+    const sorted = sortedFaultBoard(visible);
+    const kpis = [['اشکال باز', faDigits(open.length), 'warn'], ['بحرانی', faDigits(critical), 'danger'], ['در حال تعمیر', faDigits(repairing), 'info'], ['بسته‌شده', faDigits(resolved), 'ok']]
       .map(function (pair) { return '<div class="mini-stat" data-tone="' + pair[2] + '"><div class="value">' + pair[1] + '</div><div class="label"><i class="tiny-dot"></i>' + pair[0] + '</div></div>'; }).join('');
+    const chipLabel = function (status) { return status === 'all' ? 'همه' : status === 'open' ? 'باز' : status; };
     const chips = statuses.map(function (status) {
-      return '<button type="button" class="program-chip ' + (faultFilter === status ? 'active' : '') + '" data-tone="' + (status === 'all' ? 'accent' : programTone(status)) + '" data-fault-action="filter" data-status="' + esc(status) + '">' + esc(status === 'all' ? 'همه' : status) + '</button>';
+      return '<button type="button" class="program-chip ' + (faultFilter === status ? 'active' : '') + '" data-tone="' + (status === 'all' ? 'accent' : status === 'open' ? 'warn' : programTone(status)) + '" data-fault-action="filter" data-status="' + esc(status) + '">' + esc(chipLabel(status)) + '</button>';
     }).join('');
-    const body = visible.length
-      ? '<div class="fault-grid">' + visible.map(renderFaultCard).join('') + '</div>'
-      : '<div class="module-empty">هنوز اشکالی ثبت نشده. با «ثبت اشکال» اولین مورد را ثبت کن تا روند رفع و اعلان‌ها فعال شود.</div>';
+    const body = sorted.length
+      ? '<div class="module-table-wrap"><table class="module-table fault-table">' + faultBoardHead() + '<tbody>' + sorted.map(renderFaultRow).join('') + '</tbody></table></div>'
+      : '<div class="module-empty">' + (faultFilter === 'open' ? 'اشکال بازی نیست؛ همه رفع یا بسته شده‌اند.' : 'هنوز اشکالی ثبت نشده. با «ثبت اشکال» اولین مورد را ثبت کن تا روند رفع و اعلان‌ها فعال شود.') + '</div>';
     const actions = exportMenu('faults') + '<button class="primary-btn" type="button" data-module-action="new" data-view="faults">+ ثبت اشکال</button>';
     faultFormScope = 'general';
     section.innerHTML = rootWrap(
-      pageHead('اشکالات و رفع اشکال', 'هر اشکال با تاریخ، وضعیت، درصد پیشرفت و روند رفع؛ تا بسته‌شدن در اعلان‌ها می‌ماند', actions) +
+      pageHead('اشکالات و رفع اشکال', 'هر اشکال یک ردیف با تاریخ، وضعیت، درصد پیشرفت و روند رفع؛ با «رفع شد» از فهرست باز خارج می‌شود', actions) +
       vehicleTabBar() +
       '<div class="stat-row fault-kpis">' + kpis + '</div>' +
       renderForm('faults', appData) +
       '<div class="program-chips">' + chips + '</div>' +
       body +
-      '<div class="module-local-note"><strong>اعلان:</strong> اشکال‌های باز با اولویت زیاد و بحرانی در زنگ اعلان داشبورد و در «اشکالات باز» می‌آیند و تا رفع کامل حذف نمی‌شوند.</div>'
+      '<div class="module-local-note"><strong>اعلان:</strong> اشکال‌های باز با اولویت زیاد و بحرانی در زنگ اعلان داشبورد می‌آیند و با «رفع شد» یا «در سرویس» از اعلان‌ها خارج می‌شوند.</div>'
     );
   }
 
@@ -3334,23 +3389,24 @@
   }
 
   const FAULT_VEHICLE_SORTS = {
-    open: { label: 'بیشترین اشکال باز', numeric: true, desc: true, value: function (v, c) { return (c[v.id] || {}).open || 0; } },
-    total: { label: 'بیشترین کل اشکال', numeric: true, desc: true, value: function (v, c) { return (c[v.id] || {}).total || 0; } },
-    last: { label: 'آخرین اشکال ثبت‌شده', numeric: false, desc: true, value: function (v, c) { return String((c[v.id] || {}).last || ''); } },
-    name: { label: 'نام خودرو', numeric: false, value: function (v) { return String(v.name || ''); } },
-    plate: { label: 'پلاک سازمانی', numeric: false, value: function (v) { return String(v.companyPlate || v.policePlate || ''); } },
-    status: { label: 'وضعیت عملیاتی', numeric: false, value: function (v) { return String(v.status || ''); } },
-    health: { label: 'وضعیت سلامت', numeric: false, value: function (v) { return String(v.healthStatus || ''); } },
-    km: { label: 'کیلومتر فعلی', numeric: true, desc: true, value: function (v) { const n = Number(v.currentKm); return Number.isFinite(n) ? n : -1; } }
+    open: { label: 'اشکال باز', numeric: true, defaultDir: 'desc', value: function (v, c) { return (c[v.id] || {}).open || 0; } },
+    total: { label: 'کل اشکال', numeric: true, defaultDir: 'desc', value: function (v, c) { return (c[v.id] || {}).total || 0; } },
+    last: { label: 'آخرین اشکال', numeric: false, defaultDir: 'desc', value: function (v, c) { return String((c[v.id] || {}).last || ''); } },
+    name: { label: 'نام خودرو', numeric: false, defaultDir: 'asc', value: function (v) { return String(v.name || ''); } },
+    plate: { label: 'پلاک سازمانی', numeric: false, defaultDir: 'asc', value: function (v) { return String(v.companyPlate || v.policePlate || ''); } },
+    status: { label: 'وضعیت عملیاتی', numeric: false, defaultDir: 'asc', value: function (v) { return String(v.status || ''); } },
+    health: { label: 'وضعیت سلامت', numeric: false, defaultDir: 'asc', value: function (v) { return String(v.healthStatus || ''); } },
+    km: { label: 'کیلومتر فعلی', numeric: true, defaultDir: 'desc', value: function (v) { const n = Number(v.currentKm); return Number.isFinite(n) ? n : -1; } }
   };
 
   function sortedFaultVehicles(counts) {
-    const spec = FAULT_VEHICLE_SORTS[faultVehicleSort] || FAULT_VEHICLE_SORTS.open;
+    const state = faultVehicleSort;
+    const spec = FAULT_VEHICLE_SORTS[state.key] || FAULT_VEHICLE_SORTS.open;
     return (appData.vehicles || []).slice().sort(function (a, b) {
       const va = spec.value(a, counts), vb = spec.value(b, counts);
-      if (spec.numeric) return spec.desc ? vb - va : va - vb;
+      if (spec.numeric) return (va - vb) * (state.dir === 'asc' ? 1 : -1);
       const cmp = String(va).localeCompare(String(vb), 'fa', { numeric: true });
-      return spec.desc ? -cmp : cmp;
+      return state.dir === 'asc' ? cmp : -cmp;
     });
   }
 
@@ -3408,44 +3464,48 @@
     const withFaults = vehicles.filter(function (vehicle) { return (counts[vehicle.id] || {}).total; }).length;
     const kpis = [['کل خودروها', faDigits(vehicles.length), 'info'], ['دارای سابقهٔ اشکال', faDigits(withFaults), 'ok'], ['اشکال باز', faDigits(openFaults), 'warn'], ['بحرانی باز', faDigits(critical), 'danger']]
       .map(function (pair) { return '<div class="mini-stat" data-tone="' + pair[2] + '"><div class="value">' + pair[1] + '</div><div class="label"><i class="tiny-dot"></i>' + pair[0] + '</div></div>'; }).join('');
-    const sortOptions = Object.keys(FAULT_VEHICLE_SORTS).map(function (key) {
-      return '<option value="' + key + '"' + (faultVehicleSort === key ? ' selected' : '') + '>مرتب‌سازی: ' + FAULT_VEHICLE_SORTS[key].label + '</option>';
-    }).join('');
-    const cards = vehicles.length ? vehicles.map(function (vehicle) {
+    const rows = vehicles.map(function (vehicle) {
       const count = counts[vehicle.id] || { total: 0, open: 0, critical: 0, last: '' };
       const lastFault = faultsOfVehicle(vehicle.id)[0];
-      return '<button type="button" class="vtab-card" data-vtab-open="' + esc(vehicle.id) + '">' +
-        '<span class="vtab-top"><strong>' + esc(vehicle.name || 'خودرو بدون نام') + '</strong>' + statusTag(vehicle.status || '—') + '</span>' +
-        '<span class="vtab-facts">' +
-        '<span><b>پلاک سازمانی</b>' + esc(vehicle.companyPlate || vehicle.policePlate || '—') + '</span>' +
-        '<span><b>وضعیت سلامت</b>' + esc(vehicle.healthStatus || '—') + '</span>' +
-        '<span><b>کیلومتر فعلی</b>' + (vehicle.currentKm ? faDigits(vehicle.currentKm) : '—') + '</span>' +
-        '<span><b>اشکال باز</b>' + faDigits(count.open) + (count.critical ? ' · ' + faDigits(count.critical) + ' بحرانی' : '') + '</span>' +
-        '<span><b>کل اشکال</b>' + faDigits(count.total) + '</span>' +
-        '<span><b>آخرین اشکال</b>' + (count.last ? formatJalali(count.last, false) : '—') + '</span>' +
-        '</span>' +
-        (lastFault ? '<span class="vtab-last">' + esc(lastFault.title || '') + '</span>' : '') +
-        '<span class="vtab-foot"><span>' + faDigits(count.total) + ' اشکال ثبت‌شده</span><span class="vtab-open-hint">مشاهدهٔ سوابق ›</span></span>' +
-        '</button>';
-    }).join('') : '<div class="module-empty">اول خودروها را ثبت کن؛ بعد سوابق اشکالات هر خودرو اینجا باز می‌شود.</div>';
+      return '<tr class="vtab-row" data-vtab-open="' + esc(vehicle.id) + '">' +
+        '<td><button type="button" class="fault-open-btn" data-vtab-open="' + esc(vehicle.id) + '">' + esc(vehicle.name || 'خودرو بدون نام') + '</button>' +
+        (lastFault ? '<div class="cell-sub">آخرین: ' + esc(lastFault.title || '') + '</div>' : '') + '</td>' +
+        '<td>' + esc(vehicle.companyPlate || vehicle.policePlate || '—') + '</td>' +
+        '<td>' + statusTag(vehicle.status || '—') + '</td>' +
+        '<td>' + esc(vehicle.healthStatus || '—') + '</td>' +
+        '<td>' + (vehicle.currentKm ? faDigits(vehicle.currentKm) : '—') + '</td>' +
+        '<td>' + faDigits(count.open) + (count.critical ? ' <span class="fault-priority" data-tone="danger">' + faDigits(count.critical) + ' بحرانی</span>' : '') + '</td>' +
+        '<td>' + faDigits(count.total) + '</td>' +
+        '<td>' + (count.last ? formatJalali(count.last, false) : '—') + '</td>' +
+        '<td class="module-row-actions"><button type="button" class="secondary-btn" data-vtab-open="' + esc(vehicle.id) + '">سوابق ›</button></td></tr>';
+    }).join('');
     const orphans = orphanFaults();
-    const orphanCard = orphans.length
-      ? '<button type="button" class="vtab-card" data-vtab-open="__none__">' +
-        '<span class="vtab-top"><strong>اشکالات ثبت‌شده بدون خودرو</strong>' + statusTag('بدون خودرو') + '</span>' +
-        '<span class="vtab-facts"><span><b>کل اشکال</b>' + faDigits(orphans.length) + '</span>' +
-        '<span><b>اشکال باز</b>' + faDigits(orphans.filter(isFaultOpen).length) + '</span></span>' +
-        '<span class="vtab-foot"><span>' + faDigits(orphans.length) + ' اشکال ثبت‌شده</span><span class="vtab-open-hint">مشاهدهٔ سوابق ›</span></span>' +
-        '</button>'
+    const orphanRow = orphans.length
+      ? '<tr class="vtab-row" data-vtab-open="__none__"><td><button type="button" class="fault-open-btn" data-vtab-open="__none__">اشکالات ثبت‌شده بدون خودرو</button></td>' +
+        '<td>—</td><td>' + statusTag('بدون خودرو') + '</td><td>—</td><td>—</td>' +
+        '<td>' + faDigits(orphans.filter(isFaultOpen).length) + '</td><td>' + faDigits(orphans.length) + '</td><td>—</td>' +
+        '<td class="module-row-actions"><button type="button" class="secondary-btn" data-vtab-open="__none__">سوابق ›</button></td></tr>'
       : '';
+    const table = vehicles.length
+      ? '<div class="module-table-wrap"><table class="module-table vtab-table"><thead><tr>' +
+        customSortHeader(faultVehicleSort, 'name', 'نام خودرو', 'fault-vehicles') +
+        customSortHeader(faultVehicleSort, 'plate', 'پلاک سازمانی', 'fault-vehicles') +
+        customSortHeader(faultVehicleSort, 'status', 'وضعیت عملیاتی', 'fault-vehicles') +
+        customSortHeader(faultVehicleSort, 'health', 'وضعیت سلامت', 'fault-vehicles') +
+        customSortHeader(faultVehicleSort, 'km', 'کیلومتر فعلی', 'fault-vehicles') +
+        customSortHeader(faultVehicleSort, 'open', 'اشکال باز', 'fault-vehicles') +
+        customSortHeader(faultVehicleSort, 'total', 'کل اشکال', 'fault-vehicles') +
+        customSortHeader(faultVehicleSort, 'last', 'آخرین اشکال', 'fault-vehicles') +
+        '<th>عملیات</th></tr></thead><tbody>' + rows + orphanRow + '</tbody></table></div>'
+      : '<div class="module-empty">اول خودروها را ثبت کن؛ بعد سوابق اشکالات هر خودرو اینجا باز می‌شود.</div>';
     faultFormScope = 'vehicle';
     section.innerHTML = rootWrap(
-      pageHead('سوابق <span style="color:var(--tone-7)">اشکالات خودروها</span>', 'روی هر خودرو بزن تا سوابق اشکالات همان خودرو باز شود؛ فهرست و هر سابقه گزارش‌گیری جدا دارد', customExportMenu('faults-vehicles')) +
+      pageHead('سوابق <span style="color:var(--tone-7)">اشکالات خودروها</span>', 'روی هر خودرو بزن تا سوابق اشکالات همان خودرو باز شود؛ هر عنوان خودش مرتب می‌کند', customExportMenu('faults-vehicles')) +
       vehicleTabBar() +
       '<div class="stat-row fault-kpis">' + kpis + '</div>' +
       renderForm('faults', appData) +
-      '<section class="module-list-panel"><div class="module-list-head"><div><h3>خودروهای ناوگان</h3><p>بر اساس تعداد اشکال، نام، پلاک یا وضعیت مرتب کن و روی هر خودرو بزن.</p></div>' +
-      '<div class="module-list-tools"><select data-vtab-sort aria-label="مرتب‌سازی فهرست خودروها">' + sortOptions + '</select></div></div>' +
-      '<div class="vtab-list">' + cards + orphanCard + '</div></section>'
+      '<section class="module-list-panel"><div class="module-list-head"><div><h3>خودروهای ناوگان</h3><p>با کلیک روی هر عنوان، فهرست را بر اساس همان ستون مرتب کن.</p></div></div>' +
+      table + '</section>'
     );
   }
 
@@ -3469,12 +3529,12 @@
         vtabFact('کیلومتر فعلی', vehicle.currentKm ? faDigits(vehicle.currentKm) : '') +
         '</dl></section>'
       : '';
-    const cards = list.length
-      ? '<div class="fault-grid">' + list.map(renderFaultCard).join('') + '</div>'
+    const table = list.length
+      ? '<div class="module-table-wrap"><table class="module-table fault-table">' + faultBoardHead() + '<tbody>' + sortedFaultBoard(list).map(renderFaultRow).join('') + '</tbody></table></div>'
       : '<div class="module-empty">برای این خودرو هنوز اشکالی ثبت نشده است.</div>';
     faultFormScope = 'vehicle';
     section.innerHTML = rootWrap(
-      pageHead('سوابق اشکالات <span style="color:var(--tone-7)">' + esc(title) + '</span>', 'هر اشکال با تاریخ، اولویت، وضعیت، درصد پیشرفت و روند رفع خودش', customExportMenu('faults-vehicle', vehicle ? vehicle.id : '__none__', 'vehicle')) +
+      pageHead('سوابق اشکالات <span style="color:var(--tone-7)">' + esc(title) + '</span>', 'هر اشکال یک ردیف با تاریخ، اولویت، وضعیت، درصد پیشرفت و روند رفع خودش', customExportMenu('faults-vehicle', vehicle ? vehicle.id : '__none__', 'vehicle')) +
       vehicleTabBar() +
       '<div class="vtab-bar"><button type="button" class="secondary-btn" data-vtab-back>‹ بازگشت به فهرست خودروها</button>' +
       (vehicle ? '<button type="button" class="primary-btn" data-fault-new data-vehicle="' + esc(vehicle.id) + '">+ ثبت اشکال برای این خودرو</button>' : '') + '</div>' +
@@ -3482,7 +3542,7 @@
       '<div class="stat-row fault-kpis">' + kpis + '</div>' +
       snapshot +
       '<section class="module-list-panel"><div class="module-list-head"><div><h3>سوابق ثبت‌شده</h3><p>هر ردیف یک اشکال با تاریخ و روند رفع خودش.</p></div><span class="module-tag">' + faDigits(list.length) + ' مورد</span></div>' +
-      cards + '</section>'
+      table + '</section>'
     );
   }
 
@@ -4140,23 +4200,17 @@
   }
 
   const SERVICE_LOG_SORTS = {
-    'date-desc': { label: 'تاریخ سرویس (جدیدترین)', numeric: false, desc: true, value: function (item) { return String(item.date || ''); } },
-    'date-asc': { label: 'تاریخ سرویس (قدیمی‌ترین)', numeric: false, value: function (item) { return String(item.date || ''); } },
-    'km-desc': { label: 'کیلومتر (بیشترین)', numeric: true, desc: true, value: function (item) { const n = Number(item.km); return Number.isFinite(n) && item.km !== '' ? n : -1; } },
-    'km-asc': { label: 'کیلومتر (کمترین)', numeric: true, value: function (item) { const n = Number(item.km); return Number.isFinite(n) && item.km !== '' ? n : Number.MAX_SAFE_INTEGER; } },
-    type: { label: 'نوع اقدام', numeric: false, value: function (item) { return String(item.type || ''); } },
-    status: { label: 'وضعیت', numeric: false, value: function (item) { return String(item.status || ''); } },
-    'next-asc': { label: 'سرویس بعدی (نزدیک‌ترین)', numeric: false, value: function (item) { return String(item.nextServiceDate || '9999'); } }
+    date: { label: 'تاریخ سرویس', numeric: false, defaultDir: 'desc', value: function (item) { return String(item.date || ''); } },
+    km: { label: 'کیلومتر', numeric: true, defaultDir: 'desc', value: function (item) { const n = Number(item.km); return Number.isFinite(n) && item.km !== '' ? n : -1; } },
+    type: { label: 'نوع اقدام', numeric: false, defaultDir: 'asc', value: function (item) { return String(item.type || ''); } },
+    status: { label: 'وضعیت', numeric: false, defaultDir: 'asc', value: function (item) { return String(item.status || ''); } },
+    next: { label: 'سرویس بعدی', numeric: false, defaultDir: 'asc', value: function (item) { return String(item.nextServiceDate || '9999'); } }
   };
 
   function sortedServiceLogs(list) {
-    const spec = SERVICE_LOG_SORTS[serviceLogSort] || SERVICE_LOG_SORTS['date-desc'];
-    return list.slice().sort(function (a, b) {
-      const va = spec.value(a), vb = spec.value(b);
-      if (spec.numeric) return spec.desc ? vb - va : va - vb;
-      const cmp = String(va).localeCompare(String(vb), 'fa', { numeric: true });
-      return spec.desc ? -cmp : cmp;
-    });
+    const state = serviceLogSort;
+    const spec = SERVICE_LOG_SORTS[state.key] || SERVICE_LOG_SORTS.date;
+    return list.slice().sort(function (a, b) { return compareBySortSpec(spec, state.dir, a, b); });
   }
 
   function serviceStatsByVehicle() {
@@ -4179,22 +4233,23 @@
   }
 
   const SERVICE_VEHICLE_SORTS = {
-    last: { label: 'آخرین سرویس', numeric: false, desc: true, value: function (v, c) { return String((c[v.id] || {}).last || ''); } },
-    count: { label: 'بیشترین تعداد سرویس', numeric: true, desc: true, value: function (v, c) { return (c[v.id] || {}).total || 0; } },
-    next: { label: 'نزدیک‌ترین سرویس بعدی', numeric: false, value: function (v, c) { return String((c[v.id] || {}).nextDate || '9999'); } },
-    name: { label: 'نام خودرو', numeric: false, value: function (v) { return String(v.name || ''); } },
-    plate: { label: 'پلاک سازمانی', numeric: false, value: function (v) { return String(v.companyPlate || v.policePlate || ''); } },
-    status: { label: 'وضعیت عملیاتی', numeric: false, value: function (v) { return String(v.status || ''); } },
-    km: { label: 'کیلومتر فعلی', numeric: true, desc: true, value: function (v) { const n = Number(v.currentKm); return Number.isFinite(n) ? n : -1; } }
+    last: { label: 'آخرین سرویس', numeric: false, defaultDir: 'desc', value: function (v, c) { return String((c[v.id] || {}).last || ''); } },
+    count: { label: 'تعداد سرویس', numeric: true, defaultDir: 'desc', value: function (v, c) { return (c[v.id] || {}).total || 0; } },
+    next: { label: 'سرویس بعدی', numeric: false, defaultDir: 'asc', value: function (v, c) { return String((c[v.id] || {}).nextDate || '9999'); } },
+    name: { label: 'نام خودرو', numeric: false, defaultDir: 'asc', value: function (v) { return String(v.name || ''); } },
+    plate: { label: 'پلاک سازمانی', numeric: false, defaultDir: 'asc', value: function (v) { return String(v.companyPlate || v.policePlate || ''); } },
+    status: { label: 'وضعیت عملیاتی', numeric: false, defaultDir: 'asc', value: function (v) { return String(v.status || ''); } },
+    km: { label: 'کیلومتر فعلی', numeric: true, defaultDir: 'desc', value: function (v) { const n = Number(v.currentKm); return Number.isFinite(n) ? n : -1; } }
   };
 
   function sortedServiceVehicles(stats) {
-    const spec = SERVICE_VEHICLE_SORTS[serviceVehicleSort] || SERVICE_VEHICLE_SORTS.last;
+    const state = serviceVehicleSort;
+    const spec = SERVICE_VEHICLE_SORTS[state.key] || SERVICE_VEHICLE_SORTS.last;
     return (appData.vehicles || []).slice().sort(function (a, b) {
       const va = spec.value(a, stats), vb = spec.value(b, stats);
-      if (spec.numeric) return spec.desc ? vb - va : va - vb;
+      if (spec.numeric) return (va - vb) * (state.dir === 'asc' ? 1 : -1);
       const cmp = String(va).localeCompare(String(vb), 'fa', { numeric: true });
-      return spec.desc ? -cmp : cmp;
+      return state.dir === 'asc' ? cmp : -cmp;
     });
   }
 
@@ -4262,14 +4317,17 @@
       'ATLAS-SHIFT-cardex-' + exportSlug(vehicle.companyPlate || vehicle.name, vehicle.id) + '-' + todayIso(), 'print', { legend: legend });
   }
 
-  function serviceRow(item) {
-    return '<div class="service-row"><div class="service-date">' + (item.date ? formatJalali(item.date, false) : '—') + '</div>' +
-      '<div class="service-main"><strong>' + esc(item.type || 'سرویس') + '</strong><span>' + esc(item.description || '') + '</span></div>' +
-      '<div class="service-meta">' + (item.km ? faDigits(item.km) + ' کیلومتر' : '') +
-      (item.nextServiceDate ? (item.km ? ' · ' : '') + 'بعدی: ' + formatJalali(item.nextServiceDate, false) : '') + '</div>' +
-      '<div class="service-actions">' + statusTag(item.status || '—') +
+  function serviceLogRow(item) {
+    return '<tr class="service-row">' +
+      '<td>' + (item.date ? formatJalali(item.date, false) : '—') + '</td>' +
+      '<td>' + (item.km ? faDigits(item.km) : '—') + '</td>' +
+      '<td>' + esc(item.type || 'سرویس') + '</td>' +
+      '<td>' + esc(item.description || '—') + '</td>' +
+      '<td>' + statusTag(item.status || '—') + '</td>' +
+      '<td>' + (item.nextServiceDate ? formatJalali(item.nextServiceDate, false) : '—') + (item.nextServiceKm ? ' · ' + faDigits(item.nextServiceKm) + ' کیلومتر' : '') + '</td>' +
+      '<td class="module-row-actions">' +
       '<button type="button" class="secondary-btn" data-module-action="edit" data-view="maintenance" data-id="' + esc(item.id) + '">ویرایش</button>' +
-      '<button type="button" class="module-delete-btn" data-module-action="delete" data-view="maintenance" data-id="' + esc(item.id) + '">حذف</button></div></div>';
+      '<button type="button" class="module-delete-btn" data-module-action="delete" data-view="maintenance" data-id="' + esc(item.id) + '">حذف</button></td></tr>';
   }
 
   function renderServiceBook(section) {
@@ -4281,34 +4339,40 @@
     const done = logs.filter(function (item) { return item.status === 'انجام‌شده'; }).length;
     const kpis = [['کل سوابق', faDigits(logs.length), 'info'], ['خودروهای دارای سابقه', faDigits(withLogs), 'ok'], ['در جریان یا منتظر قطعه', faDigits(waiting), 'warn'], ['انجام‌شده', faDigits(done), 'special']]
       .map(function (pair) { return '<div class="mini-stat" data-tone="' + pair[2] + '"><div class="value">' + pair[1] + '</div><div class="label"><i class="tiny-dot"></i>' + pair[0] + '</div></div>'; }).join('');
-    const sortOptions = Object.keys(SERVICE_VEHICLE_SORTS).map(function (key) {
-      return '<option value="' + key + '"' + (serviceVehicleSort === key ? ' selected' : '') + '>مرتب‌سازی: ' + SERVICE_VEHICLE_SORTS[key].label + '</option>';
-    }).join('');
-    const cards = vehicles.length ? vehicles.map(function (vehicle) {
+    const rows = vehicles.map(function (vehicle) {
       const stat = stats[vehicle.id] || { total: 0, last: '', lastType: '', nextDate: '', nextKm: '' };
       const lastLog = sortedServiceLogs(serviceLogsOfVehicle(vehicle.id))[0];
-      return '<button type="button" class="vtab-card" data-vtab-open="' + esc(vehicle.id) + '">' +
-        '<span class="vtab-top"><strong>' + esc(vehicle.name || 'خودرو بدون نام') + '</strong>' + statusTag(vehicle.status || '—') + '</span>' +
-        '<span class="vtab-facts">' +
-        '<span><b>پلاک سازمانی</b>' + esc(vehicle.companyPlate || vehicle.policePlate || '—') + '</span>' +
-        '<span><b>کیلومتر فعلی</b>' + (vehicle.currentKm ? faDigits(vehicle.currentKm) : '—') + '</span>' +
-        '<span><b>تعداد سرویس</b>' + faDigits(stat.total || 0) + '</span>' +
-        '<span><b>آخرین سرویس</b>' + (stat.last ? formatJalali(stat.last, false) : '—') + '</span>' +
-        '<span><b>سرویس بعدی</b>' + (stat.nextDate ? formatJalali(stat.nextDate, false) + (stat.nextKm ? ' · ' + faDigits(stat.nextKm) + ' کیلومتر' : '') : '—') + '</span>' +
-        '<span><b>نوع آخرین سرویس</b>' + esc(stat.lastType || '—') + '</span>' +
-        '</span>' +
-        (lastLog ? '<span class="vtab-last">' + esc(lastLog.description || lastLog.type || '') + '</span>' : '') +
-        '<span class="vtab-foot"><span>' + faDigits(stat.total || 0) + ' سرویس ثبت‌شده</span><span class="vtab-open-hint">مشاهدهٔ سوابق ›</span></span>' +
-        '</button>';
-    }).join('') : '<div class="module-empty">اول خودروها را ثبت کن؛ بعد سوابق سرویس هر خودرو اینجا باز می‌شود.</div>';
+      return '<tr class="vtab-row" data-vtab-open="' + esc(vehicle.id) + '">' +
+        '<td><button type="button" class="fault-open-btn" data-vtab-open="' + esc(vehicle.id) + '">' + esc(vehicle.name || 'خودرو بدون نام') + '</button>' +
+        (lastLog ? '<div class="cell-sub">' + esc(lastLog.description || lastLog.type || '') + '</div>' : '') + '</td>' +
+        '<td>' + esc(vehicle.companyPlate || vehicle.policePlate || '—') + '</td>' +
+        '<td>' + statusTag(vehicle.status || '—') + '</td>' +
+        '<td>' + (vehicle.currentKm ? faDigits(vehicle.currentKm) : '—') + '</td>' +
+        '<td>' + faDigits(stat.total || 0) + '</td>' +
+        '<td>' + (stat.last ? formatJalali(stat.last, false) : '—') + '</td>' +
+        '<td>' + esc(stat.lastType || '—') + '</td>' +
+        '<td>' + (stat.nextDate ? formatJalali(stat.nextDate, false) + (stat.nextKm ? ' · ' + faDigits(stat.nextKm) + ' کیلومتر' : '') : '—') + '</td>' +
+        '<td class="module-row-actions"><button type="button" class="secondary-btn" data-vtab-open="' + esc(vehicle.id) + '">سوابق ›</button></td></tr>';
+    }).join('');
+    const table = vehicles.length
+      ? '<div class="module-table-wrap"><table class="module-table vtab-table"><thead><tr>' +
+        customSortHeader(serviceVehicleSort, 'name', 'نام خودرو', 'service-vehicles') +
+        customSortHeader(serviceVehicleSort, 'plate', 'پلاک سازمانی', 'service-vehicles') +
+        customSortHeader(serviceVehicleSort, 'status', 'وضعیت عملیاتی', 'service-vehicles') +
+        customSortHeader(serviceVehicleSort, 'km', 'کیلومتر فعلی', 'service-vehicles') +
+        customSortHeader(serviceVehicleSort, 'count', 'تعداد سرویس', 'service-vehicles') +
+        customSortHeader(serviceVehicleSort, 'last', 'آخرین سرویس', 'service-vehicles') +
+        '<th>نوع آخرین سرویس</th>' +
+        customSortHeader(serviceVehicleSort, 'next', 'سرویس بعدی', 'service-vehicles') +
+        '<th>عملیات</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
+      : '<div class="module-empty">اول خودروها را ثبت کن؛ بعد سوابق سرویس هر خودرو اینجا باز می‌شود.</div>';
     section.innerHTML = rootWrap(
-      pageHead('دفتر سرویس <span style="color:var(--tone-7)">خودروها</span>', 'روی هر خودرو بزن تا سوابق سرویس همان خودرو باز شود؛ فهرست و هر سابقه گزارش‌گیری جدا دارد', customExportMenu('service-vehicles') + '<button class="primary-btn" type="button" data-module-action="new" data-view="maintenance">+ ثبت سرویس</button>') +
+      pageHead('دفتر سرویس <span style="color:var(--tone-7)">خودروها</span>', 'روی هر خودرو بزن تا سوابق سرویس همان خودرو باز شود؛ هر عنوان خودش مرتب می‌کند', customExportMenu('service-vehicles') + '<button class="primary-btn" type="button" data-module-action="new" data-view="maintenance">+ ثبت سرویس</button>') +
       vehicleTabBar() +
       '<div class="stat-row fault-kpis">' + kpis + '</div>' +
       renderForm('maintenance', appData) +
-      '<section class="module-list-panel"><div class="module-list-head"><div><h3>خودروهای ناوگان</h3><p>بر اساس آخرین سرویس، تعداد، سرویس بعدی، نام، پلاک یا وضعیت مرتب کن.</p></div>' +
-      '<div class="module-list-tools"><select data-service-sort aria-label="مرتب‌سازی فهرست خودروها">' + sortOptions + '</select></div></div>' +
-      '<div class="vtab-list">' + cards + '</div></section>'
+      '<section class="module-list-panel"><div class="module-list-head"><div><h3>خودروهای ناوگان</h3><p>با کلیک روی هر عنوان، فهرست را بر اساس همان ستون مرتب کن.</p></div></div>' +
+      table + '</section>'
     );
     refreshServiceRecordsDialog();
   }
@@ -4323,10 +4387,16 @@
     const waiting = list.filter(function (item) { return item.status === 'در انتظار قطعه' || item.status === 'در حال انجام'; }).length;
     const kpis = [['کل سوابق', faDigits(list.length), 'info'], ['انجام‌شده', faDigits(done), 'ok'], ['در جریان یا منتظر قطعه', faDigits(waiting), 'warn'], ['آخرین سرویس', stats.last ? formatJalali(stats.last, false) : '—', 'special']]
       .map(function (pair) { return '<div class="mini-stat" data-tone="' + pair[2] + '"><div class="value">' + pair[1] + '</div><div class="label"><i class="tiny-dot"></i>' + pair[0] + '</div></div>'; }).join('');
-    const sortOptions = Object.keys(SERVICE_LOG_SORTS).map(function (key) {
-      return '<option value="' + key + '"' + (serviceLogSort === key ? ' selected' : '') + '>مرتب‌سازی: ' + SERVICE_LOG_SORTS[key].label + '</option>';
-    }).join('');
-    const rows = list.length ? sortedServiceLogs(list).map(serviceRow).join('') : '<div class="service-empty">برای این خودرو سرویسی ثبت نشده است.</div>';
+    const rows = list.length
+      ? '<div class="module-table-wrap"><table class="module-table service-table"><thead><tr>' +
+        customSortHeader(serviceLogSort, 'date', 'تاریخ سرویس', 'service-logs') +
+        customSortHeader(serviceLogSort, 'km', 'کیلومتر', 'service-logs') +
+        customSortHeader(serviceLogSort, 'type', 'نوع اقدام', 'service-logs') +
+        '<th>شرح اقدام و قطعات</th>' +
+        customSortHeader(serviceLogSort, 'status', 'وضعیت', 'service-logs') +
+        customSortHeader(serviceLogSort, 'next', 'سرویس بعدی', 'service-logs') +
+        '<th>عملیات</th></tr></thead><tbody>' + sortedServiceLogs(list).map(serviceLogRow).join('') + '</tbody></table></div>'
+      : '<div class="service-empty">برای این خودرو سرویسی ثبت نشده است.</div>';
     return '<div class="stat-row fault-kpis">' + kpis + '</div>' +
       '<dl class="vtab-facts vtab-facts-wide">' +
       vtabFact('پلاک سازمانی', vehicle.companyPlate || '') +
@@ -4336,8 +4406,7 @@
       vtabFact('سرویس بعدی', stats.nextDate ? formatJalali(stats.nextDate, false) + (stats.nextKm ? ' · ' + faDigits(stats.nextKm) + ' کیلومتر' : '') : '') +
       vtabFact('آخرین سرویس', stats.last ? formatJalali(stats.last, false) + (stats.lastType ? ' · ' + stats.lastType : '') : '') +
       '</dl>' +
-      '<div class="service-records-head"><h4>سوابق ثبت‌شده</h4>' +
-      '<select data-service-log-sort aria-label="مرتب‌سازی سوابق سرویس">' + sortOptions + '</select></div>' +
+      '<div class="service-records-head"><h4>سوابق ثبت‌شده</h4><span class="module-field-hint">با کلیک روی هر عنوان مرتب کن.</span></div>' +
       '<div class="service-book">' + rows + '</div>';
   }
 
@@ -4916,26 +4985,18 @@
       if (action === 'filter') { faultFilter = faultBtn.dataset.status || 'all'; setVehicleTab('board'); renderFaults(section); return; }
       const record = (appData.faults || []).find(function (item) { return String(item.id) === String(faultBtn.dataset.fault); });
       if (!record) return;
-      if (action === 'add-step') {
-        const input = section.querySelector('[data-fault-step-input="' + record.id + '"]');
-        const text = String(input && input.value || '').trim();
-        if (!text) { if (input) input.focus(); return; }
-        const entry = formatJalali(new Date().toISOString(), false) + ' | ' + text;
-        record.steps = [String(record.steps || '').trim(), entry].filter(Boolean).join('\n');
-        record.updatedAt = new Date().toISOString();
-        if (await saveState()) { renderVehicles(section); refreshDashboard(); toast('اقدام به روند رفع اضافه شد.'); }
-        return;
-      }
       if (action === 'resolve') {
-        if (!(await askConfirm({ title: 'رفع کامل اشکال', message: 'این اشکال «رفع شد» علامت بخورد؟ وضعیت روی «رفع شد» و پیشرفت روی ۱۰۰٪ تنظیم می‌شود.', confirmLabel: 'رفع شد' }))) return;
-        const entry = formatJalali(new Date().toISOString(), false) + ' | رفع کامل و بستن مورد';
+        if (!(await askConfirm({ title: 'رفع کامل اشکال', message: 'این اشکال «رفع شد» علامت بخورد؟ وضعیت روی «رفع شد» و پیشرفت روی ۱۰۰٪ تنظیم می‌شود و از فهرست باز خارج می‌شود.', confirmLabel: 'رفع شد' }))) return;
+        const at = new Date().toISOString();
+        const before = record.status || 'ثبت‌شده';
         record.status = 'رفع شد';
         record.progress = 100;
         record.resolvedAt = todayIso();
-        record.steps = [String(record.steps || '').trim(), entry].filter(Boolean).join('\n');
-        record.updatedAt = new Date().toISOString();
-        addHistory('faults', record, 'رفع شد', [{ field: 'وضعیت', before: 'باز', after: 'رفع شد' }]);
-        if (await saveState()) { renderVehicles(section); refreshDashboard(); toast('اشکال رفع شد و از اعلان‌ها خارج شد.'); }
+        record.timeline = (Array.isArray(record.timeline) ? record.timeline : []).concat([{ id: createId(), at: at, status: 'رفع شد', note: 'رفع کامل و بستن مورد', by: '' }]);
+        record.steps = [String(record.steps || '').trim(), formatJalali(at, true) + ' | رفع کامل و بستن مورد | رفع شد'].filter(Boolean).join('\n');
+        record.updatedAt = at;
+        addHistory('faults', record, 'رفع شد', [{ field: 'وضعیت', before: before, after: 'رفع شد' }]);
+        if (await saveState()) { renderVehicles(section); refreshDashboard(); toast('اشکال رفع شد و از فهرست باز و اعلان‌ها خارج شد.'); }
         return;
       }
       return;
@@ -5058,19 +5119,25 @@
     }
   });
 
-  document.addEventListener('change', function (event) {
-    const faultSort = event.target.closest('[data-vtab-sort]');
-    if (!faultSort) return;
-    faultVehicleSort = faultSort.value;
+  // «مدیریت مرتب‌سازی» داخل عنوان‌های جدول‌های دفتر سرویس و دفتر اشکالات.
+  document.addEventListener('click', function (event) {
+    const btn = event.target.closest('[data-csort]');
+    if (!btn) return;
+    const action = btn.dataset.csort;
+    const key = btn.dataset.csortKey;
+    const state = action === 'fault-board' ? faultBoardSort
+      : action === 'fault-vehicles' ? faultVehicleSort
+      : action === 'service-vehicles' ? serviceVehicleSort
+      : action === 'service-logs' ? serviceLogSort : null;
+    if (!state) return;
+    const specs = action === 'fault-board' ? FAULT_BOARD_SORTS
+      : action === 'fault-vehicles' ? FAULT_VEHICLE_SORTS
+      : action === 'service-vehicles' ? SERVICE_VEHICLE_SORTS
+      : SERVICE_LOG_SORTS;
+    const spec = specs[key];
+    if (state.key === key) state.dir = state.dir === 'asc' ? 'desc' : 'asc';
+    else { state.key = key; state.dir = (spec && spec.defaultDir) || 'asc'; }
     renderVehicles(document.getElementById('sectionView'));
-  });
-
-  document.addEventListener('change', function (event) {
-    const section = document.getElementById('sectionView');
-    const vehicleSort = event.target.closest('[data-service-sort]');
-    if (vehicleSort) { serviceVehicleSort = vehicleSort.value; renderVehicles(section); return; }
-    const logSort = event.target.closest('[data-service-log-sort]');
-    if (logSort) { serviceLogSort = logSort.value; renderVehicles(section); }
   });
 
   document.addEventListener('change', function (event) {
@@ -9773,6 +9840,8 @@
     showText: askText,
     setGasTab: setGasTab,
     setVehicleTab: setVehicleTab,
+    recordCommentField: recordCommentField,
+    recordCommentLines: recordCommentLines,
     saveNow: saveState,
     sectionBackup: exportSectionBackup,
     sectionBackupButton: sectionBackupButton,

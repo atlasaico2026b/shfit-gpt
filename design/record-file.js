@@ -576,17 +576,33 @@
     });
   }
 
-  function open(model) {
+  function open(model, extras) {
     closeFile();
+    extras = extras || {};
     const sheetHtml = buildSheet(model);
+    const historyHtml = extras.history ? buildSheet(extras.history) : '';
+    const commentLines = (extras.comments && extras.comments.lines) || [];
+    const tabs = [{ key: 'info', label: 'اطلاعات پرونده' }];
+    if (extras.history) tabs.push({ key: 'history', label: 'سوابق' });
+    if (extras.comments) tabs.push({ key: 'comments', label: 'کامنت‌ها' });
+    const tabBar = tabs.length > 1
+      ? '<div class="rf-tabs" role="tablist">' + tabs.map((tab, index) =>
+          '<button type="button" role="tab" class="rf-tab' + (index === 0 ? ' is-active' : '') + '" aria-selected="' + (index === 0) + '" data-rf-tab="' + tab.key + '">' + esc(tab.label) + '</button>').join('') + '</div>'
+      : '';
+    const commentsHtml = '<div class="rf-comments">' +
+      (commentLines.length
+        ? commentLines.map(line => '<div class="rf-comment-line">' + esc(line) + '</div>').join('')
+        : '<p class="rf-comments-empty">هنوز کامنتی روی این مورد ثبت نشده است.</p>') +
+      '</div>';
     const backdrop = document.createElement('div');
     backdrop.className = 'rf-backdrop';
     backdrop.innerHTML =
       '<div class="rf-modal" role="dialog" aria-modal="true" aria-label="پرونده">' +
         '<div class="rf-head"><div><h3>' + esc(model.title) + '</h3><p>' + esc(model.kind) + ' — همهٔ اطلاعات ثبت‌شده در یک برگه</p></div>' +
         '<button type="button" class="rf-close" data-rf-close aria-label="بستن پرونده">×</button></div>' +
-        '<div class="rf-body">' + sheetPreviewHtml(sheetHtml) + '</div>' +
-        '<div class="rf-toolbar">' +
+        tabBar +
+        '<div class="rf-body" data-rf-body>' + sheetPreviewHtml(sheetHtml) + '</div>' +
+        '<div class="rf-toolbar" data-rf-toolbar>' +
           Object.keys(EXPORT_FORMATS).map(format => '<button type="button" class="secondary-btn" data-rf-export="' + format + '">' + esc(EXPORT_FORMATS[format].label) + '</button>').join('') +
           '<small>هر خروجی اول پیش‌نمایش می‌شود؛ تأیید کن تا فایل ساخته شود.</small>' +
         '</div>' +
@@ -598,6 +614,26 @@
     backdrop.querySelectorAll('[data-rf-export]').forEach(button => {
       button.addEventListener('click', () => openPreview(button.dataset.rfExport));
     });
+    const body = backdrop.querySelector('[data-rf-body]');
+    const toolbar = backdrop.querySelector('[data-rf-toolbar]');
+    backdrop.querySelectorAll('[data-rf-tab]').forEach(button => {
+      button.addEventListener('click', () => {
+        const key = button.dataset.rfTab;
+        backdrop.querySelectorAll('[data-rf-tab]').forEach(tab => {
+          const active = tab === button;
+          tab.classList.toggle('is-active', active);
+          tab.setAttribute('aria-selected', String(active));
+        });
+        if (key === 'comments') {
+          body.innerHTML = commentsHtml;
+          if (toolbar) toolbar.hidden = true;
+        } else {
+          body.innerHTML = sheetPreviewHtml(key === 'history' ? historyHtml : sheetHtml);
+          if (toolbar) toolbar.hidden = false;
+        }
+        body.scrollTop = 0;
+      });
+    });
   }
 
   function openModuleRecord(moduleKey, id) {
@@ -607,7 +643,14 @@
       if (window.ATLAS_MODULES && window.ATLAS_MODULES.render) { /* بخش فعلی را دست نمی‌زنیم */ }
       return;
     }
-    open(moduleSheet(moduleKey, record, data));
+    const api = modules();
+    const hasHistory = (data.history || []).some(item => item.module === moduleKey && String(item.recordId) === String(record.id));
+    const commentField = api.recordCommentField ? api.recordCommentField(moduleKey) : '';
+    const commentLines = commentField && api.recordCommentLines ? api.recordCommentLines(record, commentField).slice().reverse() : [];
+    open(moduleSheet(moduleKey, record, data), {
+      history: hasHistory ? historySheet(moduleKey, record, data) : null,
+      comments: commentField ? { lines: commentLines } : null
+    });
   }
 
   // برگهٔ «سوابق» یک مورد: همان برگهٔ A4، ولی به‌جای اطلاعات پرونده، تاریخچهٔ

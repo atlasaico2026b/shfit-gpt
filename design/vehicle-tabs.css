@@ -421,6 +421,24 @@
   text-decoration: underline;
 }
 
+/* دفتر اشکالات و دفتر سرویس: هر مورد یک ردیف است، نه کارت. ردیف‌های رفع‌شده
+   کم‌رنگ می‌شوند تا موارد باز در نگاه اول پیدا باشند. */
+.fault-table .fault-row.is-resolved {
+  opacity: .62;
+}
+
+.fault-table .fault-row .fault-progress {
+  min-width: 120px;
+}
+
+.fault-table .fault-row .fault-progress .progress-track {
+  min-width: 60px;
+}
+
+.service-table .service-row td {
+  vertical-align: top;
+}
+
 @media (max-width: 640px) {
   .fault-stage-grid {
     grid-template-columns: 1fr;

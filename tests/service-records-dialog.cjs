@@ -42,7 +42,7 @@ check('تغییر زیرتب پنجره را می‌بندد', /if \(vehicleTab 
 // ── هم‌گام‌ماندن با داده ──
 check('رندر دوبارهٔ دفتر سرویس، پنجره را تازه می‌کند',
   /refreshServiceRecordsDialog\(\);\s*\}\s*\n\s*\/\/ ── پنجرهٔ سوابق سرویس/.test(modules));
-check('مرتب‌سازی سوابق داخل پنجره کار می‌کند', /data-service-log-sort/.test(modules));
+check('مرتب‌سازی سوابق داخل پنجره کار می‌کند', /customSortHeader\(serviceLogSort, 'date'/.test(modules));
 
 // ── استایل ──
 check('عرض پنجره محدود شده است', /\.service-records-modal\s*\{[^}]*width:\s*min\(820px, 100%\)/.test(css));

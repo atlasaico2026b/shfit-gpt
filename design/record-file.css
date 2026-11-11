@@ -69,6 +69,55 @@
   max-height: calc(100vh - 220px);
 }
 
+/* زیرتب‌های پرونده: اطلاعات، سوابق و کامنت‌ها در یک پنجره، نه سه دکمهٔ جدا. */
+.rf-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 18px 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-mid);
+}
+
+.rf-tab {
+  border: 1px solid var(--line);
+  border-bottom: none;
+  background: transparent;
+  color: var(--muted);
+  padding: 7px 14px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  font-size: .82rem;
+  cursor: pointer;
+}
+
+.rf-tab.is-active {
+  background: var(--panel);
+  color: var(--text-bright);
+  font-weight: 600;
+}
+
+.rf-comments {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rf-comment-line {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg-mid);
+  font-size: .84rem;
+  line-height: 1.9;
+  white-space: pre-wrap;
+}
+
+.rf-comments-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: .84rem;
+}
+
 .rf-toolbar {
   display: flex;
   flex-wrap: wrap;
