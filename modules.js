@@ -4978,7 +4978,15 @@
     if (event.target.closest('[data-fault-detail-edit]')) {
       closeFaultDetail();
       formState.faults = { open: true, id: record.id };
-      render('faults', document.getElementById('sectionView'));
+      // اگر پنجرهٔ سوابق اشکالات خودرو زیر همین پنجره باز باشد، فرم ویرایش را
+      // به انتهای body می‌گذاریم تا روی بالاترین لایه بنشیند؛ فرم داخل sectionView
+      // زیر پنجرهٔ باز می‌ماند (هر دو z-index 90 دارند و ترتیب DOM تعیین‌کننده است).
+      if (document.querySelector('[data-fault-records-dialog]')) {
+        document.body.insertAdjacentHTML('beforeend', renderForm('faults', appData));
+        enhanceJalaliInputs(document.body);
+      } else {
+        render('faults', document.getElementById('sectionView'));
+      }
       return;
     }
 
@@ -7951,7 +7959,14 @@
     if(action==='new'||action==='edit'){
       if(!specs[moduleKey])return;
       formState[moduleKey]={open:true,id:action==='edit'?button.dataset.id:null};
-      render(moduleKey,section);
+      // ویرایش/ثبت از داخل پنجرهٔ سوابق (سرویس یا اشکال خودرو): فرم به انتهای
+      // body می‌رود تا روی همان پنجره، در بالاترین لایه، باز شود و زیرش نماند.
+      if(document.querySelector('[data-service-records-dialog],[data-fault-records-dialog],[data-fault-detail-dialog]')){
+        document.body.insertAdjacentHTML('beforeend', renderForm(moduleKey, appData));
+        enhanceJalaliInputs(document.body);
+      }else{
+        render(moduleKey,section);
+      }
     }else if(action==='cancel'){
       delete formState[moduleKey];closeModal(moduleKey);
     }else if(action==='delete'){
