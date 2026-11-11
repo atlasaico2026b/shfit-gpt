@@ -167,6 +167,25 @@
   .service-interval-input { width: 100%; justify-content: flex-end; }
 }
 
+/* دکمهٔ «پیشنهاد: …» کنار کادر کیلومتر سرویس بعدی در فرم‌ها */
+.service-suggest { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
+.service-suggest[hidden] { display: none; }
+.service-suggest-chip {
+  border: 1px dashed rgba(var(--accent-rgb), 0.6);
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 4px 11px;
+  font-family: inherit;
+  font-size: 10px;
+  line-height: 1.6;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.service-suggest-chip:hover { background: rgba(var(--accent-rgb), 0.24); }
+.service-suggest-chip[hidden] { display: none; }
+.service-suggest .module-field-hint { margin: 0; }
+
 /* ─────────────────────────────────────────────────────────────
    ۳ · تنظیمات داشبورد: شبکهٔ ویرایش چیدمان
    ───────────────────────────────────────────────────────────── */

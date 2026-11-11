@@ -474,12 +474,12 @@
         {key:'secondaryDrivers',label:'راهبران فرعی',type:'multi-check',source:'employees',showChosen:true,wide:true},
         {key:'currentKm',label:'کیلومتر فعلی',type:'number',min:0},
         {key:'currentKmRecordedAt',label:'زمان آخرین ثبت کیلومتر',type:'text',placeholder:'با ثبت کیلومتر به‌صورت خودکار ثبت می‌شود'},
-        {key:'nextServiceKm',label:'کیلومتر سرویس بعدی',type:'number',min:0},
+        {key:'nextServiceKm',label:'کیلومتر سرویس بعدی',type:'number',min:0,serviceNextKm:true,serviceKmFrom:'currentKm'},
         {key:'fuelAllowanceKm',label:'کیلومتر مبنای دریافت هزینه سوخت',type:'number',min:0},
         {key:'fuelKm',label:'کیلومتر ثبت سوخت',type:'number',min:0},
         {key:'lastOilKm',label:'کیلومتر آخرین تعویض روغن',type:'number',min:0},
-        {key:'nextOilKm',label:'کیلومتر سرویس روغن بعدی',type:'number',min:0},
-        {key:'lastServiceType',label:'آخرین نوع سرویس',type:'select',listKey:'vehicleServiceTypes',options:['تعویض روغن','سرویس دوره‌ای','سوخت‌گیری','تعویض فیلتر','معاینه فنی','تعمیر اضطراری']},
+        {key:'nextOilKm',label:'کیلومتر سرویس روغن بعدی',type:'number',min:0,serviceNextKm:true,serviceKmFrom:'lastOilKm',serviceType:'تعویض روغن'},
+        {key:'lastServiceType',label:'آخرین نوع سرویس',type:'select',listKey:'vehicleServiceTypes',serviceInterval:true,options:['تعویض روغن','سرویس دوره‌ای','سوخت‌گیری','تعویض فیلتر','معاینه فنی','تعمیر اضطراری']},
         {key:'faults',label:'خرابی‌ها و نقص‌های باز',type:'textarea',wide:true},
         {key:'faultsResolved',label:'ایرادهای رفع‌شده',type:'textarea',wide:true},
         {key:'equipment',label:'تجهیزات همراه خودرو',type:'textarea',wide:true},
@@ -658,10 +658,19 @@
     }
   };
 
+  // فاصلهٔ استاندارد پیش‌فرض سرویس‌ها (کیلومتر). فقط یک بار روی دادهٔ خالی گذاشته
+  // می‌شود و بعد از آن هر عددی در تنظیمات › سرویس‌های خودرو قابل تغییر است.
+  const DEFAULT_SERVICE_INTERVALS = {
+    'تعویض روغن': 5000,
+    'تعویض فیلتر': 10000,
+    'سرویس دوره‌ای': 10000,
+    'معاینه فنی': 20000
+  };
+
   function createEmptyState() {
     const state = {
       schemaVersion: 2,
-      settings: { employeeCustomFields: '', serviceIntervals: {} },
+      settings: { employeeCustomFields: '', serviceIntervals: {}, serviceIntervalsSeeded: false },
       references: { placesByType: {}, lineColors: {} },
       history: [],
       shifts: [],
@@ -702,6 +711,16 @@
     });
     if (value.settings && typeof value.settings === 'object') out.settings = Object.assign(out.settings, value.settings);
     if (!out.settings.serviceIntervals || typeof out.settings.serviceIntervals !== 'object' || Array.isArray(out.settings.serviceIntervals)) out.settings.serviceIntervals = {};
+    // یک بار، فاصلهٔ استاندارد پیش‌فرض برای سرویس‌های رایج گذاشته می‌شود تا پیشنهاد
+    // از همان اول کار کند؛ بعد از آن هر تغییری در تنظیمات › سرویس‌های خودرو دست‌نخورده می‌ماند.
+    if (!out.settings.serviceIntervalsSeeded) {
+      Object.keys(DEFAULT_SERVICE_INTERVALS).forEach(function (key) {
+        if (!Object.prototype.hasOwnProperty.call(out.settings.serviceIntervals, key)) {
+          out.settings.serviceIntervals[key] = DEFAULT_SERVICE_INTERVALS[key];
+        }
+      });
+      out.settings.serviceIntervalsSeeded = true;
+    }
     if (value.references && typeof value.references === 'object') out.references = Object.assign(out.references, value.references);
     migrateReferenceAliases(out);
     if (!out.references.placesByType || typeof out.references.placesByType !== 'object') out.references.placesByType = {};
@@ -1278,40 +1297,66 @@
     }
   }
 
-  // پیشنهاد «کیلومتر سرویس بعدی»: کیلومتر سرویس + فاصلهٔ استاندارد همان نوع سرویس.
-  // عدد پیشنهادی در همان کادر نوشته می‌شود تا کاربر نگهش دارد یا با عدد خودش عوض کند.
+  // پیشنهاد «کیلومتر سرویس بعدی»: کیلومتر مبنا + فاصلهٔ استاندارد همان نوع سرویس.
+  // هر کادر «کیلومتر بعدی» مبنای خودش (data-service-km-from) و اگر لازم بود نوع ثابت
+  // خودش (data-service-type-fixed) را دارد؛ وگرنه از کشویی «نوع سرویس» همان فرم و از
+  // کادر «km» استفاده می‌شود. عدد پیشنهادی هم داخل کادر نوشته می‌شود و هم به‌صورت یک
+  // دکمهٔ «پیشنهاد» کنار کادر می‌آید تا هر وقت خواست با یک کلیک اعمالش کند.
+  function serviceBaseNames(form) {
+    const names = {};
+    Array.prototype.forEach.call(form.querySelectorAll('[data-service-next-km]'), function (control) {
+      names[control.dataset.serviceKmFrom || 'km'] = true;
+    });
+    return names;
+  }
+
   function applyServiceSuggestion(form, force) {
-    if (!form || form.dataset.view !== 'maintenance') return;
+    if (!form) return;
+    const nextFields = form.querySelectorAll('[data-service-next-km]');
+    if (!nextFields.length) return;
     const typeControl = form.querySelector('[data-service-type]');
-    const nextControl = form.querySelector('[data-service-next-km]');
-    if (!typeControl || !nextControl) return;
-    const hint = form.querySelector('[data-service-suggest-hint]');
-    const type = String(typeControl.value || '').trim();
-    const interval = serviceIntervalFor(type);
-    const kmControl = form.querySelector('[name="km"]');
-    const km = Number(persianDigitsToLatin(String(kmControl && kmControl.value || '')).replace(/[^\d.-]/g, ''));
-    const autoValue = String(nextControl.dataset.autoValue || '');
-    const current = String(nextControl.value || '').trim();
-    const untouched = !current || current === autoValue;
-    if (!interval) {
-      if (hint) {
-        hint.textContent = type
-          ? 'برای «' + type + '» فاصلهٔ پیشنهادی تعیین نشده است؛ از تنظیمات › سرویس‌های خودرو می‌توانی فاصلهٔ استانداردش را بنویسی.'
-          : '';
+    const formType = typeControl ? String(typeControl.value || '').trim() : '';
+    Array.prototype.forEach.call(nextFields, function (nextControl) {
+      const key = nextControl.dataset.serviceNextKm;
+      const box = form.querySelector('[data-service-suggest-for="' + key + '"]');
+      const chip = box ? box.querySelector('[data-service-apply]') : null;
+      const hint = box ? box.querySelector('[data-service-suggest-hint]') : null;
+      const type = String(nextControl.dataset.serviceTypeFixed || '').trim() || formType;
+      const fromName = nextControl.dataset.serviceKmFrom || 'km';
+      const fromControl = form.querySelector('[name="' + fromName + '"]');
+      const interval = serviceIntervalFor(type);
+      const base = Number(persianDigitsToLatin(String(fromControl && fromControl.value || '')).replace(/[^\d.-]/g, ''));
+      const autoValue = String(nextControl.dataset.autoValue || '');
+      const current = String(nextControl.value || '').trim();
+      const untouched = !current || current === autoValue;
+      const show = function (text, suggested) {
+        if (box) box.hidden = !text;
+        if (hint) hint.textContent = text || '';
+        if (chip) {
+          chip.hidden = !suggested;
+          chip.textContent = suggested ? 'پیشنهاد: ' + faDigits(suggested) + ' کیلومتر' : '';
+          chip.dataset.serviceApplyValue = suggested ? String(suggested) : '';
+        }
+      };
+      if (!interval) {
+        if (untouched && autoValue) { nextControl.value = ''; delete nextControl.dataset.autoValue; }
+        show(type ? 'برای «' + type + '» فاصلهٔ پیشنهادی تعیین نشده است؛ از تنظیمات › سرویس‌های خودرو می‌توانی فاصلهٔ استانداردش را بنویسی.' : '', 0);
+        return;
       }
-      if (untouched && autoValue) { nextControl.value = ''; delete nextControl.dataset.autoValue; }
-      return;
-    }
-    if (!Number.isFinite(km) || km <= 0) {
-      if (hint) hint.textContent = 'کیلومتر هنگام سرویس را وارد کن تا کیلومتر بعدی پیشنهاد شود (فاصلهٔ استاندارد «' + type + '»: ' + faDigits(interval) + ' کیلومتر).';
-      return;
-    }
-    const suggested = Math.round(km + interval);
-    if (force || untouched) {
-      nextControl.value = String(suggested);
-      nextControl.dataset.autoValue = String(suggested);
-    }
-    if (hint) hint.textContent = 'پیشنهاد: ' + faDigits(suggested) + ' کیلومتر = ' + faDigits(km) + ' + ' + faDigits(interval) + ' کیلومتر فاصلهٔ استاندارد «' + type + '». می‌توانی همین عدد را نگه داری یا عدد خودت را بنویسی.';
+      if (!Number.isFinite(base) || base <= 0) {
+        const baseField = fromControl && fromControl.closest ? fromControl.closest('.module-field') : null;
+        const baseLabel = baseField ? String((baseField.querySelector('span') || {}).textContent || '').replace('*', '').trim() : '';
+        show('«' + (baseLabel || 'کیلومتر مبنا') + '» را وارد کن تا کیلومتر بعدی پیشنهاد شود (فاصلهٔ استاندارد «' + type + '»: ' + faDigits(interval) + ' کیلومتر).', 0);
+        return;
+      }
+      const suggested = Math.round(base + interval);
+      if (force || untouched) {
+        nextControl.value = String(suggested);
+        nextControl.dataset.autoValue = String(suggested);
+      }
+      const applied = String(nextControl.value || '').trim() === String(suggested);
+      show('پیشنهاد: ' + faDigits(suggested) + ' کیلومتر = ' + faDigits(base) + ' + ' + faDigits(interval) + ' کیلومتر فاصلهٔ استاندارد «' + type + '». می‌توانی همین عدد را نگه داری یا عدد خودت را بنویسی.', applied ? 0 : suggested);
+    });
   }
 
   function placeLists() {
@@ -1614,7 +1659,9 @@
       const digits = field.digits === true;
       const input = '<input id="' + esc(id) + '" name="' + esc(field.key) + '" type="' + esc(type) + '"' +
         (digits ? ' inputmode="numeric" data-digits-only="1"' : '') +
-        (field.serviceNextKm ? ' data-service-next-km="1"' : '') +
+        (field.serviceNextKm ? ' data-service-next-km="' + esc(field.key) + '"' : '') +
+        (field.serviceNextKm ? ' data-service-km-from="' + esc(field.serviceKmFrom || 'km') + '"' : '') +
+        (field.serviceNextKm && field.serviceType ? ' data-service-type-fixed="' + esc(field.serviceType) + '"' : '') +
         (field.min != null ? ' min="' + esc(field.min) + '"' : '') +
         (field.max != null ? ' max="' + esc(field.max) + '"' : '') +
         (field.step != null ? ' step="' + esc(field.step) + '"' : '') + required + NO_AUTOFILL +
@@ -1628,7 +1675,12 @@
           '</span>'
         : input;
     }
-    if (field.serviceNextKm) control += '<small class="module-field-hint" data-service-suggest-hint></small>';
+    if (field.serviceNextKm) {
+      control += '<span class="service-suggest" data-service-suggest-for="' + esc(field.key) + '" hidden>' +
+        '<button type="button" class="service-suggest-chip" data-service-apply hidden></button>' +
+        '<small class="module-field-hint" data-service-suggest-hint></small>' +
+        '</span>';
+    }
     if (field.type === 'select' && field.listKey && !field.multiple) control = '<span class="module-select-with-add">' + control + '</span>';
     const shown = fieldVisible(field, record || {});
     return '<label class="module-field' + (field.wide ? ' module-field-wide' : '') + '" for="' + esc(id) + '" data-field-key="' + esc(field.key) + '"' + (shown ? '' : ' hidden') + '>' + label + control + '</label>';
@@ -2760,7 +2812,7 @@
     }).join('');
     return '<section class="module-list-panel">' +
       '<div class="module-list-head"><div><h3>فاصلهٔ پیشنهادی سرویس‌ها</h3>' +
-      '<p>برای هر نوع سرویس یک فاصلهٔ استاندارد به کیلومتر تعیین کن؛ مثلاً تعویض روغن هر ۵٬۰۰۰ کیلومتر یا تعویض تسمه تایم هر ۶۰٬۰۰۰ کیلومتر. هنگام ثبت سرویس، همین عدد با «کیلومتر در زمان سرویس» جمع می‌شود و به‌عنوان «کیلومتر سرویس بعدی» پیشنهاد می‌شود؛ می‌توانی همان عدد را نگه داری یا عدد خودت را بنویسی.</p></div>' +
+      '<p>برای هر نوع سرویس یک فاصلهٔ استاندارد به کیلومتر تعیین کن؛ مثلاً تعویض روغن هر ۵٬۰۰۰ کیلومتر یا تعویض تسمه تایم هر ۶۰٬۰۰۰ کیلومتر. برای سرویس‌های رایج عدد استاندارد از قبل پر شده و هر وقت خواستی عوضش کن. هنگام ثبت سرویس، همین عدد با «کیلومتر مبنا» جمع می‌شود و به‌عنوان «کیلومتر سرویس بعدی» پیشنهاد می‌شود؛ می‌توانی همان عدد را نگه داری یا عدد خودت را بنویسی.</p></div>' +
       '<span class="reference-count">' + faDigits(types.length) + ' نوع سرویس</span></div>' +
       (types.length
         ? '<div class="service-interval-list">' + rows + '</div>'
@@ -4749,7 +4801,7 @@
   });
 
   // تغییر انتخاب‌هایی که فیلد وابسته دارند، همان لحظه فیلد را نشان می‌دهد یا پنهان می‌کند.
-  // تغییر «نوع اقدام» یا «کیلومتر سرویس» هم کیلومتر سرویس بعدی را پیشنهاد می‌دهد.
+  // تغییر «نوع سرویس» یا کیلومتر مبنا هم کیلومتر سرویس بعدی را پیشنهاد می‌دهد.
   document.addEventListener('change', function (event) {
     const control = event.target;
     if (!control || !control.closest) return;
@@ -4757,19 +4809,35 @@
     if (!form) return;
     refreshDependentFields(form);
     if (control.matches('[data-service-type]')) applyServiceSuggestion(form, true);
-    else if (control.matches('[data-service-next-km]')) delete control.dataset.autoValue;
-    else if (control.name === 'km') applyServiceSuggestion(form, false);
+    else if (control.matches('[data-service-next-km]')) { delete control.dataset.autoValue; applyServiceSuggestion(form, false); }
+    else if (serviceBaseNames(form)[control.name]) applyServiceSuggestion(form, false);
   });
 
-  // عدد پیشنهادی تا وقتی کاربر خودش در کادر «کیلومتر سرویس بعدی» دست نبرده،
-  // با هر تغییر کیلومتر سرویس تازه می‌شود.
+  // عدد پیشنهادی تا وقتی کاربر خودش در کادر «کیلومتر بعدی» دست نبرده،
+  // با هر تغییر کیلومتر مبنا تازه می‌شود.
   document.addEventListener('input', function (event) {
     const control = event.target;
     if (!control || !control.closest) return;
     const form = control.closest('[data-module-form]');
     if (!form) return;
-    if (control.name === 'km') applyServiceSuggestion(form, false);
-    else if (control.matches('[data-service-next-km]')) delete control.dataset.autoValue;
+    if (control.matches('[data-service-next-km]')) { delete control.dataset.autoValue; applyServiceSuggestion(form, false); }
+    else if (serviceBaseNames(form)[control.name]) applyServiceSuggestion(form, false);
+  });
+
+  // کلیک روی دکمهٔ «پیشنهاد: …» عدد پیشنهادی را در کادر می‌گذارد.
+  document.addEventListener('click', function (event) {
+    const chip = event.target && event.target.closest ? event.target.closest('[data-service-apply]') : null;
+    if (!chip) return;
+    event.preventDefault();
+    const form = chip.closest('[data-module-form]');
+    const box = chip.closest('[data-service-suggest-for]');
+    if (!form || !box) return;
+    const control = form.querySelector('[data-service-next-km="' + box.dataset.serviceSuggestFor + '"]');
+    const value = String(chip.dataset.serviceApplyValue || '');
+    if (!control || !value) return;
+    control.value = value;
+    control.dataset.autoValue = value;
+    applyServiceSuggestion(form, false);
   });
 
   // ── رفتار کادر «انتخاب چندتایی با جستجو» ─────────────────────────────────
