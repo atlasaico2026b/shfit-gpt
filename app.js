@@ -414,8 +414,11 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
     }catch(_){return JSON.parse(JSON.stringify(PHONEBOOK_DEFAULT_OPTIONS));}
   }
   function phonebookOptionsSave(options){
-    localStorage.setItem(PHONEBOOK_OPTIONS_KEY,JSON.stringify(options));
-    document.dispatchEvent(new CustomEvent('atlas-phonebook-options-updated'));
+    try{
+      localStorage.setItem(PHONEBOOK_OPTIONS_KEY,JSON.stringify(options));
+      document.dispatchEvent(new CustomEvent('atlas-phonebook-options-updated'));
+      return true;
+    }catch(_){toast('ذخیره فهرست انجام نشد؛ فضای ذخیره‌سازی مرورگر را بررسی کنید.');return false;}
   }
   // عنوان شماره‌ها: «تلفن اصلی» قدیمی به «تلفن دفتر» یا «تلفن همراه» تبدیل می‌شود
   // تا نوع هر شماره از روی عنوانش هم مشخص باشد.
