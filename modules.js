@@ -8637,10 +8637,9 @@
         '<button type="button" class="jalali-open" data-jalali-open aria-label="باز کردن سالنامه" title="انتخاب از سالنامه"><span aria-hidden="true">▦</span></button>';
       input.parentNode.insertBefore(wrap, input);
       input.type = 'hidden';
-      // فیلد اجباری تاریخ (مثل «تاریخ سرویس») نباید دکمهٔ «بدون تاریخ» بگیرد؛
-      // چون خالی‌شدنش به‌هرحال در ذخیره رد می‌شود. علامت را پیش از حذف ویژگی
-      // required نگه می‌داریم تا سالنامه بداند این فیلد اجباری است.
-      if (input.hasAttribute('required')) wrap.setAttribute('data-jalali-required', '1');
+      // ویژگی required از ورودی مخفی برداشته می‌شود تا مرورگر اعتبارسنجی
+      // خودش را انجام ندهد؛ اعتبارسنجی اجباری هنگام ذخیره در validateRequired
+      // است (فیلد خالی با هایلایت قرمز و پیام رد می‌شود).
       input.removeAttribute('required');
       input.removeAttribute('data-jalali-input');
       input.classList.add('jalali-value');
@@ -9147,9 +9146,12 @@
       const isSelected = Number(selected.year) === jalaliView.year && Number(selected.month) === jalaliView.month && Number(selected.day) === day;
       cells += '<button type="button" class="jalali-day' + (isToday ? ' is-today' : '') + (isSelected ? ' is-selected' : '') + '" data-jalali-day="' + day + '">' + faDigits(day) + '</button>';
     }
-    // «بدون تاریخ» فقط برای فیلدهای اختیاری (مثل تاریخ رفع یا تاریخ سرویس بعدی):
-    // تاریخ همین‌جا برداشته می‌شود و کاربر مجبور نیست فرم را ببندد و از نو باز کند.
-    const allowClear = jalaliTarget && !jalaliTarget.hasAttribute('data-jalali-required');
+    // «بدون تاریخ» برای همهٔ فیلدهای تاریخ (اختیاری و اجباری): تاریخ همین‌جا
+    // برداشته می‌شود و کاربر مجبور نیست فرم را ببندد و از نو باز کند.
+    // اگر فیلد اجباری باشد (مثل «تاریخ سرویس» یا شروع شیفت)، خالی‌شدنش در
+    // ذخیره توسط همان اعتبارسنجی اجباری گرفته می‌شود: با هایلایت قرمز و پیام
+    // «فیلد مورد نظر اجباری است» رد می‌شود.
+    const allowClear = !!jalaliTarget;
     pop.innerHTML = head +
       '<div class="jalali-week">' + JALALI_WEEK.map(function (label) { return '<span>' + label + '</span>'; }).join('') + '</div>' +
       '<div class="jalali-grid">' + cells + '</div>' +
@@ -9216,8 +9218,9 @@
     if (hidden) hidden.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
-  // «بدون تاریخ»: همهٔ بخش‌های سال/ماه/روز/ساعت فیلد اختیاری را خالی می‌کند تا
+  // «بدون تاریخ»: همهٔ بخش‌های سال/ماه/روز/ساعت فیلد تاریخ را خالی می‌کند تا
   // مقدار ذخیره‌شده همان «هیچ» باشد؛ به‌جای بستن فرم و بازکردن دوبارهٔ آن.
+  // برای فیلدهای اجباری، خالی‌ماندن در ذخیره توسط اعتبارسنجی اجباری رد می‌شود.
   function clearJalaliField() {
     if (!jalaliTarget) return;
     const wrap = jalaliTarget;
