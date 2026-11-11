@@ -6486,7 +6486,10 @@
     }
     if (moduleKey === 'faults') {
       const records = (appData.faults || []).slice().sort(faultBoardOrder);
-      return faultFilter === 'all' ? records : records.filter(function (record) { return (record.status || 'ثبت‌شده') === faultFilter; });
+      // «باز» یک وضعیت ذخیره‌شده نیست؛ با همان قاعدهٔ جدول سنجیده می‌شود.
+      if (faultFilter === 'all') return records;
+      if (faultFilter === 'open') return records.filter(isFaultOpen);
+      return records.filter(function (record) { return (record.status || 'ثبت‌شده') === faultFilter; });
     }
     if (moduleKey === 'gasmeters') return visibleGasMeters();
     return recordsForView(moduleKey, appData);
