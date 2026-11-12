@@ -5517,7 +5517,7 @@
     renderGasRegistry(document.getElementById('sectionView'));
   });
 
-  // ── ایستگاه‌ها و مراکز: نقشهٔ شماتیک خطوط با جایگاه قابل کشیدن ──
+  // ── ایستگاه‌ها و مراکز: نقشهٔ خوزستان با جایگاه قابل کشیدن ──
   const STATION_TONES = ['info', 'ok', 'special', 'warn', 'accent', 'highlight'];
   const STATION_LINE_COLORS = ['#5b8def', '#2fbf71', '#b06bff', '#ffb020', '#ff6b6b', '#00c2c7'];
 
@@ -5536,6 +5536,33 @@
   }
 
   function stationClamp(value) { return Math.min(100, Math.max(0, value)); }
+
+  // نقشهٔ استان از design/khuzestan-map.js می‌آید؛ اگر بارگذاری نشده باشد، نقشه بدون مرز رسم می‌شود.
+  function khuzestanMap() {
+    const map = window.AtlasKhuzestan;
+    return map && typeof map.path === 'string' && Array.isArray(map.cities) ? map : null;
+  }
+
+  function stationCityAnchor(value) {
+    const map = khuzestanMap();
+    return map && typeof map.cityAnchor === 'function' ? map.cityAnchor(value) : null;
+  }
+
+  // چند ایستگاه در یک شهر روی یک نقطه نمی‌افتند؛ هر کدام کمی کنار لنگرگاه شهر می‌نشیند.
+  const STATION_CITY_OFFSETS = [
+    { x: 0, y: 0 }, { x: 6, y: 3.4 }, { x: -6, y: 3.4 }, { x: 6, y: -3.4 },
+    { x: 0, y: 6 }, { x: -6, y: -3.4 }, { x: 0, y: -6 }, { x: 7.6, y: 0 }, { x: -7.6, y: 0 }
+  ];
+
+  function stationCityPosition(record, slot) {
+    const city = stationCityAnchor(record && record.city);
+    if (!city) return null;
+    const offset = STATION_CITY_OFFSETS[Math.max(0, Number(slot) || 0) % STATION_CITY_OFFSETS.length];
+    return {
+      x: Number(stationClamp(city.x + offset.x).toFixed(1)),
+      y: Number(stationClamp(city.y + offset.y).toFixed(1))
+    };
+  }
 
   function branchPlacement(branch) {
     const x = stationCoord(branch && branch.x);
@@ -5590,11 +5617,30 @@
     return { x: Number((8 + (84 * index) / (total - 1)).toFixed(1)), y: index % 2 ? 64 : 36 };
   }
 
-  function stationPositions(groups) {
+  // جای پیش‌فرض هر گره: اول شهر ثبت‌شده، بعد چیدمان ساده برای ایستگاه‌های بدون شهر.
+  function stationDefaultPositions(groups) {
     const positions = {};
+    const citySlots = {};
     groups.forEach(function (group) {
       group.stops.forEach(function (stop, index) {
-        positions[stationStopKey(stop)] = branchPlacement(stop.branch) || stationAutoPosition(index, group.stops.length);
+        const anchor = stationCityAnchor(stop.record && stop.record.city);
+        const cityKey = String((anchor && anchor.name) || '');
+        const slot = citySlots[cityKey] || 0;
+        citySlots[cityKey] = slot + 1;
+        positions[stationStopKey(stop)] = stationCityPosition(stop.record, slot) || stationAutoPosition(index, group.stops.length);
+      });
+    });
+    return positions;
+  }
+
+  // جایگاه دستیِ ذخیره‌شده همیشه بر شهر مقدم است.
+  function stationPositions(groups) {
+    const defaults = stationDefaultPositions(groups);
+    const positions = {};
+    groups.forEach(function (group) {
+      group.stops.forEach(function (stop) {
+        const key = stationStopKey(stop);
+        positions[key] = branchPlacement(stop.branch) || defaults[key];
       });
     });
     return positions;
@@ -5644,13 +5690,40 @@
     }).join('');
   }
 
+  // شکل استان + نقطه و نام شهرهای اصلی، پشت گره‌ها.
+  function stationMapBaseMarkup() {
+    const map = khuzestanMap();
+    if (!map) return '';
+    const box = String(map.viewBox || '0 0 1000 1262').split(/\s+/).map(Number);
+    const width = box[2] || 1000;
+    const height = box[3] || 1262;
+    const dots = map.cities.filter(function (city) { return city && city.primary; }).map(function (city) {
+      const x = Number(city.x) * (width / 100);
+      const y = Number(city.y) * (height / 100);
+      const flip = Number(city.x) > 70;
+      const drop = Number(city.y) > 92;
+      return '<g class="station-city">' +
+        '<circle class="station-city-dot" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="8"></circle>' +
+        '<text class="station-city-label" x="' + (x + (flip ? -13 : 13)).toFixed(1) + '" y="' + (y + (drop ? -12 : 6)).toFixed(1) +
+        '" text-anchor="' + (flip ? 'end' : 'start') + '">' + esc(city.name) + '</text></g>';
+    }).join('');
+    return '<svg class="station-map-base" viewBox="' + esc(map.viewBox || '0 0 1000 1262') +
+      '" preserveAspectRatio="xMidYMid meet" role="img" aria-label="نقشهٔ استان خوزستان">' +
+      '<path class="station-map-province" d="' + esc(map.path) + '"></path>' + dots + '</svg>';
+  }
+
   function stationMapInner(records) {
     const groups = stationGroups(records);
     const positions = stationPositions(groups);
-    return '<svg class="station-map-canvas" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
+    const map = khuzestanMap();
+    const ratio = map && Number(map.aspect) > 0 ? Number(map.aspect) : 1000 / 1262;
+    return '<div class="station-map-frame" data-station-frame style="--station-map-ratio:' + ratio + '">' +
+      stationMapBaseMarkup() +
+      '<svg class="station-map-canvas" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
       stationLineMarkup(groups, positions) + '</svg>' +
       (groups.length ? stationNodeMarkup(groups, positions)
-        : '<div class="station-map-empty">هنوز ایستگاه یا مرکزی ثبت نشده است. با «+ ثبت ایستگاه / مرکز» شروع کنید.</div>');
+        : '<div class="station-map-empty">هنوز ایستگاه یا مرکزی ثبت نشده است. با «+ ثبت ایستگاه / مرکز» شروع کنید.</div>') +
+      '</div>';
   }
 
   function stationLegendMarkup(groups) {
@@ -5670,8 +5743,8 @@
     const groups = stationGroups(records);
     const hasBackup = !!(appData.settings && appData.settings.stationLayoutBackup);
     return '<section class="station-map-panel">' +
-      '<div class="station-map-head"><div><h3>نقشهٔ شماتیک خطوط و مراکز</h3>' +
-      '<p>هر مکان می‌تواند روی چند خط یا شاخه باشد. برای جابه‌جایی گره را بکش؛ برای دیدن اطلاعات کامل، روی آن بزن.</p></div>' +
+      '<div class="station-map-head"><div><h3>نقشهٔ خوزستان</h3>' +
+      '<p>جای هر ایستگاه از روی «شهر» ثبت‌شده‌اش روی نقشه می‌نشیند؛ برای دقیق‌ترکردن، گره را بکش و برای دیدن اطلاعات کامل روی آن بزن.</p></div>' +
       '<div class="station-map-tools">' +
       '<button type="button" class="secondary-btn" data-station-action="auto">چیدمان خودکار</button>' +
       (hasBackup ? '<button type="button" class="secondary-btn" data-station-action="restore-layout">بازگشت به چیدمان دستی</button>' : '') +
@@ -6007,7 +6080,8 @@
     });
     map.addEventListener('pointermove', function (event) {
       if (!drag) return;
-      const rect = map.getBoundingClientRect();
+      const frame = map.querySelector('[data-station-frame]') || map;
+      const rect = frame.getBoundingClientRect();
       if (!rect.width || !rect.height) return;
       drag.x = Math.round(Math.min(100, Math.max(0, ((event.clientX - rect.left) / rect.width) * 100)) * 10) / 10;
       drag.y = Math.round(Math.min(100, Math.max(0, ((event.clientY - rect.top) / rect.height) * 100)) * 10) / 10;
@@ -6043,7 +6117,7 @@
     if (!records.length) { toast('ابتدا یک ایستگاه یا مرکز ثبت کنید.'); return; }
     const approved = await askConfirm({
       title: 'چیدمان خودکار نقشه',
-      message: 'چیدمان دستی فعلی ذخیره می‌شود و هر زمان بخواهی می‌توانی به آن برگردی. چیدمان خودکار اعمال شود؟',
+      message: 'جایگاه دستی فعلی ذخیره می‌شود و ایستگاه‌ها بر اساس شهر ثبت‌شده‌شان روی نقشه می‌نشینند. چیدمان خودکار اعمال شود؟',
       confirmLabel: 'بله، چیدمان خودکار'
     });
     if (!approved) return;
@@ -6056,16 +6130,18 @@
       };
     });
     appData.settings.stationLayoutBackup = backup;
-    stationGroups(records).forEach(function (group) {
-      group.stops.forEach(function (stop, index) {
-        const point = stationAutoPosition(index, group.stops.length);
+    const groups = stationGroups(records);
+    const defaults = stationDefaultPositions(groups);
+    groups.forEach(function (group) {
+      group.stops.forEach(function (stop) {
+        const point = defaults[stationStopKey(stop)] || stationAutoPosition(0, 1);
         stationSetPlacement(stop.record, stop.branch.index, point.x, point.y);
         stop.record.updatedAt = new Date().toISOString();
       });
     });
     if (await saveState()) {
       render('stations', document.getElementById('sectionView'));
-      toast('چیدمان خودکار اعمال شد. اگر مطلوب نبود، «بازگشت به چیدمان دستی» را بزن.');
+      toast('ایستگاه‌ها بر اساس شهر روی نقشه چیده شدند. اگر مطلوب نبود، «بازگشت به چیدمان دستی» را بزن.');
     }
   }
 
