@@ -403,6 +403,34 @@
   color: var(--danger-strong);
 }
 
+/* پنجرهٔ «ثبت کیلومتر فعلی»: دو کادر کنار هم — خودرو سمت راست، کیلومتر سمت چپ. */
+.vehicle-km-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: end;
+}
+
+.vehicle-km-field > span {
+  font-size: .85rem;
+  color: var(--muted);
+}
+
+.vehicle-km-field select.atlas-dialog-input {
+  appearance: none;
+  cursor: pointer;
+}
+
+.vehicle-km-hint {
+  margin: 10px 0 0;
+  font-size: .8rem;
+  color: var(--muted);
+}
+
+@media (max-width: 480px) {
+  .vehicle-km-grid { grid-template-columns: 1fr; }
+}
+
 .atlas-dialog-text {
   margin: 0;
   padding: 12px;

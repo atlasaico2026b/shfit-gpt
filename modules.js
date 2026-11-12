@@ -473,7 +473,7 @@
         {key:'mainDriver',label:'راهبر اصلی این خودرو',type:'select',source:'employees'},
         {key:'secondaryDrivers',label:'راهبران فرعی',type:'multi-check',source:'employees',showChosen:true,wide:true},
         {key:'currentKm',label:'کیلومتر فعلی',type:'number',min:0},
-        {key:'currentKmRecordedAt',label:'زمان آخرین ثبت کیلومتر',type:'text',placeholder:'با ثبت کیلومتر به‌صورت خودکار ثبت می‌شود'},
+        {key:'currentKmRecordedAt',label:'زمان آخرین ثبت کیلومتر',type:'jalali-datetime',hint:'با ثبت کیلومتر — از فرم خودرو یا از دکمهٔ «ثبت کیلومتر فعلی» — خودکار پر می‌شود.'},
         {key:'nextServiceKm',label:'کیلومتر سرویس بعدی',type:'number',min:0,serviceNextKm:true,serviceKmFrom:'currentKm'},
         {key:'fuelAllowanceKm',label:'کیلومتر مبنای دریافت هزینه سوخت',type:'number',min:0},
         {key:'fuelKm',label:'کیلومتر ثبت سوخت',type:'number',min:0},
@@ -5052,9 +5052,10 @@
     { id:'stations', label:'ایستگاه / مرکز', tone:'info', view:'stations', icon:'stations' },
     { id:'gaslogs', label:'سابقهٔ گازسنج', tone:'highlight', view:'gaslogs', preset:{ logType:'ثبت قرائت' }, icon:'gaslogs' },
     { id:'vehicles', label:'خودرو', tone:'info', view:'vehicles', icon:'vehicles' },
+    { id:'vehiclekm', label:'ثبت کیلومتر فعلی', tone:'accent', view:'vehiclekm', icon:'odometer' },
     { id:'gasmeters', label:'گازسنج', tone:'highlight', view:'gasmeters', icon:'gasmeters' }
   ];
-  const QUICK_ADD_DEFAULT = ['employees','leaves','missions','notes','programs','maintenance','faults','stations','gaslogs'];
+  const QUICK_ADD_DEFAULT = ['employees','leaves','missions','notes','programs','maintenance','faults','stations','gaslogs','vehiclekm'];
 
   function quickAddCatalogItem(id) {
     return QUICK_ADD_CATALOG.filter(function (item) { return item.id === id; })[0] || null;
@@ -5073,7 +5074,9 @@
     });
     QUICK_ADD_CATALOG.forEach(function (item) {
       if (seen[item.id]) return;
-      out.push({ id: item.id, enabled: stored ? false : QUICK_ADD_DEFAULT.indexOf(item.id) >= 0 });
+      // دکمه‌ای که در تنظیمات ذخیره‌شده نیست (مثل دکمه‌های تازه‌افزوده) با
+      // وضعیت پیش‌فرض خودش می‌آید تا از نوار ثبت سریع جا نماند.
+      out.push({ id: item.id, enabled: QUICK_ADD_DEFAULT.indexOf(item.id) >= 0 });
     });
     return out;
   }
@@ -5100,6 +5103,118 @@
       ? enabled.map(quickAddButtonMarkup).join('')
       : '<p class="quick-add-empty">هیچ دکمهٔ ثبت سریعی فعال نیست. از تنظیمات › «ثبت سریع داشبورد» یکی را روشن کن.</p>';
   }
+
+  // ── ثبت کیلومتر فعلی (از نوار ثبت سریع) ───────────────────────────────────
+  // پنجرهٔ کوچک با دو کادر: سمت راست انتخاب خودرو، سمت چپ کیلومتر لحظه‌ای.
+  // با ذخیره، همین عدد با تاریخ و ساعت همین لحظه به‌عنوان «کیلومتر فعلی» خودرو
+  // ثبت می‌شود؛ همان مقداری که فرم خودرو، پرونده، کارتکس سرویس و پیشنهاد
+  // کیلومتر سرویس بعدی از آن می‌خوانند.
+  function vehicleKmLabel(vehicle) {
+    return [vehicle.name, vehicle.companyPlate].filter(Boolean).join(' · ') || 'خودرو بدون نام';
+  }
+
+  function vehicleKmHint(vehicle) {
+    if (!vehicle) return 'خودرو را از فهرست انتخاب کن.';
+    const km = Number(vehicle.currentKm);
+    const hasKm = vehicle.currentKm !== '' && vehicle.currentKm != null && Number.isFinite(km);
+    if (!hasKm) return 'برای این خودرو هنوز کیلومتری ثبت نشده است.';
+    const when = vehicle.currentKmRecordedAt ? formatJalali(vehicle.currentKmRecordedAt, true) : '';
+    return 'آخرین کیلومتر ثبت‌شده: ' + faDigits(km) + ' کیلومتر' + (when ? ' · ' + when : '');
+  }
+
+  function openVehicleKmDialog() {
+    const vehicles = (appData.vehicles || []).slice().sort(function (a, b) {
+      return String(a.name || '').localeCompare(String(b.name || ''), 'fa', { numeric: true });
+    });
+    if (!vehicles.length) {
+      toast('هنوز خودرویی ثبت نشده است؛ اول از بخش خودروها یک خودرو اضافه کن.');
+      return;
+    }
+    const options = vehicles.map(function (vehicle) {
+      return '<option value="' + esc(vehicle.id) + '">' + esc(vehicleKmLabel(vehicle)) + '</option>';
+    }).join('');
+    const body =
+      '<div class="vehicle-km-grid">' +
+        '<label class="atlas-dialog-field vehicle-km-field"><span>خودرو</span>' +
+          '<select class="atlas-dialog-input" data-vehicle-km-vehicle>' + options + '</select></label>' +
+        '<label class="atlas-dialog-field vehicle-km-field"><span>کیلومتر لحظه‌ای</span>' +
+          '<input class="atlas-dialog-input" type="text" inputmode="numeric" data-digits-only="1" data-vehicle-km-value placeholder="مثلاً ۱۲۳۴۵"></label>' +
+      '</div>' +
+      '<p class="vehicle-km-hint" data-vehicle-km-hint></p>' +
+      '<p class="atlas-dialog-error" data-vehicle-km-error hidden></p>';
+    const backdrop = dialogShell({
+      title: 'ثبت کیلومتر فعلی',
+      message: 'کیلومتر لحظه‌ای خودرو را وارد کن؛ با تاریخ و ساعت همین لحظه به‌عنوان آخرین کیلومتر ثبت می‌شود.',
+      body: body,
+      confirmLabel: 'ذخیرهٔ کیلومتر'
+    });
+    const select = backdrop.querySelector('[data-vehicle-km-vehicle]');
+    const input = backdrop.querySelector('[data-vehicle-km-value]');
+    const hint = backdrop.querySelector('[data-vehicle-km-hint]');
+    const error = backdrop.querySelector('[data-vehicle-km-error]');
+    let lowerConfirmed = false;
+
+    function currentVehicle() {
+      return (appData.vehicles || []).find(function (item) { return String(item.id) === String(select.value); }) || null;
+    }
+    function fail(message) {
+      error.textContent = message;
+      error.hidden = false;
+    }
+    function refreshHint() {
+      hint.textContent = vehicleKmHint(currentVehicle());
+      lowerConfirmed = false;
+      error.hidden = true;
+    }
+
+    select.addEventListener('change', refreshHint);
+    input.addEventListener('input', function () { lowerConfirmed = false; error.hidden = true; });
+    refreshHint();
+
+    backdrop.querySelectorAll('[data-dialog-cancel]').forEach(function (btn) {
+      btn.addEventListener('click', function () { backdrop.remove(); });
+    });
+
+    backdrop.querySelector('[data-dialog-ok]').addEventListener('click', async function () {
+      const vehicle = currentVehicle();
+      if (!vehicle) { fail('خودرو را از فهرست انتخاب کن.'); return; }
+      const raw = persianDigitsToLatin(input.value).trim();
+      const km = Number(raw);
+      if (!raw || !Number.isFinite(km) || km < 0) {
+        fail('کیلومتر را به‌صورت یک عدد مثبت وارد کن.');
+        input.focus();
+        return;
+      }
+      const previous = Number(vehicle.currentKm);
+      const hasPrevious = vehicle.currentKm !== '' && vehicle.currentKm != null && Number.isFinite(previous);
+      if (hasPrevious && km < previous && !lowerConfirmed) {
+        lowerConfirmed = true;
+        fail('این عدد از آخرین کیلومتر ثبت‌شده (' + faDigits(previous) + ') کمتر است. اگر مطمئنی، دوباره «ذخیرهٔ کیلومتر» را بزن.');
+        return;
+      }
+      const now = new Date().toISOString();
+      const stamp = formatJalali(now, true);
+      vehicle.currentKm = km;
+      vehicle.currentKmRecordedAt = now;
+      vehicle.updatedAt = now;
+      vehicle.maintenanceLog = [String(vehicle.maintenanceLog || '').trim(), stamp + ' | کیلومتر ' + km].filter(Boolean).join('\n');
+      addHistory('vehicles', vehicle, 'ثبت کیلومتر', [{ field: 'کیلومتر فعلی', before: hasPrevious ? previous : '—', after: km }]);
+      const ok = await saveState();
+      if (!ok) { fail('ذخیره انجام نشد؛ اطلاعات روی این دستگاه نوشته نشد.'); return; }
+      backdrop.remove();
+      refreshCurrentView();
+      refreshDashboard();
+      toast('کیلومتر ' + faDigits(km) + ' برای ' + vehicleKmLabel(vehicle) + ' ثبت شد.');
+    });
+
+    input.focus();
+  }
+
+  document.addEventListener('click', function (event) {
+    if (!event.target.closest('[data-quick-add="vehiclekm"]')) return;
+    event.preventDefault();
+    openVehicleKmDialog();
+  });
 
   function quickAddEditorMarkup() {
     const items = quickAddState();
@@ -8634,6 +8749,9 @@
           const stamp=formatJalali(new Date().toISOString(),true);
           const entry=stamp+' | کیلومتر '+String(record.currentKm||'ثبت‌نشده');
           record.maintenanceLog=[String(record.maintenanceLog||'').trim(),entry].filter(Boolean).join('\n');
+        } else if(moduleKey==='vehicles'&&!record.currentKmRecordedAt&&old&&old.currentKmRecordedAt){
+          // کیلومتر عوض نشده و کادر زمان خالی مانده؛ زمان ثبت قبلی حفظ می‌شود.
+          record.currentKmRecordedAt=old.currentKmRecordedAt;
         }
         const customFields={};
         fieldsFor(moduleKey).filter(function(field){return field.custom;}).forEach(function(field){customFields[field.key]=values[field.key]||'';delete record[field.key];});
