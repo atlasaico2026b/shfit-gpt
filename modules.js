@@ -1196,6 +1196,91 @@
     return (field.options || []).map(function (option) { return {value:option,label:option}; });
   }
 
+  // ── بازهٔ سرویس دوره‌ای (پیشنهاد کیلومتر سرویس بعدی) ──────────────────────
+  // برای هر «نوع سرویس» می‌شود یک بازهٔ کیلومتری تعیین کرد (تنظیمات › تنظیمات
+  // سرویس‌ها؛ مثل تعویض روغن ۵۰۰۰ یا تسمه تایم ۴۰۰۰۰). در فرم ثبت سرویس، این
+  // بازه با «کیلومتر در زمان سرویس» — و اگر خالی بود، کارکرد فعلی خودرو — جمع
+  // می‌شود و به‌عنوان پیشنهاد فیلد «کیلومتر سرویس بعدی» ارائه می‌شود؛ کاربر
+  // می‌تواند پیشنهاد را با یک کلیک درج کند یا عدد خودش را بنویسد.
+  function serviceIntervals() {
+    const map = appData.references.maintenanceIntervals;
+    return map && typeof map === 'object' ? map : {};
+  }
+
+  function serviceIntervalFor(type) {
+    const raw = serviceIntervals()[String(type == null ? '' : type).trim()];
+    const num = Number(persianDigitsToLatin(String(raw == null ? '' : raw)).replace(/[^\d]/g, ''));
+    return num > 0 ? num : 0;
+  }
+
+  async function setServiceInterval(type, km) {
+    const key = String(type == null ? '' : type).trim();
+    if (!key) return false;
+    const map = serviceIntervals();
+    if (km > 0) map[key] = km; else delete map[key];
+    appData.references.maintenanceIntervals = map;
+    const ok = await saveState();
+    if (ok) toast(km > 0 ? 'بازهٔ «' + key + '» روی ' + faDigits(km) + ' کیلومتر ذخیره شد.' : 'پیشنهاد «' + key + '» برداشته شد.');
+    return ok;
+  }
+
+  // نام‌های شناخته‌شدهٔ نوع سرویس: فهرست مدیریت‌شدهٔ «نوع سرویس و تعمیر» +
+  // مقادیری که فقط در سوابق قدیمی مانده‌اند تا بازه‌شان هم قابل تنظیم بماند.
+  function knownMaintenanceTypes() {
+    const out = [];
+    const push = function (value) {
+      const text = String(value == null ? '' : value).trim();
+      if (text && out.indexOf(text) < 0) out.push(text);
+    };
+    const typeField = ((specs.maintenance || {}).fields || []).filter(function (item) { return item.listKey === 'maintenanceTypes'; })[0];
+    if (Array.isArray(appData.references.maintenanceTypes)) appData.references.maintenanceTypes.forEach(push);
+    else if (typeField && Array.isArray(typeField.options)) typeField.options.forEach(push);
+    (appData.maintenance || []).forEach(function (record) { push(record && record.type); });
+    return out.sort(function (a, b) { return a.localeCompare(b, 'fa'); });
+  }
+
+  function parseKmValue(value) {
+    const num = Number(persianDigitsToLatin(String(value == null ? '' : value)).replace(/[^\d]/g, ''));
+    return Number.isFinite(num) && num > 0 ? num : 0;
+  }
+
+  // پیشنهاد = بازهٔ نوع سرویس + کیلومتر مبنا (کیلومتر سرویس؛ اگر خالی بود،
+  // کارکرد فعلی خودروی انتخاب‌شده). اگر هیچ‌کدام در دسترس نبود، پیشنهادی نیست.
+  function kmSuggestInfo(type, kmValue, vehicleId) {
+    const typeText = String(type == null ? '' : type).trim();
+    const interval = serviceIntervalFor(typeText);
+    if (!interval) return null;
+    let base = parseKmValue(kmValue);
+    let baseLabel = 'کیلومتر سرویس';
+    if (!base && vehicleId != null && String(vehicleId) !== '') {
+      const vehicle = (appData.vehicles || []).filter(function (item) { return String(item.id) === String(vehicleId); })[0];
+      if (vehicle) {
+        base = parseKmValue(vehicle.currentKm);
+        baseLabel = 'کارکرد فعلی خودرو';
+      }
+    }
+    if (!base) return null;
+    return { total: base + interval, base: base, baseLabel: baseLabel, interval: interval, type: typeText };
+  }
+
+  function kmSuggestLabel(info) {
+    return 'درج پیشنهاد: ' + faDigits(info.total) + ' کیلومتر (' + faDigits(info.base) + ' ' + info.baseLabel +
+      ' + بازهٔ ' + faDigits(info.interval) + ' کیلومتر «' + info.type + '»)';
+  }
+
+  // پیشنهادِ بازِ فرم سرویس را از نو حساب می‌کند (نوع سرویس، کیلومتر یا خودرو تغییر کرده).
+  function refreshKmSuggest(form) {
+    if (!form || form.dataset.view !== 'maintenance') return;
+    const btn = form.querySelector('[data-km-suggest]');
+    if (!btn) return;
+    const value = function (name) { const box = form.querySelector('[name="' + name + '"]'); return box ? box.value : ''; };
+    const info = kmSuggestInfo(value('type'), value('km'), value('vehicleId'));
+    if (!info) { btn.hidden = true; return; }
+    btn.hidden = false;
+    btn.textContent = kmSuggestLabel(info);
+    btn.dataset.kmValue = String(info.total);
+  }
+
   // فیلدهای وابسته به نوع محل: فقط وقتی نوع انتخاب‌شده با شرط فیلد بخواند دیده می‌شوند.
   // فیلدهای وابستهٔ عمومی (مثل «تعداد فرزند» پس از «متأهل») هم همین‌جا بررسی می‌شوند.
   // شرط دیده‌شدن یک فیلد می‌تواند یک شرط یا چند شرط هم‌زمان باشد
@@ -1582,6 +1667,14 @@
           '<button type="button" class="module-number-step" data-number-step="1" aria-label="افزایش ' + esc(field.label) + '">+</button>' +
           '</span>'
         : input;
+    }
+    // «کیلومتر سرویس بعدی» (دفتر سرویس): پیشنهادِ بازهٔ تنظیم‌شدهٔ نوع سرویس +
+    // کیلومتر مبنا؛ با تغییر نوع سرویس یا کیلومتر، زنده به‌روز می‌شود.
+    if (moduleKey === 'maintenance' && field.key === 'nextServiceKm') {
+      const info = kmSuggestInfo(record && record.type, record && record.km, record && record.vehicleId);
+      control += '<button type="button" class="module-km-suggest" data-km-suggest' +
+        (info ? ' data-km-value="' + esc(info.total) + '"' : ' hidden') + '>' +
+        esc(info ? kmSuggestLabel(info) : '') + '</button>';
     }
     if (field.type === 'select' && field.listKey && !field.multiple) control = '<span class="module-select-with-add">' + control + '</span>';
     const shown = fieldVisible(field, record || {});
@@ -2657,6 +2750,7 @@
     { id: 'places', title: 'مکان‌های ایستگاه', icon: '⚑' },
     { id: 'dashboard', title: 'تنظیمات داشبورد', icon: '▦' },
     { id: 'quickadd', title: 'ثبت سریع داشبورد', icon: '⚡' },
+    { id: 'services', title: 'تنظیمات سرویس‌ها', icon: '⟳' },
     { id: 'backup', title: 'پشتیبان‌گیری و ذخیره‌سازی', icon: '⤓' }
   ];
 
@@ -2697,6 +2791,36 @@
       '</div></details>';
   }
 
+  // تنظیمات سرویس‌ها: بازهٔ کیلومتری پیشنهادی هر نوع سرویس. نوع‌ها از فهرست
+  // «نوع سرویس و تعمیر» می‌آیند (و از همین‌جا هم قابل افزودن‌اند)؛ بازهٔ هر نوع
+  // در نقشهٔ references.maintenanceIntervals می‌ماند و در پشتیبان هم می‌آید.
+  function serviceIntervalsMarkup() {
+    const types = knownMaintenanceTypes();
+    const intervals = serviceIntervals();
+    const rows = types.map(function (type) {
+      const current = intervals[type];
+      return '<div class="service-interval-row">' +
+        '<span class="service-interval-name">' + esc(type) + '</span>' +
+        '<span class="service-interval-number">' +
+          '<input type="number" min="0" inputmode="numeric" data-interval-input="' + esc(type) + '" value="' +
+          esc(current == null ? '' : current) + '" placeholder="بدون پیشنهاد" aria-label="بازهٔ کیلومتری «' + esc(type) + '»">' +
+          '<small class="module-field-hint">کیلومتر</small>' +
+        '</span>' +
+      '</div>';
+    }).join('');
+    return '<section class="module-list-panel">' +
+      '<div class="module-list-head"><div><h3>تنظیمات سرویس‌ها (بازهٔ کیلومتری)</h3>' +
+      '<p>برای هر نوع سرویس یک بازهٔ کیلومتری تعیین کن؛ در فرم ثبت سرویس، این عدد با «کیلومتر در زمان سرویس» — و اگر خالی بود، کارکرد فعلی خودرو — جمع می‌شود و به‌عنوان پیشنهادِ «کیلومتر سرویس بعدی» ارائه می‌شود؛ پیشنهاد را می‌توانی با یک کلیک درج کنی یا عدد خودت را بنویسی. خالی بگذاری = بدون پیشنهاد.</p></div></div>' +
+      '<div class="service-interval-list">' + (rows || '<div class="module-empty">هنوز نوع سرویسی تعریف نشده است.</div>') + '</div>' +
+      '<div class="service-interval-add">' +
+        '<input type="text" data-interval-new-name placeholder="نوع سرویس جدید (مثلاً تعویض تسمه تایم)" aria-label="نام نوع سرویس جدید">' +
+        '<input type="number" min="0" inputmode="numeric" data-interval-new-km placeholder="بازه (کیلومتر)" aria-label="بازهٔ کیلومتری نوع سرویس جدید">' +
+        '<button type="button" class="primary-btn" data-module-action="service-interval-add">+ افزودن</button>' +
+      '</div>' +
+      '<p class="reference-hint">نام انواع سرویس در تب «منوها و فهرست‌ها» › «انواع و دسته‌بندی‌ها» › «نوع سرویس و تعمیر» ویرایش یا حذف می‌شود؛ بازهٔ هر نام کنارش حفظ می‌شود. افزودن از همین‌جا همان فهرست را کامل می‌کند.</p>' +
+      '</section>';
+  }
+
   function settingsPaneMarkup(id) {
     if (id === 'lists') return referenceManagerMarkup();
     if (id === 'places') {
@@ -2704,6 +2828,7 @@
     }
     if (id === 'dashboard') return dashboardEditorMarkup();
     if (id === 'quickadd') return quickAddEditorMarkup();
+    if (id === 'services') return serviceIntervalsMarkup();
     return backupSectionMarkup();
   }
 
@@ -2885,8 +3010,8 @@
   }
 
   // هر فهرستی که در فرم‌ها استفاده شود، حتی اگر هنوز ساخته نشده باشد، در تنظیمات دیده می‌شود.
-  // مخازن ساختاری (نقشهٔ مکان‌ها، رنگ خطوط) فهرست کشویی نیستند و در تنظیمات نمی‌آیند.
-  const REFERENCE_NON_LISTS = ['placesByType', 'lineColors'];
+  // مخازن ساختاری (نقشهٔ مکان‌ها، رنگ خطوط، نقشهٔ بازهٔ سرویس‌ها) فهرست کشویی نیستند و در تنظیمات نمی‌آیند.
+  const REFERENCE_NON_LISTS = ['placesByType', 'lineColors', 'maintenanceIntervals'];
 
   function referenceKeys(target){
     const refs=(target||appData).references||{};
@@ -3493,7 +3618,7 @@
       : '<div class="module-empty">اول خودروها را ثبت کن؛ بعد سوابق اشکالات هر خودرو اینجا باز می‌شود.</div>';
     faultFormScope = 'vehicle';
     section.innerHTML = rootWrap(
-      pageHead('سوابق <span style="color:var(--tone-7)">اشکالات خودروها</span>', 'روی هر خودرو بزن تا سوابق اشکالات همان خودرو در پنجره باز شود؛ هر عنوان خودش مرتب می‌کند', customExportMenu('faults-vehicles')) +
+      pageHead('سوابق <span style="color:var(--tone-7)">اشکالات خودرو</span>', 'روی هر خودرو بزن تا سوابق اشکالات همان خودرو در پنجره باز شود؛ هر عنوان خودش مرتب می‌کند', customExportMenu('faults-vehicles')) +
       vehicleTabBar() +
       '<div class="stat-row fault-kpis">' + kpis + '</div>' +
       renderForm('faults', appData) +
@@ -5153,7 +5278,7 @@
         if (!vehicle) return;
         runExport(serviceLogExportRows(serviceLogsOfVehicle(vehicle.id)), 'سوابق سرویس ' + [vehicle.name, vehicle.companyPlate].filter(Boolean).join(' · ') + ' · ATLAS SHIFT', 'ATLAS-SHIFT-servicebook-' + exportSlug(vehicle.companyPlate || vehicle.name, vehicle.id) + '-' + todayIso(), format);
       } else if (kind === 'faults-vehicles') {
-        runExport(faultVehicleExportRows(faultCountsByVehicle()), 'سوابق اشکالات خودروها · ATLAS SHIFT', 'ATLAS-SHIFT-faults-vehicles-' + todayIso(), format);
+        runExport(faultVehicleExportRows(faultCountsByVehicle()), 'سوابق اشکالات خودرو · ATLAS SHIFT', 'ATLAS-SHIFT-faults-vehicles-' + todayIso(), format);
       } else if (kind === 'faults-vehicle') {
         const vehicleId = String(custom.dataset.vehicle || '');
         const vehicle = (appData.vehicles || []).find(function (item) { return String(item.id) === vehicleId; });
@@ -7897,12 +8022,27 @@
             });
           });
         });
+        // بازهٔ کیلومتری تنظیم‌شدهٔ این نوع سرویس هم با نام تازه منتقل می‌شود.
+        if(listKey==='maintenanceTypes'){
+          const intervals=serviceIntervals();
+          if(Object.prototype.hasOwnProperty.call(intervals,previous)){
+            intervals[next]=intervals[previous];
+            delete intervals[previous];
+            appData.references.maintenanceIntervals=intervals;
+          }
+        }
         if(await saveState()){refreshReferenceCard(listKey);toast('نام گزینه اصلاح شد.'+sharedNote);}
         return;
       }
       if(action==='reference-delete'){
         if(!(await askConfirm({title:'حذف گزینه از «'+title+'»',message:'گزینه از این فهرست مشترک حذف شود؟ سوابق قبلی و مقدارهای ثبت‌شده پاک نمی‌شوند.',confirmLabel:'حذف',danger:true})))return;
-        list.splice(i,1);
+        const removed=list.splice(i,1)[0];
+        // نوع سرویس حذف شد؛ بازهٔ کیلومتری تنظیم‌شده‌اش هم معنا ندارد و برداشته می‌شود.
+        if(listKey==='maintenanceTypes'&&removed&&Object.prototype.hasOwnProperty.call(serviceIntervals(),removed)){
+          const intervals=serviceIntervals();
+          delete intervals[removed];
+          appData.references.maintenanceIntervals=intervals;
+        }
         if(await saveState()){refreshReferenceCard(listKey);toast('گزینه حذف شد.'+sharedNote);}
         return;
       }
@@ -7912,6 +8052,27 @@
       list[nextIndex]=list[i];
       list[i]=swap;
       if(await saveState())refreshReferenceCard(listKey);
+      return;
+    }
+    if(action==='service-interval-add'){
+      // افزودن نوع سرویس تازه همراه بازهٔ کیلومتری آن؛ نام به فهرست مشترک
+      // «نوع سرویس و تعمیر» می‌رود تا در فرم ثبت سرویس هم قابل انتخاب باشد.
+      const pane=button.closest('.module-list-panel');
+      const nameBox=pane&&pane.querySelector('[data-interval-new-name]');
+      const kmBox=pane&&pane.querySelector('[data-interval-new-km]');
+      const name=String(nameBox&&nameBox.value||'').trim();
+      if(!name){toast('نام نوع سرویس را وارد کن.');if(nameBox)nameBox.focus();return;}
+      if(!Array.isArray(appData.references.maintenanceTypes))appData.references.maintenanceTypes=referenceDefaultsFor('maintenanceTypes');
+      if(appData.references.maintenanceTypes.includes(name)){toast('این نوع سرویس از قبل وجود دارد.');if(nameBox)nameBox.select();return;}
+      appData.references.maintenanceTypes.push(name);
+      const km=parseKmValue(kmBox&&kmBox.value);
+      const intervals=serviceIntervals();
+      if(km>0)intervals[name]=km;else delete intervals[name];
+      appData.references.maintenanceIntervals=intervals;
+      if(await saveState()){
+        refreshCurrentView();
+        toast('نوع سرویس «'+name+'» افزوده شد'+(km>0?' با بازهٔ '+faDigits(km)+' کیلومتر.':'.'));
+      }
       return;
     }
     if(action==='custom-field-add'||action==='custom-field-remove'){
@@ -9244,6 +9405,41 @@
     if (!box) return;
     const clean = persianDigitsToLatin(box.value).replace(/\D/g, '');
     if (clean !== box.value) box.value = clean;
+  });
+
+  // ── پیشنهاد کیلومتر سرویس بعدی ────────────────────────────────
+  // با هر تغییری در فرم سرویس (نوع سرویس، کیلومتر، خودرو) پیشنهاد از نو حساب
+  // می‌شود؛ «change» هم گوش می‌دهد چون برخی کشویی‌ها و دکمه‌های ± آن را می‌دهند.
+  // تغییر بازهٔ کیلومتری در «تنظیمات سرویس‌ها» فقط با پایان ویرایش (change)
+  // ذخیره می‌شود تا هر کلید یک ذخیره/toast نسازد.
+  document.addEventListener('input', function (event) {
+    const box = event.target;
+    if (!box || !box.closest) return;
+    const form = box.closest('[data-module-form]');
+    if (form && form.dataset.view === 'maintenance') refreshKmSuggest(form);
+  });
+  document.addEventListener('change', function (event) {
+    const box = event.target;
+    if (!box || !box.closest) return;
+    const form = box.closest('[data-module-form]');
+    if (form && form.dataset.view === 'maintenance') refreshKmSuggest(form);
+    const intervalBox = box.closest('[data-interval-input]');
+    if (intervalBox) setServiceInterval(intervalBox.dataset.intervalInput || '', parseKmValue(intervalBox.value));
+  });
+
+  // درج پیشنهاد در فیلد «کیلومتر سرویس بعدی»: عدد پیشنهادی با یک کلیک می‌نشیند؛
+  // کاربر می‌تواند بعدش دستی هم تغییرش دهد.
+  document.addEventListener('click', function (event) {
+    const btn = event.target.closest ? event.target.closest('[data-km-suggest]') : null;
+    if (!btn || btn.hidden) return;
+    // دکمه داخل برچسب فیلد است؛ جلوگیری از فعال‌سازی پیش‌فرض برچسب.
+    event.preventDefault();
+    const form = btn.closest('[data-module-form]');
+    const box = form ? form.querySelector('[name="nextServiceKm"]') : null;
+    if (!box) return;
+    box.value = String(btn.dataset.kmValue || '');
+    box.focus();
+    if (box.select) box.select();
   });
 
   // بخش‌های رقمی پلاک: فقط رقم می‌پذیرند، رقم لاتین به فارسی تبدیل می‌شود و با

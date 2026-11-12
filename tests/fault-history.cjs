@@ -108,6 +108,12 @@ check('استایل خط زمانی در CSS هست', /\.fault-timeline\b/.test(
 check('استایل فرم مرحله در CSS هست', /\.fault-stage-grid\b/.test(css));
 check('خط زمانی در گوشی تک‌ستونه می‌شود', /@media \(max-width: 640px\)[\s\S]{0,200}\.fault-stage-grid \{\s*grid-template-columns: 1fr/.test(css));
 
+// ── عنوان صفحه ──
+check('عنوان صفحه «سوابق اشکالات خودرو» است (نه «خودروها»)',
+  /pageHead\('سوابق <span style="color:var\(--tone-7\)">اشکالات خودرو<\/span>'/.test(modules));
+check('عنوان خروجی هم «سوابق اشکالات خودرو» است',
+  /'سوابق اشکالات خودرو · ATLAS SHIFT'/.test(modules));
+
 const failed = checks.filter((c) => !c.ok);
 checks.forEach((c) => console.log((c.ok ? '✓' : '✗') + ' ' + c.name + (c.ok ? '' : '  → ' + c.extra)));
 console.log('\n' + (checks.length - failed.length) + '/' + checks.length + ' بررسی موفق');

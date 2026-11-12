@@ -133,6 +133,49 @@
 .reference-add input:focus { outline: none; border-color: rgba(var(--accent-rgb), 0.55); }
 .reference-add .primary-btn { flex: 0 0 auto; padding: 8px 13px; font-size: 10.5px; }
 
+/* تنظیمات سرویس‌ها: هر نوع سرویس یک ردیف با کادر بازهٔ کیلومتری. */
+.service-interval-list { display: grid; grid-template-columns: 1fr; gap: 6px; }
+.service-interval-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 9px;
+  border: 1px solid rgba(var(--c-white-rgb), 0.07);
+  border-radius: 10px;
+  background: rgba(var(--c-white-rgb), 0.02);
+}
+.service-interval-name { min-width: 0; font-size: 11px; color: var(--text); }
+.service-interval-number { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; }
+.service-interval-number input {
+  width: 96px;
+  padding: 7px 9px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(var(--c-white-rgb), 0.04);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 11px;
+  text-align: center;
+}
+.service-interval-number input:focus { outline: none; border-color: rgba(var(--accent-rgb), 0.55); }
+.service-interval-number .module-field-hint { margin: 0; font-size: 9.5px; }
+.service-interval-add { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+.service-interval-add input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(var(--c-white-rgb), 0.04);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 11px;
+}
+.service-interval-add input[type="number"] { flex: 0 1 130px; text-align: center; }
+.service-interval-add input:focus { outline: none; border-color: rgba(var(--accent-rgb), 0.55); }
+.service-interval-add .primary-btn { flex: 0 0 auto; padding: 8px 13px; font-size: 10.5px; }
+
 /* ─────────────────────────────────────────────────────────────
    ۳ · تنظیمات داشبورد: شبکهٔ ویرایش چیدمان
    ───────────────────────────────────────────────────────────── */
