@@ -1715,9 +1715,20 @@
     section.style.overflow = 'visible';
   }
 
+  // عنوان صفحه: همهٔ متن فرار می‌شود، جز نشانهٔ رنگی ثابتِ
+  // <span style="color:var(--tone-7)">…</span> که چند عنوان برای برجسته‌کردن بخش
+  // دومشان به کار می‌برند. پیش‌تر همین نشانه به‌صورت متن خام در تیتر دیده می‌شد.
+  const PAGE_ACCENT_OPEN = '<span style="color:var(--tone-7)">';
+  function pageHeadTitle(title) {
+    const escapedOpen = esc(PAGE_ACCENT_OPEN);
+    return esc(title)
+      .split(escapedOpen).join(PAGE_ACCENT_OPEN)
+      .replace(/&lt;\/span&gt;/g, '</span>');
+  }
+
   function pageHead(title, subtitle, actions) {
     return '<div class="module-page-head" style="width:100%;min-width:0"><div><span class="module-overline">ATLAS SHIFT / مدیریت عملیات</span>' +
-      '<h2>' + esc(title) + '</h2><p>' + esc(subtitle) + '</p></div><div class="module-page-actions">' + actions + '</div></div>';
+      '<h2>' + pageHeadTitle(title) + '</h2><p>' + esc(subtitle) + '</p></div><div class="module-page-actions">' + actions + '</div></div>';
   }
 
   // چیدمان پنجره: هر ردیف یک شبکهٔ مستقل است تا همان ترتیب خواسته‌شده حفظ شود و
@@ -3648,7 +3659,7 @@
       : '<div class="module-empty">اول خودروها را ثبت کن؛ بعد سوابق اشکالات هر خودرو اینجا باز می‌شود.</div>';
     faultFormScope = 'vehicle';
     section.innerHTML = rootWrap(
-      pageHead('سوابق <span style="color:var(--tone-7)">اشکالات خودروها</span>', 'روی هر خودرو بزن تا سوابق اشکالات همان خودرو در پنجره باز شود؛ هر عنوان خودش مرتب می‌کند', customExportMenu('faults-vehicles')) +
+      pageHead('سوابق <span style="color:var(--tone-7)">اشکالات خودرو</span>', 'روی هر خودرو بزن تا سوابق اشکالات همان خودرو در پنجره باز شود؛ هر عنوان خودش مرتب می‌کند', customExportMenu('faults-vehicles')) +
       vehicleTabBar() +
       '<div class="stat-row fault-kpis">' + kpis + '</div>' +
       renderForm('faults', appData) +
@@ -4374,7 +4385,7 @@
         '</div></article>';
     }).join('') : '<div class="module-empty">برای این دستگاه هنوز سابقه‌ای ثبت نشده است.</div>';
     section.innerHTML = rootWrap(
-      pageHead('سوابق ' + esc(gasMeterName(meter)), 'تاریخ، محل استقرار، سلامت و کالیبراسیون در هر ثبت', customExportMenu('gaslogs-meter', meter.id)) +
+      pageHead('سوابق ' + gasMeterName(meter), 'تاریخ، محل استقرار، سلامت و کالیبراسیون در هر ثبت', customExportMenu('gaslogs-meter', meter.id)) +
       gasTabBar() +
       '<div class="gaslog-detail-bar"><button type="button" class="secondary-btn" data-gaslog-back>‹ بازگشت به فهرست گازسنج‌ها</button>' +
       '<button type="button" class="primary-btn" data-gas-action="log" data-gas="' + esc(meter.id) + '">+ ثبت سابقه برای این دستگاه</button></div>' +
@@ -5455,7 +5466,7 @@
         if (!vehicle) return;
         runExport(serviceLogExportRows(serviceLogsOfVehicle(vehicle.id)), 'سوابق سرویس ' + [vehicle.name, vehicle.companyPlate].filter(Boolean).join(' · ') + ' · ATLAS SHIFT', 'ATLAS-SHIFT-servicebook-' + exportSlug(vehicle.companyPlate || vehicle.name, vehicle.id) + '-' + todayIso(), format);
       } else if (kind === 'faults-vehicles') {
-        runExport(faultVehicleExportRows(faultCountsByVehicle()), 'سوابق اشکالات خودروها · ATLAS SHIFT', 'ATLAS-SHIFT-faults-vehicles-' + todayIso(), format);
+        runExport(faultVehicleExportRows(faultCountsByVehicle()), 'سوابق اشکالات خودرو · ATLAS SHIFT', 'ATLAS-SHIFT-faults-vehicles-' + todayIso(), format);
       } else if (kind === 'faults-vehicle') {
         const vehicleId = String(custom.dataset.vehicle || '');
         const vehicle = (appData.vehicles || []).find(function (item) { return String(item.id) === vehicleId; });
