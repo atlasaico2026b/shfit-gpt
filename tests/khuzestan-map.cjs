@@ -8,6 +8,7 @@ const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
 
 const modules = read('modules.js');
 const css = read('design/stations.css');
+const baseCss = read('design/styles.css');
 const html = read('index.html');
 const sw = read('sw.js');
 const assetSource = read('design/khuzestan-map.js');
@@ -120,14 +121,19 @@ check('دانلود از تنظیمات نقشه هم انجام می‌شود',
 
 // ── استایل ──
 check('استایل قاب نقشه با aspect-ratio هست', /\.station-map-frame\s*\{[^}]*aspect-ratio:\s*var\(--station-map-ratio/.test(css));
-check('قاب نقشه بزرگ‌تر از قبل است (سقف ارتفاع)', /width:min\(100%, calc\(min\(76vh, 860px\)/.test(css));
+check('قاب نقشه بزرگ‌تر از قبل است (سقف ارتفاع)', /width:min\(100%, calc\(min\(84vh, 1040px\)/.test(css));
 check('قاب نقشه با متغیرهای بزرگ‌نمایی جابه‌جا می‌شود', /transform:translate\(var\(--map-x/.test(css));
 check('استایل مرز استان در CSS هست', /\.station-map-province\s*\{/.test(css));
 check('استایل نقطه و نام شهر در CSS هست', /\.station-city-dot\s*\{/.test(css) && /\.station-city-label\s*\{/.test(css));
 check('نام شهرها پله‌پله با بزرگ‌نمایی آشکار می‌شوند', /\.station-map\[data-zoom="1"\] \.station-city\[data-tier="2"\]/.test(css));
 check('اندازهٔ نوشته با بزرگ‌نمایی ثابت می‌ماند', /--map-inv/.test(css));
 check('ابزار بزرگ‌نمایی استایل دارد', /\.station-map-zoom-btn\s*\{/.test(css));
-check('قاب نقشه در ویجت داشبورد اندازهٔ خودش را دارد', /\[data-widget="stations"\] \.station-map-frame\{width:100%;max-width:240px\}/.test(css));
+check('قاب نقشه در ویجت داشبورد اندازهٔ خودش را دارد', /\[data-widget="stations"\] \.station-map-frame\{width:100%;max-width:min\(100%,420px\)\}/.test(css));
+check('قاب نقشه در ویجت داشبورد تا پهنای کارت بزرگ می‌شود', /\[data-widget="stations"\]\[data-size="medium"\] \.station-map-frame\{max-width:min\(100%,560px\)\}/.test(css));
+check('هیچ قاعدهٔ قدیمی ارتفاع ثابت روی .station-map نمانده', !/\.station-map\s*\{[^}]*height:\s*\d+px/.test(baseCss));
+check('پس‌زمینهٔ راه‌راه قدیمی نقشه حذف شده', !/\.station-map:before\s*\{/.test(baseCss));
+check('ویجت داشبورد نقشه را فقط نمایش می‌دهد (بدون جابه‌جایی گره)', /const readOnly = !!map\.closest\('\[data-widget="stations"\]'\)/.test(modules) && /if \(!drag \|\| readOnly\) return;/.test(modules));
+check('گره‌های ویجت داشبورد نشانگر دست‌کشیدن ندارند', /\[data-widget="stations"\] \.station-node\{cursor:pointer\}/.test(css));
 check('استایل تنظیمات شهرها هست', /\.map-city-row\s*\{/.test(css) && /\.map-province-row\s*\{/.test(css));
 
 // ── خروجی فایل نقشه ──

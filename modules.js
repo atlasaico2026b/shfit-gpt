@@ -6525,17 +6525,20 @@
     const signal = controller.signal;
     const zoom = createMapZoom(map, { maxScale: map.closest('[data-widget="stations"]') ? 3 : 8, signal: signal });
     map._atlasZoom = zoom;
+    // ویجت داشبورد فقط نمایش است: جابه‌جایی گره‌ها نباید جایگاه ذخیره‌شده را عوض کند.
+    const readOnly = !!map.closest('[data-widget="stations"]');
     let drag = null;
     map.addEventListener('pointerdown', function (event) {
       const node = event.target.closest('[data-station-id]');
       if (!node) return;
       drag = { node: node, id: node.dataset.stationId, branchIndex: Number(node.dataset.branchIndex || 0), x: 0, y: 0, moved: false };
+      if (readOnly) return;
       node.classList.add('is-dragging');
       try { node.setPointerCapture(event.pointerId); } catch (error) { /* optional */ }
       event.preventDefault();
     }, { signal: signal });
     map.addEventListener('pointermove', function (event) {
-      if (!drag) return;
+      if (!drag || readOnly) return;
       const point = zoom ? zoom.pointFromEvent(event) : null;
       if (!point) return;
       drag.x = point.x;
