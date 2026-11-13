@@ -68,7 +68,7 @@ check('اسکریپت خروجی نقشه در index.html هست', exportScript 
 check('نقشه پیش از modules.js بارگذاری می‌شود', mapScript > 0 && mapScript < html.indexOf('./modules.js'));
 check('نقشه در فهرست پیش‌کش سرویس‌ورکر هست', /\.\/design\/khuzestan-map\.js/.test(sw));
 check('خروجی نقشه در فهرست پیش‌کش سرویس‌ورکر هست', /\.\/design\/map-export\.js/.test(sw));
-check('نسخهٔ کش برای نقشهٔ تازه بالا رفته است', /atlas-shift-v168-all-provinces-map/.test(sw));
+check('نسخهٔ کش برای نقشهٔ تازه بالا رفته است', /atlas-shift-v169-map-roads/.test(sw));
 
 // ── جانمایی بر پایهٔ شهر ──
 check('تابع خواندن نقشه در modules.js هست', /function khuzestanMap\(\)/.test(modules));
@@ -90,7 +90,7 @@ check('کشیدن گره اندازهٔ قاب نقشه را می‌سنجد',
   /pointFromEvent\(event\)[\s\S]{0,80}getBoundingClientRect\(\)/.test(modules));
 
 // ── همهٔ شهرها و رده‌بندی ──
-check('همهٔ شهرهای فعال رسم می‌شوند', /mapVisibleCities\(\)\.map\(function \(city\)/.test(modules));
+check('همهٔ شهرهای فعال رسم می‌شوند', /mapVisibleCities\(\)[\s\S]{0,120}cities\.map\(function \(city\)/.test(modules));
 check('هر شهر ردهٔ نمایش را در مارک‌آپ دارد', /data-tier="' \+ tier \+ '"/.test(modules));
 check('شهرهای پنهان‌شده در تنظیمات ذخیره می‌شوند', /settings\.hiddenCities/.test(modules));
 check('تنظیم نمایش نام شهرها ذخیره می‌شود', /settings\.showLabels/.test(modules));
