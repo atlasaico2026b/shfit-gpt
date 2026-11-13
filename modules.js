@@ -2884,26 +2884,39 @@
     const map = khuzestanMap();
     if (!map) return '';
     const cities = map.cities.filter(function (city) { return mapCityTier(city) === tier; });
-    return '<div class="map-city-group" data-map-tier-group="' + tier + '"><h4>' + esc(MAP_TIER_TITLES[tier]) +
+    return '<div class="map-city-group" data-map-tier-group="' + tier + '">' +
+      '<div class="map-city-group-head"><h4>' + esc(MAP_TIER_TITLES[tier]) +
       ' <small>' + faDigits(cities.length) + '</small></h4>' +
+      '<div class="map-city-group-actions">' +
+      '<button type="button" class="map-city-bulk" data-map-tier-all="' + tier + '" title="نمایش همهٔ شهرهای این رده">همه</button>' +
+      '<button type="button" class="map-city-bulk" data-map-tier-none="' + tier + '" title="پنهان‌کردن همهٔ شهرهای این رده">هیچ‌کدام</button>' +
+      '</div></div>' +
       '<div class="map-city-grid">' +
       (cities.length ? cities.map(mapCityRow).join('')
         : '<span class="map-city-empty">شهری در این رده نیست؛ نام شهر را از ردهٔ دیگر به اینجا بکش.</span>') +
       '</div></div>';
   }
 
-  // فهرست استان‌ها برای انتخاب نقشهٔ فعال. همهٔ استان‌ها از پیش در برنامه هستند و
-  // انتخاب فقط در تنظیمات ذخیره می‌شود؛ هیچ دانلودی لازم نیست.
-  function provinceSelectMarkup(label, selectedId) {
+  // فهرست استان‌ها برای انتخاب نقشهٔ فعال. هر تعداد استان را می‌شود تیک زد و همه
+  // با هم روی یک نقشه دیده می‌شوند. همهٔ استان‌ها از پیش در برنامه هستند و انتخاب
+  // فقط در تنظیمات ذخیره می‌شود؛ هیچ دانلودی لازم نیست.
+  let mapProvincePickerOpen = false;
+
+  function provincePickerMarkup(label) {
     const list = provinceList();
     if (!list.length) return '';
-    return '<label class="map-province-select"><span>' + esc(label) + '</span>' +
-      '<select data-map-province-select aria-label="' + esc(label) + '">' +
+    const active = activeProvinceIds();
+    return '<details class="map-province-picker"' + (mapProvincePickerOpen ? ' open' : '') + '>' +
+      '<summary><span>' + esc(label) + '</span>' +
+      '<small>' + faDigits(active.length) + ' استان انتخاب شده</small></summary>' +
+      '<div class="map-province-picker-list">' +
       list.map(function (province) {
-        return '<option value="' + esc(province.id) + '"' + (province.id === selectedId ? ' selected' : '') + '>' +
-          esc(province.name) + '</option>';
+        const on = active.indexOf(province.id) >= 0;
+        return '<label class="map-province-row"><input type="checkbox" data-map-province-pick="' + esc(province.id) + '"' + (on ? ' checked' : '') + '>' +
+          '<span>' + esc(province.name) + '</span>' +
+          '<small>' + faDigits((province.cities || []).length) + ' شهر</small></label>';
       }).join('') +
-      '</select></label>';
+      '</div></details>';
   }
 
   function mapDownloadMarkup() {
@@ -2927,17 +2940,18 @@
     const map = khuzestanMap();
     if (!map) return '<div class="module-empty">فایل نقشه بارگذاری نشده است.</div>';
     const settings = mapSettings();
+    const active = activeProvinceIds();
     const visible = mapVisibleCities().length;
     const stored = stationRecords().filter(function (record) {
       const owner = stationProvince(record);
-      return owner && owner.id === map.id;
+      return owner && active.indexOf(owner.id) >= 0;
     }).length;
     return '<section class="module-list-panel map-settings-panel">' +
       '<div class="module-list-head"><div><h3>نقشه و شهرها</h3>' +
-      '<p>هر استان نقشهٔ خودش را دارد؛ استان را از فهرست زیر انتخاب کن تا شهرهای همان استان، با موقعیت واقعی‌شان، روی نقشه دیده شوند. هر شهری را که نمی‌خواهی ببین، از همین‌جا خاموش کن.</p></div>' +
+      '<p>هر تعداد استان را که لازم داری تیک بزن تا همه با هم روی یک نقشه دیده شوند؛ مثلاً خوزستان و چهارمحال و بختیاری و اصفهان. هر شهری را که نمی‌خواهی ببین، از همین‌جا خاموش کن یا کل یک رده را یک‌جا پنهان کن.</p></div>' +
       '<span class="reference-count">' + faDigits(visible) + ' از ' + faDigits(map.cities.length) + ' شهر</span></div>' +
-      provinceSelectMarkup('استان روی نقشه', map.id) +
-      '<p class="station-legend-hint">' + esc(map.name) + ' · ' + faDigits(stored) + ' ایستگاه/مرکز ثبت‌شده در این استان · ' +
+      provincePickerMarkup('استان‌های روی نقشه') +
+      '<p class="station-legend-hint">' + esc(map.name) + ' · ' + faDigits(stored) + ' ایستگاه/مرکز ثبت‌شده در این استان‌ها · ' +
       faDigits(map.cities.length) + ' شهر روی نقشه</p>' +
       '<div class="map-settings-toggles">' +
       '<label class="map-toggle-row"><input type="checkbox" data-map-toggle="showLabels"' + (settings.showLabels ? ' checked' : '') + '>' +
@@ -5268,7 +5282,7 @@
     const boxes = Array.prototype.slice.call(document.querySelectorAll('[data-map-province]'));
     const checked = boxes.filter(function (box) { return box.checked; })
       .map(function (box) { return box.dataset.mapProvince; });
-    return checked.length ? checked : ['khuzestan'];
+    return checked.length ? checked : activeProvinceIds();
   }
 
   function mapSettingsCount() {
@@ -5294,17 +5308,58 @@
     if (await saveState()) toast('تنظیم نقشه ذخیره شد.');
   });
 
-  // انتخاب استان: فقط تنظیمات ذخیره می‌شود و همان صفحه با نقشهٔ استان تازه دوباره
-  // ساخته می‌شود. همهٔ استان‌ها از پیش در برنامه‌اند، پس هیچ دانلودی در کار نیست.
+  // انتخاب استان‌ها: هر تعداد استان را می‌شود تیک زد و همه با هم روی یک نقشه
+  // می‌آیند. فقط تنظیمات ذخیره می‌شود و همان صفحه با نقشهٔ تازه دوباره ساخته
+  // می‌شود. همهٔ استان‌ها از پیش در برنامه‌اند، پس هیچ دانلودی در کار نیست.
   document.addEventListener('change', async function (event) {
-    const picker = event.target.closest && event.target.closest('[data-map-province-select]');
+    const picker = event.target.closest && event.target.closest('[data-map-province-pick]');
     if (!picker) return;
-    const chosen = provinceFind(picker.value);
-    if (!chosen) return;
-    mapSettings().province = chosen.id;
+    const settings = mapSettings();
+    const id = picker.dataset.mapProvincePick;
+    const index = settings.provinces.indexOf(id);
+    if (picker.checked && index < 0) settings.provinces.push(id);
+    if (!picker.checked && index >= 0) settings.provinces.splice(index, 1);
+    if (!settings.provinces.length) {
+      settings.provinces = [id];
+      picker.checked = true;
+      toast('حداقل یک استان باید روی نقشه بماند.');
+      return;
+    }
+    settings.province = settings.provinces[0];
+    mapProvincePickerOpen = true;
     render(currentView === 'settings' ? 'settings' : 'stations', document.getElementById('sectionView'));
-    toast('نقشهٔ ' + chosen.name + ' نمایش داده می‌شود.');
     await saveState();
+  });
+
+  // پنهان یا آشکار کردن دسته‌جمعی همهٔ شهرهای یک رده (شهرهای اصلی، مراکز
+  // شهرستان، شهرهای کوچک، روستاها) با یک کلیک.
+  document.addEventListener('click', async function (event) {
+    const all = event.target.closest('[data-map-tier-all]');
+    const none = event.target.closest('[data-map-tier-none]');
+    if (!all && !none) return;
+    const tier = Number((all || none).dataset.mapTierAll || (all || none).dataset.mapTierNone);
+    if ([1, 2, 3, 4].indexOf(tier) < 0) return;
+    const map = khuzestanMap();
+    if (!map) return;
+    const settings = mapSettings();
+    const names = map.cities.filter(function (city) { return mapCityTier(city) === tier; })
+      .map(function (city) { return city.name; });
+    if (all) {
+      settings.hiddenCities = settings.hiddenCities.filter(function (name) { return names.indexOf(name) < 0; });
+    } else {
+      names.forEach(function (name) {
+        if (settings.hiddenCities.indexOf(name) < 0) settings.hiddenCities.push(name);
+      });
+    }
+    Array.prototype.forEach.call(document.querySelectorAll('[data-map-city]'), function (box) {
+      if (names.indexOf(box.dataset.mapCity) >= 0) box.checked = !!all;
+    });
+    mapSettingsCount();
+    if (await saveState()) {
+      toast(all
+        ? 'همهٔ شهرهای «' + MAP_TIER_TITLES[tier] + '» نمایش داده می‌شوند.'
+        : 'همهٔ شهرهای «' + MAP_TIER_TITLES[tier] + '» پنهان شدند.');
+    }
   });
 
   document.addEventListener('click', async function (event) {
@@ -5852,18 +5907,184 @@
     return null;
   }
 
-  // استانی که کاربر انتخاب کرده و در تنظیمات می‌ماند؛ پیش‌فرض خوزستان، استان
-  // نخست برنامه است.
-  function activeProvinceId() {
+  // استان‌هایی که کاربر تیک زده و در تنظیمات می‌مانند. می‌شود چند استان را با هم
+  // روی یک نقشه دید (مثلاً خوزستان + چهارمحال و بختیاری + اصفهان). پیش‌فرض
+  // خوزستان است، استان نخست برنامه.
+  function activeProvinceIds() {
     const settings = mapSettings();
+    const ids = (Array.isArray(settings.provinces) ? settings.provinces : [])
+      .filter(function (id) { return !!provinceFind(id); });
+    if (ids.length) return ids;
     const chosen = provinceFind(settings.province);
-    if (chosen) return chosen.id;
+    if (chosen) return [chosen.id];
     const list = provinceList();
-    return list.length ? list[0].id : '';
+    return list.length ? [list[0].id] : [];
+  }
+
+  function activeProvinceId() { return activeProvinceIds()[0] || ''; }
+
+  // ── نقشهٔ چنداستانی ───────────────────────────────────────────────────────
+  // هر استان مرز خودش را در viewBox خودش دارد. برای اینکه چند استان کنار هم روی
+  // یک نقشه بنشینند، اول نگاشت خطی «درصد شهر ← طول/عرض جغرافیایی» هر استان را از
+  // مختصات واقعی شهرهایش حساب می‌کنیم (این نگاشت دقیقاً خطی است، پس برازش
+  // کمترین مربعات آن را بی‌خطا برمی‌گرداند)، بعد همه را روی یک بوم مشترک
+  // جغرافیایی می‌نشانیم. هیچ دادهٔ تازه یا درخواست شبکه‌ای لازم نیست.
+  const PROVINCE_FIT_CACHE = {};
+
+  function provinceGeoFit(province) {
+    if (!province || !province.id) return null;
+    if (PROVINCE_FIT_CACHE[province.id]) return PROVINCE_FIT_CACHE[province.id];
+    const cities = (province.cities || []).filter(function (city) {
+      return Number.isFinite(Number(city.lat)) && Number.isFinite(Number(city.lon)) &&
+        Number.isFinite(Number(city.x)) && Number.isFinite(Number(city.y));
+    });
+    if (cities.length < 2) return null;
+    function fitAxis(values, targets) {
+      const n = values.length;
+      let sumX = 0, sumY = 0;
+      for (let i = 0; i < n; i += 1) { sumX += values[i]; sumY += targets[i]; }
+      const meanX = sumX / n, meanY = sumY / n;
+      let cov = 0, variance = 0;
+      for (let i = 0; i < n; i += 1) {
+        const dx = values[i] - meanX;
+        cov += dx * (targets[i] - meanY);
+        variance += dx * dx;
+      }
+      if (variance <= 0) return null;
+      const slope = cov / variance;
+      return { slope: slope, offset: meanY - slope * meanX };
+    }
+    const lonFit = fitAxis(cities.map(function (c) { return Number(c.x); }), cities.map(function (c) { return Number(c.lon); }));
+    const latFit = fitAxis(cities.map(function (c) { return Number(c.y); }), cities.map(function (c) { return Number(c.lat); }));
+    if (!lonFit || !latFit) return null;
+    const fit = {
+      lon: lonFit,
+      lat: latFit,
+      minLon: lonFit.offset,
+      maxLon: lonFit.offset + lonFit.slope * 100,
+      maxLat: latFit.offset,
+      minLat: latFit.offset + latFit.slope * 100
+    };
+    PROVINCE_FIT_CACHE[province.id] = fit;
+    return fit;
+  }
+
+  // مسیر SVG هر استان را از فضای viewBox خودش به بوم مشترک می‌برد. مسیر در واحد
+  // viewBox نوشته شده (۰ تا عرض/ارتفاع) ولی نگاشت جغرافیایی بر پایهٔ درصد است،
+  // پس اول به درصد تبدیل می‌شود.
+  function transformProvincePath(path, fit, project, viewWidth, viewHeight) {
+    const spanX = Number(viewWidth) > 0 ? Number(viewWidth) : 1000;
+    const spanY = Number(viewHeight) > 0 ? Number(viewHeight) : 1000;
+    const tokens = String(path || '').match(/[MLZ]|-?\d+(?:\.\d+)?(?:e[-+]?\d+)?/gi) || [];
+    let out = '';
+    let command = '';
+    let i = 0;
+    while (i < tokens.length) {
+      const token = tokens[i];
+      if (token === 'M' || token === 'L' || token === 'Z') {
+        command = token;
+        i += 1;
+        if (command === 'Z') out += 'Z';
+        continue;
+      }
+      const x = Number(tokens[i]);
+      const y = Number(tokens[i + 1]);
+      i += 2;
+      if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+      const point = project(
+        fit.lon.offset + fit.lon.slope * (x / spanX * 100),
+        fit.lat.offset + fit.lat.slope * (y / spanY * 100)
+      );
+      out += (command === 'M' ? 'M' : 'L') + point[0].toFixed(1) + ' ' + point[1].toFixed(1);
+      command = 'L';
+    }
+    return out;
+  }
+
+  function compositeProvinceMap(provinces) {
+    const parts = provinces.map(function (province) {
+      return { province: province, fit: provinceGeoFit(province) };
+    }).filter(function (part) { return !!part.fit; });
+    if (parts.length < 2) return provinces[0] || null;
+
+    let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
+    parts.forEach(function (part) {
+      minLon = Math.min(minLon, part.fit.minLon);
+      maxLon = Math.max(maxLon, part.fit.maxLon);
+      minLat = Math.min(minLat, part.fit.minLat);
+      maxLat = Math.max(maxLat, part.fit.maxLat);
+    });
+    if (!(maxLon > minLon) || !(maxLat > minLat)) return provinces[0] || null;
+
+    const width = 1000;
+    const midLat = ((minLat + maxLat) / 2) * Math.PI / 180;
+    const scaleX = width / (maxLon - minLon);
+    const scaleY = scaleX / Math.max(0.2, Math.cos(midLat));
+    const height = Math.max(1, Math.round((maxLat - minLat) * scaleY));
+    function project(lon, lat) {
+      return [(lon - minLon) * scaleX, (maxLat - lat) * scaleY];
+    }
+
+    const path = parts.map(function (part) {
+      const box = String(part.province.viewBox || '0 0 1000 1000').split(/\s+/).map(Number);
+      return transformProvincePath(part.province.path, part.fit, project, box[2], box[3]);
+    }).join('');
+
+    const cities = [];
+    const index = {};
+    parts.forEach(function (part) {
+      (part.province.cities || []).forEach(function (city) {
+        const lon = part.fit.lon.offset + part.fit.lon.slope * Number(city.x);
+        const lat = part.fit.lat.offset + part.fit.lat.slope * Number(city.y);
+        const point = project(lon, lat);
+        const copy = {
+          name: city.name,
+          lat: city.lat,
+          lon: city.lon,
+          x: Math.min(100, Math.max(0, Number((point[0] / width * 100).toFixed(1)))),
+          y: Math.min(100, Math.max(0, Number((point[1] / height * 100).toFixed(1)))),
+          population: city.population,
+          aliases: city.aliases || [],
+          tier: city.tier,
+          provinceId: part.province.id,
+          provinceName: part.province.name
+        };
+        cities.push(copy);
+        const api = provinceApi();
+        const keys = [copy.name].concat(copy.aliases);
+        keys.forEach(function (key) {
+          const norm = api && typeof api.normalize === 'function' ? api.normalize(key) : String(key || '').trim();
+          if (!norm) return;
+          if (!index[norm]) index[norm] = copy;
+        });
+      });
+    });
+
+    return {
+      id: 'composite',
+      name: provinces.map(function (province) { return province.name; }).join(' + '),
+      provinceIds: provinces.map(function (province) { return province.id; }),
+      viewBox: '0 0 ' + width + ' ' + height,
+      aspect: width / height,
+      path: path,
+      cities: cities,
+      cityIn: function (name) {
+        const api = provinceApi();
+        const norm = api && typeof api.normalize === 'function' ? api.normalize(name) : String(name || '').trim();
+        return norm && index[norm] ? index[norm] : null;
+      }
+    };
+  }
+
+  function provinceMaps() {
+    return activeProvinceIds().map(provinceFind).filter(Boolean);
   }
 
   function provinceMap() {
-    return provinceFind(activeProvinceId()) || provinceList()[0] || null;
+    const maps = provinceMaps();
+    if (!maps.length) return provinceList()[0] || null;
+    if (maps.length === 1) return maps[0];
+    return compositeProvinceMap(maps);
   }
 
   // نام قدیمی این تابع در همهٔ بخش‌های نقشه به کار رفته است؛ همان استان فعال را می‌دهد.
@@ -5883,16 +6104,17 @@
   // ایستگاه‌هایی که روی نقشهٔ استان فعال می‌نشینند. ایستگاهی که استانش شناخته
   // نشده روی نقشهٔ استان جاری می‌آید تا هیچ ایستگاهی از دید پنهان نشود.
   function stationMapRecords() {
-    const active = activeProvinceId();
+    const active = activeProvinceIds();
     return stationRecords().filter(function (record) {
       const owner = stationProvince(record);
-      return !owner || owner.id === active;
+      return !owner || active.indexOf(owner.id) >= 0;
     });
   }
 
   function stationCityAnchor(value) {
     const map = provinceMap();
     if (!map) return null;
+    if (typeof map.cityIn === 'function') return map.cityIn(value);
     const api = provinceApi();
     if (api && typeof api.cityIn === 'function') {
       const hit = api.cityIn(map.id, value);
@@ -5915,6 +6137,11 @@
     if (typeof settings.showLabels !== 'boolean') settings.showLabels = true;
     if (typeof settings.alwaysLabels !== 'boolean') settings.alwaysLabels = false;
     if (typeof settings.province !== 'string' || !settings.province) settings.province = 'khuzestan';
+    // فهرست استان‌های تیک‌خورده. اگر نبود، از استان تکی قدیمی ساخته می‌شود تا
+    // دادهٔ ذخیره‌شدهٔ نسخه‌های قبلی بی‌صدا از دست نرود.
+    if (!Array.isArray(settings.provinces)) settings.provinces = [settings.province];
+    settings.provinces = settings.provinces.filter(function (id) { return !!provinceFind(id); });
+    if (!settings.provinces.length) settings.provinces = [settings.province];
     appData.settings.map = settings;
     return settings;
   }
@@ -6232,12 +6459,12 @@
     const provinceName = map ? map.name : 'استان';
     return '<section class="station-map-panel">' +
       '<div class="station-map-head"><div><h3>نقشهٔ ' + esc(provinceName) + '</h3>' +
-      '<p>استان را از فهرست انتخاب کن تا نقشهٔ همان استان با همهٔ شهرهایش بیاید. جای هر ایستگاه از روی «شهر» ثبت‌شده‌اش روی نقشه می‌نشیند؛ برای دقیق‌ترکردن، گره را بکش و برای دیدن اطلاعات کامل روی آن بزن. با چرخ ماوس یا دو انگشت بزرگ‌نمایی کن و با کشیدن، نقشه را جابه‌جا کن.</p></div>' +
+      '<p>هر تعداد استان را که لازم داری تیک بزن تا همه با هم روی یک نقشه بیایند. جای هر ایستگاه از روی «شهر» ثبت‌شده‌اش روی نقشه می‌نشیند؛ برای دقیق‌ترکردن، گره را بکش و برای دیدن اطلاعات کامل روی آن بزن. با چرخ ماوس یا دو انگشت بزرگ‌نمایی کن و با کشیدن، نقشه را جابه‌جا کن.</p></div>' +
       '<div class="station-map-tools">' +
-      provinceSelectMarkup('استان نقشه', map ? map.id : '') +
+      provincePickerMarkup('استان‌های نقشه') +
       '<button type="button" class="secondary-btn" data-station-action="auto">چیدمان خودکار</button>' +
       (hasBackup ? '<button type="button" class="secondary-btn" data-station-action="restore-layout">بازگشت به چیدمان دستی</button>' : '') +
-      '<button type="button" class="secondary-btn" data-map-download="svg" data-map-download-province="' + esc(map ? map.id : '') + '">دانلود نقشهٔ این استان</button>' +
+      '<button type="button" class="secondary-btn" data-map-download="svg">دانلود نقشهٔ این استان‌ها</button>' +
       '<button type="button" class="primary-btn" data-station-action="add">+ ثبت ایستگاه / مرکز</button>' +
       '</div></div>' +
       '<div class="station-map" data-station-map data-zoom="1">' + stationMapZoomTools() +

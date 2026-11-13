@@ -10,7 +10,7 @@
 .station-map-head{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:flex-start}
 .station-map-head h3{margin:0;font-size:14px;color:var(--text)}
 .station-map-head p{margin:4px 0 0;font-size:11.5px;line-height:1.9;color:var(--muted)}
-.station-map-tools{display:flex;gap:8px;flex-wrap:wrap}
+.station-map-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start}
 
 .station-map{
   position:relative;width:100%;min-width:0;overflow:hidden;
@@ -153,9 +153,14 @@
 .map-toggle-row input{width:16px;height:16px;accent-color:var(--accent);flex:none;cursor:pointer}
 .map-settings-actions{display:flex;gap:8px;flex-wrap:wrap}
 .map-city-group{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--line);border-radius:12px;min-width:0}
+.map-city-group-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .map-city-group h4{margin:0;font-size:12px;color:var(--text)}
 .map-city-group h4 small{font-size:10px;color:var(--muted);margin-inline-start:4px}
-.map-city-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:6px}
+.map-city-group-actions{display:flex;gap:6px;margin-inline-start:auto}
+.map-city-bulk{padding:3px 9px;border:1px solid var(--line);border-radius:7px;background:transparent;color:var(--muted);font:inherit;font-size:10.5px;line-height:1.6;cursor:pointer;white-space:nowrap}
+.map-city-bulk:hover,.map-city-bulk:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
+/* هر ردیف به‌قدری جا دارد که نام کامل شهر نوشته شود؛ نام‌های بلند به خط بعد می‌روند. */
+.map-city-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px}
 .map-city-row{display:flex;align-items:center;gap:4px;padding:4px 6px 4px 9px;border:1px solid var(--line);border-radius:8px;font-size:11.5px;color:var(--text);cursor:grab;min-width:0}
 .map-city-row:hover{border-color:var(--line-hi);background:rgba(var(--c-white-rgb),.04)}
 .map-city-row.is-dragging{opacity:.45;cursor:grabbing}
@@ -165,7 +170,7 @@
 .map-city-group.is-drop-target{border-color:var(--accent);background:rgba(var(--accent-rgb),.08);box-shadow:0 0 0 2px var(--accent) inset}
 .map-city-empty{font-size:11px;color:var(--muted);padding:6px 2px;line-height:1.6}
 .map-city-row input{width:14px;height:14px;accent-color:var(--accent);flex:none;cursor:pointer}
-.map-city-row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.map-city-row span{white-space:normal;overflow-wrap:anywhere;line-height:1.5}
 .map-download-block{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--line);border-radius:12px;min-width:0}
 .map-download-block h4{margin:0;font-size:12px;color:var(--text)}
 .map-download-block p{margin:0}
@@ -174,11 +179,18 @@
 .map-province-row input{width:15px;height:15px;accent-color:var(--accent);flex:none;cursor:pointer}
 .map-province-row small{margin-inline-start:auto;font-size:10.5px;color:var(--muted);white-space:nowrap}
 
-/* انتخاب استان روی نقشه: یک فهرست کشویی، هم در تنظیمات و هم بالای خود نقشه. */
-.map-province-select{display:flex;align-items:center;gap:8px;padding:8px 11px;border:1px solid var(--line);border-radius:10px;font-size:12px;color:var(--text);min-width:0;background:rgba(var(--c-white-rgb),.03)}
-.map-province-select>span{color:var(--muted);font-size:11px;white-space:nowrap}
-.map-province-select select{flex:1 1 auto;min-width:0;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface,#111);color:var(--text);font:inherit;font-size:12px;cursor:pointer}
-.station-map-tools .map-province-select{flex:1 1 190px;max-width:260px}
+/* انتخاب استان‌های روی نقشه: هر تعداد استان را می‌شود تیک زد. هم در تنظیمات و
+   هم بالای خود نقشه. */
+.map-province-picker{position:relative;border:1px solid var(--line);border-radius:10px;background:rgba(var(--c-white-rgb),.03);min-width:0}
+.map-province-picker>summary{display:flex;align-items:center;gap:8px;padding:8px 11px;font-size:12px;color:var(--text);cursor:pointer;list-style:none}
+.map-province-picker>summary::-webkit-details-marker{display:none}
+.map-province-picker>summary::after{content:'▾';margin-inline-start:auto;color:var(--muted);font-size:11px}
+.map-province-picker[open]>summary::after{content:'▴'}
+.map-province-picker>summary>span{color:var(--muted);font-size:11px;white-space:nowrap}
+.map-province-picker>summary>small{font-size:10.5px;color:var(--accent2);white-space:nowrap}
+/* فهرست به‌صورت کشویی روی محتوا باز می‌شود تا چیدمان دکمه‌های کنارش به‌هم نریزد. */
+.map-province-picker-list{position:absolute;inset-inline:0;top:calc(100% + 4px);z-index:40;display:grid;grid-template-columns:1fr;gap:6px;padding:8px;max-height:300px;overflow:auto;background:var(--panel,#1e2038);border:1px solid var(--line);border-radius:10px;box-shadow:0 14px 34px rgba(0,0,0,.5)}
+.station-map-tools .map-province-picker{flex:1 1 220px;max-width:320px}
 
 /* 5 · موبایل ────────────────────────────────────────────────────────────── */
 @media (max-width:640px){
@@ -190,7 +202,7 @@
   .station-map-frame{width:100%}
   [data-widget="stations"] .station-map-frame{max-width:min(100%,320px)}
   [data-widget="stations"][data-size="medium"] .station-map-frame{max-width:min(100%,420px)}
-  .map-city-grid{grid-template-columns:repeat(auto-fill,minmax(118px,1fr))}
+  .map-city-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 }
 @media (min-width:641px){
   .map-settings-toggles{grid-template-columns:repeat(2,minmax(0,1fr))}

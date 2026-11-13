@@ -89,23 +89,25 @@ const mapScript = html.indexOf('./design/provinces-map.js');
 check('اسکریپت نقشه در index.html هست', mapScript > 0);
 check('نقشه پیش از modules.js بارگذاری می‌شود', mapScript > 0 && mapScript < html.indexOf('./modules.js'));
 check('نقشه در فهرست پیش‌کش سرویس‌ورکر هست', /\.\/design\/provinces-map\.js/.test(sw));
-check('نسخهٔ کش برای نقشهٔ تازه بالا رفته است', /atlas-shift-v172-city-tiers-drag/.test(sw));
+check('نسخهٔ کش برای نقشهٔ تازه بالا رفته است', /atlas-shift-v173-multi-province-map/.test(sw));
 
 // ── پیوند با برنامه ──
 check('فهرست استان‌ها در modules.js خوانده می‌شود', /function provinceList\(\)/.test(modules));
 check('استان فعال از تنظیمات می‌آید', /settings\.province/.test(modules));
-check('انتخاب استان در رابط هست', /data-map-province-select/.test(modules));
-check('فهرست کشویی استان‌ها ساخته می‌شود', /function provinceSelectMarkup\(/.test(modules));
+check('انتخاب چند استان در رابط هست', /data-map-province-pick/.test(modules));
+check('فهرست تیک‌خور استان‌ها ساخته می‌شود', /function provincePickerMarkup\(/.test(modules));
+check('چند استان هم‌زمان در تنظیمات ذخیره می‌شود', /settings\.provinces/.test(modules));
+check('نقشهٔ چنداستانی ساخته می‌شود', /function compositeProvinceMap\(/.test(modules));
 check('نقشهٔ استان فعال رسم می‌شود', /function provinceMap\(\)/.test(modules) && /function khuzestanMap\(\) \{ return provinceMap\(\); \}/.test(modules));
 check('ایستگاه‌ها بر اساس استان صافی می‌شوند', /function stationMapRecords\(\)/.test(modules));
 check('استان ایستگاه از فرم یا شهر پیدا می‌شود', /function stationProvince\(record\)/.test(modules));
 check('پنل نقشه فقط ایستگاه‌های استان را می‌کشد', /stationMapMarkup\(stationMapRecords\(\)\)/.test(modules));
 check('فیلد «استان» در فرم ایستگاه هست', /key:'province',label:'استان',type:'select',source:'provinces'/.test(modules));
 check('گزینه‌های فیلد استان از فهرست استان‌ها می‌آید', /field\.source === 'provinces'/.test(modules));
-check('دانلود نقشهٔ استان فعال کار می‌کند', /data-map-download-province/.test(modules) && /dataset\.mapDownloadProvince/.test(modules));
+check('دانلود نقشهٔ استان‌های فعال کار می‌کند', /data-map-download="svg"/.test(modules) && /dataset\.mapDownloadProvince/.test(modules));
 check('خروجی نقشه از فهرست استان‌های تازه می‌خواند',
   /window\.AtlasProvinces/.test(exportSource) && /AtlasKhuzestan/.test(exportSource));
-check('استایل فهرست انتخاب استان هست', /\.map-province-select\s*\{/.test(css));
+check('استایل فهرست انتخاب استان‌ها هست', /\.map-province-picker\s*\{/.test(css));
 
 // ── خروجی SVG یک استان چندتکه ──
 global.window = { AtlasProvinces: api };
