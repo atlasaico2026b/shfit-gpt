@@ -95,7 +95,7 @@ missions, leave, vehicles, gas detectors, notes/actions, reports, settings.
 | خروجی چاپ/PDF فهرست‌ها (A4 افقی) | `design/print-sheet.js` + `design/print.css` |
 | خروجی Word / CSV (همهٔ برنامه) | `design/export-docs.js` |
 | برنامه‌ریزی شیفت (روش کاری، چرخش، تخصیص، تقویم) | `design/shift-planner.js` + `.css` |
-| نقشهٔ جغرافیایی ایستگاه‌ها روی خوزستان | `design/khuzestan-map.js` (شکل استان + لنگرگاه شهرها) + بخش ایستگاه‌ها در `modules.js` + `design/stations.css` |
+| نقشهٔ جغرافیایی ایستگاه‌ها روی خوزستان | `design/khuzestan-map.js` (شکل استان + لنگرگاه شهرهای واقعی + فهرست استان‌های قابل دانلود) + `design/map-export.js` (خروجی SVG/JSON) + بخش ایستگاه‌ها در `modules.js` (`createMapZoom`/`wireStationMap`/`mapSettingsMarkup`) + `design/stations.css` |
 | نوار جست‌وجو/فیلتر/مرتب‌سازی و پشتیبان‌گیری بخش | `design/toolbars.css` + `renderListToolbar` / `exportSectionBackup` در `modules.js` |
 | ظاهر کارت اعلان (کشوی اعلان) | `design/notices.css` (+ `openNoticeDialog` در `modules.js`) |
 | فیلترهای فهرست هر بخش | `LIST_FILTERS` + `recordMatchesFilters` در `modules.js` |

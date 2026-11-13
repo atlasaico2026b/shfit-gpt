@@ -2660,8 +2660,18 @@
       const records=stationRecords();
       const map=stationsWidget.querySelector('[data-station-map]');
       if(map){
-        map.innerHTML=stationMapInner(records);
+        // ابزار بزرگ‌نمایی هم جزء محتوای نقشه است؛ با بازسازی، وضعیت بزرگ‌نمایی
+        // کاربر حفظ می‌شود تا هر بار به ۱۰۰٪ برنگردد.
+        const previous=map._atlasZoom?{scale:map._atlasZoom.state.scale,x:map._atlasZoom.state.x,y:map._atlasZoom.state.y}:null;
+        map.innerHTML=stationMapZoomTools()+stationMapInner(records);
+        delete map.dataset.stationBound;
         wireStationMap(stationsWidget);
+        if(previous&&map._atlasZoom){
+          map._atlasZoom.state.scale=previous.scale;
+          map._atlasZoom.state.x=previous.x;
+          map._atlasZoom.state.y=previous.y;
+          map._atlasZoom.apply();
+        }
       }
       const caption=stationsWidget.querySelector('.widget-title p');
       if(caption)caption.textContent=records.length?'برای دیدن اطلاعات هر مکان روی آن بزن':'هنوز ایستگاه یا مرکزی ثبت نشده است';
@@ -2771,6 +2781,7 @@
     { id: 'lists', title: 'منوها و فهرست‌ها', icon: '☰' },
     { id: 'services', title: 'سرویس‌های خودرو', icon: '⚙' },
     { id: 'places', title: 'مکان‌های ایستگاه', icon: '⚑' },
+    { id: 'map', title: 'نقشه و شهرها', icon: '🗺' },
     { id: 'dashboard', title: 'تنظیمات داشبورد', icon: '▦' },
     { id: 'quickadd', title: 'ثبت سریع داشبورد', icon: '⚡' },
     { id: 'backup', title: 'پشتیبان‌گیری و ذخیره‌سازی', icon: '⤓' }
@@ -2839,18 +2850,89 @@
       '</section>';
   }
 
+  // ── تنظیمات نقشه: نمایش شهرها و دانلود فایل نقشه ──────────────────────────
+  const MAP_TIER_TITLES = { 1: 'شهرهای اصلی', 2: 'مراکز شهرستان', 3: 'شهرهای کوچک' };
+
+  function mapCityRow(city) {
+    const checked = mapCityVisible(city) ? ' checked' : '';
+    return '<label class="map-city-row" data-tier="' + (Number(city.tier) || 3) + '">' +
+      '<input type="checkbox" data-map-city="' + esc(city.name) + '"' + checked + '>' +
+      '<span>' + esc(city.name) + '</span></label>';
+  }
+
+  function mapCityGroupMarkup(tier) {
+    const map = khuzestanMap();
+    if (!map) return '';
+    const cities = map.cities.filter(function (city) { return (Number(city.tier) || 3) === tier; });
+    if (!cities.length) return '';
+    return '<div class="map-city-group"><h4>' + esc(MAP_TIER_TITLES[tier]) +
+      ' <small>' + faDigits(cities.length) + '</small></h4>' +
+      '<div class="map-city-grid">' + cities.map(mapCityRow).join('') + '</div></div>';
+  }
+
+  function mapDownloadMarkup() {
+    const provinces = (window.AtlasMapExport && window.AtlasMapExport.provinces()) || [];
+    if (!provinces.length) return '';
+    return '<div class="map-download-block">' +
+      '<h4>دانلود فایل نقشه</h4>' +
+      '<p class="station-legend-hint">فایل نقشه را با تمام شهرها و موقعیت واقعی‌شان دانلود کن و هر جا خواستی استفاده کن. فایل SVG در مرورگر و نرم‌افزارهای طراحی باز می‌شود و فایل JSON برای استفاده در برنامه‌های دیگر است.</p>' +
+      '<div class="map-province-list">' + provinces.map(function (province) {
+        return '<label class="map-province-row"><input type="checkbox" data-map-province="' + esc(province.id) + '" checked>' +
+          '<span>' + esc(province.name) + '</span>' +
+          '<small>' + faDigits((province.cities || []).length) + ' شهر</small></label>';
+      }).join('') + '</div>' +
+      '<div class="module-form-actions"><span class="module-required-help">هر استان انتخاب‌شده یک فایل جدا می‌گیرد.</span><div>' +
+      '<button type="button" class="secondary-btn" data-map-download="json">دانلود JSON</button> ' +
+      '<button type="button" class="primary-btn" data-map-download="svg">دانلود SVG</button>' +
+      '</div></div></div>';
+  }
+
+  function mapSettingsMarkup() {
+    const map = khuzestanMap();
+    if (!map) return '<div class="module-empty">فایل نقشه بارگذاری نشده است.</div>';
+    const settings = mapSettings();
+    const visible = mapVisibleCities().length;
+    return '<section class="module-list-panel map-settings-panel">' +
+      '<div class="module-list-head"><div><h3>نقشه و شهرها</h3>' +
+      '<p>هر شهر خوزستان با موقعیت واقعی‌اش روی نقشه هست. هر شهری را که نمی‌خواهی ببین، از همین‌جا خاموش کن. با بزرگ‌نمایی نقشه، نام شهرهای بیشتری آشکار می‌شود.</p></div>' +
+      '<span class="reference-count">' + faDigits(visible) + ' از ' + faDigits(map.cities.length) + ' شهر</span></div>' +
+      '<div class="map-settings-toggles">' +
+      '<label class="map-toggle-row"><input type="checkbox" data-map-toggle="showLabels"' + (settings.showLabels ? ' checked' : '') + '>' +
+      '<span>نمایش نام شهرها روی نقشه</span></label>' +
+      '<label class="map-toggle-row"><input type="checkbox" data-map-toggle="alwaysLabels"' + (settings.alwaysLabels ? ' checked' : '') + '>' +
+      '<span>نمایش نام همهٔ شهرها در هر بزرگ‌نمایی</span></label>' +
+      '</div>' +
+      '<div class="map-settings-actions">' +
+      '<button type="button" class="secondary-btn" data-map-cities="all">انتخاب همه</button>' +
+      '<button type="button" class="secondary-btn" data-map-cities="none">هیچ‌کدام</button>' +
+      '</div>' +
+      mapCityGroupMarkup(1) + mapCityGroupMarkup(2) + mapCityGroupMarkup(3) +
+      mapDownloadMarkup() +
+      '</section>';
+  }
+
   function settingsPaneMarkup(id) {
     if (id === 'lists') return referenceManagerMarkup();
     if (id === 'services') return serviceIntervalsMarkup();
     if (id === 'places') {
       return '<p class="reference-hint">هر مکان زیرمجموعهٔ یک «نوع محل» است و همان‌جا افزودن، تغییر نام و حذف می‌شود. فهرست مشترک مکان‌ها (شهر، محل خدمت، محل استقرار، محدودهٔ عملیاتی) در تب «منوها و فهرست‌ها» › «مکان‌ها و محل‌ها» است.</p>' + stationPlacesPanel();
     }
+    if (id === 'map') return mapSettingsMarkup();
     if (id === 'dashboard') return dashboardEditorMarkup();
     if (id === 'quickadd') return quickAddEditorMarkup();
     return backupSectionMarkup();
   }
 
   function renderSettings(section) {
+    // پیوند «تنظیم نمایش شهرها» از نقشه، تب درست را باز می‌کند؛ بعد از یک بار
+    // اعمال، پارامتر از نشانی حذف می‌شود تا کلیک کاربر روی تب‌ها آزاد بماند.
+    const urlTab = new URLSearchParams(window.location.search).get('tab');
+    if (urlTab && SETTINGS_TABS.some(function (tab) { return tab.id === urlTab; })) {
+      settingsTab = urlTab;
+      const url = new URL(window.location.href);
+      url.searchParams.delete('tab');
+      window.history.replaceState({}, '', url);
+    }
     if (!SETTINGS_TABS.some(function (tab) { return tab.id === settingsTab; })) settingsTab = 'lists';
     section.innerHTML = rootWrap(
       pageHead('تنظیمات', 'مدیریت محلی اطلاعات: فهرست‌های کشویی، مکان‌ها، چیدمان و ثبت سریع داشبورد، فیلدهای پرسنلی و نسخهٔ پشتیبان.', '') +
@@ -5042,6 +5124,61 @@
     }
   });
 
+  // ── تنظیمات نقشه: نمایش شهرها و دانلود فایل ───────────────────────────────
+  function mapSelectedProvinces() {
+    const boxes = Array.prototype.slice.call(document.querySelectorAll('[data-map-province]'));
+    const checked = boxes.filter(function (box) { return box.checked; })
+      .map(function (box) { return box.dataset.mapProvince; });
+    return checked.length ? checked : ['khuzestan'];
+  }
+
+  function mapSettingsCount() {
+    const box = document.querySelector('.map-settings-panel .reference-count');
+    const map = khuzestanMap();
+    if (box && map) box.textContent = faDigits(mapVisibleCities().length) + ' از ' + faDigits(map.cities.length) + ' شهر';
+  }
+
+  document.addEventListener('change', async function (event) {
+    const cityBox = event.target.closest('[data-map-city]');
+    const toggle = event.target.closest('[data-map-toggle]');
+    if (!cityBox && !toggle) return;
+    const settings = mapSettings();
+    if (cityBox) {
+      const name = cityBox.dataset.mapCity;
+      const index = settings.hiddenCities.indexOf(name);
+      if (cityBox.checked && index >= 0) settings.hiddenCities.splice(index, 1);
+      if (!cityBox.checked && index < 0) settings.hiddenCities.push(name);
+      mapSettingsCount();
+    } else {
+      settings[toggle.dataset.mapToggle] = !!toggle.checked;
+    }
+    if (await saveState()) toast('تنظیم نقشه ذخیره شد.');
+  });
+
+  document.addEventListener('click', async function (event) {
+    const bulk = event.target.closest('[data-map-cities]');
+    if (bulk) {
+      const settings = mapSettings();
+      const map = khuzestanMap();
+      settings.hiddenCities = bulk.dataset.mapCities === 'none'
+        ? (map ? map.cities.map(function (city) { return city.name; }) : [])
+        : [];
+      Array.prototype.forEach.call(document.querySelectorAll('[data-map-city]'), function (box) {
+        box.checked = bulk.dataset.mapCities !== 'none';
+      });
+      mapSettingsCount();
+      if (await saveState()) toast('نمایش شهرها به‌روز شد.');
+      return;
+    }
+    const download = event.target.closest('[data-map-download]');
+    if (!download) return;
+    const api = window.AtlasMapExport;
+    if (!api) { toast('فایل نقشه بارگذاری نشده است.'); return; }
+    const ids = mapSelectedProvinces();
+    const count = download.dataset.mapDownload === 'json' ? api.downloadJson(ids) : api.downloadSvg(ids);
+    toast(count ? 'فایل نقشه دانلود شد.' : 'استانی برای دانلود انتخاب نشده است.');
+  });
+
   // بستن کارت اطلاعات با کلیک بیرون از پنجره.
   document.addEventListener('click', function (event) {
     if (!event.target.closest('[data-station-info]')) return;
@@ -5548,6 +5685,38 @@
     return map && typeof map.cityAnchor === 'function' ? map.cityAnchor(value) : null;
   }
 
+  // ── تنظیمات نقشه ──────────────────────────────────────────────────────────
+  // نمایش هر شهر و برچسب نامش در settings.map نگه داشته می‌شود تا انتخاب کاربر
+  // بین دستگاه‌ها و پس از بازیابی پشتیبان هم بماند.
+  function mapSettings() {
+    if (!appData.settings || typeof appData.settings !== 'object') appData.settings = {};
+    const saved = appData.settings.map;
+    const settings = saved && typeof saved === 'object' ? saved : {};
+    if (!Array.isArray(settings.hiddenCities)) settings.hiddenCities = [];
+    if (typeof settings.showLabels !== 'boolean') settings.showLabels = true;
+    if (typeof settings.alwaysLabels !== 'boolean') settings.alwaysLabels = false;
+    appData.settings.map = settings;
+    return settings;
+  }
+
+  function mapCityVisible(city) {
+    return mapSettings().hiddenCities.indexOf(city.name) < 0;
+  }
+
+  function mapVisibleCities() {
+    const map = khuzestanMap();
+    if (!map) return [];
+    return map.cities.filter(mapCityVisible);
+  }
+
+  // با بزرگ‌نمایی، شهرهای ردهٔ پایین‌تر هم آشکار می‌شوند؛ این آستانه‌ها همان
+  // چیزی است که CSS با data-zoom روی قاب نقشه اعمال می‌کند.
+  function mapZoomTier(scale) {
+    if (scale >= 2.6) return 3;
+    if (scale >= 1.5) return 2;
+    return 1;
+  }
+
   // چند ایستگاه در یک شهر روی یک نقطه نمی‌افتند؛ هر کدام کمی کنار لنگرگاه شهر می‌نشیند.
   const STATION_CITY_OFFSETS = [
     { x: 0, y: 0 }, { x: 6, y: 3.4 }, { x: -6, y: 3.4 }, { x: 6, y: -3.4 },
@@ -5690,25 +5859,30 @@
     }).join('');
   }
 
-  // شکل استان + نقطه و نام شهرهای اصلی، پشت گره‌ها.
+  // شکل استان + نقطه و نام همهٔ شهرهای فعال، پشت گره‌ها. ردهٔ هر شهر با
+  // data-tier می‌آید تا با بزرگ‌نمایی، نام شهرهای بیشتری آشکار شود.
   function stationMapBaseMarkup() {
     const map = khuzestanMap();
     if (!map) return '';
     const box = String(map.viewBox || '0 0 1000 1262').split(/\s+/).map(Number);
     const width = box[2] || 1000;
     const height = box[3] || 1262;
-    const dots = map.cities.filter(function (city) { return city && city.primary; }).map(function (city) {
+    const settings = mapSettings();
+    const dots = mapVisibleCities().map(function (city) {
       const x = Number(city.x) * (width / 100);
       const y = Number(city.y) * (height / 100);
-      const flip = Number(city.x) > 70;
+      const flip = Number(city.x) > 72;
       const drop = Number(city.y) > 92;
-      return '<g class="station-city">' +
-        '<circle class="station-city-dot" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="8"></circle>' +
+      const tier = Number(city.tier) || 3;
+      return '<g class="station-city" data-tier="' + tier + '" data-city="' + esc(city.name) + '">' +
+        '<circle class="station-city-dot" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' +
+          (tier === 1 ? 8 : tier === 2 ? 6 : 5) + '"></circle>' +
         '<text class="station-city-label" x="' + (x + (flip ? -13 : 13)).toFixed(1) + '" y="' + (y + (drop ? -12 : 6)).toFixed(1) +
         '" text-anchor="' + (flip ? 'end' : 'start') + '">' + esc(city.name) + '</text></g>';
     }).join('');
     return '<svg class="station-map-base" viewBox="' + esc(map.viewBox || '0 0 1000 1262') +
-      '" preserveAspectRatio="xMidYMid meet" role="img" aria-label="نقشهٔ استان خوزستان">' +
+      '" preserveAspectRatio="xMidYMid meet" role="img" aria-label="نقشهٔ استان خوزستان"' +
+      (settings.showLabels ? '' : ' data-labels="off"') + '>' +
       '<path class="station-map-province" d="' + esc(map.path) + '"></path>' + dots + '</svg>';
   }
 
@@ -5717,12 +5891,22 @@
     const positions = stationPositions(groups);
     const map = khuzestanMap();
     const ratio = map && Number(map.aspect) > 0 ? Number(map.aspect) : 1000 / 1262;
-    return '<div class="station-map-frame" data-station-frame style="--station-map-ratio:' + ratio + '">' +
+    return '<div class="station-map-viewport">' +
+      '<div class="station-map-frame" data-station-frame style="--station-map-ratio:' + ratio + '">' +
       stationMapBaseMarkup() +
       '<svg class="station-map-canvas" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
       stationLineMarkup(groups, positions) + '</svg>' +
       (groups.length ? stationNodeMarkup(groups, positions)
         : '<div class="station-map-empty">هنوز ایستگاه یا مرکزی ثبت نشده است. با «+ ثبت ایستگاه / مرکز» شروع کنید.</div>') +
+      '</div></div>';
+  }
+
+  function stationMapZoomTools() {
+    return '<div class="station-map-zoom" role="group" aria-label="بزرگ‌نمایی نقشه">' +
+      '<button type="button" class="station-map-zoom-btn" data-map-zoom="in" aria-label="بزرگ‌تر">+</button>' +
+      '<button type="button" class="station-map-zoom-btn" data-map-zoom="out" aria-label="کوچک‌تر">−</button>' +
+      '<button type="button" class="station-map-zoom-btn" data-map-zoom="reset" aria-label="اندازهٔ اصلی">⤢</button>' +
+      '<span class="station-map-zoom-label" data-map-zoom-label>۱۰۰٪</span>' +
       '</div>';
   }
 
@@ -5742,15 +5926,21 @@
   function stationMapMarkup(records) {
     const groups = stationGroups(records);
     const hasBackup = !!(appData.settings && appData.settings.stationLayoutBackup);
+    const cityCount = mapVisibleCities().length;
     return '<section class="station-map-panel">' +
       '<div class="station-map-head"><div><h3>نقشهٔ خوزستان</h3>' +
-      '<p>جای هر ایستگاه از روی «شهر» ثبت‌شده‌اش روی نقشه می‌نشیند؛ برای دقیق‌ترکردن، گره را بکش و برای دیدن اطلاعات کامل روی آن بزن.</p></div>' +
+      '<p>جای هر ایستگاه از روی «شهر» ثبت‌شده‌اش روی نقشه می‌نشیند؛ برای دقیق‌ترکردن، گره را بکش و برای دیدن اطلاعات کامل روی آن بزن. با چرخ ماوس یا دو انگشت بزرگ‌نمایی کن و با کشیدن، نقشه را جابه‌جا کن.</p></div>' +
       '<div class="station-map-tools">' +
       '<button type="button" class="secondary-btn" data-station-action="auto">چیدمان خودکار</button>' +
       (hasBackup ? '<button type="button" class="secondary-btn" data-station-action="restore-layout">بازگشت به چیدمان دستی</button>' : '') +
+      '<button type="button" class="secondary-btn" data-map-download="svg">دانلود نقشه</button>' +
       '<button type="button" class="primary-btn" data-station-action="add">+ ثبت ایستگاه / مرکز</button>' +
       '</div></div>' +
-      '<div class="station-map" data-station-map>' + stationMapInner(records) + '</div>' +
+      '<div class="station-map" data-station-map data-zoom="1">' + stationMapZoomTools() +
+      stationMapInner(records) + '</div>' +
+      '<div class="station-map-foot"><span>' + faDigits(cityCount) + ' شهر روی نقشه · ' +
+      faDigits(groups.length) + ' خط</span>' +
+      '<a class="station-caption-link" href="./index.html?view=settings&tab=map">تنظیم نمایش شهرها ←</a></div>' +
       stationLegendMarkup(groups) +
       '</section>';
   }
@@ -6065,10 +6255,170 @@
     canvas.innerHTML = stationLineMarkup(stationGroups(stationRecords()), positions);
   }
 
+  // ── بزرگ‌نمایی و جابه‌جایی نقشه ────────────────────────────────────────────
+  // یک کنترلر برای هر قاب نقشه: چرخ ماوس (دسکتاپ)، دو انگشت (موبایل)، کشیدن
+  // پس‌زمینه و دکمه‌های +/−. بزرگ‌نمایی، نام شهرهای بیشتری را آشکار می‌کند.
+  function createMapZoom(map, options) {
+    const opts = options || {};
+    const frame = map.querySelector('[data-station-frame]');
+    if (!frame) return null;
+    const maxScale = Number(opts.maxScale) || 8;
+    const state = { scale: 1, x: 0, y: 0 };
+    const pointers = new Map();
+    let pan = null;
+    let pinch = null;
+
+    function paintLabel() {
+      const box = map.querySelector('[data-map-zoom-label]');
+      if (box) box.textContent = faDigits(Math.round(state.scale * 100)) + '٪';
+    }
+
+    function clamp() {
+      const rect = frame.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const width = rect.width / state.scale;
+      const height = rect.height / state.scale;
+      const maxX = (state.scale - 1) * width / 2;
+      const maxY = (state.scale - 1) * height / 2;
+      state.x = Math.min(maxX, Math.max(-maxX, state.x));
+      state.y = Math.min(maxY, Math.max(-maxY, state.y));
+    }
+
+    function apply() {
+      clamp();
+      const inv = 1 / state.scale;
+      frame.style.setProperty('--map-scale', String(state.scale));
+      frame.style.setProperty('--map-inv', String(inv));
+      frame.style.setProperty('--map-x', state.x.toFixed(1) + 'px');
+      frame.style.setProperty('--map-y', state.y.toFixed(1) + 'px');
+      map.dataset.zoom = String(mapZoomTier(state.scale));
+      map.dataset.labels = mapSettings().alwaysLabels ? 'all' : 'auto';
+      paintLabel();
+    }
+
+    // نقطهٔ زیر نشانگر ماوس باید سر جایش بماند؛ پس جابه‌جایی با نسبت تازه حساب می‌شود.
+    function zoomTo(next, clientX, clientY) {
+      const target = Math.min(maxScale, Math.max(1, next));
+      if (Math.abs(target - state.scale) < 0.001) return;
+      const rect = frame.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const px = (clientX == null ? cx : clientX) - cx;
+      const py = (clientY == null ? cy : clientY) - cy;
+      const anchorX = (px - state.x) / state.scale;
+      const anchorY = (py - state.y) / state.scale;
+      state.scale = target;
+      state.x = px - anchorX * target;
+      state.y = py - anchorY * target;
+      if (state.scale === 1) { state.x = 0; state.y = 0; }
+      apply();
+    }
+
+    function reset() {
+      state.scale = 1;
+      state.x = 0;
+      state.y = 0;
+      apply();
+    }
+
+    // مختصات لمس/ماوس ← درصد روی قاب نقشه، حتی وقتی نقشه بزرگ‌نمایی شده است.
+    function pointFromEvent(event) {
+      const rect = frame.getBoundingClientRect();
+      if (!rect.width || !rect.height) return { x: 0, y: 0 };
+      const width = rect.width / state.scale;
+      const height = rect.height / state.scale;
+      const left = rect.left + rect.width / 2 - width / 2;
+      const top = rect.top + rect.height / 2 - height / 2;
+      return {
+        x: Math.round(Math.min(100, Math.max(0, ((event.clientX - left) / width) * 100)) * 10) / 10,
+        y: Math.round(Math.min(100, Math.max(0, ((event.clientY - top) / height) * 100)) * 10) / 10
+      };
+    }
+
+    function onWheel(event) {
+      // چرخ ماوس فقط وقتی روی نقشهٔ فعال است بزرگ‌نمایی می‌کند تا اسکرول صفحه
+      // گیر نکند؛ Ctrl/⌘ + چرخ همیشه بزرگ‌نمایی است (پینچ ترک‌پد هم همین را می‌فرستد).
+      if (!event.ctrlKey && !event.metaKey && map.dataset.active !== '1') return;
+      event.preventDefault();
+      zoomTo(state.scale * Math.exp(-event.deltaY * 0.0016), event.clientX, event.clientY);
+    }
+
+    function onDown(event) {
+      if (event.target.closest('[data-map-zoom]')) return;
+      map.dataset.active = '1';
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (pointers.size === 2) {
+        pan = null;
+        const list = Array.from(pointers.values());
+        pinch = {
+          distance: Math.hypot(list[0].x - list[1].x, list[0].y - list[1].y),
+          scale: state.scale
+        };
+        return;
+      }
+      if (event.target.closest('[data-station-id]')) return;
+      pan = { id: event.pointerId, x: event.clientX, y: event.clientY, startX: state.x, startY: state.y };
+      map.classList.add('is-panning');
+      try { map.setPointerCapture(event.pointerId); } catch (error) { /* optional */ }
+    }
+
+    function onMove(event) {
+      if (pointers.has(event.pointerId)) pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (pinch && pointers.size === 2) {
+        const list = Array.from(pointers.values());
+        const distance = Math.hypot(list[0].x - list[1].x, list[0].y - list[1].y);
+        if (pinch.distance > 0) {
+          const midX = (list[0].x + list[1].x) / 2;
+          const midY = (list[0].y + list[1].y) / 2;
+          zoomTo(pinch.scale * (distance / pinch.distance), midX, midY);
+        }
+        return;
+      }
+      if (!pan || pan.id !== event.pointerId) return;
+      state.x = pan.startX + (event.clientX - pan.x);
+      state.y = pan.startY + (event.clientY - pan.y);
+      apply();
+    }
+
+    function onUp(event) {
+      pointers.delete(event.pointerId);
+      if (pointers.size < 2) pinch = null;
+      if (pan && pan.id === event.pointerId) {
+        pan = null;
+        map.classList.remove('is-panning');
+      }
+    }
+
+    const signal = opts.signal;
+    map.addEventListener('wheel', onWheel, { passive: false, signal: signal });
+    map.addEventListener('pointerdown', onDown, { signal: signal });
+    map.addEventListener('pointermove', onMove, { signal: signal });
+    map.addEventListener('pointerup', onUp, { signal: signal });
+    map.addEventListener('pointercancel', onUp, { signal: signal });
+    map.addEventListener('click', function (event) {
+      const button = event.target.closest('[data-map-zoom]');
+      if (!button) return;
+      const action = button.dataset.mapZoom;
+      if (action === 'in') zoomTo(state.scale * 1.5);
+      else if (action === 'out') zoomTo(state.scale / 1.5);
+      else reset();
+    }, { signal: signal });
+
+    apply();
+    return { state: state, reset: reset, zoomTo: zoomTo, pointFromEvent: pointFromEvent, apply: apply };
+  }
+
   function wireStationMap(section) {
     const map = section.querySelector('[data-station-map]');
-    if (!map || map.dataset.stationBound === '1') return;
-    map.dataset.stationBound = '1';
+    if (!map) return;
+    // ویجت داشبورد محتوایش را دوباره می‌سازد؛ شنونده‌های قبلی باید کنار بروند
+    // تا با هر بازسازی، رویدادها چندبار اجرا نشوند.
+    if (map._atlasWired) map._atlasWired.abort();
+    const controller = new AbortController();
+    map._atlasWired = controller;
+    const signal = controller.signal;
+    const zoom = createMapZoom(map, { maxScale: map.closest('[data-widget="stations"]') ? 3 : 8, signal: signal });
+    map._atlasZoom = zoom;
     let drag = null;
     map.addEventListener('pointerdown', function (event) {
       const node = event.target.closest('[data-station-id]');
@@ -6077,19 +6427,18 @@
       node.classList.add('is-dragging');
       try { node.setPointerCapture(event.pointerId); } catch (error) { /* optional */ }
       event.preventDefault();
-    });
+    }, { signal: signal });
     map.addEventListener('pointermove', function (event) {
       if (!drag) return;
-      const frame = map.querySelector('[data-station-frame]') || map;
-      const rect = frame.getBoundingClientRect();
-      if (!rect.width || !rect.height) return;
-      drag.x = Math.round(Math.min(100, Math.max(0, ((event.clientX - rect.left) / rect.width) * 100)) * 10) / 10;
-      drag.y = Math.round(Math.min(100, Math.max(0, ((event.clientY - rect.top) / rect.height) * 100)) * 10) / 10;
+      const point = zoom ? zoom.pointFromEvent(event) : null;
+      if (!point) return;
+      drag.x = point.x;
+      drag.y = point.y;
       drag.moved = true;
       drag.node.style.left = drag.x + '%';
       drag.node.style.top = drag.y + '%';
       drawStationLines(map);
-    });
+    }, { signal: signal });
     map.addEventListener('pointerup', async function () {
       if (!drag) return;
       const current = drag;
@@ -6104,12 +6453,12 @@
       stationSetPlacement(record, current.branchIndex, current.x, current.y);
       record.updatedAt = new Date().toISOString();
       if (await saveState()) toast('جایگاه «' + stationTitle(record) + '» روی نقشه ذخیره شد.');
-    });
+    }, { signal: signal });
     map.addEventListener('pointercancel', function () {
       if (!drag) return;
       drag.node.classList.remove('is-dragging');
       drag = null;
-    });
+    }, { signal: signal });
   }
 
   async function stationAutoLayout() {
