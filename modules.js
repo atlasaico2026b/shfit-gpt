@@ -2678,7 +2678,7 @@
         }
       }
       const caption=stationsWidget.querySelector('.widget-title p');
-      if(caption)caption.textContent=records.length?'برای دیدن اطلاعات هر مکان روی آن بزن':'هنوز ایستگاه یا مرکزی ثبت نشده است';
+      if(caption)caption.textContent='برای دیدن اطلاعات هر مکان روی آن بزن';
       const footer=stationsWidget.querySelector('[data-station-caption]');
       if(footer)footer.innerHTML='<span>'+faDigits(records.length)+' ایستگاه / مرکز ثبت‌شده</span><a class="station-caption-link" href="./index.html?view=stations">مدیریت و افزودن ایستگاه ←</a>';
     }
@@ -2857,21 +2857,39 @@
   // ── تنظیمات نقشه: نمایش شهرها و دانلود فایل نقشه ──────────────────────────
   const MAP_TIER_TITLES = { 1: 'شهرهای اصلی', 2: 'مراکز شهرستان', 3: 'شهرهای کوچک', 4: 'روستاها و محله‌ها' };
 
+  // ردهٔ نمایش هر شهر: اول انتخاب دستی کاربر (settings.cityTiers) و بعد ردهٔ
+  // پیش‌فرض خود نقشه. با این کار می‌شود شهری را با کشیدن به «شهرهای اصلی» برد.
+  function mapCityTier(city) {
+    const name = city && city.name;
+    const overrides = mapSettings().cityTiers;
+    const override = name && overrides ? Number(overrides[name]) : NaN;
+    if ([1, 2, 3, 4].indexOf(override) >= 0) return override;
+    return Number(city && city.tier) || 3;
+  }
+
   function mapCityRow(city) {
     const checked = mapCityVisible(city) ? ' checked' : '';
-    return '<label class="map-city-row" data-tier="' + (Number(city.tier) || 3) + '">' +
-      '<input type="checkbox" data-map-city="' + esc(city.name) + '"' + checked + '>' +
-      '<span>' + esc(city.name) + '</span></label>';
+    const tier = mapCityTier(city);
+    // روی صفحه‌های لمسی کشیدن با ماوس کار نمی‌کند؛ این دکمه همان کار را با یک
+    // ضربه انجام می‌دهد: افزودن به «شهرهای اصلی» یا بازگشت به ردهٔ پیش‌فرض.
+    const move = tier === 1
+      ? '<button type="button" class="map-city-move" data-map-city-reset="' + esc(city.name) + '" title="بازگشت به ردهٔ پیش‌فرض نقشه" aria-label="بازگشت به ردهٔ پیش‌فرض نقشه">↺</button>'
+      : '<button type="button" class="map-city-move" data-map-city-main="' + esc(city.name) + '" title="افزودن به شهرهای اصلی" aria-label="افزودن به شهرهای اصلی">★</button>';
+    return '<div class="map-city-row" draggable="true" data-map-city-row="' + esc(city.name) + '" data-tier="' + tier + '">' +
+      '<label class="map-city-pick"><input type="checkbox" data-map-city="' + esc(city.name) + '"' + checked + '>' +
+      '<span>' + esc(city.name) + '</span></label>' + move + '</div>';
   }
 
   function mapCityGroupMarkup(tier) {
     const map = khuzestanMap();
     if (!map) return '';
-    const cities = map.cities.filter(function (city) { return (Number(city.tier) || 3) === tier; });
-    if (!cities.length) return '';
-    return '<div class="map-city-group"><h4>' + esc(MAP_TIER_TITLES[tier]) +
+    const cities = map.cities.filter(function (city) { return mapCityTier(city) === tier; });
+    return '<div class="map-city-group" data-map-tier-group="' + tier + '"><h4>' + esc(MAP_TIER_TITLES[tier]) +
       ' <small>' + faDigits(cities.length) + '</small></h4>' +
-      '<div class="map-city-grid">' + cities.map(mapCityRow).join('') + '</div></div>';
+      '<div class="map-city-grid">' +
+      (cities.length ? cities.map(mapCityRow).join('')
+        : '<span class="map-city-empty">شهری در این رده نیست؛ نام شهر را از ردهٔ دیگر به اینجا بکش.</span>') +
+      '</div></div>';
   }
 
   // فهرست استان‌ها برای انتخاب نقشهٔ فعال. همهٔ استان‌ها از پیش در برنامه هستند و
@@ -2931,6 +2949,7 @@
       '<button type="button" class="secondary-btn" data-map-cities="all">انتخاب همه</button>' +
       '<button type="button" class="secondary-btn" data-map-cities="none">هیچ‌کدام</button>' +
       '</div>' +
+      '<p class="station-legend-hint">برای اینکه شهری در «شهرهای اصلی» دیده شود، نامش را از ردهٔ فعلی بردار و روی کادر «شهرهای اصلی» رها کن. جابه‌جایی بین بقیهٔ رده‌ها هم همین‌طور است.</p>' +
       mapCityGroupMarkup(1) + mapCityGroupMarkup(2) + mapCityGroupMarkup(3) + mapCityGroupMarkup(4) +
       mapDownloadMarkup() +
       '</section>';
@@ -5150,6 +5169,101 @@
   });
 
   // ── تنظیمات نقشه: نمایش شهرها و دانلود فایل ───────────────────────────────
+  // جابه‌جایی شهر بین رده‌ها با کشیدن و رها کردن: نام شهر را از یک رده بردار و
+  // روی ردهٔ دلخواه (مثلاً «شهرهای اصلی») رها کن. انتخاب در settings.cityTiers
+  // ذخیره می‌شود و همان لحظه روی نقشه هم اعمال می‌گردد.
+  let mapCityDragName = '';
+
+  function mapCityDragRow(event) {
+    const target = event.target;
+    return target && target.closest ? target.closest('[data-map-city-row]') : null;
+  }
+
+  function mapCityDropGroup(event) {
+    const target = event.target;
+    return target && target.closest ? target.closest('[data-map-tier-group]') : null;
+  }
+
+  function clearMapCityDropTargets() {
+    Array.prototype.forEach.call(document.querySelectorAll('.map-city-group.is-drop-target'), function (group) {
+      group.classList.remove('is-drop-target');
+    });
+  }
+
+  document.addEventListener('dragstart', function (event) {
+    const row = mapCityDragRow(event);
+    if (!row) return;
+    mapCityDragName = row.dataset.mapCityRow || '';
+    row.classList.add('is-dragging');
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      try { event.dataTransfer.setData('text/plain', mapCityDragName); } catch (error) { /* بعضی مرورگرها اجازه نمی‌دهند */ }
+    }
+  });
+
+  document.addEventListener('dragend', function (event) {
+    const row = mapCityDragRow(event);
+    if (row) row.classList.remove('is-dragging');
+    clearMapCityDropTargets();
+    mapCityDragName = '';
+  });
+
+  document.addEventListener('dragover', function (event) {
+    const group = mapCityDropGroup(event);
+    if (!group || !mapCityDragName) return;
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+    if (!group.classList.contains('is-drop-target')) {
+      clearMapCityDropTargets();
+      group.classList.add('is-drop-target');
+    }
+  });
+
+  // ردهٔ تازه را ذخیره می‌کند، پنل تنظیمات را دوباره می‌سازد و پیام می‌دهد.
+  async function applyMapCityTier(name, tier) {
+    const map = khuzestanMap();
+    const city = map && map.cities.filter(function (item) { return item.name === name; })[0];
+    if (!city || mapCityTier(city) === tier) return;
+    mapSettings().cityTiers[name] = tier;
+    const pane = document.querySelector('[data-settings-pane="map"]');
+    if (pane) pane.innerHTML = mapSettingsMarkup();
+    if (await saveState()) toast('«' + name + '» به ' + MAP_TIER_TITLES[tier] + ' منتقل شد.');
+  }
+
+  document.addEventListener('drop', async function (event) {
+    const group = mapCityDropGroup(event);
+    if (!group || !mapCityDragName) return;
+    event.preventDefault();
+    const tier = Number(group.dataset.mapTierGroup);
+    const name = mapCityDragName;
+    mapCityDragName = '';
+    clearMapCityDropTargets();
+    if ([1, 2, 3, 4].indexOf(tier) < 0 || !name) return;
+    await applyMapCityTier(name, tier);
+  });
+
+  // دکمهٔ ★/↺ روی هر ردیف: همان جابه‌جایی، اما با یک ضربه و بدون کشیدن.
+  document.addEventListener('click', async function (event) {
+    const target = event.target;
+    if (!target || !target.closest) return;
+    const toMain = target.closest('[data-map-city-main]');
+    const reset = target.closest('[data-map-city-reset]');
+    if (!toMain && !reset) return;
+    event.preventDefault();
+    if (toMain) {
+      await applyMapCityTier(toMain.dataset.mapCityMain, 1);
+      return;
+    }
+    const name = reset.dataset.mapCityReset;
+    const map = khuzestanMap();
+    const city = map && map.cities.filter(function (item) { return item.name === name; })[0];
+    if (!city) return;
+    delete mapSettings().cityTiers[name];
+    const pane = document.querySelector('[data-settings-pane="map"]');
+    if (pane) pane.innerHTML = mapSettingsMarkup();
+    if (await saveState()) toast('«' + name + '» به ردهٔ پیش‌فرض نقشه برگشت.');
+  });
+
   function mapSelectedProvinces() {
     const boxes = Array.prototype.slice.call(document.querySelectorAll('[data-map-province]'));
     const checked = boxes.filter(function (box) { return box.checked; })
@@ -5795,6 +5909,9 @@
     const saved = appData.settings.map;
     const settings = saved && typeof saved === 'object' ? saved : {};
     if (!Array.isArray(settings.hiddenCities)) settings.hiddenCities = [];
+    // ردهٔ نمایش هر شهر را می‌توان با کشیدن نامش در تنظیمات نقشه عوض کرد؛
+    // همان انتخاب در settings.cityTiers می‌ماند تا روی نقشه هم اعمال شود.
+    if (!settings.cityTiers || typeof settings.cityTiers !== 'object' || Array.isArray(settings.cityTiers)) settings.cityTiers = {};
     if (typeof settings.showLabels !== 'boolean') settings.showLabels = true;
     if (typeof settings.alwaysLabels !== 'boolean') settings.alwaysLabels = false;
     if (typeof settings.province !== 'string' || !settings.province) settings.province = 'khuzestan';
@@ -5825,11 +5942,11 @@
   // است و با بزرگ‌نمایی کوچک‌تر می‌شود تا جای شهرهای فرعی باز شود؛ نام
   // رده‌های پایین‌تر هم که تازه آشکار می‌شوند با بزرگ‌نمایی بزرگ‌تر می‌شود.
   // عددها اندازهٔ نوشته روی صفحه‌اند و بعد به واحد SVG تبدیل می‌شوند.
-  const MAP_LABEL_BASE = { 1: 26, 2: 19, 3: 16, 4: 14 };
+  const MAP_LABEL_BASE = { 1: 52, 2: 38, 3: 32, 4: 28 };
   const MAP_LABEL_REVEAL = { 2: 1.5, 3: 2.6, 4: 3.4 };
   // کف و سقف اندازه روی صفحه تا نام‌ها نه ریز و ناخوانا شوند و نه بیش از حد بزرگ.
   const MAP_LABEL_MIN = { 1: 13, 2: 16, 3: 14, 4: 12 };
-  const MAP_LABEL_MAX = { 1: 26, 2: 24, 3: 22, 4: 20 };
+  const MAP_LABEL_MAX = { 1: 52, 2: 48, 3: 44, 4: 40 };
 
   function mapLabelScreenFactor(tier, scale) {
     if (tier <= 1) return 1 / (1 + 0.24 * Math.max(0, scale - 1));
@@ -6058,7 +6175,7 @@
       const y = Number(city.y) * (height / 100);
       const flip = Number(city.x) > 72;
       const drop = Number(city.y) > 92;
-      const tier = Number(city.tier) || 3;
+      const tier = mapCityTier(city);
       return '<g class="station-city" data-tier="' + tier + '" data-city="' + esc(city.name) + '">' +
         '<circle class="station-city-dot" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' +
           (tier === 1 ? 8 : tier === 2 ? 6 : 5) + '"></circle>' +
@@ -6081,8 +6198,7 @@
       stationMapBaseMarkup() +
       '<svg class="station-map-canvas" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
       stationLineMarkup(groups, positions) + '</svg>' +
-      (groups.length ? stationNodeMarkup(groups, positions)
-        : '<div class="station-map-empty">در این استان هنوز ایستگاهی ثبت نشده است. استان دیگری را از فهرست بالا انتخاب کن یا با «+ ثبت ایستگاه / مرکز» شروع کن.</div>') +
+      (groups.length ? stationNodeMarkup(groups, positions) : '') +
       '</div></div>';
   }
 

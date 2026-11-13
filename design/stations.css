@@ -47,7 +47,7 @@
 .station-map-road-casing{stroke:rgba(var(--c-white-rgb),.3);stroke-width:4.4;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
 .station-map-road{stroke:#000;stroke-width:2.2;stroke-opacity:.92;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
 .station-city-dot{fill:rgba(var(--c-white-rgb),.42);stroke:rgba(var(--c-black-rgb),.35);stroke-width:1;vector-effect:non-scaling-stroke}
-.station-city-label{fill:var(--muted);font-family:inherit;font-size:21px;direction:rtl;opacity:.9}
+.station-city-label{fill:var(--muted);font-family:inherit;font-size:42px;direction:rtl;opacity:.9}
 .station-line{fill:none;stroke:var(--tone);stroke-width:4;stroke-opacity:.95;vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round}
 .station-map-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted);padding:16px;text-align:center}
 
@@ -62,10 +62,10 @@
 /* اندازهٔ نام شهرها را modules.js با --label-t* می‌دهد: در نمای دور نام
    شهرهای اصلی بزرگ است و با بزرگ‌نمایی کوچک‌تر می‌شود تا جای شهرهای فرعی باز
    شود؛ نام رده‌های پایین‌تر هم که تازه آشکار می‌شوند بزرگ‌تر می‌شود. */
-.station-city[data-tier="1"] .station-city-label{font-size:var(--label-t1,26px);fill:var(--text)}
-.station-city[data-tier="2"] .station-city-label{font-size:var(--label-t2,19px)}
-.station-city[data-tier="3"] .station-city-label{font-size:var(--label-t3,16px)}
-.station-city[data-tier="4"] .station-city-label{font-size:var(--label-t4,14px)}
+.station-city[data-tier="1"] .station-city-label{font-size:var(--label-t1,52px);fill:var(--text)}
+.station-city[data-tier="2"] .station-city-label{font-size:var(--label-t2,38px)}
+.station-city[data-tier="3"] .station-city-label{font-size:var(--label-t3,32px)}
+.station-city[data-tier="4"] .station-city-label{font-size:var(--label-t4,28px)}
 /* نامی که روی نام مهم‌تری افتاده باشد پنهان می‌ماند تا نوشته‌ها خوانا بمانند. */
 .station-city.is-culled .station-city-label{display:none}
 
@@ -156,8 +156,14 @@
 .map-city-group h4{margin:0;font-size:12px;color:var(--text)}
 .map-city-group h4 small{font-size:10px;color:var(--muted);margin-inline-start:4px}
 .map-city-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:6px}
-.map-city-row{display:flex;align-items:center;gap:7px;padding:6px 9px;border:1px solid var(--line);border-radius:8px;font-size:11.5px;color:var(--text);cursor:pointer;min-width:0}
+.map-city-row{display:flex;align-items:center;gap:4px;padding:4px 6px 4px 9px;border:1px solid var(--line);border-radius:8px;font-size:11.5px;color:var(--text);cursor:grab;min-width:0}
 .map-city-row:hover{border-color:var(--line-hi);background:rgba(var(--c-white-rgb),.04)}
+.map-city-row.is-dragging{opacity:.45;cursor:grabbing}
+.map-city-pick{display:flex;align-items:center;gap:7px;min-width:0;flex:1 1 auto;cursor:pointer;padding:2px 0}
+.map-city-move{flex:none;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;border:1px solid transparent;border-radius:6px;background:transparent;color:var(--muted);font:inherit;font-size:12px;line-height:1;cursor:pointer}
+.map-city-move:hover,.map-city-move:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
+.map-city-group.is-drop-target{border-color:var(--accent);background:rgba(var(--accent-rgb),.08);box-shadow:0 0 0 2px var(--accent) inset}
+.map-city-empty{font-size:11px;color:var(--muted);padding:6px 2px;line-height:1.6}
 .map-city-row input{width:14px;height:14px;accent-color:var(--accent);flex:none;cursor:pointer}
 .map-city-row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .map-download-block{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--line);border-radius:12px;min-width:0}

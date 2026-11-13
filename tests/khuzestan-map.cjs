@@ -68,7 +68,7 @@ check('اسکریپت خروجی نقشه در index.html هست', exportScript 
 check('نقشه پیش از modules.js بارگذاری می‌شود', mapScript > 0 && mapScript < html.indexOf('./modules.js'));
 check('نقشه در فهرست پیش‌کش سرویس‌ورکر هست', /\.\/design\/khuzestan-map\.js/.test(sw));
 check('خروجی نقشه در فهرست پیش‌کش سرویس‌ورکر هست', /\.\/design\/map-export\.js/.test(sw));
-check('نسخهٔ کش برای نقشهٔ تازه بالا رفته است', /atlas-shift-v171-drag-precision/.test(sw));
+check('نسخهٔ کش برای نقشهٔ تازه بالا رفته است', /atlas-shift-v172-city-tiers-drag/.test(sw));
 
 // ── جانمایی بر پایهٔ شهر ──
 check('تابع خواندن نقشه در modules.js هست', /function khuzestanMap\(\)/.test(modules));
