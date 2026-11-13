@@ -30,7 +30,7 @@
    پهنا با سقف ارتفاع تنظیم می‌شود تا نقشهٔ عمودی روی دسکتاپ کامل و بزرگ دیده شود. */
 .station-map-frame{
   position:relative;
-  width:min(100%, calc(min(76vh, 860px) * var(--station-map-ratio, .7924)));
+  width:min(100%, calc(min(84vh, 1040px) * var(--station-map-ratio, .7924)));
   aspect-ratio:var(--station-map-ratio, 1000 / 1262);
   margin:auto;touch-action:none;
   transform:translate(var(--map-x,0px),var(--map-y,0px)) scale(var(--map-scale,1));
@@ -104,8 +104,11 @@
 
 /* 4 · ویجت داشبورد ──────────────────────────────────────────────────────── */
 [data-widget="stations"] .station-map{height:auto;border:0;background:none;padding:26px 0 0}
-[data-widget="stations"] .station-map-frame{width:100%;max-width:240px}
-[data-widget="stations"][data-size="medium"] .station-map-frame{max-width:360px}
+[data-widget="stations"] .station-map-frame{width:100%;max-width:min(100%,420px)}
+[data-widget="stations"][data-size="medium"] .station-map-frame{max-width:min(100%,560px)}
+/* ویجت داشبورد فقط نمایش است؛ گره‌ها کشیدنی نیستند و فقط اطلاعات را باز می‌کنند. */
+[data-widget="stations"] .station-map{cursor:default}
+[data-widget="stations"] .station-node{cursor:pointer}
 /* در ویجت، نام شهرها تا وقتی بزرگ‌نمایی نشده پنهان می‌ماند تا شکل استان تمیز بماند؛
    با بزرگ‌نمایی، نام شهرهای اصلی و بعد شهرستان‌ها آشکار می‌شود. */
 [data-widget="stations"] .station-map[data-zoom="1"] .station-city-label{display:none}
@@ -160,8 +163,8 @@
   .station-map-tools .primary-btn,.station-map-tools .secondary-btn{flex:1 1 auto}
   .station-node-text{max-width:78px;font-size:10px}
   .station-map-frame{width:100%}
-  [data-widget="stations"] .station-map-frame{max-width:240px}
-  [data-widget="stations"][data-size="medium"] .station-map-frame{max-width:300px}
+  [data-widget="stations"] .station-map-frame{max-width:min(100%,320px)}
+  [data-widget="stations"][data-size="medium"] .station-map-frame{max-width:min(100%,420px)}
   .map-city-grid{grid-template-columns:repeat(auto-fill,minmax(118px,1fr))}
 }
 @media (min-width:641px){
