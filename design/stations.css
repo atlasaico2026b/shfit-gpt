@@ -128,11 +128,11 @@
 /* داشبورد فقط نمایش است: نشانگر «کشیدن» و حالت جابه‌جایی وجود ندارد. */
 .station-map[data-readonly="true"] .station-node{cursor:pointer}
 .station-map[data-readonly="true"] .station-node.is-dragging{background:transparent;cursor:pointer}
-/* در ویجت، نام شهرها تا وقتی بزرگ‌نمایی نشده پنهان می‌ماند تا شکل استان تمیز بماند؛
-   با بزرگ‌نمایی، نام شهرهای اصلی و بعد شهرستان‌ها آشکار می‌شود. */
-[data-widget="stations"] .station-map[data-zoom="1"] .station-city-label{display:none}
-[data-widget="stations"] .station-map:not([data-zoom="1"]) .station-city[data-tier="1"] .station-city-label{display:block}
-[data-widget="stations"] .station-map[data-zoom="3"] .station-city[data-tier="2"] .station-city-label{display:block}
+/* در ویجت هم مثل نقشهٔ اصلی، نام شهرهای اصلی از همان نمای دور دیده می‌شود و
+   با بزرگ‌نمایی نام شهرستان‌ها و شهرهای کوچک‌تر هم آشکار می‌شود. */
+[data-widget="stations"] .station-map[data-zoom="1"] .station-city[data-tier="2"] .station-city-label,
+[data-widget="stations"] .station-map[data-zoom="1"] .station-city[data-tier="3"] .station-city-label,
+[data-widget="stations"] .station-map[data-zoom="1"] .station-city[data-tier="4"] .station-city-label{display:none}
 [data-widget="stations"] .station-node{padding:3px 4px;max-width:86px}
 [data-widget="stations"] .station-node-dot{width:10px;height:10px;box-shadow:0 0 0 2px rgba(var(--tone-rgb),.22)}
 [data-widget="stations"] .station-node-text{font-size:9.5px;max-width:80px}
