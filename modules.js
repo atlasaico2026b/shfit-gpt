@@ -2855,7 +2855,7 @@
   }
 
   // ── تنظیمات نقشه: نمایش شهرها و دانلود فایل نقشه ──────────────────────────
-  const MAP_TIER_TITLES = { 1: 'شهرهای اصلی', 2: 'مراکز شهرستان', 3: 'شهرهای کوچک' };
+  const MAP_TIER_TITLES = { 1: 'شهرهای اصلی', 2: 'مراکز شهرستان', 3: 'شهرهای کوچک', 4: 'روستاها و محله‌ها' };
 
   function mapCityRow(city) {
     const checked = mapCityVisible(city) ? ' checked' : '';
@@ -2931,7 +2931,7 @@
       '<button type="button" class="secondary-btn" data-map-cities="all">انتخاب همه</button>' +
       '<button type="button" class="secondary-btn" data-map-cities="none">هیچ‌کدام</button>' +
       '</div>' +
-      mapCityGroupMarkup(1) + mapCityGroupMarkup(2) + mapCityGroupMarkup(3) +
+      mapCityGroupMarkup(1) + mapCityGroupMarkup(2) + mapCityGroupMarkup(3) + mapCityGroupMarkup(4) +
       mapDownloadMarkup() +
       '</section>';
   }
@@ -5815,9 +5815,39 @@
   // با بزرگ‌نمایی، شهرهای ردهٔ پایین‌تر هم آشکار می‌شوند؛ این آستانه‌ها همان
   // چیزی است که CSS با data-zoom روی قاب نقشه اعمال می‌کند.
   function mapZoomTier(scale) {
+    if (scale >= 3.4) return 4;
     if (scale >= 2.6) return 3;
     if (scale >= 1.5) return 2;
     return 1;
+  }
+
+  // اندازهٔ نام هر رده، مثل نقشه‌های واقعی: در نمای دور نام شهرهای اصلی بزرگ
+  // است و با بزرگ‌نمایی کوچک‌تر می‌شود تا جای شهرهای فرعی باز شود؛ نام
+  // رده‌های پایین‌تر هم که تازه آشکار می‌شوند با بزرگ‌نمایی بزرگ‌تر می‌شود.
+  // عددها اندازهٔ نوشته روی صفحه‌اند و بعد به واحد SVG تبدیل می‌شوند.
+  const MAP_LABEL_BASE = { 1: 26, 2: 19, 3: 16, 4: 14 };
+  const MAP_LABEL_REVEAL = { 2: 1.5, 3: 2.6, 4: 3.4 };
+  // کف و سقف اندازه روی صفحه تا نام‌ها نه ریز و ناخوانا شوند و نه بیش از حد بزرگ.
+  const MAP_LABEL_MIN = { 1: 13, 2: 16, 3: 14, 4: 12 };
+  const MAP_LABEL_MAX = { 1: 26, 2: 24, 3: 22, 4: 20 };
+
+  function mapLabelScreenFactor(tier, scale) {
+    if (tier <= 1) return 1 / (1 + 0.24 * Math.max(0, scale - 1));
+    const from = MAP_LABEL_REVEAL[tier] || 1;
+    return 1 + 0.14 * Math.max(0, scale - from);
+  }
+
+  // اندازهٔ نوشته در واحد SVG؛ چون قاب نقشه با scale بزرگ می‌شود، تقسیم بر
+  // scale همان اندازهٔ دیده‌شده روی صفحه را می‌دهد.
+  function mapLabelSizes(scale) {
+    const safe = Number(scale) > 0 ? Number(scale) : 1;
+    const sizes = {};
+    [1, 2, 3, 4].forEach(function (tier) {
+      const screen = MAP_LABEL_BASE[tier] * mapLabelScreenFactor(tier, safe);
+      const clamped = Math.min(MAP_LABEL_MAX[tier], Math.max(MAP_LABEL_MIN[tier], screen));
+      sizes[tier] = clamped / safe;
+    });
+    return sizes;
   }
 
   // چند ایستگاه در یک شهر روی یک نقطه نمی‌افتند؛ هر کدام کمی کنار لنگرگاه شهر می‌نشیند.
@@ -6416,6 +6446,47 @@
   // ── بزرگ‌نمایی و جابه‌جایی نقشه ────────────────────────────────────────────
   // یک کنترلر برای هر قاب نقشه: چرخ ماوس (دسکتاپ)، دو انگشت (موبایل)، کشیدن
   // پس‌زمینه و دکمه‌های +/−. بزرگ‌نمایی، نام شهرهای بیشتری را آشکار می‌کند.
+
+  // نام‌هایی که روی هم می‌افتند پنهان می‌شوند تا نوشته‌ها خوانا بمانند؛ اولویت
+  // با ردهٔ بالاتر است. نام شهرهای اصلی (ردهٔ ۱) هرگز پنهان نمی‌شود.
+  function boxesOverlap(a, b) {
+    const width = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+    const height = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+    if (width <= 0 || height <= 0) return false;
+    const area = width * height;
+    const smaller = Math.min((a.right - a.left) * (a.bottom - a.top), (b.right - b.left) * (b.bottom - b.top));
+    return area > smaller * 0.28;
+  }
+
+  function layoutCityLabels(map, sizes) {
+    const base = map.querySelector('.station-map-base');
+    if (!base) return;
+    const tier = Number(map.dataset.zoom) || 1;
+    const placed = [];
+    const groups = Array.prototype.slice.call(base.querySelectorAll('.station-city'));
+    groups.sort(function (a, b) {
+      return (Number(a.dataset.tier) || 9) - (Number(b.dataset.tier) || 9);
+    });
+    groups.forEach(function (group) {
+      const label = group.querySelector('.station-city-label');
+      if (!label) return;
+      group.classList.remove('is-culled');
+      const cityTier = Number(group.dataset.tier) || 3;
+      if (cityTier > tier || cityTier <= 1) return;
+      const size = sizes[cityTier] || sizes[3];
+      const text = label.textContent || '';
+      const x = parseFloat(label.getAttribute('x')) || 0;
+      const y = parseFloat(label.getAttribute('y')) || 0;
+      const width = text.length * size * 0.56;
+      const height = size * 1.15;
+      const left = label.getAttribute('text-anchor') === 'end' ? x - width : x;
+      const box = { left: left, right: left + width, top: y - height * 0.8, bottom: y + height * 0.2 };
+      const hit = placed.some(function (other) { return boxesOverlap(box, other); });
+      if (hit) group.classList.add('is-culled');
+      else placed.push(box);
+    });
+  }
+
   function createMapZoom(map, options) {
     const opts = options || {};
     const frame = map.querySelector('[data-station-frame]');
@@ -6447,10 +6518,15 @@
       const inv = 1 / state.scale;
       frame.style.setProperty('--map-scale', String(state.scale));
       frame.style.setProperty('--map-inv', String(inv));
+      const sizes = mapLabelSizes(state.scale);
+      [1, 2, 3, 4].forEach(function (tier) {
+        frame.style.setProperty('--label-t' + tier, sizes[tier].toFixed(2) + 'px');
+      });
       frame.style.setProperty('--map-x', state.x.toFixed(1) + 'px');
       frame.style.setProperty('--map-y', state.y.toFixed(1) + 'px');
       map.dataset.zoom = String(mapZoomTier(state.scale));
       map.dataset.labels = mapSettings().alwaysLabels ? 'all' : 'auto';
+      layoutCityLabels(map, sizes);
       paintLabel();
     }
 

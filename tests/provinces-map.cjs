@@ -89,7 +89,7 @@ const mapScript = html.indexOf('./design/provinces-map.js');
 check('اسکریپت نقشه در index.html هست', mapScript > 0);
 check('نقشه پیش از modules.js بارگذاری می‌شود', mapScript > 0 && mapScript < html.indexOf('./modules.js'));
 check('نقشه در فهرست پیش‌کش سرویس‌ورکر هست', /\.\/design\/provinces-map\.js/.test(sw));
-check('نسخهٔ کش برای نقشهٔ تازه بالا رفته است', /atlas-shift-v169-map-roads/.test(sw));
+check('نسخهٔ کش برای نقشهٔ تازه بالا رفته است', /atlas-shift-v170-zoom-labels/.test(sw));
 
 // ── پیوند با برنامه ──
 check('فهرست استان‌ها در modules.js خوانده می‌شود', /function provinceList\(\)/.test(modules));

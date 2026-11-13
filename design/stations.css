@@ -51,19 +51,31 @@
 .station-line{fill:none;stroke:var(--tone);stroke-width:4;stroke-opacity:.95;vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round}
 .station-map-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted);padding:16px;text-align:center}
 
-/* بزرگ‌نمایی: اندازهٔ نقطه و نوشته با نقشه بزرگ نمی‌شود تا جزئیات بیشتری جا شود. */
+/* بزرگ‌نمایی: اندازهٔ نقطه و ضخامت خط با نقشه بزرگ نمی‌شود تا جزئیات بیشتری جا شود. */
 .station-city-dot{r:calc(5 * var(--map-inv,1))}
 .station-city[data-tier="1"] .station-city-dot{r:calc(8 * var(--map-inv,1))}
 .station-city[data-tier="2"] .station-city-dot{r:calc(6 * var(--map-inv,1))}
-.station-city[data-tier="1"] .station-city-label{font-size:calc(22px * var(--map-inv,1));fill:var(--text)}
-.station-city[data-tier="2"] .station-city-label{font-size:calc(18px * var(--map-inv,1))}
-.station-city[data-tier="3"] .station-city-label{font-size:calc(15px * var(--map-inv,1))}
+.station-city[data-tier="3"] .station-city-dot{r:calc(4.5 * var(--map-inv,1))}
+.station-city[data-tier="4"] .station-city-dot{r:calc(3.5 * var(--map-inv,1))}
 .station-line{stroke-width:calc(4 * var(--map-inv,1))}
 
-/* نام شهرها پله‌پله آشکار می‌شود: ردهٔ ۱ همیشه، ردهٔ ۲ از ۱۵۰٪ و ردهٔ ۳ از ۲۶۰٪. */
+/* اندازهٔ نام شهرها را modules.js با --label-t* می‌دهد: در نمای دور نام
+   شهرهای اصلی بزرگ است و با بزرگ‌نمایی کوچک‌تر می‌شود تا جای شهرهای فرعی باز
+   شود؛ نام رده‌های پایین‌تر هم که تازه آشکار می‌شوند بزرگ‌تر می‌شود. */
+.station-city[data-tier="1"] .station-city-label{font-size:var(--label-t1,26px);fill:var(--text)}
+.station-city[data-tier="2"] .station-city-label{font-size:var(--label-t2,19px)}
+.station-city[data-tier="3"] .station-city-label{font-size:var(--label-t3,16px)}
+.station-city[data-tier="4"] .station-city-label{font-size:var(--label-t4,14px)}
+/* نامی که روی نام مهم‌تری افتاده باشد پنهان می‌ماند تا نوشته‌ها خوانا بمانند. */
+.station-city.is-culled .station-city-label{display:none}
+
+/* نام شهرها پله‌پله آشکار می‌شود: ردهٔ ۱ همیشه، ردهٔ ۲ از ۱۵۰٪، ردهٔ ۳ از ۲۶۰٪ و ردهٔ ۴ از ۳۴۰٪. */
 .station-map[data-zoom="1"] .station-city[data-tier="2"] .station-city-label,
 .station-map[data-zoom="1"] .station-city[data-tier="3"] .station-city-label,
-.station-map[data-zoom="2"] .station-city[data-tier="3"] .station-city-label{display:none}
+.station-map[data-zoom="1"] .station-city[data-tier="4"] .station-city-label,
+.station-map[data-zoom="2"] .station-city[data-tier="3"] .station-city-label,
+.station-map[data-zoom="2"] .station-city[data-tier="4"] .station-city-label,
+.station-map[data-zoom="3"] .station-city[data-tier="4"] .station-city-label{display:none}
 /* اگر کاربر «نمایش همهٔ نام‌ها» را روشن کرده باشد، پله‌ها کنار می‌روند. */
 .station-map[data-labels="all"] .station-city[data-tier] .station-city-label{display:block}
 .station-map-base[data-labels="off"] .station-city-label{display:none}

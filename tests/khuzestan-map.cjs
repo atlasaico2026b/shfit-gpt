@@ -31,7 +31,7 @@ check('هر شهر مختصات جغرافیایی واقعی دارد',
   map && map.cities.every((city) => Number.isFinite(city.lat) && Number.isFinite(city.lon)));
 check('مختصات شهرها درصدی و درون قاب است',
   map && map.cities.every((city) => city.x >= 0 && city.x <= 100 && city.y >= 0 && city.y <= 100));
-check('هر شهر ردهٔ نمایش دارد', map && map.cities.every((city) => [1, 2, 3].includes(city.tier)));
+check('هر شهر ردهٔ نمایش دارد', map && map.cities.every((city) => [1, 2, 3, 4].includes(city.tier)));
 check('شهرهای اصلی روی نقشه برجسته‌اند',
   map && ['اهواز', 'آبادان', 'اندیمشک', 'ماهشهر', 'بندر امام']
     .every((name) => map.cities.some((city) => city.name === name && city.primary)));
@@ -68,7 +68,7 @@ check('اسکریپت خروجی نقشه در index.html هست', exportScript 
 check('نقشه پیش از modules.js بارگذاری می‌شود', mapScript > 0 && mapScript < html.indexOf('./modules.js'));
 check('نقشه در فهرست پیش‌کش سرویس‌ورکر هست', /\.\/design\/khuzestan-map\.js/.test(sw));
 check('خروجی نقشه در فهرست پیش‌کش سرویس‌ورکر هست', /\.\/design\/map-export\.js/.test(sw));
-check('نسخهٔ کش برای نقشهٔ تازه بالا رفته است', /atlas-shift-v169-map-roads/.test(sw));
+check('نسخهٔ کش برای نقشهٔ تازه بالا رفته است', /atlas-shift-v170-zoom-labels/.test(sw));
 
 // ── جانمایی بر پایهٔ شهر ──
 check('تابع خواندن نقشه در modules.js هست', /function khuzestanMap\(\)/.test(modules));
@@ -126,7 +126,25 @@ check('قاب نقشه با متغیرهای بزرگ‌نمایی جابه‌ج
 check('استایل مرز استان در CSS هست', /\.station-map-province\s*\{/.test(css));
 check('استایل نقطه و نام شهر در CSS هست', /\.station-city-dot\s*\{/.test(css) && /\.station-city-label\s*\{/.test(css));
 check('نام شهرها پله‌پله با بزرگ‌نمایی آشکار می‌شوند', /\.station-map\[data-zoom="1"\] \.station-city\[data-tier="2"\]/.test(css));
-check('اندازهٔ نوشته با بزرگ‌نمایی ثابت می‌ماند', /--map-inv/.test(css));
+check('اندازهٔ نام هر رده از متغیرهای --label-t* می‌آید', /--label-t1/.test(css) && /--label-t4/.test(css));
+check('نامی که روی نام مهم‌تری افتاده پنهان می‌شود', /\.station-city\.is-culled \.station-city-label\{display:none\}/.test(css));
+
+// اندازهٔ نام‌ها را از خود modules.js می‌گیریم تا رفتار واقعی سنجیده شود.
+const sizingSource = modules.slice(
+  modules.indexOf('const MAP_LABEL_BASE'),
+  modules.indexOf('// چند ایستگاه در یک شهر')
+);
+const sizing = new Function(sizingSource + '\nreturn { mapLabelSizes: mapLabelSizes };')();
+const sizeAt1 = sizing.mapLabelSizes(1);
+const sizeAt4 = sizing.mapLabelSizes(4);
+const screen = (sizes, tier, scale) => sizes[tier] * scale;
+check('نام شهرهای اصلی در نمای دور بزرگ است', screen(sizeAt1, 1, 1) >= 24, screen(sizeAt1, 1, 1));
+check('نام شهرهای اصلی با بزرگ‌نمایی کوچک‌تر می‌شود',
+  screen(sizeAt4, 1, 4) < screen(sizeAt1, 1, 1) * 0.75, screen(sizeAt4, 1, 4));
+check('نام رده‌های پایین‌تر با بزرگ‌نمایی بزرگ‌تر می‌شود',
+  screen(sizeAt4, 2, 4) > screen(sizing.mapLabelSizes(1.5), 2, 1.5),
+  screen(sizeAt4, 2, 4));
+check('اندازهٔ نوشته با بزرگ‌نمایی ثابت نمی‌ماند', /--map-inv/.test(css) && !/font-size:calc\(22px \* var\(--map-inv/.test(css));
 check('ابزار بزرگ‌نمایی استایل دارد', /\.station-map-zoom-btn\s*\{/.test(css));
 check('قاب نقشه در ویجت داشبورد اندازهٔ خودش را دارد', /\[data-widget="stations"\] \.station-map-frame\{width:100%;max-width:min\(100%,420px\)\}/.test(css));
 check('قاب نقشه در ویجت داشبورد تا پهنای کارت بزرگ می‌شود', /\[data-widget="stations"\]\[data-size="medium"\] \.station-map-frame\{max-width:min\(100%,560px\)\}/.test(css));

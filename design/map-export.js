@@ -105,8 +105,8 @@
       var primary = city.tier === 1;
       var flip = Number(city.x) > 72;
       var drop = Number(city.y) > 92;
-      var radius = primary ? 7 : city.tier === 2 ? 5 : 4;
-      var fontSize = primary ? 22 : city.tier === 2 ? 18 : 15;
+      var radius = primary ? 7 : city.tier === 2 ? 5 : city.tier === 3 ? 4 : 3;
+      var fontSize = primary ? 22 : city.tier === 2 ? 18 : city.tier === 3 ? 15 : 13;
       return '<g>' +
         '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + radius + '" fill="' +
           (primary ? PALETTE.dotPrimary : PALETTE.dot) + '" stroke="' + PALETTE.paper + '" stroke-width="1.5"/>' +
