@@ -16,6 +16,8 @@
     border: '#5b6390',
     dot: '#8f9ad0',
     dotPrimary: '#22d3ee',
+    road: '#000000',
+    roadCasing: '#8f9ad0',
     label: '#dfe4ff',
     labelPrimary: '#ffffff',
     title: '#ffffff',
@@ -44,7 +46,38 @@
     return provinceList().filter(function (item) { return item.id === id; })[0] || null;
   }
 
-  // SVG مستقل: مرز استان + نقطه و نام همهٔ شهرها + عنوان و راهنما.
+  // شبکهٔ راه‌های اصلی: درخت پوشای کمینه روی شهرهای نمایش‌داده‌شده. همان الگوریتم
+  // modules.js است تا خروجی دانلودی با نقشهٔ درون برنامه یکی باشد.
+  function roadEdges(cities) {
+    var points = cities.map(function (city) {
+      return { x: Number(city.x), y: Number(city.y) };
+    }).filter(function (point) {
+      return isFinite(point.x) && isFinite(point.y);
+    });
+    if (points.length < 2) return [];
+    var used = points.map(function () { return false; });
+    used[0] = true;
+    var edges = [];
+    for (var step = 1; step < points.length; step += 1) {
+      var best = null;
+      for (var i = 0; i < points.length; i += 1) {
+        if (!used[i]) continue;
+        for (var j = 0; j < points.length; j += 1) {
+          if (used[j]) continue;
+          var dx = points[i].x - points[j].x;
+          var dy = points[i].y - points[j].y;
+          var dist = dx * dx + dy * dy;
+          if (!best || dist < best.dist) best = { from: points[i], to: points[j], dist: dist };
+        }
+      }
+      if (!best) break;
+      used[points.indexOf(best.to)] = true;
+      edges.push(best);
+    }
+    return edges;
+  }
+
+  // SVG مستقل: مرز استان + راه‌های اصلی + نقطه و نام همهٔ شهرها + عنوان و راهنما.
   function svg(province, options) {
     if (!province) return '';
     var opts = options || {};
@@ -55,6 +88,16 @@
     var cities = (province.cities || []).filter(function (city) {
       return !opts.hidden || opts.hidden.indexOf(city.name) < 0;
     });
+
+    var roads = roadEdges(cities).map(function (edge) {
+      var x1 = (edge.from.x * width / 100).toFixed(1);
+      var y1 = (edge.from.y * height / 100).toFixed(1);
+      var x2 = (edge.to.x * width / 100).toFixed(1);
+      var y2 = (edge.to.y * height / 100).toFixed(1);
+      var coords = 'x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"';
+      return '<line ' + coords + ' stroke="' + PALETTE.roadCasing + '" stroke-width="5" stroke-linecap="round"/>' +
+        '<line ' + coords + ' stroke="' + PALETTE.road + '" stroke-width="2.4" stroke-linecap="round"/>';
+    }).join('');
 
     var dots = cities.map(function (city) {
       var x = Number(city.x) * (width / 100);
@@ -82,7 +125,7 @@
       '<g transform="translate(0 ' + pad + ')">\n' +
       '<path d="' + esc(province.path) + '" fill="' + PALETTE.land + '" stroke="' + PALETTE.border +
         '" stroke-width="2.5" stroke-linejoin="round"/>\n' +
-      dots + '\n</g>\n' +
+      roads + '\n' + dots + '\n</g>\n' +
       '<text x="' + (width - 24) + '" y="' + (height - 18) + '" text-anchor="end" font-size="16" ' +
         'fill="' + PALETTE.note + '" direction="rtl">ATLAS SHIFT · ' + esc(province.name) + '</text>\n' +
       '</svg>\n';
@@ -102,6 +145,9 @@
           aspect: province.aspect,
           center: province.center,
           path: province.path,
+          roads: roadEdges(province.cities || []).map(function (edge) {
+            return { from: [edge.from.x, edge.from.y], to: [edge.to.x, edge.to.y] };
+          }),
           cities: (province.cities || []).map(function (city) {
             return {
               name: city.name,
