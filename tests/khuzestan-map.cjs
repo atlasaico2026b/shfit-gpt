@@ -68,7 +68,7 @@ check('اسکریپت خروجی نقشه در index.html هست', exportScript 
 check('نقشه پیش از modules.js بارگذاری می‌شود', mapScript > 0 && mapScript < html.indexOf('./modules.js'));
 check('نقشه در فهرست پیش‌کش سرویس‌ورکر هست', /\.\/design\/khuzestan-map\.js/.test(sw));
 check('خروجی نقشه در فهرست پیش‌کش سرویس‌ورکر هست', /\.\/design\/map-export\.js/.test(sw));
-check('نسخهٔ کش برای نقشهٔ تازه بالا رفته است', /atlas-shift-v170-zoom-labels/.test(sw));
+check('نسخهٔ کش برای نقشهٔ تازه بالا رفته است', /atlas-shift-v171-drag-precision/.test(sw));
 
 // ── جانمایی بر پایهٔ شهر ──
 check('تابع خواندن نقشه در modules.js هست', /function khuzestanMap\(\)/.test(modules));
@@ -88,6 +88,12 @@ check('گره‌ها داخل قاب نقشه می‌نشینند', /station-map
 check('عنوان نقشه از استان فعال ساخته می‌شود', /<h3>نقشهٔ ' \+ esc\(provinceName\) \+ '<\/h3>/.test(modules));
 check('کشیدن گره اندازهٔ قاب نقشه را می‌سنجد',
   /pointFromEvent\(event\)[\s\S]{0,80}getBoundingClientRect\(\)/.test(modules));
+// رگرسیون: پیش‌تر عرض بدون‌زوم (rect.width / state.scale) مبنای محاسبه بود و
+// حرکت گره در حالت زوم به‌اندازهٔ ضریب زوم درشت می‌شد. حالا باید بر عرض بصری
+// (rect.width که خودش شامل زوم است) تقسیم شود تا با زوم دقیق‌تر شود.
+check('کشیدن گره با بزرگ‌نمایی دقیق‌تر می‌شود (تقسیم بر عرض بصری)',
+  /pointFromEvent\(event\)[\s\S]{0,1400}\/ rect\.width\) \* 100 \+ 50/.test(modules) &&
+  !/const left = rect\.left \+ rect\.width \/ 2 - width \/ 2/.test(modules));
 
 // ── همهٔ شهرها و رده‌بندی ──
 check('همهٔ شهرهای فعال رسم می‌شوند', /mapVisibleCities\(\)[\s\S]{0,120}cities\.map\(function \(city\)/.test(modules));

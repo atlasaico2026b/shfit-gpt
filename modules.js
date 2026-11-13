@@ -6556,16 +6556,23 @@
     }
 
     // مختصات لمس/ماوس ← درصد روی قاب نقشه، حتی وقتی نقشه بزرگ‌نمایی شده است.
+    // قاب با transform: scale بزرگ‌نمایی می‌شود و transform-origin آن center است؛
+    // پس عرض بصری (rect.width) خودش ضریب زوم را در خود دارد. تقسیم بر همان عرض
+    // باعث می‌شود هر پیکسل صفحه در حالت زوم به جابه‌جایی ریزتر (دقیق‌تر) تبدیل
+    // شود، نه درشت‌تر. پیش‌تر تقسیم بر عرض بدون‌زوم انجام می‌شد و حرکت را
+    // به‌اندازهٔ ضریب زوم درشت می‌کرد.
     function pointFromEvent(event) {
       const rect = frame.getBoundingClientRect();
       if (!rect.width || !rect.height) return { x: 0, y: 0 };
-      const width = rect.width / state.scale;
-      const height = rect.height / state.scale;
-      const left = rect.left + rect.width / 2 - width / 2;
-      const top = rect.top + rect.height / 2 - height / 2;
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      // با بزرگ‌نمایی، دقت ذخیره‌سازی هم ریزتر می‌شود تا هر پیکسل صفحه اثر داشته باشد.
+      const factor = state.scale > 1 ? 100 : 10;
+      const x = ((event.clientX - cx) / rect.width) * 100 + 50;
+      const y = ((event.clientY - cy) / rect.height) * 100 + 50;
       return {
-        x: Math.round(Math.min(100, Math.max(0, ((event.clientX - left) / width) * 100)) * 10) / 10,
-        y: Math.round(Math.min(100, Math.max(0, ((event.clientY - top) / height) * 100)) * 10) / 10
+        x: Math.round(Math.min(100, Math.max(0, x)) * factor) / factor,
+        y: Math.round(Math.min(100, Math.max(0, y)) * factor) / factor
       };
     }
 
