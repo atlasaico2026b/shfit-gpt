@@ -498,6 +498,7 @@
         {key:'place',label:'محل مکان',type:'place',required:true,dependsOn:'placeType'},
         {key:'status',label:'وضعیت عملیاتی',type:'select',listKey:'stationStatuses',options:['در سرویس','نیمه‌فعال','خارج از سرویس','در تعمیر','غیرفعال']},
         {key:'personInCharge',label:'نام رئیس / مسئول',type:'people',placeholder:'جستجو در مخاطبان دفترچه تلفن یا نام جدید'},
+        {key:'province',label:'استان',type:'select',source:'provinces',hint:'استان محل استقرار؛ نقشهٔ همان استان این ایستگاه را نشان می‌دهد.'},
         {key:'city',label:'شهر محل استقرار',type:'select',listKey:'workplaces',options:['اهواز','آبادان','اندیمشک','ماهشهر','بندر امام','آغاجاری','سایر']},
         {key:'address',label:'آدرس محل',type:'textarea',wide:true},
         {key:'coordinates',label:'موقعیت جغرافیایی',placeholder:'عرض و طول؛ مثلاً ۳۱٫۳۲۰۵، ۴۸٫۶۶۹۰'},
@@ -517,7 +518,7 @@
         {key:'generators',label:'دیزل ژنراتورها',type:'rows',wide:true,addLabel:'+ افزودن دیزل ژنراتور',onlyFor:['مرکز انتقال نفت'],
           columns:[{key:'model',label:'مدل / سازنده'},{key:'count',label:'تعداد',type:'number',min:1,step:1},{key:'power',label:'توان (کیلووات)',type:'number',min:0}]}
       ],
-      columns: ['name', 'placeType', 'place', 'city', 'status', 'personInCharge']
+      columns: ['name', 'placeType', 'place', 'province', 'city', 'status', 'personInCharge']
     },
     gasmeters: {
       title: 'گازسنج‌ها', singular: 'گازسنج',
@@ -1218,6 +1219,9 @@
       }).map(function (item) {
         return {value:item.id,label:(item.code || 'گازسنج') + (item.serial ? ' · ' + item.serial : '')};
       });
+    }
+    if (field.source === 'provinces') {
+      return provinceList().map(function (province) { return {value: province.name, label: province.name}; });
     }
     if (field.listKey && data.references) {
       const shared = data.references[referenceBaseKey(field.listKey)];
@@ -2870,6 +2874,20 @@
       '<div class="map-city-grid">' + cities.map(mapCityRow).join('') + '</div></div>';
   }
 
+  // فهرست استان‌ها برای انتخاب نقشهٔ فعال. همهٔ استان‌ها از پیش در برنامه هستند و
+  // انتخاب فقط در تنظیمات ذخیره می‌شود؛ هیچ دانلودی لازم نیست.
+  function provinceSelectMarkup(label, selectedId) {
+    const list = provinceList();
+    if (!list.length) return '';
+    return '<label class="map-province-select"><span>' + esc(label) + '</span>' +
+      '<select data-map-province-select aria-label="' + esc(label) + '">' +
+      list.map(function (province) {
+        return '<option value="' + esc(province.id) + '"' + (province.id === selectedId ? ' selected' : '') + '>' +
+          esc(province.name) + '</option>';
+      }).join('') +
+      '</select></label>';
+  }
+
   function mapDownloadMarkup() {
     const provinces = (window.AtlasMapExport && window.AtlasMapExport.provinces()) || [];
     if (!provinces.length) return '';
@@ -2892,10 +2910,17 @@
     if (!map) return '<div class="module-empty">فایل نقشه بارگذاری نشده است.</div>';
     const settings = mapSettings();
     const visible = mapVisibleCities().length;
+    const stored = stationRecords().filter(function (record) {
+      const owner = stationProvince(record);
+      return owner && owner.id === map.id;
+    }).length;
     return '<section class="module-list-panel map-settings-panel">' +
       '<div class="module-list-head"><div><h3>نقشه و شهرها</h3>' +
-      '<p>هر شهر خوزستان با موقعیت واقعی‌اش روی نقشه هست. هر شهری را که نمی‌خواهی ببین، از همین‌جا خاموش کن. با بزرگ‌نمایی نقشه، نام شهرهای بیشتری آشکار می‌شود.</p></div>' +
+      '<p>هر استان نقشهٔ خودش را دارد؛ استان را از فهرست زیر انتخاب کن تا شهرهای همان استان، با موقعیت واقعی‌شان، روی نقشه دیده شوند. هر شهری را که نمی‌خواهی ببین، از همین‌جا خاموش کن.</p></div>' +
       '<span class="reference-count">' + faDigits(visible) + ' از ' + faDigits(map.cities.length) + ' شهر</span></div>' +
+      provinceSelectMarkup('استان روی نقشه', map.id) +
+      '<p class="station-legend-hint">' + esc(map.name) + ' · ' + faDigits(stored) + ' ایستگاه/مرکز ثبت‌شده در این استان · ' +
+      faDigits(map.cities.length) + ' شهر روی نقشه</p>' +
       '<div class="map-settings-toggles">' +
       '<label class="map-toggle-row"><input type="checkbox" data-map-toggle="showLabels"' + (settings.showLabels ? ' checked' : '') + '>' +
       '<span>نمایش نام شهرها روی نقشه</span></label>' +
@@ -5155,6 +5180,19 @@
     if (await saveState()) toast('تنظیم نقشه ذخیره شد.');
   });
 
+  // انتخاب استان: فقط تنظیمات ذخیره می‌شود و همان صفحه با نقشهٔ استان تازه دوباره
+  // ساخته می‌شود. همهٔ استان‌ها از پیش در برنامه‌اند، پس هیچ دانلودی در کار نیست.
+  document.addEventListener('change', async function (event) {
+    const picker = event.target.closest && event.target.closest('[data-map-province-select]');
+    if (!picker) return;
+    const chosen = provinceFind(picker.value);
+    if (!chosen) return;
+    mapSettings().province = chosen.id;
+    render(currentView === 'settings' ? 'settings' : 'stations', document.getElementById('sectionView'));
+    toast('نقشهٔ ' + chosen.name + ' نمایش داده می‌شود.');
+    await saveState();
+  });
+
   document.addEventListener('click', async function (event) {
     const bulk = event.target.closest('[data-map-cities]');
     if (bulk) {
@@ -5174,7 +5212,8 @@
     if (!download) return;
     const api = window.AtlasMapExport;
     if (!api) { toast('فایل نقشه بارگذاری نشده است.'); return; }
-    const ids = mapSelectedProvinces();
+    const only = download.dataset.mapDownloadProvince;
+    const ids = only ? [only] : mapSelectedProvinces();
     const count = download.dataset.mapDownload === 'json' ? api.downloadJson(ids) : api.downloadSvg(ids);
     toast(count ? 'فایل نقشه دانلود شد.' : 'استانی برای دانلود انتخاب نشده است.');
   });
@@ -5674,15 +5713,78 @@
 
   function stationClamp(value) { return Math.min(100, Math.max(0, value)); }
 
-  // نقشهٔ استان از design/khuzestan-map.js می‌آید؛ اگر بارگذاری نشده باشد، نقشه بدون مرز رسم می‌شود.
-  function khuzestanMap() {
-    const map = window.AtlasKhuzestan;
-    return map && typeof map.path === 'string' && Array.isArray(map.cities) ? map : null;
+  // نقشهٔ همهٔ استان‌ها از design/provinces-map.js می‌آید. اگر آن فایل بارگذاری نشده
+  // باشد، همان نقشهٔ تک‌استانی قدیمی (design/khuzestan-map.js) پشتیبان است تا نقشه
+  // هرگز خالی نماند.
+  function provinceApi() {
+    const api = window.AtlasProvinces;
+    return api && Array.isArray(api.provinces) && api.provinces.length ? api : null;
+  }
+
+  function provinceList() {
+    const api = provinceApi();
+    if (api) return api.provinces;
+    const legacy = window.AtlasKhuzestan;
+    return legacy && typeof legacy.path === 'string' && Array.isArray(legacy.cities) ? [legacy] : [];
+  }
+
+  function provinceFind(value) {
+    const key = String(value == null ? '' : value).trim();
+    if (!key) return null;
+    const list = provinceList();
+    for (let i = 0; i < list.length; i += 1) {
+      if (list[i].id === key || list[i].name === key) return list[i];
+    }
+    return null;
+  }
+
+  // استانی که کاربر انتخاب کرده و در تنظیمات می‌ماند؛ پیش‌فرض خوزستان، استان
+  // نخست برنامه است.
+  function activeProvinceId() {
+    const settings = mapSettings();
+    const chosen = provinceFind(settings.province);
+    if (chosen) return chosen.id;
+    const list = provinceList();
+    return list.length ? list[0].id : '';
+  }
+
+  function provinceMap() {
+    return provinceFind(activeProvinceId()) || provinceList()[0] || null;
+  }
+
+  // نام قدیمی این تابع در همهٔ بخش‌های نقشه به کار رفته است؛ همان استان فعال را می‌دهد.
+  function khuzestanMap() { return provinceMap(); }
+
+  // استانی که یک ایستگاه به آن تعلق دارد: اول «استان» ثبت‌شده در فرم، بعد از روی
+  // نام شهر. اگر هیچ‌کدام شناخته نشود null برمی‌گردد.
+  function stationProvince(record) {
+    const declared = provinceFind(record && record.province);
+    if (declared) return declared;
+    const api = provinceApi();
+    const city = String((record && record.city) || '').trim();
+    if (city && api && typeof api.provinceOfCity === 'function') return api.provinceOfCity(city);
+    return null;
+  }
+
+  // ایستگاه‌هایی که روی نقشهٔ استان فعال می‌نشینند. ایستگاهی که استانش شناخته
+  // نشده روی نقشهٔ استان جاری می‌آید تا هیچ ایستگاهی از دید پنهان نشود.
+  function stationMapRecords() {
+    const active = activeProvinceId();
+    return stationRecords().filter(function (record) {
+      const owner = stationProvince(record);
+      return !owner || owner.id === active;
+    });
   }
 
   function stationCityAnchor(value) {
-    const map = khuzestanMap();
-    return map && typeof map.cityAnchor === 'function' ? map.cityAnchor(value) : null;
+    const map = provinceMap();
+    if (!map) return null;
+    const api = provinceApi();
+    if (api && typeof api.cityIn === 'function') {
+      const hit = api.cityIn(map.id, value);
+      if (hit) return hit;
+    }
+    return typeof map.cityAnchor === 'function' ? map.cityAnchor(value) : null;
   }
 
   // ── تنظیمات نقشه ──────────────────────────────────────────────────────────
@@ -5695,6 +5797,7 @@
     if (!Array.isArray(settings.hiddenCities)) settings.hiddenCities = [];
     if (typeof settings.showLabels !== 'boolean') settings.showLabels = true;
     if (typeof settings.alwaysLabels !== 'boolean') settings.alwaysLabels = false;
+    if (typeof settings.province !== 'string' || !settings.province) settings.province = 'khuzestan';
     appData.settings.map = settings;
     return settings;
   }
@@ -5881,7 +5984,7 @@
         '" text-anchor="' + (flip ? 'end' : 'start') + '">' + esc(city.name) + '</text></g>';
     }).join('');
     return '<svg class="station-map-base" viewBox="' + esc(map.viewBox || '0 0 1000 1262') +
-      '" preserveAspectRatio="xMidYMid meet" role="img" aria-label="نقشهٔ استان خوزستان"' +
+      '" preserveAspectRatio="xMidYMid meet" role="img" aria-label="نقشهٔ استان ' + esc(map.name || '') + '"' +
       (settings.showLabels ? '' : ' data-labels="off"') + '>' +
       '<path class="station-map-province" d="' + esc(map.path) + '"></path>' + dots + '</svg>';
   }
@@ -5897,7 +6000,7 @@
       '<svg class="station-map-canvas" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
       stationLineMarkup(groups, positions) + '</svg>' +
       (groups.length ? stationNodeMarkup(groups, positions)
-        : '<div class="station-map-empty">هنوز ایستگاه یا مرکزی ثبت نشده است. با «+ ثبت ایستگاه / مرکز» شروع کنید.</div>') +
+        : '<div class="station-map-empty">در این استان هنوز ایستگاهی ثبت نشده است. استان دیگری را از فهرست بالا انتخاب کن یا با «+ ثبت ایستگاه / مرکز» شروع کن.</div>') +
       '</div></div>';
   }
 
@@ -5924,16 +6027,19 @@
   }
 
   function stationMapMarkup(records) {
+    const map = khuzestanMap();
     const groups = stationGroups(records);
     const hasBackup = !!(appData.settings && appData.settings.stationLayoutBackup);
     const cityCount = mapVisibleCities().length;
+    const provinceName = map ? map.name : 'استان';
     return '<section class="station-map-panel">' +
-      '<div class="station-map-head"><div><h3>نقشهٔ خوزستان</h3>' +
-      '<p>جای هر ایستگاه از روی «شهر» ثبت‌شده‌اش روی نقشه می‌نشیند؛ برای دقیق‌ترکردن، گره را بکش و برای دیدن اطلاعات کامل روی آن بزن. با چرخ ماوس یا دو انگشت بزرگ‌نمایی کن و با کشیدن، نقشه را جابه‌جا کن.</p></div>' +
+      '<div class="station-map-head"><div><h3>نقشهٔ ' + esc(provinceName) + '</h3>' +
+      '<p>استان را از فهرست انتخاب کن تا نقشهٔ همان استان با همهٔ شهرهایش بیاید. جای هر ایستگاه از روی «شهر» ثبت‌شده‌اش روی نقشه می‌نشیند؛ برای دقیق‌ترکردن، گره را بکش و برای دیدن اطلاعات کامل روی آن بزن. با چرخ ماوس یا دو انگشت بزرگ‌نمایی کن و با کشیدن، نقشه را جابه‌جا کن.</p></div>' +
       '<div class="station-map-tools">' +
+      provinceSelectMarkup('استان نقشه', map ? map.id : '') +
       '<button type="button" class="secondary-btn" data-station-action="auto">چیدمان خودکار</button>' +
       (hasBackup ? '<button type="button" class="secondary-btn" data-station-action="restore-layout">بازگشت به چیدمان دستی</button>' : '') +
-      '<button type="button" class="secondary-btn" data-map-download="svg">دانلود نقشه</button>' +
+      '<button type="button" class="secondary-btn" data-map-download="svg" data-map-download-province="' + esc(map ? map.id : '') + '">دانلود نقشهٔ این استان</button>' +
       '<button type="button" class="primary-btn" data-station-action="add">+ ثبت ایستگاه / مرکز</button>' +
       '</div></div>' +
       '<div class="station-map" data-station-map data-zoom="1">' + stationMapZoomTools() +
@@ -6516,7 +6622,7 @@
   function renderStations(section) {
     renderCrud('stations', section);
     const summary = section.querySelector('.module-summary');
-    if (summary) summary.insertAdjacentHTML('afterend', stationMapMarkup(stationRecords()));
+    if (summary) summary.insertAdjacentHTML('afterend', stationMapMarkup(stationMapRecords()));
     wireStationMap(section);
   }
 

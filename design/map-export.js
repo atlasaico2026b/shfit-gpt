@@ -29,13 +29,18 @@
   }
 
   function provinceList() {
-    var api = window.AtlasKhuzestan;
-    return api && Array.isArray(api.provinces) ? api.provinces : [];
+    var api = window.AtlasProvinces;
+    if (api && Array.isArray(api.provinces) && api.provinces.length) return api.provinces;
+    var legacy = window.AtlasKhuzestan;
+    return legacy && Array.isArray(legacy.provinces) ? legacy.provinces : [];
   }
 
   function findProvince(id) {
-    var api = window.AtlasKhuzestan;
-    if (api && typeof api.province === 'function') return api.province(id);
+    var api = window.AtlasProvinces;
+    if (api && typeof api.province === 'function') {
+      var found = api.province(id);
+      if (found) return found;
+    }
     return provinceList().filter(function (item) { return item.id === id; })[0] || null;
   }
 

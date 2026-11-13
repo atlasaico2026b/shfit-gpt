@@ -67,7 +67,7 @@ check('اسکریپت خروجی نقشه در index.html هست', exportScript 
 check('نقشه پیش از modules.js بارگذاری می‌شود', mapScript > 0 && mapScript < html.indexOf('./modules.js'));
 check('نقشه در فهرست پیش‌کش سرویس‌ورکر هست', /\.\/design\/khuzestan-map\.js/.test(sw));
 check('خروجی نقشه در فهرست پیش‌کش سرویس‌ورکر هست', /\.\/design\/map-export\.js/.test(sw));
-check('نسخهٔ کش برای نقشهٔ تازه بالا رفته است', /atlas-shift-v167-map-zoom-cities/.test(sw));
+check('نسخهٔ کش برای نقشهٔ تازه بالا رفته است', /atlas-shift-v168-all-provinces-map/.test(sw));
 
 // ── جانمایی بر پایهٔ شهر ──
 check('تابع خواندن نقشه در modules.js هست', /function khuzestanMap\(\)/.test(modules));
@@ -84,7 +84,7 @@ check('مرز استان در نقشه رسم می‌شود', /station-map-provi
 check('نقشه پایه با viewBox خودش رسم می‌شود', /class="station-map-base"[^>]*viewBox="/.test(modules));
 check('قاب نقشه نسبت خودش را از فایل نقشه می‌گیرد', /--station-map-ratio:/.test(modules) && /data-station-frame/.test(modules));
 check('گره‌ها داخل قاب نقشه می‌نشینند', /station-map-frame[\s\S]{0,260}station-map-canvas/.test(modules));
-check('عنوان نقشه «نقشهٔ خوزستان» است', /<h3>نقشهٔ خوزستان<\/h3>/.test(modules));
+check('عنوان نقشه از استان فعال ساخته می‌شود', /<h3>نقشهٔ ' \+ esc\(provinceName\) \+ '<\/h3>/.test(modules));
 check('کشیدن گره اندازهٔ قاب نقشه را می‌سنجد',
   /pointFromEvent\(event\)[\s\S]{0,80}getBoundingClientRect\(\)/.test(modules));
 
