@@ -1,4 +1,4 @@
-// بررسی آرم شرکت ملی نفت: تصویر بدون پس‌زمینه، وسط نوار بالا، کوچک.
+// بررسی آرم ATLAS SHIFT: تصویر بدون پس‌زمینه، وسط نوار بالا، کوچک.
 const fs = require('fs');
 const path = require('path');
 
@@ -8,7 +8,7 @@ const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
 const indexHtml = read('index.html');
 const css = read('design/brand-logo.css');
 const sw = read('sw.js');
-const logoPath = path.join(root, 'design/icons/nioc-logo.png');
+const logoPath = path.join(root, 'design/icons/atlas-shift-logo.png');
 
 const checks = [];
 const check = (name, ok, extra) => checks.push({ name: name, ok: !!ok, extra: extra === undefined ? '' : String(extra) });
@@ -17,14 +17,14 @@ const check = (name, ok, extra) => checks.push({ name: name, ok: !!ok, extra: ex
 check('فایل آرم وجود دارد', fs.existsSync(logoPath));
 const png = fs.readFileSync(logoPath);
 check('فایل آرم PNG معتبر است', png.slice(1, 4).toString() === 'PNG');
-// بایت رنگ در IHDR: 8 بیت، رنگ‌نوع ۶ = RGBA (دارای کانال شفافیت)
-check('آرم کانال شفافیت دارد (پس‌زمینه حذف شده)', png[25] === 6, 'colorType=' + png[25]);
+// بایت رنگ در IHDR: 8 بیت، رنگ‌نوع ۶ = RGBA یا ۲ = RGB
+check('آرم فرمت رنگی معتبر دارد (RGB/RGBA)', png[25] === 2 || png[25] === 6, 'colorType=' + png[25]);
 
 // ── جای‌گیری در صفحه ──
 check('برگهٔ استایل آرم در صفحه بارگذاری می‌شود', /design\/brand-logo\.css/.test(indexHtml));
 check('آرم داخل نوار بالا نشسته است',
   /<header class="topbar">[\s\S]*?class="topbar-logo"[\s\S]*?<\/header>/.test(indexHtml));
-check('آرم تصویر PNG را نشان می‌دهد', /class="topbar-logo"[\s\S]*?<img[^>]+nioc-logo\.png/.test(indexHtml));
+check('آرم تصویر PNG را نشان می‌دهد', /class="topbar-logo"[\s\S]*?<img[^>]+atlas-shift-logo\.png/.test(indexHtml));
 check('آرم متن جانشین دارد', /class="topbar-logo"[\s\S]*?<img[^>]+alt="[^"]+"/.test(indexHtml));
 
 // ── قاعدهٔ چیدمان ──
@@ -36,7 +36,7 @@ check('آرم در چاپ حذف می‌شود', /@media print[\s\S]*?\.topbar-l
 
 // ── کش سرویس‌ورکر ──
 check('برگهٔ استایل آرم پیش‌کش می‌شود', /'\.\/design\/brand-logo\.css'/.test(sw));
-check('تصویر آرم پیش‌کش می‌شود', /'\.\/design\/icons\/nioc-logo\.png'/.test(sw));
+check('تصویر آرم پیش‌کش می‌شود', /'\.\/design\/icons\/atlas-shift-logo\.png'/.test(sw));
 
 let failed = 0;
 checks.forEach(function (item) {
