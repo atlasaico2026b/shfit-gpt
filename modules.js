@@ -6071,6 +6071,12 @@
       viewBox: '0 0 ' + width + ' ' + height,
       aspect: width / height,
       path: path,
+      // تصویر جغرافیایی مشترک این بوم؛ راه‌های اصلی با همین تصویر روی نقشه می‌نشینند.
+      projectGeo: function (lon, lat) {
+        const point = project(lon, lat);
+        return { x: point[0] / width * 100, y: point[1] / height * 100 };
+      },
+      geoBounds: { minLon: minLon, maxLon: maxLon, minLat: minLat, maxLat: maxLat },
       cities: cities,
       cityIn: function (name) {
         const api = provinceApi();
@@ -6340,54 +6346,48 @@
     }).join('');
   }
 
-  // ── راه‌های اصلی: شبکهٔ اتصال شهرهای مارک‌شده ─────────────────────────────
-  // شهرهای نمایش‌داده‌شده با یک درخت پوشای کمینه (MST) به هم وصل می‌شوند تا
-  // شبکهٔ راه‌های اصلی شکل بگیرد. محاسبه قطعی است و به هیچ دادهٔ شبکه‌ای نیاز
-  // ندارد؛ پس آفلاین هم کار می‌کند و با تغییر شهرهای مارک‌شده خودکار به‌روز می‌شود.
-  function mapRoadEdges(cities) {
-    const points = cities.map(function (city) {
-      return { x: Number(city.x), y: Number(city.y) };
-    }).filter(function (point) {
-      return Number.isFinite(point.x) && Number.isFinite(point.y);
-    });
-    if (points.length < 2) return [];
-    const used = points.map(function () { return false; });
-    used[0] = true;
-    const edges = [];
-    for (let step = 1; step < points.length; step += 1) {
-      let best = null;
-      for (let i = 0; i < points.length; i += 1) {
-        if (!used[i]) continue;
-        for (let j = 0; j < points.length; j += 1) {
-          if (used[j]) continue;
-          const dx = points[i].x - points[j].x;
-          const dy = points[i].y - points[j].y;
-          const dist = dx * dx + dy * dy;
-          if (!best || dist < best.dist) best = { from: points[i], to: points[j], dist: dist };
-        }
-      }
-      if (!best) break;
-      used[points.indexOf(best.to)] = true;
-      edges.push(best);
-    }
-    return edges;
+  // ── راه‌های اصلی: شبکهٔ واقعی جاده‌ها ─────────────────────────────────────
+  // هندسهٔ راه‌ها از design/iran-roads.js می‌آید: مسیر واقعی رانندگی بین شهرهای
+  // اصلی ایران (OpenStreetMap). هیچ خط راستی بین دو شهر کشیده نمی‌شود.
+  // هر نقطه با همان تصویر خطی نقشه به درصد تبدیل می‌شود و راه‌ها به شکل استان
+  // بریده می‌شوند تا بیرون از مرز چیزی دیده نشود.
+  let mapClipSeq = 0;
+
+  // نگاشت طول/عرض جغرافیایی ← درصد روی قاب نقشه. برای یک استان همان برازش خطی
+  // شهرهای خودش و برای نقشهٔ چنداستانی تصویر مشترک جغرافیایی به کار می‌رود.
+  function mapGeoPercent(map) {
+    if (!map) return null;
+    if (typeof map.projectGeo === 'function') return map.projectGeo;
+    const fit = provinceGeoFit(map);
+    if (!fit || !fit.lon.slope || !fit.lat.slope) return null;
+    return function (lon, lat) {
+      return { x: (lon - fit.lon.offset) / fit.lon.slope, y: (lat - fit.lat.offset) / fit.lat.slope };
+    };
   }
 
-  // هر راه دو خط دارد: یک حاشیهٔ روشن زیر و خط سیاه روی آن. حاشیه فقط برای
-  // دیده‌شدن روی زمینهٔ تیره است؛ رنگ خودِ راه سیاه می‌ماند.
-  function mapRoadMarkup(cities, width, height) {
-    const edges = mapRoadEdges(cities);
-    if (!edges.length) return '';
-    const lines = edges.map(function (edge) {
-      const x1 = (edge.from.x * width / 100).toFixed(1);
-      const y1 = (edge.from.y * height / 100).toFixed(1);
-      const x2 = (edge.to.x * width / 100).toFixed(1);
-      const y2 = (edge.to.y * height / 100).toFixed(1);
-      const coords = 'x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"';
-      return '<line class="station-map-road-casing" ' + coords + '></line>' +
-        '<line class="station-map-road" ' + coords + '></line>';
-    }).join('');
-    return '<g class="station-map-roads" aria-hidden="true">' + lines + '</g>';
+  function mapGeoBounds(map) {
+    if (!map) return null;
+    if (map.geoBounds) return map.geoBounds;
+    const fit = provinceGeoFit(map);
+    if (!fit) return null;
+    return {
+      minLon: Math.min(fit.minLon, fit.maxLon),
+      maxLon: Math.max(fit.minLon, fit.maxLon),
+      minLat: Math.min(fit.minLat, fit.maxLat),
+      maxLat: Math.max(fit.minLat, fit.maxLat)
+    };
+  }
+
+  function mapRoadMarkup(map, width, height) {
+    const api = window.AtlasRoads;
+    const project = mapGeoPercent(map);
+    const bounds = mapGeoBounds(map);
+    if (!api || typeof api.markup !== 'function' || !project || !bounds) return '';
+    mapClipSeq += 1;
+    const clipId = 'station-map-clip-' + mapClipSeq;
+    const roads = api.markup(project, bounds, width, height, clipId);
+    if (!roads) return '';
+    return '<defs><clipPath id="' + clipId + '"><path d="' + esc(map.path) + '"></path></clipPath></defs>' + roads;
   }
 
   // شکل استان + راه‌های اصلی + نقطه و نام همهٔ شهرهای فعال، پشت گره‌ها. ردهٔ هر
@@ -6400,7 +6400,7 @@
     const height = box[3] || 1262;
     const settings = mapSettings();
     const cities = mapVisibleCities();
-    const roads = mapRoadMarkup(cities, width, height);
+    const roads = mapRoadMarkup(map, width, height);
     const dots = cities.map(function (city) {
       const x = Number(city.x) * (width / 100);
       const y = Number(city.y) * (height / 100);

@@ -42,10 +42,11 @@
   fill:rgba(var(--c-white-rgb),.055);stroke:rgba(var(--c-white-rgb),.3);
   stroke-width:2;stroke-linejoin:round;vector-effect:non-scaling-stroke;
 }
-/* راه‌های اصلی: خط سیاه روی یک حاشیهٔ روشن تا روی زمینهٔ تیره هم دیده شود. */
+/* راه‌های اصلی: شبکهٔ واقعی جاده‌ها. خط روشن با حاشیهٔ نرم تا روی زمینهٔ تیره
+   خوانا باشد و با نقطه‌های شهر اشتباه نشود. */
 .station-map-roads{pointer-events:none}
-.station-map-road-casing{stroke:rgba(var(--c-white-rgb),.3);stroke-width:4.4;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
-.station-map-road{stroke:#000;stroke-width:2.2;stroke-opacity:.92;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.station-map-road-casing{fill:none;stroke:rgba(var(--c-white-rgb),.06);stroke-width:4.4;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.station-map-road{fill:none;stroke:rgba(var(--c-white-rgb),.3);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
 .station-city-dot{fill:rgba(var(--c-white-rgb),.42);stroke:rgba(var(--c-black-rgb),.35);stroke-width:1;vector-effect:non-scaling-stroke}
 .station-city-label{fill:var(--muted);font-family:inherit;font-size:42px;direction:rtl;opacity:.9}
 .station-line{fill:none;stroke:var(--tone);stroke-width:4;stroke-opacity:.95;vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round}

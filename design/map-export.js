@@ -16,8 +16,8 @@
     border: '#5b6390',
     dot: '#8f9ad0',
     dotPrimary: '#22d3ee',
-    road: '#000000',
-    roadCasing: '#8f9ad0',
+    road: '#b9c3ee',
+    roadCasing: '#2a2f52',
     label: '#dfe4ff',
     labelPrimary: '#ffffff',
     title: '#ffffff',
@@ -46,35 +46,51 @@
     return provinceList().filter(function (item) { return item.id === id; })[0] || null;
   }
 
-  // شبکهٔ راه‌های اصلی: درخت پوشای کمینه روی شهرهای نمایش‌داده‌شده. همان الگوریتم
-  // modules.js است تا خروجی دانلودی با نقشهٔ درون برنامه یکی باشد.
-  function roadEdges(cities) {
-    var points = cities.map(function (city) {
-      return { x: Number(city.x), y: Number(city.y) };
-    }).filter(function (point) {
-      return isFinite(point.x) && isFinite(point.y);
+  // راه‌های اصلی: هندسهٔ واقعی جاده‌ها از design/iran-roads.js. تصویر جغرافیایی
+  // هر استان از برازش خطی شهرهای خودش حساب می‌شود؛ همان نگاشتی که مختصات درصدی
+  // شهرها با آن ساخته شده است.
+  function geoFit(province) {
+    var cities = (province.cities || []).filter(function (city) {
+      return isFinite(Number(city.lat)) && isFinite(Number(city.lon)) &&
+        isFinite(Number(city.x)) && isFinite(Number(city.y));
     });
-    if (points.length < 2) return [];
-    var used = points.map(function () { return false; });
-    used[0] = true;
-    var edges = [];
-    for (var step = 1; step < points.length; step += 1) {
-      var best = null;
-      for (var i = 0; i < points.length; i += 1) {
-        if (!used[i]) continue;
-        for (var j = 0; j < points.length; j += 1) {
-          if (used[j]) continue;
-          var dx = points[i].x - points[j].x;
-          var dy = points[i].y - points[j].y;
-          var dist = dx * dx + dy * dy;
-          if (!best || dist < best.dist) best = { from: points[i], to: points[j], dist: dist };
-        }
+    if (cities.length < 2) return null;
+    function fitAxis(values, targets) {
+      var n = values.length;
+      var sumX = 0, sumY = 0;
+      for (var i = 0; i < n; i += 1) { sumX += values[i]; sumY += targets[i]; }
+      var meanX = sumX / n, meanY = sumY / n;
+      var cov = 0, variance = 0;
+      for (var j = 0; j < n; j += 1) {
+        var dx = values[j] - meanX;
+        cov += dx * (targets[j] - meanY);
+        variance += dx * dx;
       }
-      if (!best) break;
-      used[points.indexOf(best.to)] = true;
-      edges.push(best);
+      if (variance <= 0) return null;
+      var slope = cov / variance;
+      return { slope: slope, offset: meanY - slope * meanX };
     }
-    return edges;
+    var lonFit = fitAxis(cities.map(function (c) { return Number(c.x); }), cities.map(function (c) { return Number(c.lon); }));
+    var latFit = fitAxis(cities.map(function (c) { return Number(c.y); }), cities.map(function (c) { return Number(c.lat); }));
+    if (!lonFit || !latFit || !lonFit.slope || !latFit.slope) return null;
+    return {
+      project: function (lon, lat) {
+        return { x: (lon - lonFit.offset) / lonFit.slope, y: (lat - latFit.offset) / latFit.slope };
+      },
+      bounds: {
+        minLon: Math.min(lonFit.offset, lonFit.offset + lonFit.slope * 100),
+        maxLon: Math.max(lonFit.offset, lonFit.offset + lonFit.slope * 100),
+        minLat: Math.min(latFit.offset, latFit.offset + latFit.slope * 100),
+        maxLat: Math.max(latFit.offset, latFit.offset + latFit.slope * 100)
+      }
+    };
+  }
+
+  function roadPaths(province, width, height) {
+    var api = window.AtlasRoads;
+    var fit = geoFit(province);
+    if (!api || typeof api.pathsFor !== 'function' || !fit) return [];
+    return api.pathsFor(fit.project, fit.bounds, width, height);
   }
 
   // SVG مستقل: مرز استان + راه‌های اصلی + نقطه و نام همهٔ شهرها + عنوان و راهنما.
@@ -89,15 +105,15 @@
       return !opts.hidden || opts.hidden.indexOf(city.name) < 0;
     });
 
-    var roads = roadEdges(cities).map(function (edge) {
-      var x1 = (edge.from.x * width / 100).toFixed(1);
-      var y1 = (edge.from.y * height / 100).toFixed(1);
-      var x2 = (edge.to.x * width / 100).toFixed(1);
-      var y2 = (edge.to.y * height / 100).toFixed(1);
-      var coords = 'x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"';
-      return '<line ' + coords + ' stroke="' + PALETTE.roadCasing + '" stroke-width="5" stroke-linecap="round"/>' +
-        '<line ' + coords + ' stroke="' + PALETTE.road + '" stroke-width="2.4" stroke-linecap="round"/>';
+    var paths = roadPaths(province, width, height);
+    var roads = paths.map(function (d) {
+      return '<path d="' + d + '" fill="none" stroke="' + PALETTE.roadCasing + '" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '<path d="' + d + '" fill="none" stroke="' + PALETTE.road + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
     }).join('');
+    var clip = paths.length
+      ? '<defs><clipPath id="atlas-map-clip"><path d="' + esc(province.path) + '"/></clipPath></defs>'
+      : '';
+    if (roads) roads = '<g clip-path="url(#atlas-map-clip)">' + roads + '</g>';
 
     var dots = cities.map(function (city) {
       var x = Number(city.x) * (width / 100);
@@ -125,7 +141,7 @@
       '<g transform="translate(0 ' + pad + ')">\n' +
       '<path d="' + esc(province.path) + '" fill="' + PALETTE.land + '" stroke="' + PALETTE.border +
         '" stroke-width="2.5" stroke-linejoin="round"/>\n' +
-      roads + '\n' + dots + '\n</g>\n' +
+      clip + '\n' + roads + '\n' + dots + '\n</g>\n' +
       '<text x="' + (width - 24) + '" y="' + (height - 18) + '" text-anchor="end" font-size="16" ' +
         'fill="' + PALETTE.note + '" direction="rtl">ATLAS SHIFT · ' + esc(province.name) + '</text>\n' +
       '</svg>\n';
@@ -145,9 +161,30 @@
           aspect: province.aspect,
           center: province.center,
           path: province.path,
-          roads: roadEdges(province.cities || []).map(function (edge) {
-            return { from: [edge.from.x, edge.from.y], to: [edge.to.x, edge.to.y] };
-          }),
+          roads: (function () {
+            var fit = geoFit(province);
+            var api = window.AtlasRoads;
+            if (!fit || !api || typeof api.routes !== 'function') return [];
+            return api.routes().filter(function (route) {
+              var points = route.points || [];
+              return points.some(function (point) {
+                var lon = Number(point[0]);
+                var lat = Number(point[1]);
+                return lon >= fit.bounds.minLon - 0.25 && lon <= fit.bounds.maxLon + 0.25 &&
+                  lat >= fit.bounds.minLat - 0.25 && lat <= fit.bounds.maxLat + 0.25;
+              });
+            }).map(function (route) {
+              return {
+                from: route.from,
+                to: route.to,
+                km: route.km,
+                points: (route.points || []).map(function (point) {
+                  var percent = fit.project(Number(point[0]), Number(point[1]));
+                  return [Number(percent.x.toFixed(1)), Number(percent.y.toFixed(1))];
+                })
+              };
+            });
+          })(),
           cities: (province.cities || []).map(function (city) {
             return {
               name: city.name,
