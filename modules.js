@@ -2786,6 +2786,7 @@
     { id: 'services', title: 'سرویس‌های خودرو', icon: '⚙' },
     { id: 'places', title: 'مکان‌های ایستگاه', icon: '⚑' },
     { id: 'map', title: 'نقشه و شهرها', icon: '🗺' },
+    { id: 'appearance', title: 'ظاهر و رنگ‌ها', icon: '◑' },
     { id: 'dashboard', title: 'تنظیمات داشبورد', icon: '▦' },
     { id: 'quickadd', title: 'ثبت سریع داشبورد', icon: '⚡' },
     { id: 'backup', title: 'پشتیبان‌گیری و ذخیره‌سازی', icon: '⤓' }
@@ -2976,6 +2977,9 @@
       return '<p class="reference-hint">هر مکان زیرمجموعهٔ یک «نوع محل» است و همان‌جا افزودن، تغییر نام و حذف می‌شود. فهرست مشترک مکان‌ها (شهر، محل خدمت، محل استقرار، محدودهٔ عملیاتی) در تب «منوها و فهرست‌ها» › «مکان‌ها و محل‌ها» است.</p>' + stationPlacesPanel();
     }
     if (id === 'map') return mapSettingsMarkup();
+    // پنل «ظاهر برنامه» (تم، رنگ‌های پس‌زمینه، اندازهٔ رابط) از index.html به این
+    // میزبان منتقل می‌شود؛ design/theme-two.js این کار را انجام می‌دهد.
+    if (id === 'appearance') return '<div class="settings-appearance-host" data-settings-appearance-host></div>';
     if (id === 'dashboard') return dashboardEditorMarkup();
     if (id === 'quickadd') return quickAddEditorMarkup();
     return backupSectionMarkup();
@@ -2993,7 +2997,7 @@
     }
     if (!SETTINGS_TABS.some(function (tab) { return tab.id === settingsTab; })) settingsTab = 'lists';
     section.innerHTML = rootWrap(
-      pageHead('تنظیمات', 'مدیریت محلی اطلاعات: فهرست‌های کشویی، مکان‌ها، چیدمان و ثبت سریع داشبورد، فیلدهای پرسنلی و نسخهٔ پشتیبان.', '') +
+      pageHead('تنظیمات', 'مدیریت محلی اطلاعات: ظاهر و رنگ‌ها، فهرست‌های کشویی، مکان‌ها، چیدمان و ثبت سریع داشبورد، فیلدهای پرسنلی و نسخهٔ پشتیبان.', '') +
       '<div class="settings-view-tabs" role="tablist">' + SETTINGS_TABS.map(function (tab) {
         return '<button type="button" role="tab" class="settings-view-tab' + (tab.id === settingsTab ? ' is-active' : '') + '" data-settings-tab="' + tab.id + '" aria-selected="' + (tab.id === settingsTab) + '"><span aria-hidden="true">' + tab.icon + '</span>' + esc(tab.title) + '</button>';
       }).join('') + '</div>' +

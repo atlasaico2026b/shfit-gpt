@@ -148,12 +148,14 @@
 }
 
 /* میزبان تنظیمات داشبورد: پنل شناور به یک کارت درون‌صفحه‌ای تبدیل می‌شود */
-.atlas-dashboard-settings-host {
+.atlas-dashboard-settings-host,
+.settings-appearance-host {
   width: 100%;
   margin-top: 0;
 }
 
-.atlas-dashboard-settings-host .settings-popover {
+.atlas-dashboard-settings-host .settings-popover,
+.settings-appearance-host .settings-popover {
   position: static !important;
   display: block !important;
   width: 100% !important;
@@ -168,7 +170,8 @@
   border: 0 !important;
 }
 
-.atlas-dashboard-settings-host .theme-choice-grid {
+.atlas-dashboard-settings-host .theme-choice-grid,
+.settings-appearance-host .theme-choice-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;

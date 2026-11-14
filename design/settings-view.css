@@ -588,3 +588,36 @@
 .qa-btn:hover:not(:disabled) { background: rgba(var(--c-accent-rgb, 90, 170, 255), 0.2); border-color: rgba(var(--c-accent-rgb, 90, 170, 255), 0.5); }
 .qa-btn:disabled { opacity: 0.3; cursor: default; }
 .quick-add-empty { grid-column: 1 / -1; margin: 0; font-size: 11px; color: var(--muted); }
+
+/* ─────────────────────────────────────────────────────────────
+   تب «ظاهر و رنگ‌ها»: میزبان پنل تنظیمات برنامه
+   ───────────────────────────────────────────────────────────── */
+.settings-appearance-host:empty::before {
+  content: 'تنظیمات ظاهر در حال بارگذاری است…';
+  display: block;
+  padding: 24px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* تم‌هایی که لایهٔ «ابروبادی» ندارند رنگ‌ها را پنهان می‌کنند؛ این یادداشت جای
+   آن بخش را توضیح می‌دهد تا کاربر فکر نکند تنظیمات رنگ حذف شده است. */
+.cloud-theme-note { display: none; }
+html[data-atlas-theme="theme-two"] .cloud-theme-note { display: block; }
+.cloud-theme-note p {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.8;
+}
+
+@media (max-width: 650px) {
+  .settings-appearance-host .theme-option,
+  .atlas-dashboard-settings-host .theme-option { grid-template-columns: 64px minmax(0, 1fr); }
+  .settings-appearance-host .theme-option-state,
+  .atlas-dashboard-settings-host .theme-option-state { display: none; }
+}
