@@ -59,7 +59,7 @@ const flatSkin = read('design/skins/flat.css');
 check('پوستهٔ تم اول لایهٔ رنگ ابروبادی را نشان می‌دهد', /--cloud-1-rgb/.test(flatSkin));
 
 // ۵ · کش سرویس‌ورکر برای دیدن فایل‌های تازه به‌روز شده
-check('نسخهٔ کش سرویس‌ورکر به‌روز است', /atlas-shift-v174/.test(sw));
+check('نسخهٔ کش سرویس‌ورکر به‌روز است', /atlas-shift-v175-real-roads-map/.test(sw));
 
 const failed = checks.filter((c) => !c.ok);
 checks.forEach((c) => console.log((c.ok ? 'PASS ' : 'FAIL ') + c.name));
