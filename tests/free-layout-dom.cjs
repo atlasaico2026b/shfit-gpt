@@ -9,6 +9,7 @@ const root = path.resolve(__dirname, '..');
 class El {
   constructor(tag, cls) {
     this.tagName = (tag || 'div').toUpperCase();
+    this.nodeType = 1;
     this.children = [];
     this.parentNode = null;
     this.dataset = {};
@@ -78,11 +79,13 @@ class El {
     node.parentNode = null;
     return node;
   }
-  // ارتفاع واقعی = بیشینهٔ محتوای طبیعی و minHeight — مثل مرورگر واقعی.
+  // ارتفاع واقعی = بیشینهٔ محتوای طبیعی و minHeight — مثل مرورگر واقعی؛ ولی
+  // اگر ارتفاع ثابت (height) تنظیم شده باشد، همان است و محتوا داخلش اسکرول می‌شود.
   getBoundingClientRect() {
     const natural = this._contentHeight != null ? this._contentHeight : this._rect.height;
     const width = parseFloat(this.style.width) || this._rect.width;
-    const height = Math.max(natural, parseFloat(this.style.minHeight) || 0);
+    const fixed = parseFloat(this.style.height);
+    const height = isFinite(fixed) ? fixed : Math.max(natural, parseFloat(this.style.minHeight) || 0);
     const start = parseFloat(this.style.insetInlineStart);
     const top = parseFloat(this.style.top);
     const hostWidth = this.parentNode ? this.parentNode.clientWidth : 0;
@@ -98,6 +101,13 @@ class El {
   setPointerCapture() {}
   setAttribute(name, value) { (this._attrs = this._attrs || {})[name] = value; }
   getAttribute(name) { return (this._attrs || {})[name]; }
+  // گره‌های فرزند فقط عنصر هستند؛ همان چیزی که ensureBody برای جابه‌جایی لازم دارد.
+  get childNodes() { return this.children; }
+  get nextSibling() {
+    const parent = this.parentNode;
+    if (!parent) return null;
+    return parent.children[parent.children.indexOf(this) + 1] || null;
+  }
   get clientWidth() { return this._clientWidth || 0; }
   set clientWidth(v) { this._clientWidth = v; }
 }
@@ -439,6 +449,65 @@ check('rect قدیمیِ پیکسلی با عرض مرجع خوانده می‌�
   Math.round(600 * DASHBOARD_WIDTH / LEGACY_REF) === window.AtlasFreeLayout.rectToPx({ x: 0, y: 0, w: 600, h: 200 }, DASHBOARD_WIDTH).w);
 check('rect بدون عرض (فقط ارتفاع ذخیره‌شده) ارتفاع را نگه می‌دارد',
   window.AtlasFreeLayout.rectToPx({ h: 240 }, DASHBOARD_WIDTH).h === 240);
+
+/* ── ۶) اندازهٔ تعیین‌شده در تنظیمات قفل است و محتوا داخل کادر اسکرول می‌شود ──
+   ارتفاع ذخیره‌شده دقیقاً همان است که اعمال می‌شود؛ محتوای بیشتر نه کادر را
+   بزرگ می‌کند و نه کوچک. محتوای کادر در ناحیهٔ .free-body می‌نشیند تا همان‌جا
+   اسکرول شود و سربرگ بیرون آن می‌ماند. */
+const fixedSize = {};
+function fixedWidget(id) {
+  const el = new El('article', 'widget');
+  el.dataset.widget = id;
+  el._rect = { width: 300, height: 200, left: 0, top: 0 };
+  const header = new El('div', 'widget-header');
+  const list = new El('div', 'list');
+  el.appendChild(header);
+  el.appendChild(list);
+  return { el, list };
+}
+const fixedHostNode = new El('section', 'dashboard');
+fixedHostNode.clientWidth = HOST_WIDTH;
+const tallContent = fixedWidget('locked');
+tallContent.el._contentHeight = 900;   // محتوای طبیعی بسیار بلندتر از اندازهٔ تعیین‌شده
+const shortContent = fixedWidget('other');
+shortContent.el._contentHeight = 120;  // و کادری با محتوای کم
+fixedHostNode.appendChild(tallContent.el);
+fixedHostNode.appendChild(shortContent.el);
+const fixedEngine = window.AtlasFreeLayout.attach(fixedHostNode, {
+  itemSelector: '.widget', gap: GAP, minWidth: 250, minHeight: 170, inject: true,
+  scrollBody: true, spanOf: () => 6, mode: 'free',
+  getSize: id => fixedSize[id] || null,
+  setSize: () => {},
+});
+fixedSize.locked = { fw: 0.5, h: 320 };
+fixedSize.other = { fw: 0.5, h: 320 };
+fixedEngine.render();
+
+check('ارتفاع تعیین‌شده با محتوای بلندتر بزرگ نمی‌شود',
+  Math.round(box(tallContent.el).h) === 320);
+check('ارتفاع تعیین‌شده روی کادر واقعی هم همان است',
+  Math.round(tallContent.el.getBoundingClientRect().height) === 320);
+check('ارتفاع تعیین‌شده با محتوای کمتر هم کوچک نمی‌شود',
+  Math.round(box(shortContent.el).h) === 320);
+check('محتوای کادر در ناحیهٔ اسکرول (free-body) می‌نشیند',
+  !!(shortContent.el.children || []).filter(c => c.classList.contains('free-body'))[0]);
+check('سربرگ بیرونِ ناحیهٔ اسکرول می‌ماند',
+  shortContent.el.children[0].classList.contains('widget-header'));
+check('ناحیهٔ اسکرول محتوای اصلی کادر را در خود دارد',
+  !!(shortContent.el.children[1] && shortContent.el.children[1].children.some(c => c.classList.contains('list'))));
+
+/* اگر ارتفاعی ذخیره نشده باشد کادر آزاد می‌ماند (خودکار). */
+delete fixedSize.other;
+fixedEngine.render();
+check('کادر بدون ارتفاع ذخیره‌شده خودکار می‌ماند',
+  Math.round(shortContent.el.getBoundingClientRect().height) === 170 && !shortContent.el.style.height);
+
+/* حالت ردیفی هم کادرِ کوتاه‌تر را تا ارتفاع کادر بلندتر کش نمی‌دهد. */
+fixedSize.other = { fw: 0.5, h: 200 };
+fixedEngine.opts.mode = 'pack';
+fixedEngine.render();
+check('حالت ردیفی ارتفاع تعیین‌شده را تغییر نمی‌دهد',
+  Math.round(box(tallContent.el).h) === 320 && Math.round(box(shortContent.el).h) === 200);
 
 const failed = checks.filter(item => !item.ok);
 checks.forEach(item => console.log((item.ok ? '✓ ' : '✗ ') + item.name));

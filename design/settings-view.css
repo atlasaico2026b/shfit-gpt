@@ -326,8 +326,25 @@
   box-sizing: border-box;
 }
 .free-layout > .widget {
+  display: flex;
+  flex-direction: column;
   transition: inset-inline-start 0.18s ease, top 0.18s ease, width 0.18s ease,
     min-height 0.18s ease, border-color 0.22s, box-shadow 0.22s, background 0.25s;
+}
+/* اندازهٔ کادر همان است که در تنظیمات تعیین شده؛ محتوای بیشتر داخل خودِ کادر
+   اسکرول می‌شود و ارتفاع کادر را عوض نمی‌کند. سربرگ بیرونِ ناحیهٔ اسکرول است. */
+.free-layout > .widget > .widget-header {
+  flex: 0 0 auto;
+}
+.free-layout > .widget > .free-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  padding-inline-end: 3px;
 }
 .free-layout > .is-dragging,
 .free-layout > .is-resizing {

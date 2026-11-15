@@ -291,23 +291,33 @@
 
     cards.forEach(function (card) {
       card.el.style.width = card.width + 'px';
+      // اندازهٔ ذخیره‌شده (تنظیمات) قفل است: ارتفاع نه از محتوا بزرگ می‌شود و
+      // نه کوچک؛ محتوای بیشتر داخل ناحیهٔ اسکرولِ خودِ کادر می‌ماند.
+      card.el.style.height = card.savedHeight ? card.savedHeight + 'px' : '';
       card.el.style.minHeight = card.savedHeight ? card.savedHeight + 'px' : '';
       card.el.style.insetInlineStart = box.padStart + 'px';
       card.el.style.top = box.padTop + 'px';
     });
 
-    // ارتفاع طبیعی هر کادر؛ ارتفاع انتخابی کاربر کفِ آن است.
+    // ارتفاع هر کادر: اگر در تنظیمات تعیین شده باشد دقیقاً همان؛ وگرنه ارتفاع
+    // طبیعی محتوا (فقط برای کادرهایی که هنوز اندازه‌ای برایشان ثبت نشده).
     var heights = cards.map(function (card) {
+      if (card.savedHeight) return card.savedHeight;
       var measured = Math.round(card.el.getBoundingClientRect().height);
-      return Math.max(card.savedHeight || 0, measured, stacked ? 0 : self.opts.minHeight);
+      return Math.max(measured, stacked ? 0 : self.opts.minHeight);
     });
 
     var plan = planRows(cards.map(function (card) { return card.width; }), heights, box.width, gap);
 
+    var byEl = {};
+    cards.forEach(function (card, index) { byEl[card.id] = { card: card, height: heights[index] }; });
+
     var slots;
     if (mode === 'pack') {
       slots = plan.map(function (slot) {
-        return { el: cards[slot.index].el, x: slot.x, y: slot.y, w: slot.w, h: slot.h };
+        // ارتفاع هر کادر همان است که برایش تعیین شده؛ ردیف فقط جای‌گذاری را
+        // تعیین می‌کند و کادرِ کوتاه‌تر را کش نمی‌دهد.
+        return { el: cards[slot.index].el, x: slot.x, y: slot.y, w: slot.w, h: heights[slot.index] };
       });
     } else {
       var free = cards.map(function (card, index) {
@@ -332,6 +342,8 @@
       var h = Math.round(slot.h);
       slot.el.style.width = w + 'px';
       slot.el.style.minHeight = h + 'px';
+      var known = byEl[self.idOf(slot.el)];
+      slot.el.style.height = known && known.card.savedHeight ? h + 'px' : '';
       slot.el.style.insetInlineStart = Math.round(box.padStart + slot.x) + 'px';
       slot.el.style.top = Math.round(box.padTop + slot.y) + 'px';
       slot.el.dataset.freeWidth = String(w);
@@ -386,9 +398,31 @@
     });
   };
 
+  /* محتوای کادر داخل یک ناحیهٔ اسکرول‌شونده می‌نشیند تا اندازهٔ کادر ثابت
+     بماند و اطلاعات بیشتر داخل خودِ کادر اسکرول شود (سربرگ بیرون می‌ماند). */
+  FreeLayout.prototype.ensureBody = function (el) {
+    if (!this.opts.scrollBody || el.dataset.freeScrollBody) return;
+    el.dataset.freeScrollBody = '1';
+    var body = document.createElement('div');
+    body.className = 'free-body';
+    var header = null;
+    var keep = ['widget-header', 'dash-card-head', 'free-drag', 'free-resize'];
+    Array.prototype.slice.call(el.childNodes).forEach(function (node) {
+      if (node.nodeType === 1 && keep.some(function (name) { return node.classList.contains(name); })) {
+        if (node.classList.contains('widget-header') || node.classList.contains('dash-card-head')) header = node;
+        return;
+      }
+      if (node.nodeType === 3 && !node.nodeValue.trim()) return;
+      body.appendChild(node);
+    });
+    if (header && header.nextSibling) el.insertBefore(body, header.nextSibling);
+    else el.appendChild(body);
+  };
+
   FreeLayout.prototype.prepare = function () {
     var self = this;
     this.items().forEach(function (el) {
+      self.ensureBody(el);
       self.ensureHandles(el);
       if (self.observer) { try { self.observer.observe(el); } catch (error) {} }
     });
@@ -478,6 +512,8 @@
       }
       if (flags.s) h = Math.max(this.opts.minHeight, h + dy);
       card.style.width = Math.round(w) + 'px';
+      // هنگام تغییر اندازه ارتفاع دقیق است، نه کفِ ارتفاع.
+      card.style.height = Math.round(h) + 'px';
       card.style.minHeight = Math.round(h) + 'px';
       card.style.insetInlineStart = Math.round(state.padStart + x0) + 'px';
       card.style.top = Math.round(state.padTop + y0) + 'px';
@@ -497,7 +533,9 @@
     size.x = Math.max(0, Math.round(number(parseFloat(card.style.insetInlineStart), state.padStart) - state.padStart));
     size.y = Math.max(0, Math.round(number(parseFloat(card.style.top), state.padTop) - state.padTop));
     size.w = Math.round(clamp(rect.width, this.opts.minWidth, state.limit));
-    size.h = Math.round(Math.max(0, number(parseFloat(card.style.minHeight), 0)));
+    // ارتفاع ثبت‌شده همان ارتفاع واقعی کادر است؛ اگر کادر آزاد (خودکار) باشد
+    // ارتفاع اندازه‌گیری‌شده ذخیره می‌شود تا از این پس اندازه ثابت بماند.
+    size.h = Math.round(Math.max(0, number(parseFloat(card.style.height), rect.height)));
     if (this.opts.setSize) this.opts.setSize(state.id, size, state.limit);
 
     this.render();
