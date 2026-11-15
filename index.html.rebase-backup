@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="fa" dir="rtl" data-atlas-theme="atlas-flat">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- رنگ نوار مرورگر: متا تگ مقدار var() را نمی‌فهمد، پس ناچار همان مقدار --bg است -->
+  <meta name="theme-color" content="#171a4d">
+  <meta name="description" content="ATLAS SHIFT؛ سامانه محلی مدیریت نیروی انسانی، شیفت‌ها و مأموریت‌ها">
+  <title>ATLAS SHIFT | مرکز عملیات</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="icon" href="./design/icons/icon-192.png" sizes="192x192" type="image/png">
+  <!-- iOS فقط PNG را برای آیکون صفحهٔ اصلی می‌پذیرد؛ بدون این، آیکون خالی می‌ماند -->
+  <link rel="apple-touch-icon" href="./design/icons/icon-180.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="ATLAS SHIFT">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- ── لایهٔ طراحی: ترتیب بارگذاری مهم است (tokens → base → skin → tones) ── -->
+  <link rel="stylesheet" href="./design/tokens.css">
+  <link rel="stylesheet" href="./design/styles.css">
+  <link rel="stylesheet" href="./design/skins/flat.css">
+  <link rel="stylesheet" href="./design/skins/theme-two.css">
+  <link rel="stylesheet" href="./design/tones.css">
+  <link rel="stylesheet" href="./design/table-fix.css">
+  <link rel="stylesheet" href="./design/settings-tabs.css">
+  <link rel="stylesheet" href="./design/phonebook.css">
+  <link rel="stylesheet" href="./design/option-manager.css">
+  <link rel="stylesheet" href="./design/modals-export.css">
+  <link rel="stylesheet" href="./design/print.css">
+  <link rel="stylesheet" href="./design/spectrum.css">
+  <link rel="stylesheet" href="./design/gaslogs.css">
+  <link rel="stylesheet" href="./design/stations.css">
+  <link rel="stylesheet" href="./design/vehicle-tabs.css">
+  <link rel="stylesheet" href="./design/settings-view.css">
+  <link rel="stylesheet" href="./design/atlas-icons.css">
+  <link rel="stylesheet" href="./design/forms-validation.css">
+  <link rel="stylesheet" href="./design/record-file.css">
+  <link rel="stylesheet" href="./design/toolbars.css">
+  <link rel="stylesheet" href="./design/shift-planner.css">
+  <!-- لایهٔ ظاهری تازه (بر پایهٔ کدهای پیوست) — آخرین لینک تا بر همهٔ فایل‌ها سوار شود -->
+  <link rel="stylesheet" href="./design/scroll-routing.css">
+  <link rel="stylesheet" href="./design/new-ui.css">
+  <link rel="stylesheet" href="./design/notices.css">
+  <link rel="stylesheet" href="./design/vertical-text.css">
+  <link rel="stylesheet" href="./design/brand-logo.css">
+</head>
+<body>
+
+
+<aside class="app-menu" aria-label="منوی اصلی برنامه">
+  <nav class="app-menu-nav">
+    <a class="app-menu-item active" href="./index.html" title="داشبورد"><span class="nav-ico" data-atlas-icon="dashboard"></span>داشبورد</a>
+    <a class="app-menu-item" href="./index.html?view=employees" title="پرسنل"><span class="nav-ico" data-atlas-icon="employees"></span>پرسنل</a>
+    <a class="app-menu-item" href="./index.html?view=shifts" title="شیفت‌ها"><span class="nav-ico" data-atlas-icon="shifts"></span>شیفت‌ها</a>
+    <a class="app-menu-item" href="./index.html?view=missions" title="مأموریت‌ها"><span class="nav-ico" data-atlas-icon="missions"></span>مأموریت</a>
+    <a class="app-menu-item" href="./index.html?view=leaves" title="مرخصی‌ها"><span class="nav-ico" data-atlas-icon="leaves"></span>مرخصی</a>
+    <a class="app-menu-item" href="./index.html?view=vehicles" title="خودروها"><span class="nav-ico" data-atlas-icon="vehicles"></span>خودرو</a>
+    <a class="app-menu-item" href="./index.html?view=stations" title="ایستگاه‌ها و مراکز"><span class="nav-ico" data-atlas-icon="stations"></span>ایستگاه و مرکز</a>
+    <a class="app-menu-item" href="./index.html?view=gasmeters" title="گازسنج‌ها"><span class="nav-ico" data-atlas-icon="gasmeters"></span>گازسنج</a>
+    <a class="app-menu-item" href="./index.html?view=notes" title="یادداشت‌ها"><span class="nav-ico" data-atlas-icon="notes"></span>یادداشت</a>
+    <a class="app-menu-item" href="./index.html?view=programs" title="برنامه‌ها و پرونده‌ها"><span class="nav-ico" data-atlas-icon="programs"></span>برنامه‌ها</a>
+    <a class="app-menu-item" href="./index.html?view=phonebook" title="دفترچه تلفن"><span class="nav-ico" data-atlas-icon="phonebook"></span>دفترچه</a>
+    <a class="app-menu-item" href="./index.html?view=reports" title="گزارشات"><span class="nav-ico" data-atlas-icon="reports"></span>گزارش</a>
+    <a class="app-menu-item" href="./index.html?view=settings" title="تنظیمات"><span class="nav-ico" data-atlas-icon="settings"></span>تنظیمات</a>
+  </nav>
+</aside>
+
+<header class="topbar">
+  <div class="brand" aria-label="ATLAS SHIFT">
+    <div class="brandmark"><span class="brandmark-glyph" data-atlas-icon="compass"></span></div><div class="brandtext"><b>ATLAS SHIFT</b><span>مرکز فرماندهی عملیات HSE</span></div>
+  </div>
+  <div class="topbar-logo" aria-label="ATLAS SHIFT">
+    <img src="./design/icons/atlas-shift-logo-transparent.png" alt="لوگوی ATLAS SHIFT" width="185" height="160" decoding="async">
+  </div>
+  <div class="top-actions">
+    <div class="clock-pill"><span class="live"></span><span id="dateText">در حال بارگذاری تاریخ</span><b id="clockText">--:--</b></div>
+    <button class="icon-btn" id="settingsButton" title="تنظیمات داشبورد" aria-label="بازکردن تنظیمات داشبورد" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.7a8 8 0 0 1-1.8 1l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.8-1l-1.7.7-1.4-2.4 1.4-1.1a7 7 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.7.7a8 8 0 0 1 1.8-1l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.8 1l1.7-.7 1.4 2.4-1.4 1.1a7 7 0 0 1 0 2Z" transform="translate(-1 -1) scale(1.08)"/></svg></button>
+    <button class="icon-btn" id="notificationButton" aria-label="بازکردن اعلان‌ها" title="اعلان‌ها" aria-haspopup="true"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span class="notification-count" id="notificationCount">۳</span></button>
+  </div>
+</header>
+
+<main class="shell">
+  <section class="hero">
+    <div>
+      <div class="kicker">مرکز پایش عملیات <span style="color:var(--muted)">/ LIVE OVERVIEW</span></div>
+      <h1>اتاق فرمان <span class="tone-text" data-tone="info">عملیات</span></h1>
+      <p>نمایی یکپارچه از نیروی انسانی، مأموریت‌ها، ناوگان و وضعیت تجهیزات ایمنی</p>
+    </div>
+
+  </section>
+  <section class="dashboard-controls" aria-label="تنظیم بازه زمانی داشبورد">
+    <div class="range-toolbar">
+      <div class="range-context"><span>بازهٔ نمایش اطلاعات</span><strong id="selectedRangeLabel">امروز</strong></div>
+      <div class="range-presets" aria-label="بازه‌های زمانی آماده">
+        <button class="range-chip active" data-range-preset="today" type="button">امروز</button>
+        <button class="range-chip" data-range-preset="yesterday" type="button">دیروز</button>
+        <button class="range-chip" data-range-preset="threeDays" type="button">۳ روز</button>
+        <button class="range-chip" data-range-preset="week" type="button">هفته</button>
+        <button class="range-chip" data-range-preset="tenDays" type="button">۱۰ روز</button>
+        <button class="range-chip" data-range-preset="month" type="button">ماه</button>
+        <button class="range-chip" data-range-preset="threeMonths" type="button">۳ ماه</button>
+        <button class="range-chip" data-range-preset="sixMonths" type="button">۶ ماه</button>
+        <button class="range-chip" data-range-preset="year" type="button">سال</button>
+        <button class="range-chip" data-range-preset="custom" type="button">دلخواه</button>
+      </div>
+      <button class="calendar-toggle" id="calendarToggle" type="button" aria-expanded="false" aria-controls="calendarPanel">
+        <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01"/></svg><span>تقویم شمسی</span>
+      </button>
+    </div>
+    <div class="calendar-panel" id="calendarPanel" aria-hidden="true">
+      <div class="calendar-panel-head"><div><h3>انتخاب بازه در تقویم شمسی</h3><p>برای انتخاب بازه، ابتدا روز شروع و سپس روز پایان را انتخاب کن.</p></div><button class="icon-btn" id="closeCalendar" type="button" aria-label="بستن تقویم"><svg viewBox="0 0 24 24"><path d="m18 6-12 12M6 6l12 12"/></svg></button></div>
+      <div class="calendar-panel-layout">
+        <div class="calendar-box">
+          <div class="calendar-monthbar"><strong id="calendarMonthLabel">مهر ۱۴۰۵</strong><div class="month-nav"><button id="calendarPrev" type="button" aria-label="ماه قبل">‹</button><button id="calendarNext" type="button" aria-label="ماه بعد">›</button></div></div>
+          <div class="weekday-row"><span>شنبه</span><span>یکشنبه</span><span>دوشنبه</span><span>سه‌شنبه</span><span>چهارشنبه</span><span>پنجشنبه</span><span>جمعه</span></div>
+          <div class="calendar-grid" id="calendarGrid" role="group" aria-label="روزهای ماه"></div>
+        </div>
+        <div class="calendar-summary-box">
+          <div class="calendar-selection-label">بازهٔ انتخاب‌شده</div>
+          <div class="calendar-selection-dates" id="calendarSelectionDates">انتخاب روز شروع</div>
+          <p class="calendar-summary-help" id="calendarSelectionHelp">بعد از انتخاب تاریخ شروع، یک تاریخ پایان هم انتخاب کن. بازه در بالای داشبورد نمایش داده می‌شود.</p>
+          <div class="calendar-summary-actions"><button class="secondary-btn" id="clearCalendarSelection" type="button">پاک‌کردن انتخاب</button><button class="primary-btn" id="applyCustomRange" type="button" disabled>اعمال بازه</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="quick-add" id="dashboardQuickAdd" aria-label="ثبت سریع">
+    <div class="quick-add-head"><span class="quick-add-title">ثبت سریع</span><small>هر مورد را همان‌جا ثبت کن؛ فرم روی همین صفحه باز می‌شود.</small></div>
+    <div class="quick-add-grid">
+    <button type="button" class="quick-add-btn" data-quick-add="employees" data-tone="info"><span class="quick-add-icon"><svg viewBox="0 0 24 24"><path d="M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/></svg></span><span>کارمند</span></button>
+    <button type="button" class="quick-add-btn" data-quick-add="leaves" data-tone="ok"><span class="quick-add-icon"><svg viewBox="0 0 24 24"><path d="M12 3v18M5 8h14"/></svg></span><span>مرخصی</span></button>
+    <button type="button" class="quick-add-btn" data-quick-add="missions" data-tone="special"><span class="quick-add-icon"><svg viewBox="0 0 24 24"><path d="M3 7h18M6 3h12v18H6zM9 11h6"/></svg></span><span>مأموریت</span></button>
+    <button type="button" class="quick-add-btn" data-quick-add="notes" data-tone="warn"><span class="quick-add-icon"><svg viewBox="0 0 24 24"><path d="M5 3h9l5 5v13H5zM14 3v5h5"/></svg></span><span>یادداشت</span></button>
+    <button type="button" class="quick-add-btn" data-quick-add="programs" data-tone="accent"><span class="quick-add-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h10M4 19h7"/></svg></span><span>برنامه</span></button>
+    <button type="button" class="quick-add-btn" data-quick-add="maintenance" data-tone="ok"><span class="quick-add-icon"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0 5 5L21 21H3l1.3-9.7a4 4 0 0 0 5-5Z"/><path d="M9 13h6"/></svg></span><span>سرویس خودرو</span></button>
+    <button type="button" class="quick-add-btn" data-quick-add="faults" data-tone="danger" data-preset='{"assetType":"خودرو"}'><span class="quick-add-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2.8 20h18.4L12 3ZM12 9v4M12 17h.01"/></svg></span><span>اشکال خودرو</span></button>
+    <button type="button" class="quick-add-btn" data-quick-add="stations" data-tone="info"><span class="quick-add-icon"><svg viewBox="0 0 24 24"><path d="M3 20V9l4-3 4 3v11"/><path d="M13 20V4h8v16"/><path d="M2 20h20"/></svg></span><span>ایستگاه / مرکز</span></button>
+    <button type="button" class="quick-add-btn" data-quick-add="gaslogs" data-tone="highlight" data-preset='{"logType":"ثبت قرائت"}'><span class="quick-add-icon"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v5l-4 7a4 4 0 0 0 3.5 6h5A4 4 0 0 0 18 15l-4-7V3"/></svg></span><span>سابقهٔ گازسنج</span></button>
+    </div>
+  </section>
+  <nav class="widget-dock" aria-label="۹ پنجرهٔ شناور داشبورد">
+    <button class="widget-dock-item active" type="button" data-target-widget="roster"><span class="widget-dock-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2M16 3.2a4 4 0 0 1 0 7.6M18 15h1a3 3 0 0 1 3 3v3"/></svg></span><span>نیروی انسانی</span></button>
+    <button class="widget-dock-item" type="button" data-target-widget="shift-coverage"><span class="widget-dock-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span>پوشش شیفت</span></button>
+    <button class="widget-dock-item" type="button" data-target-widget="missions"><span class="widget-dock-icon"><svg viewBox="0 0 24 24"><path d="M3 7h18M6 3h12v18H6zM9 11h6M9 15h6"/></svg></span><span>مأموریت‌ها</span></button>
+    <button class="widget-dock-item" type="button" data-target-widget="alerts"><span class="widget-dock-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2.8 20h18.4L12 3Z"/><path d="M12 9v4M12 17h.01"/></svg></span><span>هشدارها</span></button>
+    <button class="widget-dock-item" type="button" data-target-widget="fleet"><span class="widget-dock-icon"><svg viewBox="0 0 24 24"><path d="M3 13l2-6h14l2 6v6h-3v-2H6v2H3zM5 13h14M7 16h.01M17 16h.01"/></svg></span><span>ناوگان خودرو</span></button>
+    <button class="widget-dock-item" type="button" data-target-widget="calendar"><span class="widget-dock-icon"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span><span>برنامه امروز</span></button>
+    <button class="widget-dock-item" type="button" data-target-widget="equipment"><span class="widget-dock-icon"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v5l-4 7a4 4 0 0 0 3.5 6h5A4 4 0 0 0 18 15l-4-7V3M8 14h8"/></svg></span><span>تجهیزات ایمنی</span></button>
+    <button class="widget-dock-item" type="button" data-target-widget="operations"><span class="widget-dock-icon"><svg viewBox="0 0 24 24"><path d="M3 3v18h18M7 14l4-4 3 3 6-7"/></svg></span><span>فعالیت‌ها</span></button>
+    <button class="widget-dock-item" type="button" data-target-widget="stations"><span class="widget-dock-icon"><svg viewBox="0 0 24 24"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg></span><span>ایستگاه‌ها و مراکز</span></button>
+  </nav>
+
+  <div class="layout-hint">حالت چیدمان فعال است: دستگیرهٔ ⠿ هر پنجره را بکش و در محل جدید رها کن. برای تغییر اندازه از گزینه‌های روی پنجره استفاده کن. برای پایان، از تنظیمات «پایان تنظیم» را بزن.</div>
+
+  <section class="dashboard" id="dashboard" aria-label="پنجره‌های وضعیت">
+    <article class="widget" data-widget="roster" data-size="medium">
+      <div class="widget-header"><div class="widget-title"><span class="widget-icon"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg></span><div><h2>وضعیت نیروی انسانی</h2><p>تصویر لحظه‌ای حضور و مأموریت</p></div></div><div class="widget-meta"><span class="status-pill">به‌روز</span><div class="edit-tools"><button class="drag-handle" aria-label="جابه‌جایی پنجره" title="برای جابه‌جایی بکش">⠿</button><button class="size-btn" data-size-action="compact">کوچک</button><button class="size-btn" data-size-action="medium">معمولی</button><button class="size-btn" data-size-action="wide">عریض</button></div></div></div>
+      <div class="roster-top"><div><div class="big-number">۲۴<small>نفر در برنامه</small></div><div style="font-size:10px;color:var(--muted);margin-top:9px">پوشش برنامهٔ کاری امروز</div></div><div class="roster-visual"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="ring-track" cx="50" cy="50" r="38"/><circle class="ring-a" cx="50" cy="50" r="38"/><circle class="ring-b" cx="50" cy="50" r="38"/></svg><div class="ring-label"><b>۸۷٪</b><span>پوشش</span></div></div></div>
+      <div class="stat-row"><div class="mini-stat" data-tone="ok"><div class="value">۱۲</div><div class="label"><i class="tiny-dot"></i>آماده‌کار</div></div><div class="mini-stat" data-tone="accent"><div class="value">۰۸</div><div class="label"><i class="tiny-dot"></i>شیفت</div></div><div class="mini-stat" data-tone="info"><div class="value">۰۳</div><div class="label"><i class="tiny-dot"></i>مأموریت</div></div><div class="mini-stat" data-tone="warn"><div class="value">۰۱</div><div class="label"><i class="tiny-dot"></i>مرخصی</div></div></div>
+    </article>
+
+    <article class="widget" data-widget="shift-coverage" data-size="compact">
+      <div class="widget-header"><div class="widget-title"><span class="widget-icon" data-tone="ok"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2M4 5l2 2M20 5l-2 2"/></svg></span><div><h2>پوشش شیفت‌ها</h2><p>تفکیک نمایشی گروه‌های کاری</p></div></div><div class="widget-meta"><span class="status-pill">نمونه</span><div class="edit-tools"><button class="drag-handle" aria-label="جابه‌جایی پنجره" title="برای جابه‌جایی بکش">⠿</button><button class="size-btn" data-size-action="compact">کوچک</button><button class="size-btn" data-size-action="medium">معمولی</button></div></div></div>
+      <div class="shift-line"><div class="shift-line-top"><b>شیفت روز</b><span>۰۸ نفر</span></div><div class="progress-track"><div class="progress-bar" style="width:76%"></div></div></div>
+      <div class="shift-line"><div class="shift-line-top"><b>شیفت شب</b><span>۰۶ نفر</span></div><div class="progress-track"><div class="progress-bar" class="progress-bar" data-tone="info" style="width:58%"></div></div></div>
+      <div class="shift-line"><div class="shift-line-top"><b>نیروی روزکار</b><span>۱۰ نفر</span></div><div class="progress-track"><div class="progress-bar" class="progress-bar" data-tone="ok" style="width:91%"></div></div></div>
+    </article>
+
+    <article class="widget" data-widget="missions" data-size="wide">
+      <div class="widget-header"><div class="widget-title"><span class="widget-icon" data-tone="info"><svg viewBox="0 0 24 24"><path d="M3 12h18M13 4l8 8-8 8"/><circle cx="5" cy="12" r="2"/></svg></span><div><h2>مأموریت‌های میدانی</h2><p>مسیرها و فعالیت‌های در جریان</p></div></div><div class="widget-meta"><span class="status-pill">۳ مورد</span><div class="edit-tools"><button class="drag-handle" aria-label="جابه‌جایی پنجره">⠿</button><button class="size-btn" data-size-action="medium">معمولی</button><button class="size-btn" data-size-action="wide">عریض</button><button class="size-btn" data-size-action="full">تمام‌عرض</button></div></div></div>
+      <div class="list">
+        <div class="list-item"><div class="route-mark"><b>AHV</b><span>مسیر ۰۱</span></div><div class="list-main"><b>بازدید ایمنی و بررسی مسیر خط لوله</b><span>اهواز ← آبادان · گروه عملیاتی الف</span></div><div class="list-side"><strong>در جریان</strong><span class="status-pill">فعال</span></div></div>
+        <div class="list-item"><div class="route-mark" data-tone="info"><b>AND</b><span>مسیر ۰۲</span></div><div class="list-main"><b>بازدید تجهیزات اعلام و اطفای حریق</b><span>ایستگاه اندیمشک · گروه پشتیبانی</span></div><div class="list-side"><strong>برنامه‌ریزی‌شده</strong><span style="color:var(--muted)">۰۹:۳۰</span></div></div>
+        <div class="list-item"><div class="route-mark" data-tone="warn"><b>MAH</b><span>مسیر ۰۳</span></div><div class="list-main"><b>نظارت بر عملیات تعمیراتی</b><span>محدوده ماهشهر · گروه نظارت</span></div><div class="list-side"><strong>در انتظار اعزام</strong><span style="color:var(--muted)">۱۰:۱۵</span></div></div>
+      </div>
+    </article>
+
+    <article class="widget" data-widget="alerts" data-size="compact">
+      <div class="widget-header"><div class="widget-title"><span class="widget-icon" data-tone="warn"><svg viewBox="0 0 24 24"><path d="m10.3 3.9-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3.1l-8-14a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg></span><div><h2>هشدارها و اعلان‌ها</h2><p>موارد نیازمند توجه</p></div></div><div class="widget-meta"><span class="status-pill" data-tone="warn">۲ مورد</span><div class="edit-tools"><button class="drag-handle" aria-label="جابه‌جایی پنجره">⠿</button><button class="size-btn" data-size-action="compact">کوچک</button><button class="size-btn" data-size-action="medium">معمولی</button></div></div></div>
+      <div class="alert-list"><div class="alert-item critical"><div class="alert-symbol">◉</div><div class="alert-copy"><b>نزدیک‌شدن موعد کالیبراسیون</b><p>آشکارساز گاز · نمونه نمایشی</p></div><span class="alert-age">۳ روز</span></div><div class="alert-item"><div class="alert-symbol">↗</div><div class="alert-copy"><b>یادآوری سرویس خودرو</b><p>خودروی عملیاتی · نمونه نمایشی</p></div><span class="alert-age">۴۸۰ km</span></div><button class="secondary-btn" style="width:100%;justify-content:center;margin-top:3px" id="seeAllAlerts">مشاهده اعلان‌ها <span>←</span></button></div>
+    </article>
+
+    <article class="widget" data-widget="fleet" data-size="compact">
+      <div class="widget-header"><div class="widget-title"><span class="widget-icon" data-tone="special"><svg viewBox="0 0 24 24"><path d="M5 17h14l1-6-2-5H6l-2 5 1 6Z"/><path d="M4 11h16M7 17v2m10-2v2"/><circle cx="7.5" cy="14.5" r="1"/><circle cx="16.5" cy="14.5" r="1"/></svg></span><div><h2>وضعیت ناوگان</h2><p>نمای کلی خودروهای عملیاتی</p></div></div><div class="widget-meta"><span class="status-pill">پایش‌شده</span><div class="edit-tools"><button class="drag-handle" aria-label="جابه‌جایی پنجره">⠿</button><button class="size-btn" data-size-action="compact">کوچک</button><button class="size-btn" data-size-action="medium">معمولی</button></div></div></div>
+      <div class="vehicle-stack"><div class="vehicle"><div class="vehicle-icon"><svg viewBox="0 0 24 24"><path d="M5 17h14l1-6-2-5H6l-2 5 1 6Z"/><path d="M4 11h16"/><circle cx="7.5" cy="14.5" r="1"/><circle cx="16.5" cy="14.5" r="1"/></svg></div><div class="vehicle-info"><b>خودروی عملیاتی ۰۱</b><span>مستقر در اهواز</span></div><div class="vehicle-side"><b>آماده</b><span>● فعال</span></div></div><div class="vehicle"><div class="vehicle-icon"><svg viewBox="0 0 24 24"><path d="M3 7h11v11H3zM14 11h4l3 3v4h-7z"/><circle cx="7.5" cy="19" r="2"/><circle cx="17.5" cy="19" r="2"/></svg></div><div class="vehicle-info"><b>خودروی پشتیبانی ۰۲</b><span>مستقر در آبادان</span></div><div class="vehicle-side"><b>در سرویس</b><span>● فعال</span></div></div><div class="vehicle"><div class="vehicle-icon"><svg viewBox="0 0 24 24"><path d="M4 10h16l-1 8H5l-1-8Z"/><path d="M7 10V6h10v4M8 18v2m8-2v2"/></svg></div><div class="vehicle-info"><b>خودروی پشتیبانی ۰۳</b><span>مستقر در اندیمشک</span></div><div class="vehicle-side"><b class="tone-text" data-tone="warn">بررسی</b><span class="tone-text" data-tone="warn">● برنامه سرویس</span></div></div></div>
+    </article>
+
+    <article class="widget" data-widget="calendar" data-size="compact">
+      <div class="widget-header"><div class="widget-title"><span class="widget-icon" data-tone="danger"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/><path d="m8 15 2 2 5-4"/></svg></span><div><h2>برنامه امروز</h2><p>زمان‌بندی نمونه</p></div></div><div class="widget-meta"><div class="edit-tools"><button class="drag-handle" aria-label="جابه‌جایی پنجره">⠿</button><button class="size-btn" data-size-action="compact">کوچک</button><button class="size-btn" data-size-action="medium">معمولی</button></div></div></div>
+      <div class="date-banner"><div><strong id="persianDay">۲۷</strong><div style="font-size:10px;margin-top:6px">روز برنامه‌ریزی</div></div><div style="text-align:left"><span id="persianMonth">مهر ۱۴۰۵</span><div style="font-size:10px;color:var(--muted);margin-top:6px" id="weekDay">دوشنبه</div></div><div class="date-icon">◷</div></div>
+      <div class="agenda"><div class="agenda-row"><div class="agenda-time">۰۸:۰۰</div><div class="agenda-dot"></div><div class="agenda-text"><b>تحویل شیفت و هماهنگی</b><span>ستاد ایمنی</span></div></div><div class="agenda-row"><div class="agenda-time">۰۹:۳۰</div><div class="agenda-dot"></div><div class="agenda-text"><b>بررسی تجهیزات میدانی</b><span>ایستگاه عملیاتی</span></div></div><div class="agenda-row"><div class="agenda-time">۱۲:۰۰</div><div class="agenda-dot"></div><div class="agenda-text"><b>جمع‌بندی گزارش‌ها</b><span>پایان بازه کاری</span></div></div></div>
+    </article>
+
+    <article class="widget" data-widget="equipment" data-size="medium">
+      <div class="widget-header"><div class="widget-title"><span class="widget-icon" data-tone="info"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v5l-4 7a4 4 0 0 0 3.5 6h5A4 4 0 0 0 18 15l-4-7V3"/><path d="M8 14h8M10 17h4"/></svg></span><div><h2>پایش تجهیزات ایمنی</h2><p>وضعیت نمونه ابزارهای سنجش گاز</p></div></div><div class="widget-meta"><span class="status-pill">۳ گروه</span><div class="edit-tools"><button class="drag-handle" aria-label="جابه‌جایی پنجره">⠿</button><button class="size-btn" data-size-action="compact">کوچک</button><button class="size-btn" data-size-action="medium">معمولی</button><button class="size-btn" data-size-action="wide">عریض</button></div></div></div>
+      <div class="equip-row"><div class="equip-label"><div class="gas-chip">O₂</div><div><b>اکسیژن</b><span>وضعیت تجهیز · نمونه نمایشی<div class="progress-track"><div class="progress-bar" style="width:82%"></div></div></span></div></div><span class="equip-status">معتبر</span></div>
+      <div class="equip-row"><div class="equip-label"><div class="gas-chip" data-tone="info">LEL</div><div><b>گازهای قابل اشتعال</b><span>وضعیت تجهیز · نمونه نمایشی<div class="progress-track"><div class="progress-bar" style="width:67%"></div></div></span></div></div><span class="equip-status">معتبر</span></div>
+      <div class="equip-row" style="margin-bottom:0"><div class="equip-label"><div class="gas-chip" data-tone="warn">H₂S</div><div><b>هیدروژن سولفوره</b><span>بررسی موعد کالیبراسیون<div class="progress-track"><div class="progress-bar" class="progress-bar" data-tone="danger" style="width:26%"></div></div></span></div></div><span class="equip-status warn">نزدیک موعد</span></div>
+    </article>
+
+    <article class="widget" data-widget="operations" data-size="wide">
+      <div class="widget-header"><div class="widget-title"><span class="widget-icon"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 6-7"/><path d="M16 6h4v4"/></svg></span><div><h2>نمای کلی فعالیت‌ها</h2><p>توزیع نمونه فعالیت‌ها در بازه هفتگی</p></div></div><div class="widget-meta"><span style="display:flex;align-items:center;gap:5px"><span class="tone-text" data-tone="info">●</span> روند پایش</span><div class="edit-tools"><button class="drag-handle" aria-label="جابه‌جایی پنجره">⠿</button><button class="size-btn" data-size-action="medium">معمولی</button><button class="size-btn" data-size-action="wide">عریض</button><button class="size-btn" data-size-action="full">تمام‌عرض</button></div></div></div>
+      <div class="chart-legend"><span><i class="legend-dot"></i>بازدید و پایش</span><span><i class="legend-dot alt"></i>مأموریت میدانی</span></div>
+      <svg class="chart" viewBox="0 0 620 130" preserveAspectRatio="none" role="img" aria-label="نمودار نمونه فعالیت‌های هفتگی"><defs><linearGradient id="fillA" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="var(--accent)" stop-opacity=".28"/><stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/></linearGradient><linearGradient id="fillB" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="var(--accent2)" stop-opacity=".18"/><stop offset="100%" stop-color="var(--accent2)" stop-opacity="0"/></linearGradient></defs><g stroke="rgba(var(--c-white-rgb),.09)" stroke-dasharray="3 5"><path d="M0 20H620M0 48H620M0 76H620M0 104H620"/></g><path d="M0 92 C42 86 50 49 94 59 S147 75 180 47 S233 52 270 35 S322 65 360 52 S420 17 450 31 S512 61 540 37 S585 25 620 16 V130 H0Z" fill="url(#fillA)"/><path d="M0 104 C48 100 60 86 94 93 S150 60 180 76 S234 87 270 69 S320 85 360 70 S410 86 450 67 S510 83 540 65 S585 76 620 57 V130 H0Z" fill="url(#fillB)"/><path d="M0 92 C42 86 50 49 94 59 S147 75 180 47 S233 52 270 35 S322 65 360 52 S420 17 450 31 S512 61 540 37 S585 25 620 16" stroke="var(--accent)" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M0 104 C48 100 60 86 94 93 S150 60 180 76 S234 87 270 69 S320 85 360 70 S410 86 450 67 S510 83 540 65 S585 76 620 57" stroke="var(--accent2)" stroke-width="2" fill="none" stroke-linecap="round"/><g fill="var(--accent)"><circle cx="94" cy="59" r="3.5"/><circle cx="270" cy="35" r="3.5"/><circle cx="450" cy="31" r="3.5"/><circle cx="620" cy="16" r="3.5"/></g></svg>
+      <div class="chart-labels"><span>شنبه</span><span>یکشنبه</span><span>دوشنبه</span><span>سه‌شنبه</span><span>چهارشنبه</span><span>پنجشنبه</span><span>جمعه</span></div>
+    </article>
+
+    <article class="widget" data-widget="stations" data-size="compact">
+      <div class="widget-header"><div class="widget-title"><span class="widget-icon" data-tone="warn"><svg viewBox="0 0 24 24"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg></span><div><h2>نمای ایستگاه‌ها و مراکز</h2><p>برای دیدن اطلاعات هر مکان روی آن بزن</p></div></div><div class="widget-meta"><div class="edit-tools"><button class="drag-handle" aria-label="جابه‌جایی پنجره">⠿</button><button class="size-btn" data-size-action="compact">کوچک</button><button class="size-btn" data-size-action="medium">معمولی</button></div></div></div>
+      <div class="station-map" data-station-map data-zoom="1"><div class="station-map-zoom" role="group" aria-label="بزرگ‌نمایی نقشه"><button type="button" class="station-map-zoom-btn" data-map-zoom="in" aria-label="بزرگ‌تر">+</button><button type="button" class="station-map-zoom-btn" data-map-zoom="out" aria-label="کوچک‌تر">−</button><button type="button" class="station-map-zoom-btn" data-map-zoom="reset" aria-label="اندازهٔ اصلی">⤢</button><span class="station-map-zoom-label" data-map-zoom-label>۱۰۰٪</span></div></div>
+      <div class="station-caption" data-station-caption></div>
+    </article>
+  </section>
+  <div class="footnote"><span class="pulse"></span><span>پوستهٔ تعاملی ATLAS SHIFT</span><span style="opacity:.45">•</span><span>اطلاعات این پیش‌نمایش ساختگی است و به سامانه عملیاتی متصل نیست.</span><span style="margin-right:auto;opacity:.8">LIVE PREVIEW BUILD · 2026.10.19</span></div>
+
+  <section class="section-view" id="sectionView" hidden aria-live="polite"></section>
+</main>
+
+<div class="drawer-backdrop" id="drawerBackdrop"></div>
+<aside class="drawer" id="notificationDrawer" aria-label="مرکز اعلان‌ها" aria-hidden="true">
+  <div class="drawer-head"><div><h2>مرکز اعلان‌ها</h2><p>یادآوری‌ها و موارد نیازمند توجه</p></div><button class="icon-btn" id="closeDrawer" aria-label="بستن اعلان‌ها"><svg viewBox="0 0 24 24"><path d="m18 6-12 12M6 6l12 12"/></svg></button></div>
+  <div class="drawer-actions"><button id="markAllRead">خواندن همه</button><button id="onlyUnread">فقط خوانده‌نشده‌ها</button></div>
+  <div id="noticeList">
+    <div class="notice-card unread" data-notice="calibration"><div class="notice-mark">◉</div><div class="notice-body"><b>موعد کالیبراسیون نزدیک است</b><p>برای یک دستگاه آشکارساز گاز، موعد کالیبراسیون در ۳ روز آینده ثبت شده است.</p><small>امروز · تجهیزات ایمنی</small></div><span class="notice-unread"></span></div>
+    <div class="notice-card unread" data-notice="maintenance"><div class="notice-mark">↗</div><div class="notice-body"><b>یادآوری سرویس خودرو</b><p>کیلومتر سرویس دوره‌ای خودروی نمونه به محدوده یادآوری نزدیک شده است.</p><small>امروز · ناوگان</small></div><span class="notice-unread"></span></div>
+    <div class="notice-card unread" data-notice="mission"><div class="notice-mark">⌁</div><div class="notice-body"><b>برنامه مأموریت جدید</b><p>بازدید میدانی در برنامه امروز قرار داده شده است.</p><small>امروز · مأموریت‌ها</small></div><span class="notice-unread"></span></div>
+  </div>
+</aside>
+<section class="settings-popover" id="settingsPanel" aria-label="تنظیمات داشبورد" aria-hidden="true">
+  <div class="settings-head"><span class="setting-glyph"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="m19 13.5 1.2 1-.9 1.6-1.5-.5a6.8 6.8 0 0 1-1.4.8l-.3 1.6h-1.9l-.3-1.6a6.8 6.8 0 0 1-1.4-.8l-1.5.5-.9-1.6 1.2-1a6 6 0 0 1 0-1.6l-1.2-1 .9-1.6 1.5.5a6.8 6.8 0 0 1 1.4-.8l.3-1.6h1.9l.3 1.6a6.8 6.8 0 0 1 1.4.8l1.5-.5.9 1.6-1.2 1a6 6 0 0 1 0 1.6Z" transform="translate(-1 -1) scale(1.08)"/></svg></span><div><h3>تنظیمات برنامه</h3><p>شخصی‌سازی داشبورد، ظاهر و دفترچه تلفن</p></div></div>  <div class="settings-tabs" role="tablist" aria-label="بخش‌های تنظیمات">
+    <button class="settings-tab is-active" id="settings-tab-dashboard" type="button" role="tab" aria-selected="true" aria-controls="settings-pane-dashboard">داشبورد</button>
+    <button class="settings-tab" id="settings-tab-appearance" type="button" role="tab" aria-selected="false" aria-controls="settings-pane-appearance" tabindex="-1">ظاهر برنامه</button>
+    <button class="settings-tab" id="settings-tab-phonebook" type="button" role="tab" aria-selected="false" aria-controls="settings-pane-phonebook" tabindex="-1">دفترچه تلفن</button>
+    <button class="settings-tab" id="settings-tab-lists" type="button" role="tab" aria-selected="false" aria-controls="settings-pane-lists" tabindex="-1">منوها و فهرست‌ها</button>
+  </div>
+  <div class="settings-tab-pane" id="settings-pane-dashboard" role="tabpanel" aria-labelledby="settings-tab-dashboard">
+<div class="settings-section"><h4>چیدمان پنجره‌ها</h4><p>حالت تنظیم را فعال کن و با کشیدن دستگیرهٔ پنجره‌ها، جای آن‌ها را در داشبورد تغییر بده.</p><div class="settings-layout-actions"><button class="primary-btn" id="layoutButton" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="m14 6 4-4 4 4-4 4"/><path d="M18 2v12a4 4 0 0 1-4 4H3"/><path d="m7 14-4 4 4 4"/></svg><span id="layoutButtonText">تنظیم چیدمان</span></button><button class="secondary-btn" id="resetLayout"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>بازنشانی چیدمان</button></div></div>
+<div class="settings-section"><h4>عنوان اتاق فرمان</h4><p>عنوان بالای داشبورد («اتاق فرمان عملیات») و توضیح زیر آن را اینجا شخصی‌سازی کن.</p>
+  <label class="settings-line" for="dashboardTitleInput"><span>عنوان</span><input id="dashboardTitleInput" type="text" placeholder="اتاق فرمان عملیات" autocomplete="new-password" spellcheck="false" data-form-type="other"></label>
+  <label class="settings-line" for="dashboardSubtitleInput"><span>توضیح زیر عنوان</span><input id="dashboardSubtitleInput" type="text" placeholder="نمایی یکپارچه از نیروی انسانی، مأموریت‌ها، ناوگان و وضعیت تجهیزات ایمنی" autocomplete="new-password" spellcheck="false" data-form-type="other"></label>
+  <div class="settings-layout-actions"><button class="primary-btn" type="button" id="saveDashboardHeading">ذخیره عنوان</button><button class="secondary-btn" type="button" id="resetDashboardHeading">بازگردانی پیش‌فرض</button></div>
+</div>
+  </div>
+  <div class="settings-tab-pane" id="settings-pane-appearance" role="tabpanel" aria-labelledby="settings-tab-appearance" hidden>
+<div class="settings-section">
+    <h4>پوستهٔ برنامه</h4>
+    <p>برنامه دو تم دارد. تم اول تخت و روشن است؛ تم دوم «مرکز فرمان آینده‌نگر» با منوی کناری و پالت تیره است. انتخاب هر تم بلافاصله اعمال و ذخیره می‌شود.</p>
+    <div class="theme-choice-grid">
+      <button class="theme-option active" type="button" data-app-theme="cloud-glass" aria-pressed="true">
+        <span class="theme-preview theme-preview-cloud" aria-hidden="true"><i></i><i></i><i></i><b>ATLAS</b></span>
+        <span class="theme-option-copy"><strong>تم اول · شیشه‌ای ابروبادی</strong><small>تم مرجع فعلی</small></span>
+        <span class="theme-option-state">فعال</span>
+      </button>
+      <button class="theme-option" type="button" data-app-theme="theme-two" aria-pressed="false">
+        <span class="theme-preview theme-preview-pending" aria-hidden="true"><i></i><i></i><b>۲</b></span>
+        <span class="theme-option-copy"><strong>تم دوم</strong><small>تم دوم · مرکز فرمان آینده‌نگر</small></span>
+        <span class="theme-option-state">انتخاب</span>
+      </button>
+    </div>
+  </div>
+<div class="settings-section cloud-theme-note"><p>رنگ‌های «پس‌زمینهٔ ابروبادی» فقط در تم «شیشه‌ای ابروبادی» دیده می‌شوند؛ برای تنظیم آن‌ها کارت بالایی را انتخاب کن.</p></div>
+<div class="settings-section cloud-settings"><h4>پس‌زمینهٔ ابروبادی</h4><p>سه رنگ دلخواه را انتخاب کن؛ تغییرات فوراً اعمال می‌شوند.</p>
+    <div class="cloud-color-grid">
+      <label class="cloud-color-field" for="cloudColor1"><span>رنگ اول</span><input class="cloud-color-input" id="cloudColor1" type="color" value="#22d3ee" aria-label="رنگ اول پس‌زمینه"></label>
+      <label class="cloud-color-field" for="cloudColor2"><span>رنگ دوم</span><input class="cloud-color-input" id="cloudColor2" type="color" value="#f97316" aria-label="رنگ دوم پس‌زمینه"></label>
+      <label class="cloud-color-field" for="cloudColor3"><span>رنگ سوم</span><input class="cloud-color-input" id="cloudColor3" type="color" value="#a78bfa" aria-label="رنگ سوم پس‌زمینه"></label>
+    </div>
+    <label class="cloud-strength" for="cloudStrength"><span>شدت رنگ‌ها</span><output id="cloudStrengthValue" for="cloudStrength">۳۲٪</output></label>
+    <input class="cloud-strength-input" id="cloudStrength" type="range" min="8" max="38" step="1" value="32">
+    <button class="secondary-btn" id="resetCloudBackground" type="button">بازگردانی رنگ‌های پیش‌فرض</button>
+    <div class="ui-scale-setting atlas-divider">
+      <label for="uiScale" style="display:flex;justify-content:space-between;gap:12px;align-items:center"><span>اندازه کلی رابط برنامه</span><output id="uiScaleValue">۱۰۰٪</output></label>
+      <input id="uiScale" type="range" min="90" max="115" step="5" value="100" style="width:100%;margin-top:8px">
+      <p style="font-size:11px;margin:4px 0 0">اندازه را بین ۹۰ تا ۱۱۵ درصد تنظیم کنید.</p>
+    </div>
+  </div>
+<div class="settings-section"><h4>دستیار صوتی</h4><p>ترجیحات دستیار صوتی را اینجا تنظیم کن.</p><div class="atlas-voice-settings" style="display:grid;gap:10px;margin:12px 0"><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">فعال بودن دستیار صوتی<input id="voiceEnabled" type="checkbox"></label><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">دریافت فرمان صوتی فارسی<input id="voiceInput" type="checkbox"></label><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">پاسخ صوتی<input id="voiceReply" type="checkbox"></label><label style="display:flex;justify-content:space-between;gap:12px;align-items:center">تأیید عملیات حساس<input id="voiceConfirm" type="checkbox"></label></div><button class="secondary-btn" id="saveVoiceSettings" type="button">ذخیره تنظیمات دستیار</button></div>
+  </div>
+  <div class="settings-tab-pane" id="settings-pane-lists" role="tabpanel" aria-labelledby="settings-tab-lists" hidden>
+    <div class="settings-section" id="mainMenuManager">
+      <h4>مدیریت منوهای اصلی</h4>
+      <p>منوهای موجود را نمایش یا پنهان کن، ترتیبشان را تغییر بده یا میان‌بر تازه‌ای به یکی از بخش‌های برنامه اضافه کن.</p>
+      <div id="mainMenuList" style="display:grid;gap:8px;margin:12px 0"></div>
+      <div class="atlas-divider">
+        <h4 style="margin-top:0">افزودن منو</h4>
+        <label for="newMenuTitle">عنوان منو</label>
+        <input id="newMenuTitle" type="text" maxlength="40" placeholder="مثلاً پیگیری تجهیزات" class="atlas-input atlas-input--block" autocomplete="new-password" spellcheck="false" data-form-type="other">
+        <label for="newMenuTarget">صفحه‌ای که منو باز می‌کند</label>
+        <select id="newMenuTarget" class="atlas-input atlas-input--block">
+          <option value="dashboard">داشبورد</option><option value="employees">کارکنان</option><option value="shifts">شیفت‌ها</option><option value="missions">مأموریت‌ها</option><option value="leaves">مرخصی‌ها</option><option value="vehicles">خودروها</option><option value="gasmeters">گازسنج‌ها</option><option value="notes">یادداشت‌ها و پیگیری‌ها</option><option value="programs">برنامه‌ها و پرونده‌ها</option><option value="phonebook">دفترچه تلفن</option><option value="reports">گزارشات</option>
+        </select>
+        <button class="primary-btn" id="addMainMenu" type="button">+ افزودن منو</button>
+      </div>
+      <p id="mainMenuStatus" role="status" aria-live="polite" style="font-size:12px;margin-top:8px"></p>
+    </div>
+    <div class="settings-section"><h4>فهرست‌های داخل فرم‌ها</h4><p>مدیریت مقادیر قابل انتخاب فرم‌ها از بخش‌های مربوطه انجام می‌شود.</p></div>
+  </div>
+  <div class="settings-tab-pane" id="settings-pane-phonebook" role="tabpanel" aria-labelledby="settings-tab-phonebook" hidden>
+<div class="settings-section" id="phonebookSettingsGroup"><h4>تنظیمات دفترچه تلفن</h4><p>تنظیم ساختار مکانی و مدیریت فهرست‌های قابل انتخاب در دفترچه تلفن.</p><div class="phonebook-settings-subsection" id="phonebookTreeSettings">
+  <h4>مدیریت ساختارها</h4>
+  <p>هر مورد را به والد درست وصل کنید.</p>
+  <details class="pb-structure-accordion">
+    <summary>📍 ساختار مکان‌ها <span>حوزه ← شهر ← مجتمع/مرکز انتقال نفت/ایستگاه ← ساختمان</span></summary>
+    <div class="pb-structure-content"><div id="pbLocationTreeView" class="atlas-pb-settings-list"></div></div>
+  </details>
+  <details class="pb-structure-accordion">
+    <summary>🏢 ساختار سازمانی <span>سرپرستی ← واحد ← رئیس واحد و سمت‌ها</span></summary>
+    <div class="pb-structure-content"><div id="pbOrgTreeView" class="atlas-pb-settings-list"></div></div>
+  </details>
+  <details class="pb-structure-accordion">
+    <summary>+ افزودن یا اصلاح مورد</summary>
+    <div class="pb-structure-content">
+      <label for="pbTreeType">نوع مورد</label>
+      <select id="pbTreeType" class="atlas-input">
+        <optgroup label="مکان‌ها">
+          <option value="area">حوزه</option><option value="city">شهر</option><option value="complex">مجتمع</option><option value="transferCenter">مرکز انتقال نفت</option><option value="station">ایستگاه مخابراتی</option><option value="building">ساختمان</option>
+        </optgroup>
+        <optgroup label="ساختار سازمانی">
+          <option value="supervision">سرپرستی</option><option value="unit">واحد</option><option value="unitHead">رئیس واحد</option><option value="position">سمت سازمانی</option>
+        </optgroup>
+      </select>
+      <label for="pbTreeParent" style="display:block;margin-top:8px">والد / محل قرارگیری</label>
+      <select id="pbTreeParent" class="atlas-input"><option value="">بدون والد (ریشه)</option></select>
+      <label for="pbTreeName" style="display:block;margin-top:8px">نام مورد</label>
+      <input id="pbTreeName" type="text" placeholder="نام جدید یا نام اصلاح‌شده" class="atlas-input" style="margin-top:6px" autocomplete="new-password" spellcheck="false" data-form-type="other">
+      <div style="display:flex;gap:8px;margin-top:8px"><button class="secondary-btn" id="pbTreeAdd" type="button" style="flex:1;min-width:0">+ افزودن</button><button class="secondary-btn" id="pbTreeCancelEdit" type="button" style="display:none;flex:1;min-width:0">لغو اصلاح</button></div>
+    </div>
+  </details>
+</div>
+<div class="phonebook-settings-subsection atlas-divider" id="phonebookSettings"><h4>فهرست‌های قابل انتخاب</h4><p>مقادیر منوهای کشویی دفترچه تلفن را اضافه، ویرایش یا حذف کن.</p><label for="phonebookOptionCategory">فیلد موردنظر</label><select id="phonebookOptionCategory" class="atlas-input" style="margin-top:8px"><option value="phoneLabel">عنوان شماره تماس</option></select><div class="atlas-pb-settings-editor"><input id="phonebookOptionValue" type="text" placeholder="مقدار جدید یا مقدار اصلاح‌شده" autocomplete="new-password" spellcheck="false" data-form-type="other"><button class="secondary-btn" id="phonebookOptionAdd" type="button">+ افزودن</button></div><div id="phonebookOptionList" class="atlas-pb-settings-list"></div></div></div>
+  </div>
+</section>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="./design/theme-switch.js" defer></script>
+<script src="./design/secure-store.js" defer></script>
+<script src="./design/scroll-routing.js" defer></script>
+<script src="./design/print-sheet.js" defer></script>
+<script src="./design/export-docs.js" defer></script>
+<script src="./design/khuzestan-map.js" defer></script>
+<script src="./design/provinces-map.js" defer></script>
+<script src="./design/iran-roads.js" defer></script>
+<script src="./design/roads.js" defer></script>
+<script src="./design/map-export.js" defer></script>
+<script src="./modules.js" defer></script>
+<script src="./design/shift-planner.js" defer></script>
+<script src="./design/vertical-text.js" defer></script>
+<script src="./design/icons/atlas-icons.js"></script>
+<script src="./app.js" defer></script>
+<script src="./theme-two.js" defer></script>
+<script src="./settings-tabs.js" defer></script>
+<script src="./menu-manager.js" defer></script>
+<script src="./design/new-ui.js" defer></script>
+<script src="./design/contact-sync.js" defer></script>
+<script src="./design/record-file.js" defer></script>
+<script>
+  (function () {
+    // حافظهٔ پایدار: بدون این، مرورگر می‌تواند زیر فشار فضا داده‌های محلی را پاک کند.
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {});
+
+    var notice = null;
+    function showNotice(message, actionLabel, onAction) {
+      if (notice) notice.remove();
+      notice = document.createElement('div');
+      notice.className = 'atlas-notice';
+      var text = document.createElement('span');
+      text.textContent = message;
+      notice.appendChild(text);
+      if (actionLabel) {
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'atlas-notice-action';
+        button.textContent = actionLabel;
+        button.addEventListener('click', function () { notice.remove(); notice = null; onAction(); });
+        notice.appendChild(button);
+      }
+      var close = document.createElement('button');
+      close.type = 'button';
+      close.className = 'atlas-notice-close';
+      close.setAttribute('aria-label', 'بستن');
+      close.textContent = '×';
+      close.addEventListener('click', function () { notice.remove(); notice = null; });
+      notice.appendChild(close);
+      document.body.appendChild(notice);
+      return notice;
+    }
+
+    // نسخهٔ تازه نصب شد (سرویس‌ورکر در activate پیام می‌دهد).
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', function (event) {
+        if (!event.data || event.data.type !== 'atlas-shell-updated') return;
+        showNotice('نسخهٔ تازهٔ برنامه ذخیره شد. برای دیدنش صفحه را بازخوانی کنید.', 'بازخوانی', function () { location.reload(); });
+      });
+    }
+
+    // وضعیت آفلاین: کاربر باید بداند داده‌ها روی همین دستگاه ذخیره می‌شوند.
+    function offlineNotice() {
+      var box = showNotice('آفلاین هستید. همه‌چیز کار می‌کند و تغییرات روی همین دستگاه ذخیره می‌شوند.');
+      setTimeout(function () { if (box.isConnected) box.remove(); }, 6000);
+    }
+    if (!navigator.onLine) window.addEventListener('load', offlineNotice);
+    window.addEventListener('offline', offlineNotice);
+
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+      window.addEventListener('load', async function () {
+        try {
+          const registration = await navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' });
+          await registration.update();
+        } catch (_) {}
+      });
+    }
+  }());
+</script>
+
+<script id="atlas-ui-scale-script">
+(function(){
+  function setupScale(){
+    const slider=document.getElementById('uiScale'),output=document.getElementById('uiScaleValue');
+    if(!slider||!output||slider.dataset.ready==='1')return;
+    slider.dataset.ready='1';
+    let saved=100;try{saved=Number(localStorage.getItem('atlasShiftUiScale')||100)}catch(_){}
+    if(![90,95,100,105,110,115].includes(saved))saved=100;
+    function apply(value){
+      const scale=Number(value);
+      document.documentElement.style.fontSize=scale+'%';
+      slider.value=String(scale);
+      output.textContent=String(scale).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d])+'٪';
+      try{localStorage.setItem('atlasShiftUiScale',String(scale))}catch(_){}
+    }
+    slider.addEventListener('input',()=>apply(slider.value));
+    apply(saved);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setupScale,{once:true});else setupScale();
+})();
+</script>
+</body>
+</html>
