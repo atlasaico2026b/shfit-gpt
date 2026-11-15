@@ -384,6 +384,62 @@ check('حالت آزاد واقعی: کادرها کنار هم می‌نشین�
 check('حالت آزاد واقعی: هیچ کادری از عرض داشبورد بیرون نمی‌زند', free.boxes.every(r => r.x + r.w <= 1284 + 1));
 check('حالت آزاد واقعی: هیچ کادری باریک‌تر از کمینه نیست', free.boxes.every(r => r.w >= 250 - 1));
 
+/* ── ۵) یک چیدمان، دو میزبان: ویرایشگر تنظیمات (باریک) و داشبورد (پهن) ──
+   هندسه به کسری از عرض میزبان ذخیره می‌شود، پس چیدمانی که در تنظیمات درست
+   چیده شده باید در داشبورد هم همان نسبت‌ها را داشته باشد، نه پیکسل خام. */
+const shared = {};
+function sharedOptions() {
+  return {
+    itemSelector: '.widget', gap: GAP, minWidth: 250, minHeight: 170, inject: true, mode: 'free',
+    spanOf: () => 6,
+    getSize: (id, width) => window.AtlasFreeLayout.rectToPx(shared[id], width),
+    setSize: (id, size, width) => { shared[id] = window.AtlasFreeLayout.rectFromPx(size, width); },
+  };
+}
+function sharedHost(width, ids) {
+  const node = new El('section', 'dashboard');
+  node.clientWidth = width;
+  ids.forEach(id => {
+    const el = new El('article', 'widget');
+    el.dataset.widget = id;
+    el._rect = { width: 300, height: 200, left: 0, top: 0 };
+    el._contentHeight = 200;
+    node.appendChild(el);
+  });
+  const engine = window.AtlasFreeLayout.attach(node, sharedOptions());
+  engine.render();
+  return { node, engine };
+}
+
+const EDITOR_WIDTH = 760;
+const DASHBOARD_WIDTH = 1380;
+const editorHost = sharedHost(EDITOR_WIDTH, ['a', 'b', 'c']);
+const editorCard = editorHost.node.children.filter(el => el.dataset.widget === 'a')[0];
+pointer(editorHost.node, 'pointerdown', editorCard.querySelector('[data-free-resize="e"]'), 0, 0);
+pointer(editorHost.node, 'pointermove', editorCard.querySelector('[data-free-resize="e"]'), -300, 0);
+pointer(editorHost.node, 'pointerup', editorCard.querySelector('[data-free-resize="e"]'), -300, 0);
+const editorRatio = box(editorCard).w / EDITOR_WIDTH;
+
+check('چیدمان به کسری از عرض ذخیره می‌شود، نه پیکسل خام',
+  shared.a && shared.a.fw > 0 && Math.abs(shared.a.fw - editorRatio) < 0.02);
+
+const dashboardHost = sharedHost(DASHBOARD_WIDTH, ['a', 'b', 'c']);
+const dashboardCard = dashboardHost.node.children.filter(el => el.dataset.widget === 'a')[0];
+const dashboardBoxes = dashboardHost.node.children.map(box);
+check('همان چیدمان در داشبورد به همان نسبت عرض دیده می‌شود',
+  Math.abs(box(dashboardCard).w / DASHBOARD_WIDTH - editorRatio) < 0.02);
+check('چیدمان داشبورد داخل عرض میزبان می‌ماند',
+  dashboardBoxes.every(r => r.x + r.w <= DASHBOARD_WIDTH + 1));
+check('چیدمان داشبورد روی هم نمی‌افتد',
+  dashboardBoxes.every((a, i) => dashboardBoxes.every((b, j) => i >= j || !overlaps(a, b))));
+
+/* rectهای قدیمی فقط پیکسل داشتند؛ باید با عرض مرجع به کسر تبدیل شوند. */
+const LEGACY_REF = window.AtlasFreeLayout.REF_WIDTH;
+check('rect قدیمیِ پیکسلی با عرض مرجع خوانده می‌شود',
+  Math.round(600 * DASHBOARD_WIDTH / LEGACY_REF) === window.AtlasFreeLayout.rectToPx({ x: 0, y: 0, w: 600, h: 200 }, DASHBOARD_WIDTH).w);
+check('rect بدون عرض (فقط ارتفاع ذخیره‌شده) ارتفاع را نگه می‌دارد',
+  window.AtlasFreeLayout.rectToPx({ h: 240 }, DASHBOARD_WIDTH).h === 240);
+
 const failed = checks.filter(item => !item.ok);
 checks.forEach(item => console.log((item.ok ? '✓ ' : '✗ ') + item.name));
 if (failed.length) {

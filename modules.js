@@ -10988,6 +10988,22 @@
   // دوباره چیده می‌شود تا فضای خالی بین کادرها نماند.
   let freeDashboardLayout = null;
 
+  // یک چیدمان، دو میزبان: ویرایشگر تنظیمات و خود داشبورد عرض یکسانی ندارند،
+  // پس هندسه به کسری از عرض میزبان ذخیره می‌شود؛ پیکسل خام همان چیزی بود که
+  // چیدمان درستِ تنظیمات را در داشبورد به‌هم‌ریخته نشان می‌داد.
+  function dashboardRectPx(id, width) {
+    const engine = window.AtlasFreeLayout;
+    const rect = dashboardLayout().rects[id];
+    if (rect && engine && engine.rectToPx) return engine.rectToPx(rect, width);
+    return rect || null;
+  }
+
+  function storeDashboardRect(id, size, width) {
+    const engine = window.AtlasFreeLayout;
+    const rect = engine && engine.rectFromPx ? engine.rectFromPx(size, width) : size;
+    dashboardLayout().rects[id] = rect;
+  }
+
   function dashboardFreeLayout() {
     const host = document.getElementById('dashboard');
     if (!host || !window.AtlasFreeLayout) return null;
@@ -11003,19 +11019,8 @@
           const id = node.dataset.widget;
           return dashboardLayout().spans[id] || DASHBOARD_SPAN_BY_SIZE[node.dataset.size] || 6;
         },
-        getSize: function (id) {
-          const rect = dashboardLayout().rects[id];
-          return rect ? { x: rect.x, y: rect.y, w: rect.w, h: rect.h } : null;
-        },
-        setSize: function (id, size) {
-          const rect = dashboardLayout().rects[id] || {};
-          dashboardLayout().rects[id] = {
-            x: Math.max(0, Math.round(Number(size.x != null ? size.x : rect.x) || 0)),
-            y: Math.max(0, Math.round(Number(size.y != null ? size.y : rect.y) || 0)),
-            w: Math.round(size.w),
-            h: Math.round(size.h || 0)
-          };
-        },
+        getSize: dashboardRectPx,
+        setSize: storeDashboardRect,
         onChange: function () { commitDashboardLayout(host); }
       });
     }
@@ -11066,11 +11071,12 @@
   }
 
   function dashCardFoot(card) {
-    const width = Number(card.dataset.freeWidth || 0);
-    const height = Number(card.dataset.freeHeight || 0);
+    const rect = dashboardLayout().rects[card.dataset.dashCard] || {};
+    const share = Number(rect.fw || 0);
+    const height = Math.round(Number(rect.h || 0));
     const widthNode = card.querySelector('[data-dash-foot-span]');
     const heightNode = card.querySelector('[data-dash-foot-height]');
-    if (widthNode) widthNode.textContent = 'عرض: ' + (width ? faDigits(width) + ' پیکسل' : 'آزاد');
+    if (widthNode) widthNode.textContent = share > 0 ? 'عرض: ' + faDigits(Math.round(share * 100)) + '٪ صفحه' : 'عرض: آزاد';
     if (heightNode) heightNode.textContent = 'ارتفاع: ' + (height ? faDigits(height) + ' پیکسل' : 'خودکار');
   }
 
@@ -11147,19 +11153,8 @@
         mode: dashboardLayout().mode,
         idOf: function (node) { return node.dataset.dashCard; },
         spanOf: function (node) { return dashboardLayout().spans[node.dataset.dashCard] || 6; },
-        getSize: function (id) {
-          const rect = dashboardLayout().rects[id];
-          return rect ? { x: rect.x, y: rect.y, w: rect.w, h: rect.h } : null;
-        },
-        setSize: function (id, size) {
-          const rect = dashboardLayout().rects[id] || {};
-          dashboardLayout().rects[id] = {
-            x: Math.max(0, Math.round(Number(size.x != null ? size.x : rect.x) || 0)),
-            y: Math.max(0, Math.round(Number(size.y != null ? size.y : rect.y) || 0)),
-            w: Math.round(size.w),
-            h: Math.round(size.h || 0)
-          };
-        },
+        getSize: dashboardRectPx,
+        setSize: storeDashboardRect,
         onChange: function () { commitEditorLayout(editor); }
       });
       editor.addEventListener('free-layout', function () {

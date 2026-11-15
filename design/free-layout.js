@@ -18,19 +18,61 @@
        gap: 17,
        minWidth: 220, minHeight: 120,
        mode: 'free',
-       spanOf(el) -> 1..12,
-       getSize(id) -> {x, y, w, h} | null,
-       setSize(id, {x, y, w, h}),
-       onChange()   // پس از هر تغییر کاربر
-     });
-     layout.render();
+      spanOf(el) -> 1..12,
+      getSize(id, width) -> {x, y, w, h} | null,   // width = عرض محتوای همین میزبان
+      setSize(id, {x, y, w, h}, width),
+      onChange()   // پس از هر تغییر کاربر
+    });
+    layout.render();
+
+   چیدمان را با `AtlasFreeLayout.rectFromPx` ذخیره و با `rectToPx` بخوانید
+   تا یک چیدمان در داشبورد و ویرایشگر تنظیمات (دو عرض متفاوت) یکسان بماند.
 */(function () {
   'use strict';
 
   var SPAN_BY_SIZE = { compact: 4, medium: 6, wide: 8, full: 12 };
   var COLS = 12;
   var EPS = 0.5;
+  /* چیدمان یک کادر در «کسری از عرض میزبان» ذخیره می‌شود، نه پیکسل خام:
+     ویرایشگر تنظیمات و داشبورد دو میزبان با عرض‌های متفاوت‌اند و پیکسل
+     خام باعث می‌شد همان چیدمان در داشبورد به‌هم‌ریخته دیده شود. */
+  var REF_WIDTH = 1200;
   var instances = [];
+
+  /* {fx, fy, fw, h} → {x, y, w, h} بر حسب پیکسلِ همین عرض.
+     rect قدیمی (فقط پیکسل) با عرض مرجع به کسر تبدیل می‌شود. */
+  function rectToPx(rect, width) {
+    if (!rect || typeof rect !== 'object') return null;
+    var span = number(width, 0) > 0 ? number(width, 0) : REF_WIDTH;
+    var height = Math.max(0, Math.round(number(rect.h, 0)));
+    var fw = number(rect.fw, 0);
+    if (fw > 0) {
+      return {
+        x: Math.max(0, Math.round(number(rect.fx, 0) * span)),
+        y: Math.max(0, Math.round(number(rect.fy, 0) * span)),
+        w: Math.max(0, Math.round(fw * span)),
+        h: height
+      };
+    }
+    var ratio = span / REF_WIDTH;
+    return {
+      x: Math.max(0, Math.round(number(rect.x, 0) * ratio)),
+      y: Math.max(0, Math.round(number(rect.y, 0) * ratio)),
+      w: Math.max(0, Math.round(number(rect.w, 0) * ratio)),
+      h: height
+    };
+  }
+
+  function rectFromPx(size, width) {
+    var span = number(width, 0) > 0 ? number(width, 0) : REF_WIDTH;
+    var source = size && typeof size === 'object' ? size : {};
+    return {
+      fx: Math.max(0, number(source.x, 0)) / span,
+      fy: Math.max(0, number(source.y, 0)) / span,
+      fw: clamp(Math.max(0, number(source.w, 0)) / span, 0, 1),
+      h: Math.max(0, Math.round(number(source.h, 0)))
+    };
+  }
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -233,7 +275,7 @@
 
     var cards = list.map(function (el) {
       var id = self.idOf(el);
-      var saved = (self.opts.getSize && self.opts.getSize(id)) || {};
+      var saved = (self.opts.getSize && self.opts.getSize(id, box.width)) || {};
       var width = saved.w
         ? clamp(Math.round(number(saved.w, 0)), self.opts.minWidth, box.width)
         : clamp(self.defaultWidth(el, box.width), self.opts.minWidth, box.width);
@@ -451,12 +493,12 @@
     card.classList.remove('is-dragging', 'is-resizing');
 
     var rect = card.getBoundingClientRect();
-    var size = (this.opts.getSize && this.opts.getSize(state.id)) || {};
+    var size = (this.opts.getSize && this.opts.getSize(state.id, state.limit)) || {};
     size.x = Math.max(0, Math.round(number(parseFloat(card.style.insetInlineStart), state.padStart) - state.padStart));
     size.y = Math.max(0, Math.round(number(parseFloat(card.style.top), state.padTop) - state.padTop));
     size.w = Math.round(clamp(rect.width, this.opts.minWidth, state.limit));
     size.h = Math.round(Math.max(0, number(parseFloat(card.style.minHeight), 0)));
-    if (this.opts.setSize) this.opts.setSize(state.id, size);
+    if (this.opts.setSize) this.opts.setSize(state.id, size, state.limit);
 
     this.render();
     if (this.opts.onChange) this.opts.onChange();
@@ -516,6 +558,9 @@
     },
     planRows: planRows,
     compact: compact,
+    rectToPx: rectToPx,
+    rectFromPx: rectFromPx,
+    REF_WIDTH: REF_WIDTH,
     axisFlags: axisFlags,
     isRtl: isRtl,
     GRIPS: GRIPS,

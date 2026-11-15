@@ -64,7 +64,8 @@ check('free-layout.js در index.html پیش از modules.js بارگذاری م
 check('داشبورد از موتور چیدمان شناور استفاده می‌کند', /itemSelector: '\.widget'/.test(modules));
 check('ویرایشگر تنظیمات هم از همان موتور استفاده می‌کند', /itemSelector: '\.dash-card'/.test(modules));
 check('عرض و ارتفاع هر کادر جداگانه ذخیره می‌شود',
-  /rects\[id\] = \{[\s\S]{0,220}w: Math\.round\(size\.w\)[\s\S]{0,60}h: Math\.round\(size\.h \|\| 0\)/.test(modules));
+  /function storeDashboardRect[\s\S]{0,200}rectFromPx/.test(modules) &&
+  (modules.match(/setSize: storeDashboardRect/g) || []).length === 2);
 check('کادرها در CSS موقعیت مطلق و آزاد دارند', /\.free-layout > \.widget,[\s\S]{0,80}position: absolute/.test(css));
 check('دستگیرهٔ درگ و ریسایز استایل دارد', /\.free-drag \{/.test(css) && /\.free-resize\{|\.free-resize \{/.test(css));
 check('هر هشت جهت تغییر اندازه استایل دارد', ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'].every(axis =>
@@ -73,7 +74,8 @@ check('هر هشت جهت تغییر اندازه استایل دارد', ['n', 
 check('هر هشت دستگیره در کادر ویرایشگر ساخته می‌شود', ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'].every(axis =>
   modules.indexOf("'" + axis + "'") >= 0 && /data-dash-resize="' \+ axis \+ '"/.test(modules)));
 check('حالت چیدمان (دستی/ردیفی) ذخیره می‌شود', /layout\.mode = toggle\.checked \? 'free' : 'pack'/.test(modules));
-check('موقعیت دستی (x/y) ذخیره می‌شود', /x: Math\.max\(0, Math\.round\(Number\(size\.x[\s\S]{0,160}y: Math\.max\(0, Math\.round\(Number\(size\.y/.test(modules));
+check('موقعیت دستی (x/y) به کسری از عرض میزبان ذخیره می‌شود',
+  /function rectFromPx[\s\S]{0,320}fx: [\s\S]{0,120}fy: /.test(read('design/free-layout.js')));
 check('چیدمان قدیمی شبکه‌ای از داشبورد حذف شده است', !/node\.style\.gridColumn = span \? 'span ' \+ span : '';/.test(modules));
 // رگرسیون: display:block چیدمان آزاد نباید مسیردهی را بشکند و داشبورد را روی همهٔ صفحه‌ها نگه دارد.
 check('قاعدهٔ پنهان‌شدن داشبورد بر display:block چیدمان آزاد اولویت دارد',
