@@ -2686,6 +2686,8 @@
     const foot=document.querySelector('.footnote');
     if(foot){const parts=foot.querySelectorAll('span');if(parts[1])parts[1].textContent='مرکز مدیریت عملیات ATLAS SHIFT';if(parts[3])parts[3].textContent='داده‌های نمونه برای بازبینی جریان کار';}
     enhanceSearchSelects(document.body);
+    // ارتفاع کادرها بعد از تازه‌سازی داده عوض می‌شود؛ چیدمان دوباره جمع می‌شود.
+    if(typeof window.ATLAS_LAYOUT_REFRESH==='function')window.ATLAS_LAYOUT_REFRESH();
 
   }
 
@@ -10962,19 +10964,81 @@
   function dashboardLayout() {
     if (!appData.settings || typeof appData.settings !== 'object') appData.settings = {};
     let layout = appData.settings.dashboardLayout;
-    if (!layout || typeof layout !== 'object') layout = { order: [], spans: {}, heights: {}, hidden: [] };
+    if (!layout || typeof layout !== 'object') layout = { order: [], spans: {}, heights: {}, hidden: [], rects: {} };
     const defaults = dashboardDefaultLayout();
     if (!Array.isArray(layout.order)) layout.order = [];
     if (!layout.spans || typeof layout.spans !== 'object') layout.spans = {};
     if (!layout.heights || typeof layout.heights !== 'object') layout.heights = {};
     if (!Array.isArray(layout.hidden)) layout.hidden = [];
+    if (!layout.rects || typeof layout.rects !== 'object') layout.rects = {};
+    // حالت چیدمان: «free» جای دستی با گرانش عمودی، «pack» ردیف‌های توجیه‌شده.
+    if (layout.mode !== 'pack') layout.mode = 'free';
     defaults.order.forEach(function (id) {
       if (layout.order.indexOf(id) < 0) layout.order.push(id);
       if (!layout.spans[id]) layout.spans[id] = defaults.spans[id];
+      // چیدمان قدیمی فقط ارتفاع ذخیره می‌کرد؛ همان ارتفاع به اندازهٔ آزاد منتقل می‌شود.
+      if (!layout.rects[id] && Number(layout.heights[id])) layout.rects[id] = { h: Number(layout.heights[id]) };
     });
     layout.order = layout.order.filter(function (id) { return defaults.order.indexOf(id) >= 0; });
     appData.settings.dashboardLayout = layout;
     return layout;
+  }
+
+  // چیدمان شناور داشبورد: عرض/ارتفاع هر کادر آزاد است و پس از هر جابه‌جایی
+  // دوباره چیده می‌شود تا فضای خالی بین کادرها نماند.
+  let freeDashboardLayout = null;
+
+  function dashboardFreeLayout() {
+    const host = document.getElementById('dashboard');
+    if (!host || !window.AtlasFreeLayout) return null;
+    if (!freeDashboardLayout || freeDashboardLayout.host !== host) {
+      freeDashboardLayout = window.AtlasFreeLayout.attach(host, {
+        itemSelector: '.widget',
+        gap: 17,
+        minWidth: 250,
+        minHeight: 170,
+        inject: true,
+        mode: dashboardLayout().mode,
+        spanOf: function (node) {
+          const id = node.dataset.widget;
+          return dashboardLayout().spans[id] || DASHBOARD_SPAN_BY_SIZE[node.dataset.size] || 6;
+        },
+        getSize: function (id) {
+          const rect = dashboardLayout().rects[id];
+          return rect ? { x: rect.x, y: rect.y, w: rect.w, h: rect.h } : null;
+        },
+        setSize: function (id, size) {
+          const rect = dashboardLayout().rects[id] || {};
+          dashboardLayout().rects[id] = {
+            x: Math.max(0, Math.round(Number(size.x != null ? size.x : rect.x) || 0)),
+            y: Math.max(0, Math.round(Number(size.y != null ? size.y : rect.y) || 0)),
+            w: Math.round(size.w),
+            h: Math.round(size.h || 0)
+          };
+        },
+        onChange: function () { commitDashboardLayout(host); }
+      });
+    }
+    return freeDashboardLayout;
+  }
+
+  function dashboardWidgetIds(host) {
+    const target = host || document.getElementById('dashboard');
+    if (!target) return [];
+    return Array.prototype.slice.call(target.querySelectorAll('[data-widget]')).map(function (node) { return node.dataset.widget; });
+  }
+
+  // ترتیب و اندازه‌های تازه را در تنظیمات ذخیره می‌کند.
+  function commitDashboardLayout(host) {
+    const layout = dashboardLayout();
+    const ids = dashboardWidgetIds(host);
+    if (ids.length) layout.order = ids.concat(layout.order.filter(function (id) { return ids.indexOf(id) < 0; }));
+    const saved = saveState();
+    if (freeEditorLayout && freeEditorLayout.host && freeEditorLayout.host.isConnected) {
+      freeEditorLayout.opts.mode = layout.mode;
+      freeEditorLayout.render();
+    }
+    return saved;
   }
 
   // چیدمان ذخیره‌شده روی کادرهای واقعی داشبورد اعمال می‌شود.
@@ -10986,47 +11050,51 @@
     const nodes = Array.prototype.slice.call(host.querySelectorAll('[data-widget]'));
     nodes.forEach(function (node) {
       const id = node.dataset.widget;
-      const span = layout.spans[id];
       const hidden = layout.hidden.indexOf(id) >= 0;
       node.style.display = hidden ? 'none' : '';
-      node.style.gridColumn = span ? 'span ' + span : '';
-      const height = layout.heights[id];
-      node.style.minHeight = height ? height + 'px' : '';
+      node.style.gridColumn = '';
     });
     layout.order.forEach(function (id) {
       const node = nodes.filter(function (item) { return item.dataset.widget === id; })[0];
       if (node) host.appendChild(node);
     });
+    const engine = dashboardFreeLayout();
+    if (engine) {
+      engine.opts.mode = layout.mode;
+      engine.render();
+    }
   }
 
   function dashCardFoot(card) {
-    const span = Number(card.dataset.dashSpan || 6);
-    const height = Number(card.dataset.dashHeight || 0);
-    const spanNode = card.querySelector('[data-dash-foot-span]');
+    const width = Number(card.dataset.freeWidth || 0);
+    const height = Number(card.dataset.freeHeight || 0);
+    const widthNode = card.querySelector('[data-dash-foot-span]');
     const heightNode = card.querySelector('[data-dash-foot-height]');
-    if (spanNode) spanNode.textContent = 'عرض: ' + faDigits(span) + ' از ۱۲';
+    if (widthNode) widthNode.textContent = 'عرض: ' + (width ? faDigits(width) + ' پیکسل' : 'آزاد');
     if (heightNode) heightNode.textContent = 'ارتفاع: ' + (height ? faDigits(height) + ' پیکسل' : 'خودکار');
   }
 
   function dashboardCardMarkup(widget, layout) {
-    const span = Number(layout.spans[widget.id] || 6);
-    const height = Number(layout.heights[widget.id] || 0);
-    return '<article class="dash-card" data-dash-card="' + esc(widget.id) + '" data-dash-span="' + span + '" data-dash-height="' + height + '" style="--span:' + span + (height ? ';min-height:' + height + 'px' : '') + '">' +
+    const rect = layout.rects[widget.id] || {};
+    const height = Number(rect.h || 0);
+    return '<article class="dash-card" data-dash-card="' + esc(widget.id) + '"' + (height ? ' data-free-min-height="' + height + '"' : '') + '>' +
       '<header class="dash-card-head">' +
         '<button type="button" class="dash-card-drag" data-dash-drag="' + esc(widget.id) + '" aria-label="جابه‌جایی کادر">⠿</button>' +
         '<div class="dash-card-title"><b>' + esc(widget.title) + '</b><span>' + esc(widget.subtitle) + '</span></div>' +
         '<button type="button" class="dash-card-remove" data-dash-remove="' + esc(widget.id) + '" aria-label="حذف کادر از داشبورد" title="حذف از داشبورد">×</button>' +
       '</header>' +
       '<div class="dash-card-body" aria-hidden="true"></div>' +
-      '<footer class="dash-card-foot"><span data-dash-foot-span>عرض: ' + faDigits(span) + ' از ۱۲</span><span data-dash-foot-height>ارتفاع: ' + (height ? faDigits(height) + ' پیکسل' : 'خودکار') + '</span></footer>' +
-      '<span class="dash-resize" data-dash-resize="w" role="separator" aria-label="تغییر عرض کادر"></span>' +
-      '<span class="dash-resize" data-dash-resize="h" role="separator" aria-label="تغییر ارتفاع کادر"></span>' +
-      '<span class="dash-resize dash-resize-corner" data-dash-resize="both" role="separator" aria-label="تغییر اندازهٔ کادر"></span>' +
+      '<footer class="dash-card-foot"><span data-dash-foot-span>عرض: آزاد</span><span data-dash-foot-height>ارتفاع: خودکار</span></footer>' +
+      ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'].map(function (axis) {
+        return '<span class="dash-resize" data-dash-resize="' + axis + '" role="separator" aria-label="تغییر اندازهٔ کادر"></span>';
+      }).join('') +
     '</article>';
   }
 
   function dashboardEditorMarkup() {
     renderDashboardCards();
+    const dashboardEngine = dashboardFreeLayout();
+    if (dashboardEngine) dashboardEngine.render();
     const catalog = dashboardWidgetCatalog();
     const layout = dashboardLayout();
     const byId = function (id) { return catalog.filter(function (item) { return item.id === id; })[0]; };
@@ -11049,112 +11117,87 @@
     }
     return '<section class="module-list-panel">' +
       '<div class="module-list-head"><div><h3>تنظیمات داشبورد</h3>' +
-      '<p>چیدمان کادرهای سربرگ داشبورد اینجا تعیین می‌شود: با کشیدن دستگیرهٔ ⠿ جای کادر را عوض کن، از لبه‌ها و گوشه‌ها ابعاد را کم و زیاد کن و کادرهای تازه مثل یادداشت‌ها را اضافه یا حذف کن.</p></div>' +
+      '<p>چیدمان کادرهای داشبورد آزاد است: دستگیرهٔ ⠿ را بکش تا کادر جای دیگری برود و از لبه‌ها و گوشه‌ها هر اندازه‌ای که می‌خواهی بگیرد. کادرها خودشان شناور جمع می‌شوند تا فضای خالی بین‌شان نماند. کادر تازه هم از همین‌جا اضافه یا حذف می‌شود.</p></div>' +
       '<div class="module-list-tools">' +
         (options.length
           ? '<select data-dash-hidden-select aria-label="کادرهای قابل افزودن">' + options.join('') + '</select><button type="button" class="secondary-btn" data-dash-add>+ افزودن کادر</button>'
           : '<span class="module-local-note">همهٔ کادرها روی داشبورد هستند.</span>') +
+        '<label class="dash-mode-toggle"><input type="checkbox" data-dash-free-mode' + (layout.mode === 'free' ? ' checked' : '') + '> چیدمان دستی و آزاد</label>' +
         '<button type="button" class="secondary-btn" data-dash-reset>بازنشانی چیدمان</button>' +
       '</div></div>' +
       '<div class="dash-editor" data-dash-editor>' + visible.map(function (widget) { return dashboardCardMarkup(widget, layout); }).join('') + '</div>' +
-      '<p class="dash-editor-note">تغییرها بی‌درنگ ذخیره و روی داشبورد اعمال می‌شوند. شبکهٔ داشبورد ۱۲ ستونه است؛ «عرض» تعداد ستون‌ها و «ارتفاع» کمینهٔ ارتفاع کادر است. کادرهای حذف‌شده در همین فهرست «افزودن کادر» باقی می‌مانند.</p>' +
+      '<p class="dash-editor-note">هر کادر را می‌توانی از هر هشت جهت (چهار لبه و چهار گوشه) به هر اندازه‌ای بزرگ یا کوچک کنی و با دستگیرهٔ ⠿ هر جای صفحه رهایش کنی. در «چیدمان دستی» جای هر کادر یادت می‌ماند و کادرها همیشه رو به بالا جمع می‌شوند تا حفرهٔ خالی نماند؛ اگر محتوای یک کادر بیشتر شود، خودش بزرگ می‌شود و بقیه کنار می‌روند. تیک را برداری، کادرها در ردیف‌های منظم و بدون فاصله می‌نشینند.</p>' +
       '</section>';
   }
 
-  let dashEdit = null;
-  let dashEditorBound = false;
+  let freeEditorLayout = null;
 
-  function onDashEditMove(event) {
-    if (!dashEdit) return;
-    const editor = dashEdit.editor;
-    const card = dashEdit.card;
-    if (dashEdit.mode === 'resize') {
-      if (dashEdit.axis === 'w' || dashEdit.axis === 'both') {
-        const rect = editor.getBoundingClientRect();
-        const style = window.getComputedStyle(editor);
-        const gap = parseFloat(style.columnGap || style.gap) || 0;
-        const columnWidth = (rect.width - gap * 11) / 12;
-        const unit = columnWidth + gap;
-        const cardRect = card.getBoundingClientRect();
-        const rtl = (document.documentElement.dir || 'rtl') === 'rtl';
-        const distance = rtl ? (cardRect.right - event.clientX) : (event.clientX - cardRect.left);
-        const span = Math.min(12, Math.max(1, Math.round((distance + gap) / unit)));
-        card.dataset.dashSpan = String(span);
-        card.style.setProperty('--span', String(span));
-      }
-      if (dashEdit.axis === 'h' || dashEdit.axis === 'both') {
-        const height = Math.min(1200, Math.max(140, Math.round(dashEdit.startHeight + (event.clientY - dashEdit.startY))));
-        card.dataset.dashHeight = String(height);
-        card.style.minHeight = height + 'px';
-      }
-      dashCardFoot(card);
-      event.preventDefault();
-      return;
+  function editorFreeLayout() {
+    const editor = document.querySelector('[data-dash-editor]');
+    if (!editor || !window.AtlasFreeLayout) return null;
+    if (!freeEditorLayout || freeEditorLayout.host !== editor) {
+      freeEditorLayout = window.AtlasFreeLayout.attach(editor, {
+        itemSelector: '.dash-card',
+        gap: 12,
+        minWidth: 190,
+        minHeight: 132,
+        inject: false,
+        dragSelector: '[data-dash-drag]',
+        resizeSelector: '[data-dash-resize]',
+        mode: dashboardLayout().mode,
+        idOf: function (node) { return node.dataset.dashCard; },
+        spanOf: function (node) { return dashboardLayout().spans[node.dataset.dashCard] || 6; },
+        getSize: function (id) {
+          const rect = dashboardLayout().rects[id];
+          return rect ? { x: rect.x, y: rect.y, w: rect.w, h: rect.h } : null;
+        },
+        setSize: function (id, size) {
+          const rect = dashboardLayout().rects[id] || {};
+          dashboardLayout().rects[id] = {
+            x: Math.max(0, Math.round(Number(size.x != null ? size.x : rect.x) || 0)),
+            y: Math.max(0, Math.round(Number(size.y != null ? size.y : rect.y) || 0)),
+            w: Math.round(size.w),
+            h: Math.round(size.h || 0)
+          };
+        },
+        onChange: function () { commitEditorLayout(editor); }
+      });
+      editor.addEventListener('free-layout', function () {
+        Array.prototype.slice.call(editor.querySelectorAll('[data-dash-card]')).forEach(dashCardFoot);
+      });
     }
-    const over = document.elementFromPoint(event.clientX, event.clientY);
-    const target = over && over.closest ? over.closest('[data-dash-card]') : null;
-    if (!target || target === card || !editor.contains(target)) return;
-    const rect = target.getBoundingClientRect();
-    const rtl = (document.documentElement.dir || 'rtl') === 'rtl';
-    const dx = event.clientX - (rect.left + rect.width / 2);
-    const dy = event.clientY - (rect.top + rect.height / 2);
-    let after;
-    if (Math.abs(dx) > Math.abs(dy)) after = rtl ? dx < 0 : dx > 0;
-    else after = dy > 0;
-    editor.insertBefore(card, after ? target.nextSibling : target);
+    return freeEditorLayout;
   }
 
-  function onDashEditEnd() {
-    if (!dashEdit) return;
-    const card = dashEdit.card;
-    const editor = dashEdit.editor;
-    const mode = dashEdit.mode;
-    card.classList.remove('is-resizing', 'is-dragging');
+  function commitEditorLayout(editor) {
     const layout = dashboardLayout();
-    if (mode === 'resize') {
-      layout.spans[card.dataset.dashCard] = Number(card.dataset.dashSpan || 6);
-      const height = Number(card.dataset.dashHeight || 0);
-      if (height) layout.heights[card.dataset.dashCard] = height;
-      else delete layout.heights[card.dataset.dashCard];
-    } else {
-      const order = Array.prototype.slice.call(editor.querySelectorAll('[data-dash-card]')).map(function (node) { return node.dataset.dashCard; });
-      const rest = layout.order.filter(function (id) { return order.indexOf(id) < 0; });
-      layout.order = order.concat(rest);
-    }
-    dashEdit = null;
+    const order = Array.prototype.slice.call(editor.querySelectorAll('[data-dash-card]')).map(function (node) { return node.dataset.dashCard; });
+    layout.order = order.concat(layout.order.filter(function (id) { return order.indexOf(id) < 0; }));
     applyDashboardLayout();
     saveState();
   }
 
   function wireDashboardEditor() {
-    const editor = document.querySelector('[data-dash-editor]');
-    if (!editor) return;
-    editor.addEventListener('pointerdown', function (event) {
-      const card = event.target.closest('[data-dash-card]');
-      if (!card) return;
-      const resize = event.target.closest('[data-dash-resize]');
-      const drag = event.target.closest('[data-dash-drag]');
-      const rect = card.getBoundingClientRect();
-      if (resize) {
-        dashEdit = { mode: 'resize', axis: resize.dataset.dashResize, card: card, editor: editor, startX: event.clientX, startY: event.clientY, startHeight: rect.height };
-        card.classList.add('is-resizing');
-        if (resize.setPointerCapture) resize.setPointerCapture(event.pointerId);
-        event.preventDefault();
-        return;
-      }
-      if (drag) {
-        dashEdit = { mode: 'drag', card: card, editor: editor, startX: event.clientX, startY: event.clientY };
-        card.classList.add('is-dragging');
-        if (drag.setPointerCapture) drag.setPointerCapture(event.pointerId);
-        event.preventDefault();
-      }
-    });
-    if (dashEditorBound) return;
-    dashEditorBound = true;
-    document.addEventListener('pointermove', onDashEditMove);
-    document.addEventListener('pointerup', onDashEditEnd);
-    document.addEventListener('pointercancel', onDashEditEnd);
+    const engine = editorFreeLayout();
+    if (engine) {
+      engine.opts.mode = dashboardLayout().mode;
+      engine.render();
+    }
   }
+
+  // حالت چیدمان: دستی/آزاد یا ردیفی منظم.
+  document.addEventListener('change', async function (event) {
+    const toggle = event.target.closest ? event.target.closest('[data-dash-free-mode]') : null;
+    if (!toggle) return;
+    const layout = dashboardLayout();
+    layout.mode = toggle.checked ? 'free' : 'pack';
+    applyDashboardLayout();
+    const view = document.getElementById('sectionView');
+    if (await saveState()) {
+      if (view) render('settings', view);
+      toast(layout.mode === 'free' ? 'چیدمان دستی و آزاد فعال شد.' : 'کادرها در ردیف‌های منظم چیده شدند.');
+    }
+  });
 
   // ── مسیردهی چرخ ماوس ───────────────────────────────────────────────────────
   // این رفتار یک صاحب دارد: `design/scroll-routing.js`. این‌جا هیچ شنوندهٔ چرخ
@@ -11198,6 +11241,7 @@
         layout.hidden = layout.hidden.filter(function (item) { return item !== id; });
         delete layout.spans[id];
         delete layout.heights[id];
+        delete layout.rects[id];
       } else if (layout.hidden.indexOf(id) < 0) {
         layout.hidden.push(id);
       }
