@@ -299,7 +299,6 @@
 
 /* چیدمان کادرهای داشبورد فقط در تنظیمات تعیین می‌شود. */
 #dashboard .edit-tools { display: none !important; }
-.settings-section:has(#layoutButton) { display: none !important; }
 
 /* ─────────────────────────────────────────────────────────────
    چیدمان شناور و آزاد کادرها (design/free-layout.js)

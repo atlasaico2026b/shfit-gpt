@@ -509,7 +509,7 @@ fixedEngine.render();
 check('حالت ردیفی ارتفاع تعیین‌شده را تغییر نمی‌دهد',
   Math.round(box(tallContent.el).h) === 320 && Math.round(box(shortContent.el).h) === 200);
 
-/* ── ۶) داشبورد فقط جابه‌جا می‌شود؛ اندازه‌اش عوض نمی‌شود ──────────────── */
+/* ── ۶) داشبورد قفل است: نه جابه‌جا می‌شود و نه اندازه‌اش عوض می‌شود ───── */
 const moveHost = new El('section', 'dashboard');
 moveHost.clientWidth = HOST_WIDTH;
 const moveSaved = {};
@@ -523,8 +523,9 @@ const moveEngine = window.AtlasFreeLayout.attach(moveHost, {
   gap: GAP,
   minWidth: 200,
   minHeight: 120,
-  inject: true,
+  inject: false,
   resize: false,
+  drag: false,
   mode: 'free',
   getSize: id => moveSaved[id] || null,
   setSize: (id, size) => { moveSaved[id] = { x: Math.round(size.x), y: Math.round(size.y), w: Math.round(size.w), h: Math.round(size.h || 0) }; },
@@ -534,8 +535,8 @@ moveEngine.render();
 
 check('داشبورد هیچ دستگیرهٔ تغییر اندازه‌ای تزریق نمی‌کند',
   !moveCard.querySelector('.free-resize'));
-check('دستگیرهٔ جابه‌جایی روی داشبورد سر جایش است',
-  !!moveCard.querySelector('.free-drag'));
+check('داشبورد هیچ دستگیرهٔ جابه‌جایی تزریق نمی‌کند',
+  !moveCard.querySelector('.free-drag'));
 
 // حتی اگر یک لبهٔ ریسایز از نسخهٔ قبلی روی کادر باقی مانده باشد، بی‌اثر است.
 const staleGrip = new El('span', 'free-resize');
@@ -551,11 +552,14 @@ check('کشیدن لبه روی داشبورد اندازهٔ کادر را عو
 check('کشیدن لبه روی داشبورد عرض ذخیره‌شده را هم عوض نمی‌کند',
   Math.round(moveSaved.m.w) === 400 && Math.round(moveSaved.m.h) === 200);
 
-pointer(moveHost, 'pointerdown', moveCard.querySelector('.free-drag'), 0, 0);
-pointer(moveHost, 'pointermove', moveCard.querySelector('.free-drag'), -120, 30);
-pointer(moveHost, 'pointerup', moveCard.querySelector('.free-drag'), -120, 30);
-check('جابه‌جایی کادر داشبورد با دستگیرهٔ ⠿ هنوز کار می‌کند',
-  !!moveSaved.m && Math.abs(box(moveCard).x - beforeMove.x) > 0.5);
+// دستگیرهٔ ⠿ نسخهٔ قبلی هم اگر روی کادر مانده باشد، کادر را جابه‌جا نمی‌کند.
+const staleHandle = new El('button', 'free-drag');
+moveCard.appendChild(staleHandle);
+pointer(moveHost, 'pointerdown', staleHandle, 0, 0);
+pointer(moveHost, 'pointermove', staleHandle, -120, 30);
+pointer(moveHost, 'pointerup', staleHandle, -120, 30);
+check('کشیدن دستگیرهٔ قدیمی داشبورد کادر را جابه‌جا نمی‌کند',
+  Math.abs(box(moveCard).x - beforeMove.x) <= 0.5 && Math.abs(box(moveCard).y - beforeMove.y) <= 0.5);
 
 const failed = checks.filter(item => !item.ok);
 checks.forEach(item => console.log((item.ok ? '✓ ' : '✗ ') + item.name));

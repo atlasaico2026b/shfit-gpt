@@ -1,9 +1,7 @@
 (()=>{
   const $=(s,root=document)=>root.querySelector(s), $$=(s,root=document)=>Array.from(root.querySelectorAll(s));
   const dashboard=$('#dashboard'), widgets=()=>$$('.widget',dashboard);
-  const initialOrder=['roster','shift-coverage','missions','alerts','fleet','calendar','equipment','operations','stations'];
-  const initialSizes={roster:'medium','shift-coverage':'compact',missions:'wide',alerts:'compact',fleet:'compact',calendar:'compact',equipment:'medium',operations:'wide',stations:'compact'};
-  let layoutMode=false, showUnreadOnly=false, toastTimer;
+  let showUnreadOnly=false, toastTimer;
   const toast=(msg)=>{const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2400)};
   const safeRead=(key)=>{try{return localStorage.getItem(key)}catch(e){return null}};
   const safeWrite=(key,value)=>{try{localStorage.setItem(key,value)}catch(e){}}
@@ -22,31 +20,9 @@
     }
     paintSizeButtons();
   }
-  function saveLayout(){safeWrite('atlasShiftLayout',JSON.stringify({order:widgets().map(w=>w.dataset.widget),sizes:Object.fromEntries(widgets().map(w=>[w.dataset.widget,w.dataset.size]))}));}
   function paintSizeButtons(){widgets().forEach(w=>$$('[data-size-action]',w).forEach(b=>b.classList.toggle('selected',b.dataset.sizeAction===w.dataset.size)))}
-  function setLayoutMode(on){layoutMode=on;document.body.classList.toggle('layout-mode',on);$('#layoutButtonText').textContent=on?'پایان تنظیم':'تنظیم چیدمان';$('#layoutButton').setAttribute('aria-pressed',String(on));widgets().forEach(w=>{const handle=$('.drag-handle',w);if(handle)handle.setAttribute('draggable',String(on));});if(on)toast('حالت چیدمان فعال شد؛ دستگیرهٔ پنجره‌ها را بکش و جابه‌جا کن.');else{saveLayout();toast('چیدمان ذخیره شد.')}}
-  $('#layoutButton').addEventListener('click',()=>setLayoutMode(!layoutMode));
-  $('#resetLayout').addEventListener('click',()=>{initialOrder.forEach(id=>{const node=$(`[data-widget="${id}"]`);if(node)dashboard.appendChild(node);if(node)node.dataset.size=initialSizes[id]});safeWrite('atlasShiftLayout','');paintSizeButtons();setLayoutMode(false);toast('چیدمان اولیه بازگردانده شد.')});
-  // A drag handle is used for both a mouse and a finger. Cards snap to the grid when dropped.
-  let dragCard=null, startX=0,startY=0,lastTarget=null,activePointer=null;
-  widgets().forEach(w=>{
-    const handle=$('.drag-handle',w);if(!handle)return;
-    handle.addEventListener('pointerdown',e=>{if(!layoutMode)return;if(e.button!==0&&e.pointerType==='mouse')return;dragCard=w;activePointer=e.pointerId;startX=e.clientX;startY=e.clientY;w.classList.add('is-dragging');handle.setPointerCapture?.(e.pointerId);e.preventDefault()});
-    handle.addEventListener('pointermove',e=>{
-      if(!layoutMode||dragCard!==w||activePointer!==e.pointerId)return;
-      const hit=document.elementFromPoint(e.clientX,e.clientY)?.closest('.widget');
-      if(!hit||hit===dragCard||hit===lastTarget)return;
-      if(lastTarget)lastTarget.classList.remove('drag-over');lastTarget=hit;hit.classList.add('drag-over');
-      const r=hit.getBoundingClientRect();const dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);let after;
-      if(Math.abs(dx)>Math.abs(dy))after=(document.documentElement.dir==='rtl')?dx<0:dx>0;else after=dy>0;
-      dashboard.insertBefore(dragCard,after?hit.nextSibling:hit); 
-    });
-    const endDrag=e=>{if(dragCard!==w)return;w.classList.remove('is-dragging');if(lastTarget)lastTarget.classList.remove('drag-over');lastTarget=null;dragCard=null;activePointer=null;saveLayout();if(layoutMode)paintSizeButtons()};
-    handle.addEventListener('pointerup',endDrag);handle.addEventListener('pointercancel',endDrag);
-  });
   // Keep the widgets' glass reflection responsive to the pointer.
   widgets().forEach(w=>{w.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;const r=w.getBoundingClientRect();w.style.setProperty('--mx',(e.clientX-r.left)+'px');w.style.setProperty('--my',(e.clientY-r.top)+'px')});w.addEventListener('pointerleave',()=>{w.style.setProperty('--mx','50%');w.style.setProperty('--my','0')})});
-  dashboard.addEventListener('click',e=>{const btn=e.target.closest('[data-size-action]');if(!btn||!layoutMode)return;const w=btn.closest('.widget');w.dataset.size=btn.dataset.sizeAction;paintSizeButtons();saveLayout()});
   applySavedLayout();
   // Notifications: open, read/unread filter, and local read state.
   function updateNotificationBadge(){const count=$$('.notice-card.unread').length;const badge=$('#notificationCount');badge.textContent=String(count).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);badge.style.display=count?'flex':'none';}
@@ -951,5 +927,5 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
   window.addEventListener('popstate',renderRoute);
   renderRoute();
 
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDrawer();calendarPanel.classList.remove('open');calendarPanel.setAttribute('aria-hidden','true');calendarToggle.setAttribute('aria-expanded','false');settingsPanel.classList.remove('open');settingsPanel.setAttribute('aria-hidden','true');settingsButton.setAttribute('aria-expanded','false');if(layoutMode)setLayoutMode(false)}});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDrawer();calendarPanel.classList.remove('open');calendarPanel.setAttribute('aria-hidden','true');calendarToggle.setAttribute('aria-expanded','false');settingsPanel.classList.remove('open');settingsPanel.setAttribute('aria-hidden','true');settingsButton.setAttribute('aria-expanded','false')}});
 })();

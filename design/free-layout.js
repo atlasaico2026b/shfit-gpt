@@ -124,6 +124,9 @@
     // وقتی false باشد هیچ دستگیرهٔ تغییر اندازه ساخته نمی‌شود و کشیدنِ لبه‌ها هم
     // نادیده گرفته می‌شود؛ اندازه فقط از تنظیمات (پنل ویرایش) تعیین می‌شود.
     this.opts.resize = this.opts.resize !== false;
+    // وقتی false باشد کشیدنِ کادر هم نادیده گرفته می‌شود؛ داشبورد با این حالت
+    // فقط نمایشی است و جابه‌جایی هم ندارد.
+    this.opts.drag = this.opts.drag !== false;
     this.state = null;
     this.busy = false;
     this.positions = {};
@@ -447,7 +450,7 @@
       if (event.pointerType === 'mouse' && event.button !== 0) return;
       var card = event.target.closest && event.target.closest(self.opts.itemSelector);
       if (!card || card.parentNode !== self.host) return;
-      var grab = event.target.closest(self.opts.dragSelector);
+      var grab = self.opts.drag ? event.target.closest(self.opts.dragSelector) : null;
       var grip = self.opts.resize ? event.target.closest(self.opts.resizeSelector) : null;
       if (!grab && !grip) return;
 
