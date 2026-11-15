@@ -16,6 +16,8 @@ const exportSource = read('design/map-export.js');
 
 const checks = [];
 const check = (name, ok, extra) => checks.push({ name: name, ok: !!ok, extra: extra === undefined ? '' : String(extra) });
+// شناسهٔ کش نسخهٔ جاری سرویس‌ورکر؛ هر انتشار باید آن را بالا ببرد.
+const cacheVersion = () => Number((sw.match(/atlas-shift-v(\d+)/) || [])[1] || 0);
 
 // ── فایل نقشه ──
 global.window = {};
@@ -68,7 +70,7 @@ check('اسکریپت خروجی نقشه در index.html هست', exportScript 
 check('نقشه پیش از modules.js بارگذاری می‌شود', mapScript > 0 && mapScript < html.indexOf('./modules.js'));
 check('نقشه در فهرست پیش‌کش سرویس‌ورکر هست', /\.\/design\/khuzestan-map\.js/.test(sw));
 check('خروجی نقشه در فهرست پیش‌کش سرویس‌ورکر هست', /\.\/design\/map-export\.js/.test(sw));
-check('نسخهٔ کش برای نقشهٔ تازه بالا رفته است', /atlas-shift-v175-real-roads-map/.test(sw));
+check('نسخهٔ کش برای نقشهٔ تازه بالا رفته است', cacheVersion() >= 175);
 
 // ── جانمایی بر پایهٔ شهر ──
 check('تابع خواندن نقشه در modules.js هست', /function khuzestanMap\(\)/.test(modules));

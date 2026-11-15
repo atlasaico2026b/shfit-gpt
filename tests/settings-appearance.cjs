@@ -21,6 +21,8 @@ const indexHtml = read('index.html');
 const newUi = read('design/new-ui.css');
 const settingsView = read('design/settings-view.css');
 const sw = read('sw.js');
+// شناسهٔ کش نسخهٔ جاری سرویس‌ورکر؛ هر انتشار باید آن را بالا ببرد.
+const cacheVersion = () => Number((sw.match(/atlas-shift-v(\d+)/) || [])[1] || 0);
 
 // ۱ · تب اختصاصی ظاهر و رنگ‌ها در صفحهٔ تنظیمات
 check('تب «ظاهر و رنگ‌ها» در تنظیمات هست', /id: 'appearance'/.test(modules));
@@ -59,7 +61,7 @@ const flatSkin = read('design/skins/flat.css');
 check('پوستهٔ تم اول لایهٔ رنگ ابروبادی را نشان می‌دهد', /--cloud-1-rgb/.test(flatSkin));
 
 // ۵ · کش سرویس‌ورکر برای دیدن فایل‌های تازه به‌روز شده
-check('نسخهٔ کش سرویس‌ورکر به‌روز است', /atlas-shift-v175-real-roads-map/.test(sw));
+check('نسخهٔ کش سرویس‌ورکر به‌روز است', cacheVersion() >= 175);
 
 const failed = checks.filter((c) => !c.ok);
 checks.forEach((c) => console.log((c.ok ? 'PASS ' : 'FAIL ') + c.name));

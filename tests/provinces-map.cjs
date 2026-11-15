@@ -16,6 +16,8 @@ const builder = read('tools/build-province-maps.py');
 
 const checks = [];
 const check = (name, ok, extra) => checks.push({ name: name, ok: !!ok, extra: extra === undefined ? '' : String(extra) });
+// شناسهٔ کش نسخهٔ جاری سرویس‌ورکر؛ هر انتشار باید آن را بالا ببرد.
+const cacheVersion = () => Number((sw.match(/atlas-shift-v(\d+)/) || [])[1] || 0);
 
 // ── دادهٔ نقشه ──
 global.window = {};
@@ -89,7 +91,7 @@ const mapScript = html.indexOf('./design/provinces-map.js');
 check('اسکریپت نقشه در index.html هست', mapScript > 0);
 check('نقشه پیش از modules.js بارگذاری می‌شود', mapScript > 0 && mapScript < html.indexOf('./modules.js'));
 check('نقشه در فهرست پیش‌کش سرویس‌ورکر هست', /\.\/design\/provinces-map\.js/.test(sw));
-check('نسخهٔ کش برای نقشهٔ تازه بالا رفته است', /atlas-shift-v175-real-roads-map/.test(sw));
+check('نسخهٔ کش برای نقشهٔ تازه بالا رفته است', cacheVersion() >= 175);
 
 // ── پیوند با برنامه ──
 check('فهرست استان‌ها در modules.js خوانده می‌شود', /function provinceList\(\)/.test(modules));
