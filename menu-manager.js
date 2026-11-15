@@ -40,7 +40,14 @@
     ) : [];
     const savedOrder = Array.isArray(saved.order) ? saved.order.filter(id => typeof id === 'string') : [];
     const defaultOrder = DEFAULTS.map(item => item.id);
-    const order = [...defaultOrder.filter(id => savedOrder.includes(id)), ...defaultOrder.filter(id => !savedOrder.includes(id)), ...savedOrder.filter(id => !defaultOrder.includes(id))];
+    // ترتیب ذخیره‌شده باید همان‌طور که کاربر چیده بازگردد؛ منوهای تازهٔ همین نسخه
+    // که در فهرست ذخیره‌شده نیستند به انتهای فهرست اضافه می‌شوند.
+    const known = new Set(defaultOrder.concat(custom.map(item => item.id)));
+    const order = [];
+    savedOrder.concat(defaultOrder).forEach(function (id) {
+      if (!known.has(id) || order.indexOf(id) >= 0) return;
+      order.push(id);
+    });
     return { hidden: hidden.filter(id => !['dashboard', 'settings'].includes(id)), labels, custom, order };
   }
 
