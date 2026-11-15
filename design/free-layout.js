@@ -121,6 +121,9 @@
     this.opts.itemSelector = this.opts.itemSelector || '.widget';
     this.opts.dragSelector = this.opts.dragSelector || '.free-drag';
     this.opts.resizeSelector = this.opts.resizeSelector || '.free-resize';
+    // وقتی false باشد هیچ دستگیرهٔ تغییر اندازه ساخته نمی‌شود و کشیدنِ لبه‌ها هم
+    // نادیده گرفته می‌شود؛ اندازه فقط از تنظیمات (پنل ویرایش) تعیین می‌شود.
+    this.opts.resize = this.opts.resize !== false;
     this.state = null;
     this.busy = false;
     this.positions = {};
@@ -388,6 +391,7 @@
     handle.textContent = '⠿';
     if (header) header.insertBefore(handle, header.firstChild);
     else el.insertBefore(handle, el.firstChild);
+    if (!this.opts.resize) return;
     GRIPS.forEach(function (grip) {
       var node = document.createElement('span');
       node.className = 'free-resize';
@@ -444,7 +448,7 @@
       var card = event.target.closest && event.target.closest(self.opts.itemSelector);
       if (!card || card.parentNode !== self.host) return;
       var grab = event.target.closest(self.opts.dragSelector);
-      var grip = event.target.closest(self.opts.resizeSelector);
+      var grip = self.opts.resize ? event.target.closest(self.opts.resizeSelector) : null;
       if (!grab && !grip) return;
 
       var box = self.box();
