@@ -99,6 +99,7 @@ missions, leave, vehicles, gas detectors, notes/actions, reports, settings.
 | نوار جست‌وجو/فیلتر/مرتب‌سازی و پشتیبان‌گیری بخش | `design/toolbars.css` + `renderListToolbar` / `exportSectionBackup` در `modules.js` |
 | ظاهر کارت اعلان (کشوی اعلان) | `design/notices.css` (+ `openNoticeDialog` در `modules.js`) |
 | فیلترهای فهرست هر بخش | `LIST_FILTERS` + `recordMatchesFilters` در `modules.js` |
+| چیدمان کادرهای داشبورد (ویرایشگر تنظیمات ↔ داشبورد) | `design/free-layout.js` + `dashboardRectPx` / `storeDashboardRect` در `modules.js` — هندسه **به کسری از عرض میزبان** ذخیره می‌شود (`rectFromPx`/`rectToPx`)، نه پیکسل خام؛ دو میزبان عرض یکسان ندارند و پیکسل خام چیدمان درستِ تنظیمات را در داشبورد به‌هم می‌ریخت. Test: `node tests/free-layout-dom.cjs` |
 | لایه‌بندی منوی «خروجی و چاپ» بالای پنل‌ها | `design/modals-export.css` |
 | همگام‌سازی کارمند ↔ مخاطب | `design/contact-sync.js` |
 | تم/رنگ‌ها | `design/theme-switch.js` + `design/skins/*.css` |
