@@ -5,7 +5,7 @@
    - fetch: اول کش؛ شبکه فقط برای پر کردن کش چیزی که نداریم و به‌عنوان پشتیبان.
    - activate: کش‌های قدیمی پاک می‌شوند و اگر نسخهٔ قبلی وجود داشت، به صفحه اعلام می‌شود.
    افزایش CACHE_NAME در هر انتشار، نصب نسخهٔ تازه و پیش‌کش اتمی را تضمین می‌کند. */
-const CACHE_NAME = 'atlas-shift-v187-export-columns-none';
+const CACHE_NAME = 'atlas-shift-v188-drag-reorder';
 const APP_FILES = [
   './', './index.html',
   './design/tokens.css', './design/styles.css', './design/skins/flat.css', './design/skins/theme-two.css', './design/tones.css',
@@ -15,6 +15,7 @@ const APP_FILES = [
   './design/stations.css', './design/vehicle-tabs.css', './design/settings-view.css',
   './design/new-ui.css', './design/new-ui.js', './design/notices.css',
   './design/forms-validation.css', './design/record-file.css',
+  './design/drag-reorder.css', './design/drag-reorder.js',
   './design/scroll-routing.css', './design/scroll-routing.js', './design/print-sheet.js', './design/toolbars.css',
   './design/export-docs.js', './design/shift-planner.css', './design/shift-planner.js',
   './design/vertical-text.css', './design/vertical-text.js', './design/brand-logo.css',

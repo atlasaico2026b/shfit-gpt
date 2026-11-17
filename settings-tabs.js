@@ -16,7 +16,10 @@
         tab.setAttribute('aria-selected', String(active));
         tab.tabIndex = active ? 0 : -1;
       });
-      panes.forEach((pane, i) => { pane.hidden = i !== index; });
+      // هر پنل با aria-labelledby به تب خودش وصل است؛ تطبیق بر اساس ترتیب DOM
+      // اشتباه بود، چون ترتیب تب‌ها و پنل‌ها در index.html یکی نیست.
+      const activeId = tabs[index].id;
+      panes.forEach(pane => { pane.hidden = pane.getAttribute('aria-labelledby') !== activeId; });
       if (moveFocus) tabs[index].focus();
     }
 

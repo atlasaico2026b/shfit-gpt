@@ -3,6 +3,8 @@
 Persian (RTL) offline-first PWA for HR operations: employees, 12-hour day/night shifts,
 missions, leave, vehicles, gas detectors, notes/actions, reports, settings.
 
+**Read `AI-GOALS.md` first** — it holds the current goals and the project's fixed rules.
+
 ## Stack
 - No framework, no bundler. Plain HTML + CSS + ES modules served statically.
 - Preview build (from `shogo.preview.json`): copies `index.html app.js modules.js

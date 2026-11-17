@@ -23,7 +23,7 @@ function openManager(){ensureManager();document.getElementById('atlasOptionManag
 var settingsPanelRef=null;
 function settingsPanelNode(){var panel=document.getElementById('settingsPanel');if(panel){settingsPanelRef=panel;return panel}return settingsPanelRef}
 // تب «ظاهر برنامه» را فعال می‌کند تا تم و رنگ‌ها همان‌جا دیده شوند.
-function showAppearancePane(panel){var tabs=panel.querySelectorAll('.settings-tabs [role="tab"]'),panes=panel.querySelectorAll('.settings-tab-pane[role="tabpanel"]');if(!tabs.length||tabs.length!==panes.length)return;for(var i=0;i<tabs.length;i+=1){var active=tabs[i].id==='settings-tab-appearance';tabs[i].classList.toggle('is-active',active);tabs[i].setAttribute('aria-selected',String(active));tabs[i].tabIndex=active?0:-1;panes[i].hidden=!active}}
+function showAppearancePane(panel){var tabs=panel.querySelectorAll('.settings-tabs [role="tab"]'),panes=panel.querySelectorAll('.settings-tab-pane[role="tabpanel"]');if(!tabs.length||!panes.length)return;for(var i=0;i<tabs.length;i+=1){var active=tabs[i].id==='settings-tab-appearance';tabs[i].classList.toggle('is-active',active);tabs[i].setAttribute('aria-selected',String(active));tabs[i].tabIndex=active?0:-1}for(var j=0;j<panes.length;j+=1){panes[j].hidden=panes[j].getAttribute('aria-labelledby')!=='settings-tab-appearance'}}
 var placeTimer=0;
 function schedulePlace(){clearTimeout(placeTimer);placeTimer=setTimeout(placeSettings,0)}
 function watchSection(){var section=document.getElementById('sectionView');if(!section||section.dataset.settingsWatch==='1')return;section.dataset.settingsWatch='1';if(!window.MutationObserver)return;new MutationObserver(schedulePlace).observe(section,{childList:true})}
