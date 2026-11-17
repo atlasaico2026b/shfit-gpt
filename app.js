@@ -899,6 +899,9 @@ ${formatJDate(rangeEnd)}`:`شروع: ${formatJDate(rangeStart)}`):'انتخاب 
     }else{
       settingsPanel.classList.remove('open');settingsPanel.setAttribute('aria-hidden','true');settingsButton.setAttribute('aria-expanded','false');
     }
+    // داشبورد همیشه با تازه‌ترین داده و تنظیمات (از جمله استان‌های انتخاب‌شدهٔ نقشه)
+    // بازسازی می‌شود؛ بدون این، تغییرات فقط با رفرش صفحه دیده می‌شدند.
+    if(isDashboard&&window.ATLAS_MODULES&&typeof window.ATLAS_MODULES.refreshDashboard==='function')window.ATLAS_MODULES.refreshDashboard();
   }
   window.ATLAS_ROUTE=renderRoute;
   document.addEventListener('click',event=>{
