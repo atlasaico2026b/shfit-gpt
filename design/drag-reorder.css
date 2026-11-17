@@ -1,4 +1,7 @@
-/* جابه‌جایی با درگ — دستگیره، ردیفِ در حال کشیدن و نسخهٔ شناور */
+/* جابه‌جایی شناور با درگ — AtlasShift (نسخهٔ ۲)
+   آیتم از جای خود بلند نمی‌شود؛ در همان ردیف با حرکت دست جابه‌جا
+   می‌شود و بقیهٔ گزینه‌ها با انیمیشن کوتاه جا باز می‌کنند. */
+
 .drag-handle{
   flex:none;
   display:grid;
@@ -22,24 +25,35 @@
 .drag-handle:active{cursor:grabbing}
 .drag-handle:focus-visible{outline:2px solid rgba(var(--accent-rgb,90,170,240),.7);outline-offset:2px}
 
-.is-drag-item{position:relative}
-.is-drag-origin{opacity:.35}
-.is-drag-active{user-select:none;-webkit-user-select:none}
-
-.drag-ghost{
-  opacity:.96;
-  border-radius:10px;
-  box-shadow:0 18px 40px rgba(0,0,0,.45);
-  background:var(--panel,#12263a);
-  border:1px solid rgba(var(--accent-rgb,90,170,240),.45);
-  pointer-events:none;
-  overflow:hidden;
-  will-change:transform;
+.is-drag-item{touch-action:manipulation;-webkit-user-drag:none;user-drag:none}
+.is-drag-item.is-drag-active,
+.is-drag-item.is-drag-armed{
+  touch-action:none;
+  position:relative;
+  z-index:40;
 }
+
+/* آیتمِ در حال کشیدن: همان ردیف، کمی برجسته، بدون شبح شناور */
+.is-drag-active{
+  box-shadow:0 12px 26px rgba(0,0,0,.38);
+  border-radius:10px;
+  will-change:transform;
+  cursor:grabbing;
+  opacity:.97;
+}
+.is-drag-armed{
+  box-shadow:0 0 0 1px rgba(var(--accent-rgb,90,170,240),.55);
+  border-radius:10px;
+}
+
+.is-drag-active .drag-handle{cursor:grabbing}
+
+/* همسایه‌هایی که جا باز می‌کنند؛ فقط transform انیمیشن دارد */
 
 body.is-drag-reordering{cursor:grabbing;user-select:none;-webkit-user-select:none}
 body.is-drag-reordering *{cursor:grabbing!important}
 
 @media (prefers-reduced-motion:reduce){
-  .drag-ghost{box-shadow:0 6px 16px rgba(0,0,0,.35)}
+  .is-drag-item{transition:none!important}
+  .is-drag-active{box-shadow:0 4px 12px rgba(0,0,0,.3)}
 }

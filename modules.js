@@ -7209,7 +7209,6 @@
     if (await saveQuickAddState(items)) {
       const section = document.getElementById('sectionView');
       if (section) render('settings', section);
-      toast('ترتیب دکمه‌های ثبت سریع ذخیره شد.');
     }
   }
 
@@ -7225,7 +7224,6 @@
     appData.references[key] = order.map(function (index) { return current[index]; });
     if (await saveState()) {
       refreshReferenceCard(key);
-      toast('ترتیب گزینه‌های «' + referenceListTitle(key) + '» ذخیره شد.');
     }
   }
 

@@ -105,6 +105,7 @@
       fragment.appendChild(a);
     });
     nav.replaceChildren(fragment);
+    attachNavDrag(nav);
   }
 
   function button(text, action, disabled = false) {
@@ -170,7 +171,7 @@
     const ordered = ids.map(id => byId.get(id)).filter(Boolean);
     if (!ordered.length || ordered.length !== ids.length) return;
     config.order = ordered.map(item => item.id);
-    if (save()) { render(); status('ترتیب منوها ذخیره شد.'); }
+    if (save()) { renderNav(allItems()); }
   }
 
   function attachDrag(list) {
@@ -178,6 +179,24 @@
     window.AtlasDragReorder.attach(list, {
       itemSelector: '[data-menu-row]',
       onReorder: applyDragOrder
+    });
+  }
+
+  // نوار منوی برنامه هم با همان درگ شناور مرتب می‌شود؛ ترتیب نهایی همان
+  // config.order است و بدون هیچ پیامی ذخیره می‌شود.
+  function attachNavDrag(nav) {
+    if (!window.AtlasDragReorder || !nav) return;
+    window.AtlasDragReorder.attach(nav, {
+      itemSelector: '.app-menu-item',
+      injectHandle: false,
+      onReorder: function (list) {
+        const ids = Array.from(list.querySelectorAll('.app-menu-item'))
+          .map(el => el.dataset.menuId).filter(Boolean);
+        const known = new Set(allItems().map(item => item.id));
+        if (!ids.length || ids.some(id => !known.has(id))) return;
+        config.order = ids;
+        save();
+      }
     });
   }
 
