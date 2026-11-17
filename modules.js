@@ -943,6 +943,20 @@
     refreshDashboard();
   }
 
+  // داشبورد فقط وقتی دیده می‌شود که مسیر جاری «داشبورد» باشد؛ در نمای بخش‌ها
+  // (ایستگاه‌ها، تنظیمات، …) پنهان است و بازسازی‌اش بی‌فایده است.
+  function dashboardVisible() {
+    const dashboard = document.getElementById('dashboard');
+    return !!dashboard && !dashboard.classList.contains('route-hidden');
+  }
+
+  // هر تغییری در داده‌ها باید همان لحظه در داشبورد دیده شود، نه با رفرش صفحه.
+  // این قلاب مرکزی است: هر مسیری که saveState را صدا بزند، داشبورد را تازه می‌کند.
+  function refreshDashboardIfVisible() {
+    if (!dashboardVisible()) return;
+    try { refreshDashboard(); } catch (error) { /* داشبورد نباید ذخیره‌سازی را بشکند */ }
+  }
+
   function saveState() {
     if (storageLocked) return Promise.resolve(false);
     appData.updatedAt = new Date().toISOString();
@@ -966,6 +980,9 @@
         toast('ذخیره انجام نشد؛ فضای ذخیره‌سازی این مرورگر کافی نیست.');
         return false;
       }
+    }).then(function (saved) {
+      if (saved) refreshDashboardIfVisible();
+      return saved;
     });
     return saveQueue;
   }
