@@ -124,12 +124,14 @@
     list.replaceChildren();
     items.forEach((item, index) => {
       const row = document.createElement('div');
+      row.dataset.menuRow = item.id;
       row.style.cssText = 'display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:9px;border:1px solid rgba(140,210,255,.18);border-radius:10px;background:rgba(80,140,200,.05)';
       const main = document.createElement('div');
-      main.style.cssText = 'display:grid;gap:6px;min-width:0';
+      main.dataset.dragHandleSlot = '';
+      main.style.cssText = 'display:flex;align-items:center;gap:8px;min-width:0';
       const label = document.createElement('label');
       label.textContent = item.custom ? 'عنوان منوی سفارشی' : 'عنوان منو';
-      label.style.cssText = 'font-size:11px;color:var(--muted)';
+      label.style.cssText = 'display:grid;gap:6px;min-width:0;flex:1;font-size:11px;color:var(--muted)';
       const input = document.createElement('input');
       input.type = 'text';
       input.maxLength = 40;
@@ -157,6 +159,25 @@
       }
       row.append(main, controls);
       list.appendChild(row);
+    });
+    attachDrag(list);
+  }
+
+  // ترتیب ردیف‌ها در DOM همان ترتیب منو است؛ بعد از هر درگ همان را ذخیره می‌کنیم.
+  function applyDragOrder(list) {
+    const ids = Array.from(list.querySelectorAll('[data-menu-row]')).map(row => row.dataset.menuRow);
+    const byId = new Map(allItems().map(item => [item.id, item]));
+    const ordered = ids.map(id => byId.get(id)).filter(Boolean);
+    if (!ordered.length || ordered.length !== ids.length) return;
+    config.order = ordered.map(item => item.id);
+    if (save()) { render(); status('ترتیب منوها ذخیره شد.'); }
+  }
+
+  function attachDrag(list) {
+    if (!window.AtlasDragReorder) return;
+    window.AtlasDragReorder.attach(list, {
+      itemSelector: '[data-menu-row]',
+      onReorder: applyDragOrder
     });
   }
 
