@@ -113,6 +113,14 @@ check('تیک‌های انتخاب ستون بومی‌اند (نه کلید ک
 check('گزینه‌های تیک در شبکهٔ ستونی می‌نشینند', /\.module-check-options\s*\{[^}]*display:\s*grid/.test(read('design/styles.css')) && /grid-template-columns:\s*repeat\(auto-fill/.test(read('design/styles.css')));
 check('تیک گزینه‌ها ۱۵px و بومی است', /\.module-check-options input\s*\{[^}]*width:\s*15px!important/.test(read('design/styles.css')));
 
+// ── «انتخاب همه» و «انتخاب هیچ‌کدام» کنار هم در پنجرهٔ ستون‌های گزارش ──
+check('کنار «انتخاب همه»، «انتخاب هیچ‌کدام» هم هست',
+  /data-module-action="export-columns-all"[^>]*>انتخاب همه<\/button> ' \+\s*'<button type="button" class="secondary-btn" data-module-action="export-columns-none"[^>]*>انتخاب هیچ‌کدام<\/button>/.test(modules));
+check('«انتخاب همه» همهٔ تیک‌های گزارش را می‌زند',
+  /action==='export-columns-all'\)\{[\s\S]{0,200}\[data-export-columns\] input'\)\.forEach\(function\(box\)\{box\.checked=true;\}\)/.test(modules));
+check('«انتخاب هیچ‌کدام» همهٔ تیک‌های گزارش را برمی‌دارد',
+  /action==='export-columns-none'\)\{[\s\S]{0,200}\[data-export-columns\] input'\)\.forEach\(function\(box\)\{box\.checked=false;\}\)/.test(modules));
+
 // ── «عناوین»: انتخاب و ترتیب ستون‌های جدول ──
 check('قرص «عناوین» در نوار فیلتر هست', /list-chip-columns[^>]*data-module-action="columns-open"/.test(modules));
 check('پنجرهٔ عناوین با تیک و دکمه‌های ترتیب ساخته می‌شود', /function columnsModal\(moduleKey\)/.test(modules) && /data-column-list/.test(modules) && /data-module-action="column-move" data-dir="up"/.test(modules) && /data-module-action="column-move" data-dir="down"/.test(modules));

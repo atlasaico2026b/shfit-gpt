@@ -77,8 +77,8 @@
       if (!isFinite(lon) || !isFinite(lat)) continue;
       var percent = project(lon, lat);
       if (!percent || !isFinite(percent.x) || !isFinite(percent.y)) continue;
-      var x = Number((percent.x * width / 100).toFixed(1));
-      var y = Number((percent.y * height / 100).toFixed(1));
+      var x = Number((percent.x * width / 100).toFixed(2));
+      var y = Number((percent.y * height / 100).toFixed(2));
       if (x === lastX && y === lastY) continue;
       d += (d ? 'L' : 'M') + x + ' ' + y;
       lastX = x;
