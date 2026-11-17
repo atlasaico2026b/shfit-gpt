@@ -86,11 +86,37 @@
     };
   }
 
-  function roadPaths(province, width, height) {
+  // ردهٔ نمایش شهرها برای راه‌ها: هر سر راه باید ردهٔ شهرش را داشته باشد تا
+  // راه شهرهای اصلی ضخیم‌تر و راه شهرهای فرعی نازک‌تر رسم شود.
+  function cityTierLookup(province) {
+    var api = window.AtlasProvinces;
+    var normalize = api && typeof api.normalize === 'function'
+      ? api.normalize
+      : function (value) { return String(value == null ? '' : value).trim(); };
+    var index = {};
+    (province.cities || []).forEach(function (city) {
+      [city.name].concat(city.aliases || []).forEach(function (key) {
+        var norm = normalize(key);
+        if (norm && !index[norm]) index[norm] = city;
+      });
+    });
+    return function (name) {
+      var hit = index[normalize(name)];
+      return hit ? Number(hit.tier) || 3 : 0;
+    };
+  }
+
+  function roadEntries(province, width, height, hidden) {
     var api = window.AtlasRoads;
     var fit = geoFit(province);
-    if (!api || typeof api.pathsFor !== 'function' || !fit) return [];
-    return api.pathsFor(fit.project, fit.bounds, width, height);
+    if (!api || typeof api.entriesFor !== 'function' || !fit) return [];
+    return api.entriesFor(fit.project, fit.bounds, width, height, {
+      tierOf: cityTierLookup(province),
+      visible: function (name) {
+        return !hidden || hidden.indexOf(name) < 0;
+      },
+      zoom: 4
+    });
   }
 
   // SVG مستقل: مرز استان + راه‌های اصلی + نقطه و نام همهٔ شهرها + عنوان و راهنما.
@@ -105,10 +131,12 @@
       return !opts.hidden || opts.hidden.indexOf(city.name) < 0;
     });
 
-    var paths = roadPaths(province, width, height);
-    var roads = paths.map(function (d) {
-      return '<path d="' + d + '" fill="none" stroke="' + PALETTE.roadCasing + '" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>' +
-        '<path d="' + d + '" fill="none" stroke="' + PALETTE.road + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+    var entries = roadEntries(province, width, height, opts.hidden);
+    var paths = entries.map(function (entry) { return entry.d; });
+    var roads = entries.map(function (entry) {
+      var stroke = entry.rank === 1 ? 3 : entry.rank === 2 ? 2.2 : 1.6;
+      return '<path d="' + entry.d + '" fill="none" stroke="' + PALETTE.roadCasing + '" stroke-width="' + (stroke + 3) + '" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '<path d="' + entry.d + '" fill="none" stroke="' + PALETTE.road + '" stroke-width="' + stroke + '" stroke-linecap="round" stroke-linejoin="round"/>';
     }).join('');
     var clip = paths.length
       ? '<defs><clipPath id="atlas-map-clip"><path d="' + esc(province.path) + '"/></clipPath></defs>'
@@ -164,22 +192,19 @@
           roads: (function () {
             var fit = geoFit(province);
             var api = window.AtlasRoads;
-            if (!fit || !api || typeof api.routes !== 'function') return [];
+            if (!fit || !api || typeof api.routes !== 'function' || typeof api.pointsOf !== 'function') return [];
             return api.routes().filter(function (route) {
-              var points = route.points || [];
-              return points.some(function (point) {
-                var lon = Number(point[0]);
-                var lat = Number(point[1]);
-                return lon >= fit.bounds.minLon - 0.25 && lon <= fit.bounds.maxLon + 0.25 &&
-                  lat >= fit.bounds.minLat - 0.25 && lat <= fit.bounds.maxLat + 0.25;
+              return api.pointsOf(route).some(function (point) {
+                return point[0] >= fit.bounds.minLon - 0.25 && point[0] <= fit.bounds.maxLon + 0.25 &&
+                  point[1] >= fit.bounds.minLat - 0.25 && point[1] <= fit.bounds.maxLat + 0.25;
               });
             }).map(function (route) {
               return {
                 from: route.from,
                 to: route.to,
                 km: route.km,
-                points: (route.points || []).map(function (point) {
-                  var percent = fit.project(Number(point[0]), Number(point[1]));
+                points: api.pointsOf(route).map(function (point) {
+                  var percent = fit.project(point[0], point[1]);
                   return [Number(percent.x.toFixed(1)), Number(percent.y.toFixed(1))];
                 })
               };

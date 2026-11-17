@@ -53,12 +53,12 @@ check('دادهٔ راه‌ها بارگذاری می‌شود', routes.length >
 check('هر راه نام مبدأ و مقصد و کیلومتر دارد',
   routes.every((route) => route.from && route.to && Number(route.km) > 0));
 check('هر راه دنبالهٔ نقطه‌های واقعی جاده است',
-  routes.every((route) => Array.isArray(route.points) && route.points.length >= 2));
+  routes.every((route) => Array.isArray(route.points) && route.points.length >= 4));
 check('بیشتر راه‌ها بیش از دو نقطه دارند (خط راست نیستند)',
-  routes.filter((route) => route.points.length > 2).length >= routes.length * 0.9,
-  routes.filter((route) => route.points.length > 2).length + '/' + routes.length);
+  routes.filter((route) => route.points.length > 4).length >= routes.length * 0.9,
+  routes.filter((route) => route.points.length > 4).length + '/' + routes.length);
 check('همهٔ نقطه‌ها داخل ایران‌اند',
-  routes.every((route) => route.points.every(([lon, lat]) => lon > 44 && lon < 64 && lat > 25 && lat < 40)));
+  routes.every((route) => roads.pointsOf(route).every(([lon, lat]) => lon > 44 && lon < 64 && lat > 25 && lat < 40)));
 
 // تصویر جغرافیایی استان از برازش خطی شهرهای خودش؛ باید با مختصات درصدی شهرها بخواند.
 function geoFit(province) {
@@ -112,6 +112,44 @@ const markup = roads.markup(fit.project, fit.bounds, 1000, 1262, 'clip-test');
 check('مارک‌آپ راه‌ها گروه و برش دارد',
   /class="station-map-roads"/.test(markup) && /clip-path="url\(#clip-test\)"/.test(markup));
 check('مارک‌آپ راه‌ها خط سیاه ندارد', !/#000/.test(markup));
+
+// ── راه فقط برای شهرهای نشان‌داده‌شده ──
+const cityTier = (name) => {
+  const city = khuzestan.cities.find((item) => item.name === name);
+  return city ? city.tier : 0;
+};
+const allRoads = roads.entriesFor(fit.project, fit.bounds, 1000, 1262, { tierOf: cityTier, zoom: 4 });
+const zoom1 = roads.entriesFor(fit.project, fit.bounds, 1000, 1262, { tierOf: cityTier, zoom: 1 });
+check('با بزرگ‌نمایی، راه‌های بیشتری آشکار می‌شود', zoom1.length > 0 && zoom1.length < allRoads.length,
+  zoom1.length + ' از ' + allRoads.length);
+check('در نمای دور فقط راه بین شهرهای اصلی رسم می‌شود',
+  zoom1.every((entry) => entry.rank <= 2 && entry.tier === 1),
+  JSON.stringify(zoom1.map((entry) => entry.tier + '/' + entry.rank)));
+check('هر راه ردهٔ آشکارشدن و ردهٔ ضخامت دارد',
+  allRoads.every((entry) => entry.tier >= 1 && entry.rank >= 1 &&
+    (entry.tier >= entry.rank || (entry.rank <= 2 && entry.tier === 1))));
+check('راه شهرهای اصلی ضخیم‌تر است',
+  allRoads.some((entry) => entry.rank === 1) && allRoads.some((entry) => entry.rank === 3));
+check('شهر پنهان‌شده راهش هم رسم نمی‌شود', (() => {
+  const before = roads.entriesFor(fit.project, fit.bounds, 1000, 1262, { tierOf: cityTier, zoom: 4 }).length;
+  const after = roads.entriesFor(fit.project, fit.bounds, 1000, 1262, {
+    tierOf: cityTier,
+    visible: (name) => name !== 'شوشتر',
+    zoom: 4
+  }).length;
+  return after < before;
+})());
+check('گروه هر راه رده‌اش را در SVG می‌برد',
+  /<g data-tier="\d" data-rank="\d">/.test(roads.markup(fit.project, fit.bounds, 1000, 1262, null, { tierOf: cityTier, zoom: 4 })));
+check('راه شهرهای اصلی در CSS ضخیم‌تر از بقیه است', (() => {
+  const width = (rank) => {
+    const match = css.match(new RegExp('\\[data-rank="' + rank + '"\\] \\.station-map-road\\{stroke-width:([\\d.]+)'));
+    return match ? Number(match[1]) : 0;
+  };
+  return width(1) > width(2) && width(2) > width(3) && width(3) > 0;
+})());
+check('پله‌های بزرگ‌نمایی راه‌ها در CSS هست',
+  /data-zoom="1"\] \.station-map-roads g\[data-tier="2"\]/.test(css));
 
 // ── خروجی دانلودی نقشه ──
 sandbox.document = { createElement: () => ({ style: {}, appendChild() {}, remove() {}, click() {}, setAttribute() {} }), body: { appendChild() {} } };

@@ -47,6 +47,15 @@
 .station-map-roads{pointer-events:none}
 .station-map-road-casing{fill:none;stroke:rgba(var(--c-white-rgb),.06);stroke-width:4.4;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
 .station-map-road{fill:none;stroke:rgba(var(--c-white-rgb),.3);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+/* راه شهرهای اصلی ضخیم‌تر است. ردهٔ ضخامت (data-rank) کمترین ردهٔ دو سر راه
+   است: راهی که یک سرش شهر اصلی باشد پررنگ‌تر از راه بین دو شهر کوچک دیده
+   می‌شود، مثل نقشه‌های واقعی. */
+.station-map-roads g[data-rank="1"] .station-map-road-casing{stroke-width:6.4}
+.station-map-roads g[data-rank="1"] .station-map-road{stroke-width:2.6;stroke:rgba(var(--c-white-rgb),.44)}
+.station-map-roads g[data-rank="2"] .station-map-road-casing{stroke-width:5}
+.station-map-roads g[data-rank="2"] .station-map-road{stroke-width:1.9;stroke:rgba(var(--c-white-rgb),.34)}
+.station-map-roads g[data-rank="3"] .station-map-road-casing{stroke-width:4}
+.station-map-roads g[data-rank="3"] .station-map-road{stroke-width:1.2;stroke:rgba(var(--c-white-rgb),.22)}
 .station-city-dot{fill:rgba(var(--c-white-rgb),.42);stroke:rgba(var(--c-black-rgb),.35);stroke-width:1;vector-effect:non-scaling-stroke}
 .station-city-label{fill:var(--muted);font-family:inherit;font-size:42px;direction:rtl;opacity:.9}
 .station-line{fill:none;stroke:var(--tone);stroke-width:4;stroke-opacity:.95;vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round}
@@ -77,8 +86,18 @@
 .station-map[data-zoom="2"] .station-city[data-tier="3"] .station-city-label,
 .station-map[data-zoom="2"] .station-city[data-tier="4"] .station-city-label,
 .station-map[data-zoom="3"] .station-city[data-tier="4"] .station-city-label{display:none}
+
+/* راه‌ها هم‌پای نام شهرها آشکار می‌شوند: هر راه ردهٔ بیشترین ردهٔ دو سرش را
+   دارد، پس راهی که به شهر کوچک می‌رسد تا وقتی نام آن شهر دیده نشود رسم نمی‌شود. */
+.station-map[data-zoom="1"] .station-map-roads g[data-tier="2"],
+.station-map[data-zoom="1"] .station-map-roads g[data-tier="3"],
+.station-map[data-zoom="1"] .station-map-roads g[data-tier="4"],
+.station-map[data-zoom="2"] .station-map-roads g[data-tier="3"],
+.station-map[data-zoom="2"] .station-map-roads g[data-tier="4"],
+.station-map[data-zoom="3"] .station-map-roads g[data-tier="4"]{display:none}
 /* اگر کاربر «نمایش همهٔ نام‌ها» را روشن کرده باشد، پله‌ها کنار می‌روند. */
 .station-map[data-labels="all"] .station-city[data-tier] .station-city-label{display:block}
+.station-map[data-labels="all"] .station-map-roads g[data-tier]{display:inline}
 .station-map-base[data-labels="off"] .station-city-label{display:none}
 
 /* ابزار بزرگ‌نمایی */

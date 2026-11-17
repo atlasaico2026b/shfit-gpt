@@ -6397,6 +6397,28 @@
     };
   }
 
+  // نقش راه‌ها به شهرهای نشان‌داده‌شده گره خورده است: ردهٔ هر شهر روی همین نقشه
+  // و پنهان‌بودنش در تنظیمات، از همین‌جا به AtlasRoads داده می‌شود. جست‌وجوی نام
+  // شهر یک بار برای هر نام انجام می‌شود، نه یک بار برای هر سر هر راه.
+  function mapRoadCityOptions() {
+    const cache = {};
+    function find(name) {
+      const key = String(name == null ? '' : name);
+      if (!(key in cache)) cache[key] = stationCityAnchor(key);
+      return cache[key];
+    }
+    return {
+      tierOf: function (name) {
+        const city = find(name);
+        return city ? mapCityTier(city) : 0;
+      },
+      visible: function (name) {
+        const city = find(name);
+        return city ? mapCityVisible(city) : true;
+      }
+    };
+  }
+
   function mapRoadMarkup(map, width, height) {
     const api = window.AtlasRoads;
     const project = mapGeoPercent(map);
@@ -6404,7 +6426,7 @@
     if (!api || typeof api.markup !== 'function' || !project || !bounds) return '';
     mapClipSeq += 1;
     const clipId = 'station-map-clip-' + mapClipSeq;
-    const roads = api.markup(project, bounds, width, height, clipId);
+    const roads = api.markup(project, bounds, width, height, clipId, mapRoadCityOptions());
     if (!roads) return '';
     return '<defs><clipPath id="' + clipId + '"><path d="' + esc(map.path) + '"></path></clipPath></defs>' + roads;
   }
