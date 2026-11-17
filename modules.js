@@ -6018,7 +6018,7 @@
         fit.lon.offset + fit.lon.slope * (x / spanX * 100),
         fit.lat.offset + fit.lat.slope * (y / spanY * 100)
       );
-      out += (command === 'M' ? 'M' : 'L') + point[0].toFixed(1) + ' ' + point[1].toFixed(1);
+      out += (command === 'M' ? 'M' : 'L') + point[0].toFixed(2) + ' ' + point[1].toFixed(2);
       command = 'L';
     }
     return out;
@@ -6064,8 +6064,8 @@
           name: city.name,
           lat: city.lat,
           lon: city.lon,
-          x: Math.min(100, Math.max(0, Number((point[0] / width * 100).toFixed(1)))),
-          y: Math.min(100, Math.max(0, Number((point[1] / height * 100).toFixed(1)))),
+          x: Math.min(100, Math.max(0, Number((point[0] / width * 100).toFixed(2)))),
+          y: Math.min(100, Math.max(0, Number((point[1] / height * 100).toFixed(2)))),
           population: city.population,
           aliases: city.aliases || [],
           tier: city.tier,
@@ -6184,6 +6184,11 @@
     if (!map) return [];
     return map.cities.filter(mapCityVisible);
   }
+
+  // قدرت نقشه: بازهٔ بزرگ‌نمایی و حساسیت چرخ ماوس هر دو با همین ضریب زیاد
+  // می‌شوند. عدد ۳ یعنی تا سه برابر دورتر از قبل می‌توان بزرگ‌نمایی کرد و هر
+  // پلهٔ چرخ هم سه برابر جابه‌جایی می‌کند.
+  const MAP_ZOOM_POWER = 3;
 
   // با بزرگ‌نمایی، شهرهای ردهٔ پایین‌تر هم آشکار می‌شوند؛ این آستانه‌ها همان
   // چیزی است که CSS با data-zoom روی قاب نقشه اعمال می‌کند.
@@ -6879,7 +6884,7 @@
     const opts = options || {};
     const frame = map.querySelector('[data-station-frame]');
     if (!frame) return null;
-    const maxScale = Number(opts.maxScale) || 8;
+    const maxScale = Number(opts.maxScale) || 8 * MAP_ZOOM_POWER;
     const state = { scale: 1, x: 0, y: 0 };
     const pointers = new Map();
     let pan = null;
@@ -6955,7 +6960,9 @@
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
       // با بزرگ‌نمایی، دقت ذخیره‌سازی هم ریزتر می‌شود تا هر پیکسل صفحه اثر داشته باشد.
-      const factor = state.scale > 1 ? 100 : 10;
+      // در بزرگ‌نمایی‌های عمیق (که حالا تا سه برابر دورتر می‌رود) یک پلهٔ دقت هم
+      // بیشتر می‌شود تا جابه‌جایی گره با پیکسل صفحه بخوانَد.
+      const factor = state.scale > 8 ? 1000 : state.scale > 1 ? 100 : 10;
       const x = ((event.clientX - cx) / rect.width) * 100 + 50;
       const y = ((event.clientY - cy) / rect.height) * 100 + 50;
       return {
@@ -6969,7 +6976,7 @@
       // گیر نکند؛ Ctrl/⌘ + چرخ همیشه بزرگ‌نمایی است (پینچ ترک‌پد هم همین را می‌فرستد).
       if (!event.ctrlKey && !event.metaKey && map.dataset.active !== '1') return;
       event.preventDefault();
-      zoomTo(state.scale * Math.exp(-event.deltaY * 0.0016), event.clientX, event.clientY);
+      zoomTo(state.scale * Math.exp(-event.deltaY * 0.0016 * MAP_ZOOM_POWER), event.clientX, event.clientY);
     }
 
     function onDown(event) {
@@ -7046,7 +7053,7 @@
     const controller = new AbortController();
     map._atlasWired = controller;
     const signal = controller.signal;
-    const zoom = createMapZoom(map, { maxScale: map.closest('[data-widget="stations"]') ? 3 : 8, signal: signal });
+    const zoom = createMapZoom(map, { maxScale: (map.closest('[data-widget="stations"]') ? 3 : 8) * MAP_ZOOM_POWER, signal: signal });
     map._atlasZoom = zoom;
     // ویجت داشبورد فقط نمایش است: هیچ گره‌ای جابه‌جا نمی‌شود و جایگاه ذخیره‌شده
     // عوض نمی‌شود. جابه‌جایی و ذخیرهٔ جایگاه فقط در صفحهٔ «ایستگاه‌ها» ممکن است.
@@ -7630,6 +7637,7 @@
       }).join('') + '</div>' +
       '<div class="module-form-actions"><span class="module-required-help">حداقل یک ستون لازم است.</span><div>' +
       '<button type="button" class="secondary-btn" data-module-action="export-columns-all" data-view="' + esc(moduleKey) + '">انتخاب همه</button> ' +
+      '<button type="button" class="secondary-btn" data-module-action="export-columns-none" data-view="' + esc(moduleKey) + '">انتخاب هیچ‌کدام</button> ' +
       '<button type="button" class="primary-btn" data-module-action="export-columns-save" data-view="' + esc(moduleKey) + '">ذخیرهٔ ستون‌ها</button></div></div></div></div></div>';
   }
 
@@ -9422,6 +9430,9 @@
     }else if(action==='export-columns-all'){
       const modal=button.closest('[data-modal-backdrop]');
       if(modal)modal.querySelectorAll('[data-export-columns] input').forEach(function(box){box.checked=true;});
+    }else if(action==='export-columns-none'){
+      const modal=button.closest('[data-modal-backdrop]');
+      if(modal)modal.querySelectorAll('[data-export-columns] input').forEach(function(box){box.checked=false;});
     }else if(action==='export-columns-save'&&specs[moduleKey]){
       const modal=button.closest('[data-modal-backdrop]');
       const picked=modal?Array.from(modal.querySelectorAll('[data-export-columns] input:checked')).map(function(box){return box.value;}):[];
