@@ -3298,7 +3298,7 @@
       ? 'مشترک بین ' + faDigits(consumers.length) + ' فیلد — ' + consumers.slice(0, 3).map(function (item) { return item.label; }).join('، ') + (consumers.length > 3 ? ' و …' : '')
       : (consumers.length === 1 ? 'استفاده در ' + consumers[0].label : 'در هیچ فیلدی استفاده نمی‌شود.');
     const rows = values.map(function (value, index) {
-      return '<div class="reference-row">' +
+      return '<div class="reference-row" data-reference-index="' + index + '">' +
         '<span class="reference-value">' + esc(value) + '</span>' +
         '<span class="reference-actions">' +
           '<button type="button" class="secondary-btn" data-module-action="reference-up" data-list-key="' + esc(key) + '" data-index="' + index + '" aria-label="انتقال به بالا"' + (index === 0 ? ' disabled' : '') + '>↑</button>' +
@@ -3338,6 +3338,7 @@
     const node = document.querySelector('[data-reference-card="' + key + '"]');
     if (!node) return;
     node.outerHTML = referenceCardMarkup(key);
+    wireDragReorder(document);
   }
 
   function refreshCurrentView() {
@@ -5599,7 +5600,7 @@
     const items = quickAddState();
     const enabledCount = items.filter(function (item) { return item.enabled; }).length;
     return '<section class="module-list-panel"><div class="module-list-head"><div><h3>دکمه‌های ثبت سریع داشبورد</h3>' +
-      '<p>هر دکمه‌ای را که می‌خواهی روی نوار «ثبت سریع» داشبورد ببینی روشن کن؛ با ↑ و ↓ جای آن را عوض کن. ترتیب همین فهرست، ترتیب دکمه‌ها روی داشبورد است.</p></div>' +
+      '<p>هر دکمه‌ای را که می‌خواهی روی نوار «ثبت سریع» داشبورد ببینی روشن کن؛ با کشیدن ردیف (یا ↑ و ↓) جای آن را عوض کن. ترتیب همین فهرست، ترتیب دکمه‌ها روی داشبورد است.</p></div>' +
       '<div class="module-list-tools"><span class="module-tag">' + faDigits(enabledCount) + ' از ' + faDigits(items.length) + ' فعال</span>' +
       '<button type="button" class="secondary-btn" data-qa-reset>بازنشانی پیش‌فرض</button></div></div>' +
       '<div class="qa-list" data-qa-list>' + items.map(function (item, index) {
@@ -7169,6 +7170,65 @@
 
   let currentView = '';
 
+  // ── جابه‌جایی عنوان‌ها با درگ ──
+  // هر فهرستی از عنوان‌ها که تا امروز با ↑ ↓ مرتب می‌شد، حالا با کشیدن هم
+  // مرتب می‌شود. ترتیب نهایی همان ترتیب فرزندان DOM است، پس هر کدی که بعداً
+  // از DOM می‌خواند (ذخیرهٔ ستون‌ها) بدون تغییر درست کار می‌کند.
+  function wireDragReorder(root) {
+    if (!window.AtlasDragReorder) return;
+    const scope = root || document;
+
+    scope.querySelectorAll('[data-column-list]').forEach(function (list) {
+      window.AtlasDragReorder.attach(list, {
+        itemSelector: '[data-col-key]',
+        onReorder: function () { updateColumnMoveButtons(list); }
+      });
+    });
+
+    scope.querySelectorAll('[data-qa-list]').forEach(function (list) {
+      window.AtlasDragReorder.attach(list, {
+        itemSelector: '[data-qa-row]',
+        onReorder: function () { saveQuickAddOrder(list); }
+      });
+    });
+
+    scope.querySelectorAll('.reference-items').forEach(function (list) {
+      window.AtlasDragReorder.attach(list, {
+        itemSelector: '.reference-row',
+        onReorder: function () { saveReferenceOrder(list); }
+      });
+    });
+  }
+
+  async function saveQuickAddOrder(list) {
+    const ids = Array.from(list.querySelectorAll('[data-qa-row]')).map(function (row) { return row.dataset.qaRow; });
+    const byId = {};
+    quickAddState().forEach(function (item) { byId[item.id] = item; });
+    const items = ids.map(function (id) { return byId[id]; }).filter(Boolean);
+    if (!items.length || items.length !== ids.length) return;
+    if (await saveQuickAddState(items)) {
+      const section = document.getElementById('sectionView');
+      if (section) render('settings', section);
+      toast('ترتیب دکمه‌های ثبت سریع ذخیره شد.');
+    }
+  }
+
+  async function saveReferenceOrder(list) {
+    const card = list.closest('[data-reference-card]');
+    if (!card) return;
+    const key = card.dataset.referenceCard;
+    const current = Array.isArray(appData.references[key]) ? appData.references[key].slice() : [];
+    const order = Array.from(list.querySelectorAll('.reference-row')).map(function (row) {
+      return Number(row.dataset.referenceIndex);
+    });
+    if (!order.length || order.length !== current.length) return;
+    appData.references[key] = order.map(function (index) { return current[index]; });
+    if (await saveState()) {
+      refreshReferenceCard(key);
+      toast('ترتیب گزینه‌های «' + referenceListTitle(key) + '» ذخیره شد.');
+    }
+  }
+
   function refreshPlaceManager() {
     const section = document.getElementById('sectionView');
     render(currentView === 'settings' ? 'settings' : 'stations', section);
@@ -7199,6 +7259,7 @@
     enhanceJalaliInputs(section);
     initMultiChecks(section);
     mountSectionBackup(view, section);
+    wireDragReorder(section);
     if(view==='dashboard')applyDashboardLayout();
   }
 
@@ -7660,7 +7721,7 @@
     const hidden = prefs && Array.isArray(prefs.hidden) ? prefs.hidden : [];
     return '<div class="atlas-modal-backdrop" data-modal-backdrop data-modal-kind="columns" data-view="' + esc(moduleKey) + '">' +
       '<div class="atlas-modal atlas-modal-narrow" role="dialog" aria-modal="true"><div class="atlas-modal-head"><div><h3>عناوین جدول</h3>' +
-      '<p>هر عنوانی را که می‌خواهی در جدول ببینی تیک بزن و با دکمه‌های ↑ ↓ ترتیبش را مشخص کن.</p></div>' +
+      '<p>هر عنوانی را که می‌خواهی در جدول ببینی تیک بزن و با کشیدن ردیف (یا دکمه‌های ↑ ↓) ترتیبش را مشخص کن.</p></div>' +
       '<button type="button" class="atlas-modal-close" data-module-action="columns-cancel" data-view="' + esc(moduleKey) + '" aria-label="بستن">×</button></div>' +
       '<div class="atlas-modal-body"><div class="module-column-list" data-column-list>' +
       ordered.map(function (key, index) {
@@ -9446,6 +9507,7 @@
       }
     }else if(action==='columns-open'&&specs[moduleKey]){
       document.body.insertAdjacentHTML('beforeend',columnsModal(moduleKey));
+      wireDragReorder(document);
     }else if(action==='columns-cancel'){
       const modal=button.closest('[data-modal-backdrop]');
       if(modal)modal.remove();
