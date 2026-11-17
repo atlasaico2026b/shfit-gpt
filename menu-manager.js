@@ -94,6 +94,7 @@
       a.className = 'app-menu-item';
       a.href = item.href;
       a.dataset.menuId = item.id;
+      if (item.fixed) a.dataset.dragLocked = '';
       const icon = document.createElement('span');
       icon.className = 'nav-ico';
       if (window.atlasIcon && window.ATLAS_ICONS && window.ATLAS_ICONS[item.icon]) {
@@ -105,6 +106,30 @@
       fragment.appendChild(a);
     });
     nav.replaceChildren(fragment);
+    attachNavDrag(nav);
+  }
+
+  // ترتیب منوی کنار صفحه با درگ عوض می‌شود و بلافاصله ذخیره می‌شود.
+  // چیزی که روی صفحه می‌بینی همان ترتیب فرزندان nav است.
+  function applyNavOrder(nav) {
+    const shown = Array.from(nav.querySelectorAll('[data-menu-id]')).map(a => a.dataset.menuId);
+    const known = new Set(allItems().map(item => item.id));
+    const rest = config.order.filter(id => known.has(id) && shown.indexOf(id) < 0);
+    const ordered = shown.concat(rest);
+    if (ordered.length !== known.size) return;
+    config.order = ordered;
+    if (save()) renderManager();
+  }
+
+  function attachNavDrag(nav) {
+    if (!window.AtlasDragReorder || !nav) return;
+    window.AtlasDragReorder.attach(nav, {
+      itemSelector: '.app-menu-item',
+      injectHandle: false,
+      touchMode: 'longpress',
+      lockedSelector: '[data-drag-locked]',
+      onReorder: applyNavOrder
+    });
   }
 
   function button(text, action, disabled = false) {
@@ -170,7 +195,7 @@
     const ordered = ids.map(id => byId.get(id)).filter(Boolean);
     if (!ordered.length || ordered.length !== ids.length) return;
     config.order = ordered.map(item => item.id);
-    if (save()) { render(); status('ترتیب منوها ذخیره شد.'); }
+    save();
   }
 
   function attachDrag(list) {

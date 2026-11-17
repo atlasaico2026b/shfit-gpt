@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>آزمایشگاه درگ زنده — AtlasShift</title>
+<link rel="stylesheet" href="./design/tokens.css">
+<link rel="stylesheet" href="./design/styles.css">
+<link rel="stylesheet" href="./design/new-ui.css">
+<link rel="stylesheet" href="./design/drag-reorder.css">
+<style>
+  body{margin:0;padding:20px;font-family:inherit;background:#0b1a28;color:#eaf2fb}
+  h1{font-size:16px;margin:0 0 6px}
+  p.hint{margin:0 0 22px;font-size:12px;color:#9fb3c8;line-height:1.9}
+  section{margin-bottom:26px;padding:14px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(140,210,255,.16)}
+  h2{font-size:12px;margin:0 0 12px;color:#9fb3c8;font-weight:600}
+  .row{display:flex;gap:8px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px}
+  .tab{flex:0 0 auto;padding:9px 14px;border-radius:14px;border:1px solid rgba(140,210,255,.2);background:rgba(255,255,255,.04);font-size:12px;cursor:grab}
+  .tab.is-active{background:rgba(90,170,240,.25);border-color:rgba(90,170,240,.5)}
+  .col{display:flex;flex-direction:column;gap:6px}
+  .item{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;border:1px solid rgba(140,210,255,.14);background:rgba(255,255,255,.03);font-size:12px;cursor:grab}
+  .item .dot{width:22px;height:22px;border-radius:8px;display:grid;place-items:center;background:rgba(90,170,240,.2);font-size:11px}
+  .chip{display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:1px solid rgba(140,210,255,.2);background:rgba(255,255,255,.03);font-size:12px;cursor:grab}
+  .free-columns{display:flex;gap:10px;flex-wrap:wrap}
+  .mini{flex:1 1 140px;min-width:140px}
+  .mini h3{font-size:11px;color:#9fb3c8;margin:0 0 6px}
+  .status{font-size:11px;color:#7fd6a6;margin-top:8px}
+</style>
+</head>
+<body>
+  <h1>آزمایشگاه درگ زنده</h1>
+  <p class="hint">آیتم را بگیر و در همان ردیف به چپ/راست (یا بالا/پایین) بکش؛ بقیه همان لحظه کنار می‌روند و آیتم از ردیف بلند نمی‌شود. روی لمس، کوتاه نگه‌دار و بکش.</p>
+
+  <section>
+    <h2>تب‌ها (افقی)</h2>
+    <div class="row" id="tabs">
+      <div class="tab is-active">داشبورد</div>
+      <div class="tab">ظاهر برنامه</div>
+      <div class="tab">دفترچه تلفن</div>
+      <div class="tab">منوها و فهرست‌ها</div>
+      <div class="tab">گزارشات</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>عنوان منوها (عمودی)</h2>
+    <div class="col" id="menu">
+      <div class="item"><span class="dot">۱</span>داشبورد</div>
+      <div class="item"><span class="dot">۲</span>کارکنان</div>
+      <div class="item"><span class="dot">۳</span>شیفت‌ها</div>
+      <div class="item"><span class="dot">۴</span>مأموریت‌ها</div>
+      <div class="item"><span class="dot">۵</span>خودروها</div>
+      <div class="item"><span class="dot">۶</span>تنظیمات</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>زیرمنوها (چیپ افقی)</h2>
+    <div class="row" id="chips">
+      <div class="chip">پرسنل</div>
+      <div class="chip">قراردادها</div>
+      <div class="chip">مرخصی</div>
+      <div class="chip">اضافه‌کاری</div>
+      <div class="chip">مدارک</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>ستون‌های داشبورد (چند ردیف)</h2>
+    <div class="free-columns" id="cols">
+      <div class="mini"><h3>ستون ۱</h3><div class="col"><div class="item"><span class="dot">A</span>کارت</div><div class="item"><span class="dot">B</span>کارت</div></div></div>
+      <div class="mini"><h3>ستون ۲</h3><div class="col"><div class="item"><span class="dot">C</span>کارت</div><div class="item"><span class="dot">D</span>کارت</div></div></div>
+      <div class="mini"><h3>ستون ۳</h3><div class="col"><div class="item"><span class="dot">E</span>کارت</div><div class="item"><span class="dot">F</span>کارت</div></div></div>
+    </div>
+  </section>
+
+  <p class="status" id="status">آماده</p>
+
+<script src="./design/drag-reorder.js"></script>
+<script>
+  (function () {
+    'use strict';
+    var status = document.getElementById('status');
+    function label(list) {
+      return Array.prototype.map.call(list.children, function (el) {
+        return (el.textContent || '').trim();
+      }).join(' | ');
+    }
+    function wire(id, selector) {
+      var list = document.getElementById(id);
+      if (!list) return;
+      var saved = null;
+      try { saved = JSON.parse(localStorage.getItem('lab:' + id) || 'null'); } catch (_) {}
+      if (Array.isArray(saved)) {
+        saved.forEach(function (text) {
+          var el = Array.prototype.find.call(list.children, function (child) {
+            return (child.textContent || '').trim() === text;
+          });
+          if (el) list.appendChild(el);
+        });
+      }
+      window.AtlasDragReorder.attach(list, {
+        itemSelector: selector,
+        injectHandle: false,
+        touchMode: 'longpress',
+        onReorder: function (container) {
+          try { localStorage.setItem('lab:' + id, JSON.stringify(label(container).split(' | '))); } catch (_) {}
+          status.textContent = 'ذخیره شد: ' + label(container);
+        }
+      });
+    }
+    wire('tabs', '.tab');
+    wire('menu', '.item');
+    wire('chips', '.chip');
+  })();
+</script>
+</body>
+</html>
