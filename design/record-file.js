@@ -585,8 +585,13 @@
     const tabs = [{ key: 'info', label: 'اطلاعات پرونده' }];
     if (extras.history) tabs.push({ key: 'history', label: 'سوابق' });
     if (extras.comments) tabs.push({ key: 'comments', label: 'کامنت‌ها' });
-    const tabBar = tabs.length > 1
-      ? '<div class="rf-tabs" role="tablist">' + tabs.map((tab, index) =>
+    let order;
+    try { order = JSON.parse(localStorage.getItem('recordFileTabsOrder') || '[]'); } catch (_) { order = []; }
+    const orderedTabs = order.length
+      ? order.map(id => tabs.find(p => p.key === id)).filter(Boolean)
+      : tabs;
+    const tabBar = orderedTabs.length > 1
+      ? '<div class="rf-tabs" role="tablist">' + orderedTabs.map((tab, index) =>
           '<button type="button" role="tab" class="rf-tab' + (index === 0 ? ' is-active' : '') + '" aria-selected="' + (index === 0) + '" data-rf-tab="' + tab.key + '">' + esc(tab.label) + '</button>').join('') + '</div>'
       : '';
     const commentsHtml = '<div class="rf-comments">' +
@@ -609,6 +614,18 @@
       '</div>';
     document.body.appendChild(backdrop);
     current = { backdrop: backdrop, model: model, sheetHtml: sheetHtml };
+    // فعال‌سازی Drag & Reorder برای تب‌های پرونده
+    if (window.AtlasDragReorder) {
+      window.AtlasDragReorder.attach(backdrop.querySelector('.rf-tabs'), {
+        itemSelector: '[role="tab"]',
+        injectHandle: false,
+        touchMode: 'longpress',
+        onReorder: function () {
+          const ids = Array.from(backdrop.querySelectorAll('[data-rf-tab]')).map(t => t.dataset.rfTab);
+          try { localStorage.setItem('recordFileTabsOrder', JSON.stringify(ids)); } catch (_) {}
+        }
+      });
+    }
     backdrop.querySelector('[data-rf-close]').addEventListener('click', closeFile);
     backdrop.addEventListener('click', event => { if (event.target === backdrop) closeFile(); });
     backdrop.querySelectorAll('[data-rf-export]').forEach(button => {

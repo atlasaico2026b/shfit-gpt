@@ -50,9 +50,14 @@
 
   Sortable.prototype.items = function () {
     var self = this;
-    return toArray(this.container.children).filter(function (el) {
+    var direct = toArray(this.container.children).filter(function (el) {
       return el.matches && el.matches(self.itemSelector);
     });
+    if (direct.length) return direct;
+    // Some containers (e.g. <thead>) hold the draggable items one level deeper,
+    // behind a wrapping row. Fall back to a full subtree search so the same
+    // engine can drive column headers, table rows and nav items alike.
+    return toArray(this.container.querySelectorAll(self.itemSelector));
   };
 
   /* دستگیرهٔ ⠿ را به هر آیتم اضافه می‌کند تا با لمس هم بتوان کشید. */
@@ -61,7 +66,8 @@
     this.items().forEach(function (el) {
       el.classList.add('is-drag-item');
       el.setAttribute('draggable', 'false');
-      if (self.opts.injectHandle === false) return;
+      // اگر injectHandle false است و slot هم وجود ندارد، دستگیره نساز
+      if (self.opts.injectHandle === false && !el.querySelector('[data-drag-handle-slot]')) return;
       if (el.querySelector('[data-drag-handle]')) return;
       var handle = document.createElement('span');
       handle.className = 'drag-handle';
@@ -98,7 +104,10 @@
     var target = event.target;
     if (!target || !target.closest) return;
     var item = target.closest(this.itemSelector);
-    if (!item || item.parentNode !== this.container) return;
+    if (!item) return;
+    // The draggable item may live one level deeper than the container (e.g. a
+    // <th> inside a <thead> that owns the <tr>). Accept either as the owner.
+    if (item.parentNode !== this.container && item.closest(this.itemSelector) !== item) return;
     if (!this.draggable(item)) return;
 
     var fromHandle = !!(this.handleSelector && target.closest(this.handleSelector));

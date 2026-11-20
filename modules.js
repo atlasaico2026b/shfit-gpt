@@ -1941,7 +1941,6 @@
         '</div>' +
         '<div class="list-filter-row" role="group" aria-label="فیلترها">' +
           renderFilterControls(moduleKey) +
-          '<button type="button" class="list-chip list-chip-columns" data-module-action="columns-open" data-view="' + esc(moduleKey) + '" title="نمایش و ترتیب ستون‌های جدول" aria-label="عناوین جدول">▤ عناوین</button>' +
           '<button type="button" class="list-chip list-chip-reset' + (active ? ' is-active' : '') + '" data-module-reset data-view="' + esc(moduleKey) + '"' + (active ? '' : ' hidden') + '>پاک‌کردن فیلترها</button>' +
           '<span class="list-filter-count" data-module-result-count>' + faDigits(recordsForView(moduleKey, appData).length) + ' مورد</span>' +
         '</div>' +
@@ -1964,16 +1963,16 @@
     const sort = listSortFor(moduleKey);
     const active = sort.key === key;
     const ascending = sort.direction === 'asc';
-    return '<th class="module-sort-th' + (active ? ' is-sorted' : '') + '" aria-sort="' +
-      (active ? (ascending ? 'ascending' : 'descending') : 'none') + '">' +
+    return '<th class="module-sort-th' + (active ? ' is-sorted' : '') + '" data-col-key="' + esc(key) +
+      '" aria-sort="' + (active ? (ascending ? 'ascending' : 'descending') : 'none') + '">' +
       '<button type="button" class="module-sort-btn" data-sort-key="' + esc(key) + '" data-sort-module="' + esc(moduleKey) +
       '" data-sort-view="' + esc(viewKey || moduleKey) + '" title="مرتب‌سازی بر اساس ' + esc(label) + '">' +
       '<span class="module-sort-label">' + esc(label) + '</span>' +
       '<span class="module-sort-caret" aria-hidden="true">' + (active ? (ascending ? '↑' : '↓') : '↕') + '</span>' +
+      '<span class="module-drag-handle-slot" data-drag-handle-slot aria-hidden="true"></span>' +
       '</button></th>';
   }
-
-  function renderTable(moduleKey, data) {
+function renderTable(moduleKey, data) {
     const columns = tableColumns(moduleKey);
     const records = recordsForView(moduleKey, data);
     if (!records.length) {
@@ -3447,7 +3446,11 @@
       return '<button type="button" data-program-action="filter" data-category="' + esc(category) + '" data-tone="' + programTone(category) + '" class="program-chip ' + (programFilter === category ? 'active' : '') + '">' + esc(category === 'all' ? 'همه' : category) + '</button>';
     }).join('');
     const body = visible.length
-      ? '<div class="program-grid">' + visible.map(renderProgramCard).join('') + '</div>'
+      ? '<div class="program-list">' + visible.map(function (record) {
+        const p = record.title || 'بدون عنوان';
+        const k = record.key || '';
+        return '<div class="program-list-item'><div class="program-list-title">' + esc(p) + '</div><div class="program-list-meta">' + (record.status ? 'وضعیت: ' + esc(record.status) : '') + '</div></div>';
+      }).join('') + '</div>'
       : '<div class="module-empty">هنوز برنامه‌ای ثبت نشده. با «برنامهٔ جدید» اولین هدف یا برنامه را بساز، بعد مراحلش را اضافه کن تا درصد پیشرفت خودکار محاسبه شود.</div>';
     section.innerHTML = rootWrap(
       pageHead('برنامه‌ها و اهداف', 'اهداف، برنامه‌های فعالیت، مانور، روتین و دوره‌های آموزشی؛ هر برنامه با مراحل و درصد پیشرفت', actions) +
@@ -3494,7 +3497,12 @@
 
   function vehicleTabBar() {
     const tabs = [['registry', 'خودروها'], ['service', 'دفتر سرویس'], ['history', 'سوابق اشکالات'], ['board', 'دفتر اشکالات']];
-    return '<div class="module-subtabs" role="tablist" aria-label="بخش‌های خودرو">' + tabs.map(function (pair) {
+    let order;
+    try { order = JSON.parse(localStorage.getItem('vehicleTabsOrder') || '[]'); } catch (_) { order = []; }
+    const orderedTabs = order.length
+      ? order.map(id => tabs.find(p => p[0] === id)).filter(Boolean)
+      : tabs;
+    return '<div class="module-subtabs" role="tablist" aria-label="بخش‌های خودرو" data-module-key="vehicle">' + orderedTabs.map(function (pair) {
       return '<button type="button" role="tab" aria-selected="' + (vehicleTab === pair[0]) + '" class="module-subtab' + (vehicleTab === pair[0] ? ' active' : '') + '" data-vehicle-tab="' + pair[0] + '">' + pair[1] + '</button>';
     }).join('') + '</div>';
   }
@@ -3886,6 +3894,7 @@
       '</div></div>';
     document.body.appendChild(backdrop);
     refreshFaultRecordsDialog();
+    wireAllTabs(backdrop);
     const modal = backdrop.querySelector('.fault-records-modal');
     if (modal) { modal.setAttribute('tabindex', '-1'); modal.focus(); }
   }
@@ -3977,6 +3986,7 @@
       '</div></div>';
     document.body.appendChild(backdrop);
     refreshFaultDetail();
+    wireAllTabs(backdrop);
     const modal = backdrop.querySelector('.fault-detail-modal');
     if (modal) { modal.setAttribute('tabindex', '-1'); modal.focus(); }
   }
@@ -4042,10 +4052,15 @@
   }
 
   function gasTabBar() {
-    return '<div class="module-subtabs" role="tablist" aria-label="بخش‌های گازسنج">' +
-      '<button type="button" role="tab" aria-selected="' + (gasTab === 'registry') + '" class="module-subtab' + (gasTab === 'registry' ? ' active' : '') + '" data-gas-tab="registry">گازسنج‌ها</button>' +
-      '<button type="button" role="tab" aria-selected="' + (gasTab === 'logs') + '" class="module-subtab' + (gasTab === 'logs' ? ' active' : '') + '" data-gas-tab="logs">سوابق گازسنج‌ها</button>' +
-      '</div>';
+    const tabs = [['registry', 'گازسنج‌ها'], ['logs', 'سوابق گازسنج‌ها']];
+    let order;
+    try { order = JSON.parse(localStorage.getItem('gasTabsOrder') || '[]'); } catch (_) { order = []; }
+    const orderedTabs = order.length
+      ? order.map(id => tabs.find(p => p[0] === id)).filter(Boolean)
+      : tabs;
+    return '<div class="module-subtabs" role="tablist" aria-label="بخش‌های گازسنج" data-module-key="gas">' + orderedTabs.map(function (pair) {
+      return '<button type="button" role="tab" aria-selected="' + (gasTab === pair[0]) + '" class="module-subtab' + (gasTab === pair[0] ? ' active' : '') + '" data-gas-tab="' + pair[0] + '">' + pair[1] + '</button>';
+    }).join('') + '</div>';
   }
 
   function gasCalibrationState(record) {
@@ -5480,8 +5495,20 @@
     if (!grid) return;
     const enabled = quickAddState().filter(function (item) { return item.enabled; });
     grid.innerHTML = enabled.length
-      ? enabled.map(quickAddButtonMarkup).join('')
+      ? '<div class="quick-add-grid-inner" data-quick-add-grid>' + enabled.map(quickAddButtonMarkup).join('') + '</div>'
       : '<p class="quick-add-empty">هیچ دکمهٔ ثبت سریعی فعال نیست. از تنظیمات › «ثبت سریع داشبورد» یکی را روشن کن.</p>';
+    // اتصال درگ برای خود گرید داشبورد (اگه AtlasDragReorder بارگذاری شده باشد)
+    if (window.AtlasDragReorder) {
+      const inner = grid.querySelector('[data-quick-add-grid]');
+      if (inner && !inner.dataset.dragBound) {
+        window.AtlasDragReorder.attach(inner, {
+          itemSelector: '.quick-add-btn',
+          injectHandle: false,
+          onReorder: function (list) { saveQuickAddOrderFromGrid(list); }
+        });
+        inner.dataset.dragBound = '1';
+      }
+    }
   }
 
   // ── ثبت کیلومتر فعلی (از نوار ثبت سریع) ───────────────────────────────────
@@ -7181,7 +7208,39 @@
     scope.querySelectorAll('[data-column-list]').forEach(function (list) {
       window.AtlasDragReorder.attach(list, {
         itemSelector: '[data-col-key]',
+        handleSelector: '[data-drag-handle]',
+        touchMode: 'longpress',
         onReorder: function () { updateColumnMoveButtons(list); }
+      });
+    });
+
+    // سرستون‌های جدول ماژول‌ها: جابه‌جایی مستقیم با Drag & Drop روی <th>
+    scope.querySelectorAll('.module-table').forEach(function (table) {
+      const thead = table.querySelector('thead');
+      if (!thead) return;
+      const moduleKey = thead.querySelector('[data-sort-module]')?.dataset.sortModule;
+      if (!moduleKey) return;
+      // جلوگیری از اتصال تکراری
+      if (thead.dataset.dragBound === '1') return;
+      thead.dataset.dragBound = '1';
+      window.AtlasDragReorder.attach(thead, {
+        itemSelector: '[data-col-key]',
+        handleSelector: '[data-drag-handle-slot]',
+        touchMode: 'longpress',
+        onReorder: function (list) {
+          const newOrder = Array.from(list.querySelectorAll('[data-col-key]')).map(th => th.dataset.colKey);
+          if (!newOrder.length) return;
+          if (!appData.settings.columnPrefs) appData.settings.columnPrefs = {};
+          const prefs = appData.settings.columnPrefs[moduleKey] || { order: [], hidden: [] };
+          // نگه‌داشتن ستون‌های پنهان و اضافه کردن ستون‌های جدید که در پیش‌فرض هستند اما در order نیستند
+          const allCols = orderedTableColumns(moduleKey);
+          const merged = newOrder.concat(allCols.filter(c => newOrder.indexOf(c) < 0));
+          appData.settings.columnPrefs[moduleKey] = { order: merged, hidden: prefs.hidden || [] };
+          saveState();
+          // رندر مجدد برای اعمال تغییر روی بدنه جدول
+          const section = document.getElementById('sectionView');
+          if (section) render(moduleKey, section);
+        }
       });
     });
 
@@ -7198,6 +7257,95 @@
         onReorder: function () { saveReferenceOrder(list); }
       });
     });
+
+    // تب‌های ماژول‌ها: خودرو، گازسنج، گزارش
+    scope.querySelectorAll('.module-subtabs').forEach(function (tablist) {
+      window.AtlasDragReorder.attach(tablist, {
+        itemSelector: '[role="tab"]',
+        injectHandle: false,
+        touchMode: 'longpress',
+        onReorder: function (list) { saveModuleSubtabOrder(list); }
+      });
+    });
+
+    // تب‌های برنامه‌ریزی شیفت
+    scope.querySelectorAll('.sp-tabs').forEach(function (tablist) {
+      window.AtlasDragReorder.attach(tablist, {
+        itemSelector: '[role="tab"]',
+        injectHandle: false,
+        touchMode: 'longpress',
+        onReorder: function (list) { saveShiftPlannerTabOrder(list); }
+      });
+    });
+
+    // تب‌های پرونده
+    scope.querySelectorAll('.rf-tabs').forEach(function (tablist) {
+      window.AtlasDragReorder.attach(tablist, {
+        itemSelector: '[role="tab"]',
+        injectHandle: false,
+        touchMode: 'longpress',
+        onReorder: function (list) { saveRecordFileTabOrder(list); }
+      });
+    });
+
+    // widget-dock: نوار پایین داشبورد
+    scope.querySelectorAll('.widget-dock').forEach(function (dock) {
+      window.AtlasDragReorder.attach(dock, {
+        itemSelector: '.widget-dock-item',
+        injectHandle: false,
+        touchMode: 'longpress',
+        onReorder: function (list) {
+          const order = Array.from(list.querySelectorAll('.widget-dock-item')).map(item => item.dataset.targetWidget);
+          try { localStorage.setItem('atlasShiftWidgetDockOrderV1', JSON.stringify(order)); } catch (_) {}
+        }
+      });
+    });
+
+    // فراخوانی خودکار برای مودال‌های دینامیک جدید
+    wireAllTabs(scope);
+  }
+
+  // تابع کمکی: فراخوانی Drag & Reorder روی همه تب‌های موجود در یک node
+  function wireAllTabs(root) {
+    if (!window.AtlasDragReorder) return;
+    const scope = root || document;
+
+    // مودال‌های جدید که از innerHTML ساخته می‌شوند
+    scope.querySelectorAll('.module-subtabs').forEach(function (tablist) {
+      if (!tablist.dataset.dragBound) {
+        window.AtlasDragReorder.attach(tablist, {
+          itemSelector: '[role="tab"]',
+          injectHandle: false,
+          touchMode: 'longpress',
+          onReorder: function (list) { saveModuleSubtabOrder(list); }
+        });
+        tablist.dataset.dragBound = '1';
+      }
+    });
+
+    scope.querySelectorAll('.sp-tabs').forEach(function (tablist) {
+      if (!tablist.dataset.dragBound) {
+        window.AtlasDragReorder.attach(tablist, {
+          itemSelector: '[role="tab"]',
+          injectHandle: false,
+          touchMode: 'longpress',
+          onReorder: function (list) { saveShiftPlannerTabOrder(list); }
+        });
+        tablist.dataset.dragBound = '1';
+      }
+    });
+
+    scope.querySelectorAll('.rf-tabs').forEach(function (tablist) {
+      if (!tablist.dataset.dragBound) {
+        window.AtlasDragReorder.attach(tablist, {
+          itemSelector: '[role="tab"]',
+          injectHandle: false,
+          touchMode: 'longpress',
+          onReorder: function (list) { saveRecordFileTabOrder(list); }
+        });
+        tablist.dataset.dragBound = '1';
+      }
+    });
   }
 
   async function saveQuickAddOrder(list) {
@@ -7210,6 +7358,16 @@
       const section = document.getElementById('sectionView');
       if (section) render('settings', section);
     }
+  }
+
+  async function saveQuickAddOrderFromGrid(list) {
+    const ids = Array.from(list.querySelectorAll('.quick-add-btn')).map(function (btn) { return btn.dataset.qaId; }).filter(Boolean);
+    const byId = {};
+    quickAddState().forEach(function (item) { byId[item.id] = item; });
+    const items = ids.map(function (id) { return byId[id]; }).filter(Boolean);
+    if (!items.length || items.length !== ids.length) return;
+    await saveQuickAddState(items);
+    // نیازی به رندر مجدد تنظیمات نیست؛ گرید داشبورد خودش آپدیت می‌شود در renderQuickAdd
   }
 
   async function saveReferenceOrder(list) {
@@ -7225,6 +7383,43 @@
     if (await saveState()) {
       refreshReferenceCard(key);
     }
+  }
+
+  // ذخیرهٔ ترتیب تب‌های ماژول‌ها (خودرو، گازسنج، گزارش)
+  function saveModuleSubtabOrder(list) {
+    const ids = Array.from(list.querySelectorAll('[role="tab"]')).map(function (tab) {
+      return tab.dataset.vehicleTab || tab.dataset.gasTab || tab.dataset.rangeTab || '';
+    }).filter(Boolean);
+    if (!ids.length) return;
+    // هر ماژول کلید خودش را دارد: vehicleTabsOrder, gasTabsOrder, reportTabsOrder
+    const moduleKey = list.closest('[data-module-key]')?.dataset.moduleKey;
+    if (!moduleKey) return;
+    const orderKey = moduleKey + 'TabsOrder';
+    try {
+      localStorage.setItem(orderKey, JSON.stringify(ids));
+    } catch (_) {}
+  }
+
+  // ذخیرهٔ ترتیب تب‌های برنامه‌ریزی شیفت
+  function saveShiftPlannerTabOrder(list) {
+    const ids = Array.from(list.querySelectorAll('[role="tab"]')).map(function (tab) {
+      return tab.dataset.spTab || '';
+    }).filter(Boolean);
+    if (!ids.length) return;
+    try {
+      localStorage.setItem('shiftPlannerTabsOrder', JSON.stringify(ids));
+    } catch (_) {}
+  }
+
+  // ذخیرهٔ ترتیب تب‌های پرونده
+  function saveRecordFileTabOrder(list) {
+    const ids = Array.from(list.querySelectorAll('[role="tab"]')).map(function (tab) {
+      return tab.dataset.rfTab || '';
+    }).filter(Boolean);
+    if (!ids.length) return;
+    try {
+      localStorage.setItem('recordFileTabsOrder', JSON.stringify(ids));
+    } catch (_) {}
   }
 
   function refreshPlaceManager() {
@@ -7724,7 +7919,7 @@
       '<div class="atlas-modal-body"><div class="module-column-list" data-column-list>' +
       ordered.map(function (key, index) {
         return '<div class="module-column-row" data-col-key="' + esc(key) + '">' +
-          '<label><input type="checkbox" class="nu-keep-native" value="' + esc(key) + '"' + (hidden.indexOf(key) < 0 ? ' checked' : '') + '><span>' + esc(columnLabel(moduleKey, key)) + '</span></label>' +
+          '<label><span data-drag-handle-slot></span><input type="checkbox" class="nu-keep-native" value="' + esc(key) + '"' + (hidden.indexOf(key) < 0 ? ' checked' : '') + '><span>' + esc(columnLabel(moduleKey, key)) + '</span></label>' +
           '<div class="module-column-move">' +
             '<button type="button" class="module-column-move-btn" data-module-action="column-move" data-dir="up" data-view="' + esc(moduleKey) + '" aria-label="بالا" title="بالا"' + (index === 0 ? ' disabled' : '') + '>↑</button>' +
             '<button type="button" class="module-column-move-btn" data-module-action="column-move" data-dir="down" data-view="' + esc(moduleKey) + '" aria-label="پایین" title="پایین"' + (index === ordered.length - 1 ? ' disabled' : '') + '>↓</button>' +
@@ -9071,11 +9266,19 @@
           '<label class="module-field"><span>تا تاریخ</span><input type="text" data-jalali-input="jalali" data-range-to value="' + esc(formatJalali(range.end, false)) + '" placeholder="۱۴۰۵/۰۷/۳۰"></label>' +
           '<button type="button" class="primary-btn" data-range-apply>اعمال بازه</button>' +
           (summaryKind ? '' :
-          '<div class="module-subtabs" role="tablist" aria-label="نوع گزارش">' +
-            RANGE_REPORT_TABS.map(function (item) {
-              return '<button type="button" role="tab" class="module-subtab" data-range-tab="' + item.key + '">' + item.label + '</button>';
-            }).join('') +
-          '</div>') +
+          (function () {
+            const tabs = RANGE_REPORT_TABS.slice();
+            let order;
+            try { order = JSON.parse(localStorage.getItem('reportTabsOrder') || '[]'); } catch (_) { order = []; }
+            const orderedTabs = order.length
+              ? order.map(id => tabs.find(p => p.key === id)).filter(Boolean)
+              : tabs;
+            return '<div class="module-subtabs" role="tablist" aria-label="نوع گزارش" data-module-key="report">' +
+              orderedTabs.map(function (item) {
+                return '<button type="button" role="tab" class="module-subtab" data-range-tab="' + item.key + '">' + item.label + '</button>';
+              }).join('') +
+            '</div>';
+          })()) +
         '</div>' +
         '<div class="atlas-modal-body" data-range-panel></div>' +
         '<div class="module-form-actions"><span class="module-required-help" data-range-note></span><div>' +
@@ -9089,6 +9292,7 @@
       '</div>';
     document.body.appendChild(backdrop);
     enhanceJalaliInputs(backdrop);
+    wireAllTabs(backdrop);
 
     const panel = backdrop.querySelector('[data-range-panel]');
     const caption = backdrop.querySelector('[data-range-caption]');
@@ -9503,9 +9707,6 @@
         toast('ستون‌های گزارش ذخیره شد؛ خروجی‌ها فقط همین ستون‌ها را دارند.');
         render(moduleKey,section);
       }
-    }else if(action==='columns-open'&&specs[moduleKey]){
-      document.body.insertAdjacentHTML('beforeend',columnsModal(moduleKey));
-      wireDragReorder(document);
     }else if(action==='columns-cancel'){
       const modal=button.closest('[data-modal-backdrop]');
       if(modal)modal.remove();

@@ -258,6 +258,49 @@
   opacity: 0.5;
 }
 
+/* Drag handle for column reordering */
+.module-drag-handle-slot {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  margin-left: 4px;
+}
+
+.module-sort-btn:hover .module-drag-handle-slot,
+.module-sort-btn:focus-visible .module-drag-handle-slot {
+  opacity: 0.5;
+}
+
+.module-sort-btn:hover .module-drag-handle-slot::before,
+.module-sort-btn:focus-visible .module-drag-handle-slot::before {
+  content: '⋮⋮';
+  font-size: 10px;
+  color: var(--muted);
+  cursor: grab;
+}
+
+/* Drag states for column headers */
+.module-sort-th.is-dragging {
+  transition: none;
+  z-index: 10;
+  cursor: grabbing;
+  will-change: transform;
+  box-shadow: 0 12px 26px -10px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.28);
+  outline: 1px solid rgba(var(--accent-rgb,90,170,240),.42);
+  outline-offset: -1px;
+  background: linear-gradient(120deg, rgba(var(--accent-rgb,90,170,240),.18), rgba(var(--c-cyan-rgb,90,200,240),.06));
+}
+
+.module-sort-th.is-shifting {
+  z-index: 5;
+  will-change: transform;
+}
+
 .module-sort-th.is-sorted .module-sort-btn {
   color: var(--accent);
 }

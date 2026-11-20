@@ -121,9 +121,9 @@ check('«انتخاب همه» همهٔ تیک‌های گزارش را می‌�
 check('«انتخاب هیچ‌کدام» همهٔ تیک‌های گزارش را برمی‌دارد',
   /action==='export-columns-none'\)\{[\s\S]{0,200}\[data-export-columns\] input'\)\.forEach\(function\(box\)\{box\.checked=false;\}\)/.test(modules));
 
-// ── «عناوین»: انتخاب و ترتیب ستون‌های جدول ──
-check('قرص «عناوین» در نوار فیلتر هست', /list-chip-columns[^>]*data-module-action="columns-open"/.test(modules));
-check('پنجرهٔ عناوین با تیک و دکمه‌های ترتیب ساخته می‌شود', /function columnsModal\(moduleKey\)/.test(modules) && /data-column-list/.test(modules) && /data-module-action="column-move" data-dir="up"/.test(modules) && /data-module-action="column-move" data-dir="down"/.test(modules));
+// ── «عناوین»: انتخاب و ترتیب ستون‌های جدول (حذف شده - فقط درگ در جدول) ──
+check('قرص «عناوین» در نوار فیلتر حذف شده', !/list-chip-columns[^>]*data-module-action="columns-open"/.test(modules));
+check('پنجرهٔ عناوین (columnsModal) برای سازگاری وجود دارد', /function columnsModal\(moduleKey\)/.test(modules));
 check('جدول از ستون‌های انتخابی/مرتب‌شده استفاده می‌کند', /function renderTable\(moduleKey, data\) \{\s*const columns = tableColumns\(moduleKey\);/.test(modules));
 check('ذخیرهٔ عناوین در تنظیمات بخش', /appData\.settings\.columnPrefs\[moduleKey\]=\{order:order,hidden:hidden\}/.test(modules));
 check('قرص عناوین رنگ متفاوت دارد', /\.list-chip-columns\s*\{[^}]*--special-rgb/.test(read('design/toolbars.css')));

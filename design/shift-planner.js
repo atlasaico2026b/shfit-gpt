@@ -404,9 +404,14 @@
       ['calendar', 'تقویم شیفت'],
       ['legacy', 'برنامه‌های ثبت‌شده']
     ];
+    let order;
+    try { order = JSON.parse(localStorage.getItem('shiftPlannerTabsOrder') || '[]'); } catch (_) { order = []; }
+    const orderedTabs = order.length
+      ? order.map(id => tabs.find(p => p[0] === id)).filter(Boolean)
+      : tabs;
     section.innerHTML = bridge.rootWrap(
       bridge.pageHead('برنامه‌ریزی شیفت', 'تخصیص کارکنان، روش کاری، ساعت کاری، قالب چرخش و تقویم بازه‌ای', '') +
-      '<div class="sp-tabs" role="tablist">' + tabs.map(function (pair) {
+      '<div class="sp-tabs" role="tablist">' + orderedTabs.map(function (pair) {
         return '<button type="button" role="tab" class="sp-tab' + (tab === pair[0] ? ' is-active' : '') +
           '" aria-selected="' + (tab === pair[0] ? 'true' : 'false') + '" data-sp-tab="' + pair[0] + '">' + esc(pair[1]) + '</button>';
       }).join('') + '</div>' +

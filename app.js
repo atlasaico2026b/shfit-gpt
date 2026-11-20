@@ -24,6 +24,59 @@
   // Keep the widgets' glass reflection responsive to the pointer.
   widgets().forEach(w=>{w.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;const r=w.getBoundingClientRect();w.style.setProperty('--mx',(e.clientX-r.left)+'px');w.style.setProperty('--my',(e.clientY-r.top)+'px')});w.addEventListener('pointerleave',()=>{w.style.setProperty('--mx','50%');w.style.setProperty('--my','0')})});
   applySavedLayout();
+
+  // ── widget-dock: ذخیره و بازیابی ترتیب + درگ ───────────────────────────
+  const DOCK_STORAGE_KEY = 'atlasShiftWidgetDockOrderV1';
+  const DEFAULT_DOCK_ORDER = ['roster','shift-coverage','missions','alerts','fleet','calendar','equipment','operations','stations'];
+
+  function loadDockOrder() {
+    try {
+      const saved = JSON.parse(safeRead(DOCK_STORAGE_KEY) || '[]');
+      return Array.isArray(saved) ? saved.filter(id => typeof id === 'string') : [];
+    } catch (_) { return []; }
+  }
+
+  function saveDockOrder(order) {
+    try {
+      safeWrite(DOCK_STORAGE_KEY, JSON.stringify(order));
+      return true;
+    } catch (_) { return false; }
+  }
+
+  function applyDockOrder() {
+    const dock = $('.widget-dock');
+    if (!dock) return;
+    const savedOrder = loadDockOrder();
+    if (!savedOrder.length) return;
+    const items = $$('.widget-dock-item', dock);
+    const byId = new Map(items.map(item => [item.dataset.targetWidget, item]));
+    const seen = new Set();
+    savedOrder.forEach(id => {
+      const item = byId.get(id);
+      if (!item || seen.has(id)) return;
+      seen.add(id);
+      dock.appendChild(item);
+    });
+    items.forEach(item => { if (!seen.has(item.dataset.targetWidget)) dock.appendChild(item); });
+  }
+
+  function attachDockDrag() {
+    const dock = $('.widget-dock');
+    if (!dock || !window.AtlasDragReorder) return;
+    window.AtlasDragReorder.attach(dock, {
+      itemSelector: '.widget-dock-item',
+      injectHandle: false,
+      touchMode: 'longpress',
+      onReorder: function (list) {
+        const order = Array.from(list.querySelectorAll('.widget-dock-item')).map(item => item.dataset.targetWidget);
+        saveDockOrder(order);
+      }
+    });
+  }
+
+  // اجرا
+  applyDockOrder();
+  attachDockDrag();
   // Notifications: open, read/unread filter, and local read state.
   function updateNotificationBadge(){const count=$$('.notice-card.unread').length;const badge=$('#notificationCount');badge.textContent=String(count).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);badge.style.display=count?'flex':'none';}
   function openDrawer(){document.body.classList.add('notifications-open');$('#notificationDrawer').setAttribute('aria-hidden','false');$('#settingsPanel').classList.remove('open');$('#settingsPanel').setAttribute('aria-hidden','true');$('#settingsButton').setAttribute('aria-expanded','false')}
