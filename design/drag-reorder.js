@@ -86,16 +86,19 @@
     var self = this;
     this.onMoveBound = function (event) { self.onMove(event); };
     this.onUpBound = function (event) { self.onUp(event); };
+    this.onCancelBound = function (event) { self.onCancel(event); };
     this.container.addEventListener('pointerdown', function (event) { self.onDown(event); });
     this.container.addEventListener('dragstart', function (event) {
       if (self.state) event.preventDefault();
     });
   };
 
+  Sortable.prototype.isLocked = function (item) {
+    return !!(item && this.lockedSelector && item.matches(this.lockedSelector));
+  };
+
   Sortable.prototype.draggable = function (item) {
-    if (!item) return false;
-    if (this.lockedSelector && item.matches(this.lockedSelector)) return false;
-    return true;
+    return !!item && !this.isLocked(item);
   };
 
   Sortable.prototype.onDown = function (event) {
@@ -131,13 +134,17 @@
       axis: null,
       dir: 1,
       grab: 0,
-      timer: 0
+      timer: 0,
+      initialOrder: this.items().slice()
     };
 
     var self = this;
     document.addEventListener('pointermove', this.onMoveBound, { passive: false });
     document.addEventListener('pointerup', this.onUpBound);
-    document.addEventListener('pointercancel', this.onUpBound);
+    document.addEventListener('pointercancel', this.onCancelBound);
+    if (item.setPointerCapture && event.pointerId != null) {
+      try { item.setPointerCapture(event.pointerId); } catch (_) {}
+    }
 
     /* با لمس، نگه‌داشتن کوتاه روی آیتم هم درگ را شروع می‌کند. */
     if (event.pointerType !== 'mouse' && this.touchMode === 'longpress' && !fromHandle) {
@@ -151,25 +158,30 @@
 
   /* محور حرکت: ردیف افقی یا فهرست عمودی — خودکار از چیدمان فهمیده می‌شود. */
   Sortable.prototype.measure = function () {
-    var items = this.items();
+    var items = this.items().filter(this.draggable.bind(this));
     if (!items.length) return { axis: 'y', dir: 1 };
-    var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    var centers = [];
-    items.forEach(function (el) {
+    var centers = items.map(function (el) {
       var r = el.getBoundingClientRect();
-      minX = Math.min(minX, r.left); maxX = Math.max(maxX, r.right);
-      minY = Math.min(minY, r.top); maxY = Math.max(maxY, r.bottom);
-      centers.push({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     });
     var axis = this.axisMode;
     if (axis !== 'x' && axis !== 'y') {
-      axis = (maxX - minX) >= (maxY - minY) ? 'x' : 'y';
+      if (centers.length < 2) axis = 'y';
+      else {
+        var first = centers[0];
+        var last = centers[centers.length - 1];
+        // Compare item centers, not the outer bounding box: full-width vertical
+        // rows must remain vertical even when each row is wider than the list is tall.
+        axis = Math.abs(last.x - first.x) > Math.abs(last.y - first.y) ? 'x' : 'y';
+      }
     }
     var dir = 1;
     if (centers.length > 1) {
-      var first = centers[0];
-      var last = centers[centers.length - 1];
-      dir = axis === 'x' ? (last.x < first.x ? -1 : 1) : (last.y < first.y ? -1 : 1);
+      var firstCenter = centers[0];
+      var lastCenter = centers[centers.length - 1];
+      dir = axis === 'x'
+        ? (lastCenter.x < firstCenter.x ? -1 : 1)
+        : (lastCenter.y < firstCenter.y ? -1 : 1);
     }
     return { axis: axis, dir: dir };
   };
@@ -203,7 +215,13 @@
     var dx = event.clientX - state.startX;
     var dy = event.clientY - state.startY;
     if (!state.dragging) {
-      if (!state.longpress && Math.abs(dx) < THRESHOLD && Math.abs(dy) < THRESHOLD) return;
+      if (Math.abs(dx) < THRESHOLD && Math.abs(dy) < THRESHOLD) return;
+      // A long-press surface must not turn an ordinary touch-scroll into a drag.
+      // Only a completed long press may start dragging from a non-handle area.
+      if (event.pointerType !== 'mouse' && this.touchMode === 'longpress' && !state.longpress) {
+        this.finish(event, true);
+        return;
+      }
       if (state.timer) { window.clearTimeout(state.timer); state.timer = 0; }
       this.startDrag();
     }
@@ -223,7 +241,8 @@
     if (this.opts.onDrag) this.opts.onDrag(event);
 
     /* جای تازه را از موقعیت اشاره‌گر نسبت به وسط بقیهٔ آیتم‌ها می‌فهمیم. */
-    var kids = this.items().filter(function (el) { return el !== item; });
+    var movable = this.items().filter(this.draggable.bind(this));
+    var kids = movable.filter(function (el) { return el !== item; });
     var index = kids.length;
     for (var i = 0; i < kids.length; i++) {
       var r = kids[i].getBoundingClientRect();
@@ -232,11 +251,19 @@
       if (passed) { index = i; break; }
     }
 
-    var current = this.items().indexOf(item);
+    var current = movable.indexOf(item);
     if (current !== index) {
       var before = this.snapshot();
-      if (index >= kids.length) container.appendChild(item);
-      else container.insertBefore(item, kids[index]);
+      if (index >= kids.length) {
+        // Keep any trailing locked items (for example Dashboard/Settings) pinned.
+        var all = this.items();
+        var trailingLocked = null;
+        for (var j = all.length - 1; j >= 0 && this.isLocked(all[j]); j--) trailingLocked = all[j];
+        if (trailingLocked) container.insertBefore(item, trailingLocked);
+        else container.appendChild(item);
+      } else {
+        container.insertBefore(item, kids[index]);
+      }
       this.flip(before, item);
     }
 
@@ -292,43 +319,69 @@
   };
 
   Sortable.prototype.onUp = function (event) {
+    this.finish(event, false);
+  };
+
+  Sortable.prototype.onCancel = function (event) {
+    this.finish(event, true);
+  };
+
+  Sortable.prototype.finish = function (event, cancelled) {
     var state = this.state;
     if (!state) return;
-    if (state.pointerId != null && event.pointerId != null && event.pointerId !== state.pointerId) return;
+    if (state.pointerId != null && event && event.pointerId != null && event.pointerId !== state.pointerId) return;
 
     if (state.timer) { window.clearTimeout(state.timer); state.timer = 0; }
     this.state = null;
     document.removeEventListener('pointermove', this.onMoveBound);
     document.removeEventListener('pointerup', this.onUpBound);
-    document.removeEventListener('pointercancel', this.onUpBound);
+    document.removeEventListener('pointercancel', this.onCancelBound);
 
-    if (!state.dragging) return;
+    if (cancelled && state.dragging) {
+      // A cancelled gesture is not a drop: restore the exact starting order.
+      state.initialOrder.forEach(function (el) {
+        if (el.parentNode === this.container) this.container.appendChild(el);
+      }, this);
+    }
 
-    state.item.classList.remove('is-dragging');
-    this.container.classList.remove('is-sorting');
-    document.body.classList.remove('is-drag-reordering');
+    if (state.dragging) {
+      state.item.classList.remove('is-dragging');
+      this.container.classList.remove('is-sorting');
+      document.body.classList.remove('is-drag-reordering');
+      this.items().forEach(function (el) {
+        el.style.transform = '';
+        el.style.transition = '';
+        el.classList.remove('is-shifting');
+      });
+      void this.container.offsetWidth;
+      if (!cancelled) this.suppressClick(state.item);
 
-    var self = this;
-    this.items().forEach(function (el) {
-      el.style.transform = '';
-      el.style.transition = '';
-      el.classList.remove('is-shifting');
-    });
-    void self.container.offsetWidth;
+      var finalOrder = this.items();
+      var changed = state.initialOrder.length !== finalOrder.length ||
+        state.initialOrder.some(function (el, index) { return finalOrder[index] !== el; });
+      if (!cancelled && changed && this.opts.onReorder) this.opts.onReorder(this.container);
+    }
 
-    this.suppressClick();
-    if (this.opts.onReorder) this.opts.onReorder(this.container);
+    if (state.item.releasePointerCapture && state.pointerId != null) {
+      try { state.item.releasePointerCapture(state.pointerId); } catch (_) {}
+    }
   };
 
-  /* کلیکی که بعد از رها کردن روی همان آیتم می‌افتد نباید منو/تب را باز کند. */
-  Sortable.prototype.suppressClick = function () {
+  /* Only suppress the synthetic click on the dragged item, not the next click anywhere. */
+  Sortable.prototype.suppressClick = function (item) {
+    var container = this.container;
     var handler = function (event) {
+      var target = event.target;
+      var belongsToDraggedItem = target === item ||
+        (item.contains && item.contains(target)) ||
+        (target.closest && target.closest(this.itemSelector) === item);
+      if (!belongsToDraggedItem) return;
       event.preventDefault();
       event.stopPropagation();
-      document.removeEventListener('click', handler, true);
-    };
-    document.addEventListener('click', handler, true);
-    window.setTimeout(function () { document.removeEventListener('click', handler, true); }, 350);
+      container.removeEventListener('click', handler, true);
+    }.bind(this);
+    container.addEventListener('click', handler, true);
+    window.setTimeout(function () { container.removeEventListener('click', handler, true); }, 350);
   };
 
   window.AtlasDragReorder = {
