@@ -83,8 +83,8 @@
     if (window.AtlasDragReorder) {
       window.AtlasDragReorder.attach(tablist, {
         itemSelector: '[role="tab"]',
-        injectHandle: false,
-        touchMode: 'longpress',
+        injectHandle: true,
+        touchMode: 'handle',
         onReorder: list => saveOrder([...list.querySelectorAll('[role="tab"]')])
       });
     }
